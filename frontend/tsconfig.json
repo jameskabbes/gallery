@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "jsx": "react",
+    "lib": ["dom", "ESNext"],
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true
+  }
+}
