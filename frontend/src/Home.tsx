@@ -44,7 +44,7 @@ function Home(): JSX.Element {
         <p>not loading</p>
         <div>
           {data.photos.map((photo) => (
-            <img src={photo.src.tiny} alt="" />
+            <img key={photo.id} src={photo.src.medium} alt="" />
           ))}
         </div>
       </>
