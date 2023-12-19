@@ -6,13 +6,11 @@ function App(): JSX.Element {
   return (
     <div className="App">
       <BrowserRouter>
-        <div className="mx-2">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/404" element={<p>404</p>} />
-            <Route path="*" element={<Navigate to="/404" />} />
-          </Routes>
-        </div>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/404" element={<p>404</p>} />
+          <Route path="*" element={<Navigate to="/404" />} />
+        </Routes>
       </BrowserRouter>
     </div>
   );
