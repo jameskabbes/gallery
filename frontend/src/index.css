@@ -2,10 +2,91 @@
 @tailwind components;
 @tailwind utilities;
 
-.photos {
-  @apply grid grid-cols-3 gap-8;
+body,
+html {
+  @apply bg-color;
+  height: 100%;
 }
 
-.photo {
-  @apply shadow-lg rounded-lg px-8 py-4 m-4;
+header {
+  @apply sticky top-0 bg-color-darker;
+}
+
+footer {
+  @apply bg-color-darker;
+}
+
+h1 {
+  @apply mb-4 text-6xl font-extrabold;
+}
+
+h2 {
+  @apply mb-4 text-4xl font-bold;
+}
+
+h3 {
+  @apply mb-3 text-3xl font-semibold;
+}
+
+h4 {
+  @apply mb-3 text-2xl;
+}
+
+h5 {
+  @apply mb-2 text-xl;
+}
+h6 {
+  @apply mb-1 text-lg;
+}
+
+p {
+}
+
+.App {
+  @apply text-color font-sans bg-color;
+}
+
+.page {
+  @apply py-8 mx-2;
+}
+
+.text-color {
+  @apply text-custom_dark-lighter dark:text-custom_light-darker;
+}
+.text-color-invert {
+  @apply text-custom_light-lighter dark:text-custom_dark-darker;
+}
+
+.bg-color {
+  @apply bg-custom_light dark:bg-custom_dark;
+}
+.bg-color-invert {
+  @apply bg-custom_dark dark:bg-custom_light;
+}
+
+.bg-color-lighter {
+  @apply bg-custom_light-lighter dark:bg-custom_dark-lighter;
+}
+.bg-color-darker {
+  @apply bg-custom_light-darker dark:bg-custom_dark-darker;
+}
+
+.hover-bg-color-darker {
+  @apply hover:bg-custom_light-darker dark:hover:bg-custom_dark-darker;
+}
+
+.gallery {
+  @apply flex;
+}
+
+.column {
+  @apply flex flex-1 flex-col;
+}
+
+.card {
+  @apply m-2;
+}
+
+img {
+  @apply p-1 rounded-lg bg-color-lighter;
 }
