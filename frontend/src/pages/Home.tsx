@@ -2,14 +2,14 @@ import React from 'react';
 import { useApiData, useConditionalRender } from '../utils/Api';
 import privateConfig from '../../private_config.json';
 import { Photo } from '../types';
-import { Photos } from '../components/Photo/Photos';
+import { Gallery } from '../components/Gallery/Gallery';
 
 type HomePageApi = {
   photos: Photo[];
 };
 
 function Component(data: HomePageApi) {
-  return <Photos photos={data.photos} />;
+  return <Gallery photos={data.photos} />;
 }
 
 function useSetTitle(data: HomePageApi): void {
