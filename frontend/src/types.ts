@@ -1,5 +1,9 @@
 import { Photo as PhotoPexels } from 'pexels';
 
-type Photo = PhotoPexels;
+interface Photo extends PhotoPexels {
+  index?: number;
+}
 
-export { Photo };
+type Gallery = Photo[][];
+
+export { Photo, Gallery };
