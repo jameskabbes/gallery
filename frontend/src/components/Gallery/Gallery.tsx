@@ -63,7 +63,7 @@ function Gallery({ photos }: { photos: Photo[] }): JSX.Element {
     <>
       {imagePreviewIndex && (
         <div>
-          <div className="fixed top-0 left-0 w-full h-full bg-color-darker bg-opacity-50 z-10"></div>
+          <div className="fixed top-0 left-0 w-full h-full bg-opacity-50 z-10"></div>
           <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center z-20">
             <div className="bg-white p-6 rounded-lg">
               <GalleryView photo={photos[imagePreviewIndex]} />
