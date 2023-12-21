@@ -7,11 +7,11 @@ import { Column } from './Column';
 function calculateNColumns(screenWidth: number): number {
   if (screenWidth < 300) {
     return 1;
-  } else if (screenWidth < 600) {
+  } else if (screenWidth < 700) {
     return 2;
-  } else if (screenWidth < 1200) {
+  } else if (screenWidth < 1100) {
     return 3;
-  } else if (screenWidth < 2000) {
+  } else if (screenWidth < 1600) {
     return 4;
   } else {
     return 5;
@@ -102,15 +102,17 @@ function Gallery({ photos }: { photos: Photo[] }): JSX.Element {
           {imagePreviewIndex !== null && (
             <div>
               <div
-                className="fixed top-0 left-0 w-full h-full flex items-center justify-center z-10"
+                className="fixed top-0 left-0 h-screen w-screen flex items-center justify-center z-10"
                 onClick={() => setImagePreviewIndex(null)}
               >
                 <div className="absolute top-0 left-0 w-full h-full bg-gray-300/50"></div>
-                <div className="relative z-20">
-                  <PreviewView
-                    photo={photos[imagePreviewIndex]}
-                    setImagePreviewIndex={setImagePreviewIndex}
-                  />
+                <div className="relative w-5/8 h-5/8 m-auto z-20">
+                  <div className="h-full w-full bg-color-darker flex items-center justify-center">
+                    <PreviewView
+                      photo={photos[imagePreviewIndex]}
+                      setImagePreviewIndex={setImagePreviewIndex}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

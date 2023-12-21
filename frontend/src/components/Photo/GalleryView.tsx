@@ -12,16 +12,16 @@ function GalleryView({
   setImagePreviewIndex: CallableFunction;
 }): JSX.Element {
   return (
-    <div className="flex items-center justify-center">
-      <button onClick={() => setImagePreviewIndex(index)}>
+    <button onClick={() => setImagePreviewIndex(index)}>
+      <div className="flex items-center justify-center">
         <div className="img-card relative">
           <Image photo={photo} />
           <div className="absolute inset-0 flex">
             <h3 className="text-white mx-3 my-2">{index}</h3>
           </div>
         </div>
-      </button>
-    </div>
+      </div>
+    </button>
   );
 }
 

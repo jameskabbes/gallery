@@ -84,11 +84,11 @@ p {
 }
 
 .card {
-  @apply rounded-lg p-2 m-2 bg-color-lighter;
+  @apply rounded-lg p-1 m-1 bg-color-lighter;
 }
 
 .img-card {
-  @apply rounded-lg p-1 m-1 bg-color-lighter;
+  @apply w-full card;
 }
 
 img {
