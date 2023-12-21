@@ -18,6 +18,7 @@ function Column({
           <GalleryView
             key={i}
             photo={photos[photoInd]}
+            index={photoInd}
             setImagePreviewIndex={setImagePreviewIndex}
           />
         ))}

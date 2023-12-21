@@ -4,24 +4,20 @@ import { Image } from './Image';
 
 function GalleryView({
   photo,
+  index,
   setImagePreviewIndex,
 }: {
   photo: Photo;
+  index: number;
   setImagePreviewIndex: CallableFunction;
 }): JSX.Element {
-  useEffect(() => {
-    console.log(photo.index);
-  }, []);
-
   return (
     <div className="flex items-center justify-center">
-      <button onClick={() => setImagePreviewIndex(photo.index)}>
-        <div className="img-card">
-          <div className="relative">
-            <Image photo={photo} />
-            <div className="absolute inset-0 flex">
-              <h2 className="text-white mx-3 my-2">{photo.index}</h2>
-            </div>
+      <button onClick={() => setImagePreviewIndex(index)}>
+        <div className="img-card relative">
+          <Image photo={photo} />
+          <div className="absolute inset-0 flex">
+            <h3 className="text-white mx-3 my-2">{index}</h3>
           </div>
         </div>
       </button>

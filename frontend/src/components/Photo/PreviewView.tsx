@@ -12,6 +12,7 @@ function PreviewView({
   return (
     <>
       <div className="flex flex-col card">
+        <h2>{photo.id}</h2>
         <button onClick={() => setImagePreviewIndex(null)}>Close</button>
         <Image photo={photo} />
       </div>
