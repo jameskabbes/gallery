@@ -5,14 +5,18 @@ import { Image } from './Image';
 function GalleryView({
   photo,
   index,
-  setImagePreviewIndex,
+  imagePreviewIndexDispatch,
 }: {
   photo: Photo;
   index: number;
-  setImagePreviewIndex: CallableFunction;
+  imagePreviewIndexDispatch: CallableFunction;
 }): JSX.Element {
   return (
-    <button onClick={() => setImagePreviewIndex(index)}>
+    <button
+      onClick={() =>
+        imagePreviewIndexDispatch({ type: 'SET_VALUE', value: index })
+      }
+    >
       <div className="flex items-center justify-center">
         <div className="img-card relative">
           <Image photo={photo} />

@@ -2,20 +2,46 @@ import React, { useEffect } from 'react';
 import { Photo } from '../../types';
 import { Image } from './Image';
 
+import {
+  IoIosArrowForward,
+  IoIosArrowBack,
+  IoIosExit,
+  IoIosClose,
+} from 'react-icons/io';
+
 function PreviewView({
   photo,
-  setImagePreviewIndex,
+  nPhotos,
+  imagePreviewIndexDispatch,
 }: {
   photo: Photo;
-  setImagePreviewIndex: CallableFunction;
+  nPhotos: number;
+  imagePreviewIndexDispatch: CallableFunction;
 }) {
   return (
     <>
-      <div className="flex flex-col card">
-        <h2>{photo.id}</h2>
-        <button onClick={() => setImagePreviewIndex(null)}>Close</button>
-        <Image photo={photo} />
-      </div>
+      <h1>
+        <IoIosClose
+          onClick={() => {
+            imagePreviewIndexDispatch({ type: 'SET_NULL' });
+          }}
+        />
+      </h1>
+      <h1
+        onClick={() => {
+          imagePreviewIndexDispatch({ type: 'INCREMENT', nPhotos: nPhotos });
+        }}
+      >
+        <IoIosArrowBack />
+      </h1>
+      <h1>
+        <IoIosArrowForward
+          onClick={() => {
+            imagePreviewIndexDispatch({ type: 'DECREMENT', nPhotos: nPhotos });
+          }}
+        />
+      </h1>
+      <Image photo={photo} />
     </>
   );
 }

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useReducer } from 'react';
 import { Photo, Gallery } from '../../types';
 import { PreviewView } from '../Photo/PreviewView';
 import { getAspectRatio } from '../Photo/utils';
 import { Column } from './Column';
+import { reducer as PreviewIndexReducer } from './PreviewIndexTracker';
 
 function calculateNColumns(screenWidth: number): number {
   if (screenWidth < 300) {
@@ -41,7 +42,10 @@ function Gallery({ photos }: { photos: Photo[] }): JSX.Element {
   const [screenWidth, setScreenWidth] = useState<number>(window.innerWidth);
   const [nColumns, setNColumns] = useState<number>(null);
   const [columns, setColumns] = useState<Gallery>(null);
-  const [imagePreviewIndex, setImagePreviewIndex] = useState(null);
+  const [imagePreviewIndex, imagePreviewIndexDispatch] = useReducer(
+    PreviewIndexReducer,
+    null
+  );
 
   const handleResize = () => {
     setScreenWidth(window.innerWidth);
@@ -70,19 +74,17 @@ function Gallery({ photos }: { photos: Photo[] }): JSX.Element {
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
-        setImagePreviewIndex(null);
+        imagePreviewIndexDispatch({ type: 'SET_NULL' });
       } else if (event.key === 'ArrowLeft') {
-        if (imagePreviewIndex !== null) {
-          let ind = (imagePreviewIndex - 1) % photos.length;
-          while (ind < 0) {
-            ind += photos.length;
-          }
-          setImagePreviewIndex(ind);
-        }
+        imagePreviewIndexDispatch({
+          type: 'DECREMENT',
+          nPhotos: photos.length,
+        });
       } else if (event.key === 'ArrowRight') {
-        if (imagePreviewIndex !== null) {
-          setImagePreviewIndex((imagePreviewIndex + 1) % photos.length);
-        }
+        imagePreviewIndexDispatch({
+          type: 'INCREMENT',
+          nPhotos: photos.length,
+        });
       }
     };
 
@@ -103,14 +105,15 @@ function Gallery({ photos }: { photos: Photo[] }): JSX.Element {
             <div>
               <div
                 className="fixed top-0 left-0 h-screen w-screen flex items-center justify-center z-10"
-                onClick={() => setImagePreviewIndex(null)}
+                onClick={() => imagePreviewIndexDispatch({ type: 'SET_NULL' })}
               >
                 <div className="absolute top-0 left-0 w-full h-full bg-gray-300/50"></div>
-                <div className="relative w-5/8 h-5/8 m-auto z-20">
+                <div className="relative w-5/6 h-5/6 m-auto z-20">
                   <div className="h-full w-full bg-color-darker flex items-center justify-center">
                     <PreviewView
                       photo={photos[imagePreviewIndex]}
-                      setImagePreviewIndex={setImagePreviewIndex}
+                      nPhotos={photos.length}
+                      imagePreviewIndexDispatch={imagePreviewIndexDispatch}
                     />
                   </div>
                 </div>
@@ -123,7 +126,7 @@ function Gallery({ photos }: { photos: Photo[] }): JSX.Element {
                 key={columnInd}
                 photos={photos}
                 photoInds={column}
-                setImagePreviewIndex={setImagePreviewIndex}
+                imagePreviewIndexDispatch={imagePreviewIndexDispatch}
               />
             ))}
           </div>

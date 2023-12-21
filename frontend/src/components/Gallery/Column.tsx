@@ -5,11 +5,11 @@ import { GalleryView } from '../Photo/GalleryView';
 function Column({
   photos,
   photoInds,
-  setImagePreviewIndex,
+  imagePreviewIndexDispatch,
 }: {
   photos: Photo[];
   photoInds: number[];
-  setImagePreviewIndex: CallableFunction;
+  imagePreviewIndexDispatch: CallableFunction;
 }) {
   return (
     <>
@@ -19,7 +19,7 @@ function Column({
             key={i}
             photo={photos[photoInd]}
             index={photoInd}
-            setImagePreviewIndex={setImagePreviewIndex}
+            imagePreviewIndexDispatch={imagePreviewIndexDispatch}
           />
         ))}
       </div>
