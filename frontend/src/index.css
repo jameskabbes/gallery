@@ -76,17 +76,21 @@ p {
 }
 
 .gallery {
-  @apply flex;
+  @apply flex flex-row justify-around;
 }
 
 .column {
-  @apply flex flex-1 flex-col;
+  @apply flex flex-1 flex-col justify-items-center;
 }
 
 .card {
-  @apply m-2;
+  @apply rounded-lg p-2 m-2 bg-color-lighter;
+}
+
+.img-card {
+  @apply rounded-lg p-1 m-1 bg-color-lighter;
 }
 
 img {
-  @apply p-1 rounded-lg bg-color-lighter;
+  @apply rounded-md;
 }

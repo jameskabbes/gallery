@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Photo, Gallery } from '../../types';
-import { GalleryView } from '../Photo/GalleryView';
+import { PreviewView } from '../Photo/PreviewView';
+import { getAspectRatio } from '../Photo/utils';
+import { Column } from './Column';
 
 function calculateNColumns(screenWidth: number): number {
   if (screenWidth < 600) {
@@ -15,12 +17,19 @@ function calculateNColumns(screenWidth: number): number {
 }
 
 function dividePhotosToColumns(photos: Photo[], nColumns: number): Gallery {
-  let gallery: Gallery = Array.from({ length: nColumns }, () => []);
+  let gallery: Gallery = [];
+  for (let i = 0; i < nColumns; i++) {
+    gallery.push([]);
+  }
+
+  let columnHeights: number[] = Array(nColumns).fill(0.0);
 
   photos.forEach((photo, index) => {
-    const columnIndex = index % nColumns;
+    const minIndex = columnHeights.indexOf(Math.min(...columnHeights));
+    columnHeights[minIndex] += 1 / getAspectRatio(photo);
+
     photo.index = index;
-    gallery[columnIndex].push(photo);
+    gallery[minIndex].push(photo);
   });
 
   return gallery;
@@ -28,13 +37,8 @@ function dividePhotosToColumns(photos: Photo[], nColumns: number): Gallery {
 
 function Gallery({ photos }: { photos: Photo[] }): JSX.Element {
   const [screenWidth, setScreenWidth] = useState<number>(window.innerWidth);
-  const [nColumns, setNColumns] = useState<number>(
-    calculateNColumns(screenWidth)
-  );
-  const [galleryColumns, setGalleryColumns] = useState<Gallery>(
-    dividePhotosToColumns(photos, nColumns)
-  );
-
+  const [nColumns, setNColumns] = useState<number>(null);
+  const [columns, setColumns] = useState<Gallery>(null);
   const [imagePreviewIndex, setImagePreviewIndex] = useState(null);
 
   const handleResize = () => {
@@ -42,6 +46,7 @@ function Gallery({ photos }: { photos: Photo[] }): JSX.Element {
   };
 
   useEffect(() => {
+    console.log('resizing');
     window.addEventListener('resize', handleResize);
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -49,6 +54,7 @@ function Gallery({ photos }: { photos: Photo[] }): JSX.Element {
   }, []);
 
   useEffect(() => {
+    console.log('calculating nColumns');
     const newNColumns = calculateNColumns(screenWidth);
     if (newNColumns !== nColumns) {
       setNColumns(newNColumns);
@@ -56,36 +62,37 @@ function Gallery({ photos }: { photos: Photo[] }): JSX.Element {
   }, [screenWidth, nColumns]);
 
   useEffect(() => {
-    setGalleryColumns(dividePhotosToColumns(photos, nColumns));
+    if (nColumns !== null) {
+      setColumns(dividePhotosToColumns(photos, nColumns));
+    }
   }, [nColumns]);
 
   return (
     <>
-      {imagePreviewIndex && (
-        <div>
-          <div className="fixed top-0 left-0 w-full h-full bg-opacity-50 z-10"></div>
-          <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center z-20">
-            <div className="bg-white p-6 rounded-lg">
-              <GalleryView photo={photos[imagePreviewIndex]} />
-              <button onClick={() => setImagePreviewIndex(null)}>Close</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="flex flex-row justify-around">
-        {galleryColumns.map((columnPhotos, columnInd) => (
-          <div key={columnInd} className="column">
+      {columns !== null && nColumns !== null && (
+        <>
+          {imagePreviewIndex && (
             <div>
-              {columnPhotos.map((photo, index) => (
-                <button onClick={() => setImagePreviewIndex(photo.index)}>
-                  <GalleryView key={index} photo={photo} index={photo.index} />
-                </button>
-              ))}
+              <div className="fixed top-0 left-0 w-full h-full bg-opacity-50 z-10"></div>
+              <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center z-20">
+                <PreviewView
+                  photo={photos[imagePreviewIndex]}
+                  setImagePreviewIndex={setImagePreviewIndex}
+                />
+              </div>
             </div>
+          )}
+          <div className="gallery">
+            {columns.map((column, columnInd) => (
+              <Column
+                key={columnInd}
+                photos={column}
+                setImagePreviewIndex={setImagePreviewIndex}
+              />
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
     </>
   );
 }

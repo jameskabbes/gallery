@@ -1,21 +1,22 @@
-import React from 'react';
-import { Photo as PhotoType } from '../../types';
+import React, { useEffect, useState } from 'react';
+import { Photo } from '../../types';
+import { Card } from './Card';
 
 function GalleryView({
   photo,
-  index = null,
+  setImagePreviewIndex,
 }: {
-  photo: PhotoType;
+  photo: Photo;
+  setImagePreviewIndex: CallableFunction;
   index?: number | null;
 }): JSX.Element {
   return (
-    <div className="card flex items-center justify-center">
-      <div className="relative">
-        <img className="" src={photo.src.large} alt={photo.alt} />
-        <div className="absolute inset-0 flex">
-          <h2 className="text-white mx-3 my-2">{index}</h2>
+    <div className="flex items-center justify-center">
+      <button onClick={() => setImagePreviewIndex(photo.index)}>
+        <div className="img-card">
+          <Card photo={photo} />
         </div>
-      </div>
+      </button>
     </div>
   );
 }
