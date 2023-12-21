@@ -4,6 +4,7 @@ interface Photo extends PhotoPexels {
   index?: number;
 }
 
-type Gallery = Photo[][];
+type Gallery = Column[];
+type Column = number[];
 
 export { Photo, Gallery };

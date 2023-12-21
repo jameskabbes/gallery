@@ -4,18 +4,20 @@ import { GalleryView } from '../Photo/GalleryView';
 
 function Column({
   photos,
+  photoInds,
   setImagePreviewIndex,
 }: {
   photos: Photo[];
+  photoInds: number[];
   setImagePreviewIndex: CallableFunction;
 }) {
   return (
     <>
       <div className="column">
-        {photos.map((photo, index) => (
+        {photoInds.map((photoInd, i) => (
           <GalleryView
-            key={index}
-            photo={photo}
+            key={i}
+            photo={photos[photoInd]}
             setImagePreviewIndex={setImagePreviewIndex}
           />
         ))}

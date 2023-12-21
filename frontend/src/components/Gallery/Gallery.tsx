@@ -5,7 +5,9 @@ import { getAspectRatio } from '../Photo/utils';
 import { Column } from './Column';
 
 function calculateNColumns(screenWidth: number): number {
-  if (screenWidth < 600) {
+  if (screenWidth < 300) {
+    return 1;
+  } else if (screenWidth < 600) {
     return 2;
   } else if (screenWidth < 1200) {
     return 3;
@@ -29,7 +31,7 @@ function dividePhotosToColumns(photos: Photo[], nColumns: number): Gallery {
     columnHeights[minIndex] += 1 / getAspectRatio(photo);
 
     photo.index = index;
-    gallery[minIndex].push(photo);
+    gallery[minIndex].push(index);
   });
 
   return gallery;
@@ -86,7 +88,8 @@ function Gallery({ photos }: { photos: Photo[] }): JSX.Element {
             {columns.map((column, columnInd) => (
               <Column
                 key={columnInd}
-                photos={column}
+                photos={photos}
+                photoInds={column}
                 setImagePreviewIndex={setImagePreviewIndex}
               />
             ))}

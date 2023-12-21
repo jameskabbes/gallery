@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Photo } from '../../types';
-import { Card } from './Card';
+import { Image } from './Image';
 
 function PreviewView({
   photo,
@@ -9,15 +9,11 @@ function PreviewView({
   photo: Photo;
   setImagePreviewIndex: CallableFunction;
 }) {
-  useEffect(() => {
-    console.log(photo);
-  }, []);
-
   return (
     <>
       <div className="flex flex-col card">
         <button onClick={() => setImagePreviewIndex(null)}>Close</button>
-        <Card photo={photo} />
+        <Image photo={photo} />
       </div>
     </>
   );
