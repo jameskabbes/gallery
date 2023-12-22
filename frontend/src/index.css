@@ -92,5 +92,5 @@ p {
 }
 
 img {
-  @apply rounded-md;
+  @apply w-full rounded-md;
 }
