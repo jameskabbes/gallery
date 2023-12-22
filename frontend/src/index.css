@@ -9,7 +9,7 @@ html {
 }
 
 header {
-  @apply sticky top-0 bg-color-darker bg-opacity-t50 z-50;
+  @apply sticky top-0 bg-color-darker bg-opacity-t75 z-50;
 }
 
 footer {

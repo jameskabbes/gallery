@@ -11,15 +11,15 @@ function GalleryView({
   index: number;
   imagePreviewIndexDispatch: CallableFunction;
 }): JSX.Element {
-  const [showIndex, setShowIndex] = useState(false);
+  const [showIndex, setShowIndex] = useState(true);
   return (
     <div
       className="flex items-center justify-center"
       onMouseEnter={() => {
-        setShowIndex(true);
+        setShowIndex(false);
       }}
       onMouseLeave={() => {
-        setShowIndex(false);
+        setShowIndex(true);
       }}
       onClick={() =>
         imagePreviewIndexDispatch({ type: 'SET_VALUE', value: index })
