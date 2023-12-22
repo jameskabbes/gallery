@@ -106,20 +106,17 @@ function Gallery({ photos }: { photos: Photo[] }): JSX.Element {
       {columns !== null && nColumns !== null && (
         <>
           {imagePreviewIndex !== null && (
-            <div>
-              <div className="fixed top-0 left-0 h-screen w-screen flex items-center justify-center z-10">
-                <div className="absolute top-0 left-0 w-full h-full bg-gray-300/50"></div>
-                <div className="w-5/6 h-5/6 m-auto z-20">
-                  <PreviewView
-                    photo={photos[imagePreviewIndex]}
-                    nPhotos={photos.length}
-                    imagePreviewIndexDispatch={imagePreviewIndexDispatch}
-                  />
-                </div>
-              </div>
-            </div>
+            <PreviewView
+              photo={photos[imagePreviewIndex]}
+              nPhotos={photos.length}
+              imagePreviewIndexDispatch={imagePreviewIndexDispatch}
+            />
           )}
-          <div className="gallery">
+          <div
+            className={`gallery ${
+              imagePreviewIndex !== null ? 'blur-[2px]' : ''
+            }`}
+          >
             {columns.map((column, columnInd) => (
               <Column
                 key={columnInd}
