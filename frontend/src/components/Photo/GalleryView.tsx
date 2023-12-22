@@ -11,17 +11,24 @@ function GalleryView({
   index: number;
   imagePreviewIndexDispatch: CallableFunction;
 }): JSX.Element {
+  const [showIndex, setShowIndex] = useState(false);
   return (
     <div
       className="flex items-center justify-center"
+      onMouseEnter={() => {
+        setShowIndex(true);
+      }}
+      onMouseLeave={() => {
+        setShowIndex(false);
+      }}
       onClick={() =>
         imagePreviewIndexDispatch({ type: 'SET_VALUE', value: index })
       }
     >
       <div className="img-card relative">
-        <Image photo={photo} />
+        <Image photo={photo} className="img-gallery-view" />
         <div className="absolute inset-0 flex">
-          <h3 className="text-white mx-3 my-2">{index}</h3>
+          {showIndex && <h3 className="text-white mx-3 my-2">{index}</h3>}
         </div>
       </div>
     </div>
