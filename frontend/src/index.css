@@ -9,7 +9,7 @@ html {
 }
 
 header {
-  @apply sticky top-0 bg-color-darker z-50;
+  @apply sticky top-0 bg-color-darker bg-opacity-t50 z-50;
 }
 
 footer {
@@ -63,12 +63,20 @@ p {
 .bg-color-invert {
   @apply bg-custom_dark dark:bg-custom_light;
 }
-
 .bg-color-lighter {
   @apply bg-custom_light-lighter dark:bg-custom_dark-lighter;
 }
 .bg-color-darker {
   @apply bg-custom_light-darker dark:bg-custom_dark-darker;
+}
+.bg-opacity-t25 {
+  @apply bg-opacity-25 dark:bg-opacity-25;
+}
+.bg-opacity-t50 {
+  @apply bg-opacity-50 dark:bg-opacity-50;
+}
+.bg-opacity-t75 {
+  @apply bg-opacity-75 dark:bg-opacity-75;
 }
 
 .hover-bg-color-darker {
@@ -76,7 +84,7 @@ p {
 }
 
 .gallery {
-  @apply flex flex-row justify-around;
+  @apply my-8 flex flex-row justify-around;
 }
 
 .column {
@@ -91,6 +99,12 @@ p {
   @apply w-full card;
 }
 
-img {
+.img-gallery-view {
   @apply w-full rounded-md;
+}
+.img-preview-view {
+  @apply h-full object-contain;
+}
+
+img {
 }
