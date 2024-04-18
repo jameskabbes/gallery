@@ -1,21 +1,19 @@
-from flask import Flask, make_response
-from flask_cors import CORS
-from src import params
+from fastapi import FastAPI
+import pydantic
 
-app = Flask(__name__)
-cors = CORS(app, resources={r"*": {"origins": "*"}})
-
-app.secret_key = params.FLASK_SECRET_KEY_PATH.read_text()
+app = FastAPI()
 
 
-@app.route('/')
-def home():
-    return make_response('<p>backend</p>', 200)
+@app.get("/")
+def read_root() -> str:
+    return "Hello world!"
 
 
-if __name__ == '__main__':
-    app.run(**{
-        "debug": True,
-        "host": "0.0.0.0",
-        "port": 8080
-    })
+class Person(pydantic.BaseModel):
+    id: int
+    name: str
+
+
+@app.get('/person/{person_id}')
+def get_person_by_id(person_id: Person.model_fields['id'].annotation) -> Person:
+    return Person(id=1, name='test')

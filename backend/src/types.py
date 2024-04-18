@@ -1,0 +1,1 @@
+type Nanoid = str
