@@ -4,8 +4,32 @@
   "paths": {
     "/": {
       "get": {
-        "summary": "Read Root",
-        "operationId": "read_root__get",
+        "summary": "Home",
+        "operationId": "home__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "type": "string", "title": "Response Home  Get" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/image/{image_id}/": {
+      "get": {
+        "summary": "Get Image",
+        "operationId": "get_image_image__image_id___get",
+        "parameters": [
+          {
+            "name": "image_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Image Id" }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -13,8 +37,16 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "title": "Response Read Root  Get"
+                  "title": "Response Get Image Image  Image Id   Get"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
               }
             }
           }
@@ -36,7 +68,11 @@
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": {} } }
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Person" }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -62,6 +98,15 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "Person": {
+        "properties": {
+          "id": { "type": "integer", "title": "Id" },
+          "name": { "type": "string", "title": "Name" }
+        },
+        "type": "object",
+        "required": ["id", "name"],
+        "title": "Person"
       },
       "ValidationError": {
         "properties": {

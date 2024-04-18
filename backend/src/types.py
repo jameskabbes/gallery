@@ -1,1 +1,3 @@
-type Nanoid = str
+import typing
+
+Nanoid = typing.NewType('Nanoid', str)

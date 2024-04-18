@@ -6,8 +6,12 @@
 
 export interface paths {
   "/": {
-    /** Read Root */
-    get: operations["read_root__get"];
+    /** Home */
+    get: operations["home__get"];
+  };
+  "/image/{image_id}/": {
+    /** Get Image */
+    get: operations["get_image_image__image_id___get"];
   };
   "/person/{person_id}": {
     /** Get Person By Id */
@@ -23,6 +27,13 @@ export interface components {
     HTTPValidationError: {
       /** Detail */
       detail?: components["schemas"]["ValidationError"][];
+    };
+    /** Person */
+    Person: {
+      /** Id */
+      id: number;
+      /** Name */
+      name: string;
     };
     /** ValidationError */
     ValidationError: {
@@ -47,13 +58,35 @@ export type external = Record<string, never>;
 
 export interface operations {
 
-  /** Read Root */
-  read_root__get: {
+  /** Home */
+  home__get: {
     responses: {
       /** @description Successful Response */
       200: {
         content: {
           "application/json": string;
+        };
+      };
+    };
+  };
+  /** Get Image */
+  get_image_image__image_id___get: {
+    parameters: {
+      path: {
+        image_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": string;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -69,7 +102,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": components["schemas"]["Person"];
         };
       };
       /** @description Validation Error */
