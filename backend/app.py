@@ -10,8 +10,13 @@ def home() -> str:
     return "Gallery Backend"
 
 
-@app.get("/image/{image_id}/")
-def get_image(image_id: schemas.Image.Version.model_fields['id'].annotation) -> str:
+@app.get("/image/{image_id}/file")
+def get_image_file(image_id: schemas.ImageVersion.model_fields['id'].annotation):
+    pass
+
+
+@app.get("/image/{image_id}")
+def get_image(image_id: schemas.ImageVersion.model_fields['id'].annotation) -> str:
     pass
 
 

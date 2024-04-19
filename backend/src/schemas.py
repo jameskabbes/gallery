@@ -2,15 +2,30 @@ import pydantic
 from src import types
 
 
-class Person(pydantic.BaseModel):
-    id: int
-    name: str
+class ImageVersion:
+    id: types.Nanoid
 
 
-class Image:
+class ImageGroup:
+    id: types.Nanoid
 
-    class Version(pydantic.BaseModel):
-        id: types.Nanoid
 
-    class Group:
-        pass
+class Album:
+    pass
+
+# a collection of albums
+
+
+class Event:
+    pass
+
+# a collection of events / albums
+
+
+class Gallery:
+    pass
+
+
+# a collection of galleries
+class Studio:
+    pass
