@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 import pydantic
-from src import schemas
+from src import types
 
 app = FastAPI()
 
@@ -11,15 +11,10 @@ def home() -> str:
 
 
 @app.get("/image/{image_id}/file")
-def get_image_file(image_id: schemas.ImageVersion.model_fields['id'].annotation):
+def get_image_file(image_id: types.ImageVersion.model_fields['id'].annotation):
     pass
 
 
 @app.get("/image/{image_id}")
-def get_image(image_id: schemas.ImageVersion.model_fields['id'].annotation) -> str:
+def get_image(image_id: types.ImageVersion.model_fields['id'].annotation) -> str:
     pass
-
-
-@app.get('/person/{person_id}')
-def get_person_by_id(person_id: schemas.Person.model_fields['id'].annotation) -> schemas.Person:
-    return schemas.Person(id=1, name='test')
