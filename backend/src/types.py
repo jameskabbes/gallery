@@ -14,7 +14,8 @@ StudioId = typing.NewType('StudioId', Nanoid)
 
 class ImageFile(pydantic.BaseModel):
     id: ImageFileId
-    version_id: ImageVersionId
+    shape: tuple[int, int]
+    size: int
 
 
 class ImageVersion(pydantic.BaseModel):
