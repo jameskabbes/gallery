@@ -3,28 +3,35 @@ import typing
 
 Nanoid = typing.NewType('Nanoid', str)
 
-ImageFileId = typing.NewType('ImageFileId', Nanoid)
-ImageVersionId = typing.NewType('ImageVersionId', Nanoid)
-ImageGroupId = typing.NewType('ImageGroupId', Nanoid)
+
+ORIGINAL_KEY = typing.Literal['_original']
+ImageVersion = typing.NewType(
+    'ImageVersion', typing.Literal[ORIGINAL_KEY,
+                                   ] | str)
+ImageSize = typing.NewType('ImageSize', typing.Literal[ORIGINAL_KEY] | str)
+
+
 AlbumId = typing.NewType('AlbumId', Nanoid)
+ImageGroupId = typing.NewType('ImageGroupId', str)
 EventId = typing.NewType('EventId', Nanoid)
 GalleryId = typing.NewType('GalleryId', Nanoid)
 StudioId = typing.NewType('StudioId', Nanoid)
 
 
 class ImageFile(pydantic.BaseModel):
-    id: ImageFileId
-    shape: tuple[int, int]
-    size: int
+    version: str
+    size: str
+    height: int
+    width: int
+    bytes: int
 
 
 class ImageVersion(pydantic.BaseModel):
-    id: ImageVersionId
-    group_id: ImageGroupId
+    pass
 
 
 class ImageGroup(pydantic.BaseModel):
-    id: ImageGroupId
+    pass
 
 
 class Album:
@@ -34,15 +41,16 @@ class Album:
 
 
 class Event:
+    id: EventId
     pass
 
 # a collection of events / albums
 
 
 class Gallery:
-    pass
+    id: GalleryId
 
 
 # a collection of galleries
 class Studio:
-    pass
+    id: StudioId
