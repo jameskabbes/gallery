@@ -1,8 +1,52 @@
-{
-  "_id": "U1IT00001",
-  "item_name": "Blender",
-  "max_discount": "10%",
-  "batch_number": "RR450020FRG",
-  "price": 340,
-  "category": "kitchen appliance"
-}
+[
+  {
+    "2023-11-17 Wedding": {
+      "0138": {
+        "versions": {
+          "_original": {
+            "sizes": {
+              "_original": {
+                "extension": "CR2",
+                "width": 3600,
+                "height": 2400,
+                "bytes": 100000000
+              }
+            }
+          },
+          "1": {
+            "sizes": {
+              "SM": {
+                "extension": "jpg",
+                "width": 600,
+                "height": 400,
+                "bytes": 1000
+              },
+              "MD": {
+                "extension": "jpg",
+                "width": 1200,
+                "height": 800,
+                "bytes": 2000
+              }
+            }
+          },
+          "2": {
+            "sizes": {
+              "SM": {
+                "extension": "jpg",
+                "width": 600,
+                "height": 400,
+                "bytes": 1000
+              },
+              "MD": {
+                "extension": "jpg",
+                "width": 1200,
+                "height": 800,
+                "bytes": 2000
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+]
