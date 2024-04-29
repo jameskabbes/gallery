@@ -30,5 +30,3 @@ class ImageGroupId(str):
 
 class Event(pydantic.BaseModel):
     id: EventId
-    datetime: typing.Optional[datetime_module.datetime]
-    name: typing.Optional[str]

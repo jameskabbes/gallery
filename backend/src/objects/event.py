@@ -6,19 +6,22 @@ import datetime as datetime_module
 
 class Event(types.Event):
 
+    _IMAGES_KEY: str = 'images'
+    date: datetime_module.date = pydantic.Field(
+        default=None, exclude=True)
+    name: str = pydantic.Field(default=None, exclude=True)
+
     def model_post_init(self, _):
-        print('model post init')
-        date_str, name = self.id.split(' ', 1)
-        print(date_str)
-        print(name)
-        self.datetime = datetime_module.datetime.fromisoformat(date_str)
-        self.name = name
+        """Set the id from the datetime and name."""
+
+        date_str, self.name = self.id.split(' ', 1)
+        self.date = datetime_module.date.fromisoformat(date_str)
 
     def get_image_group_ids(self, db_events: database.Database) -> list[types.ImageGroupId]:
         """returns a list of all image group ids in the event"""
 
         document = self.get_collection(db_events).find_one()
-        return document[self.IMAGES_KEY].keys()
+        return document[self._IMAGES_KEY].keys()
 
     def get_collection(self, db_events: database.Database) -> collection.Collection:
         """returns a collection from the events database by event_id"""
