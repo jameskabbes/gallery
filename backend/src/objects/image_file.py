@@ -18,13 +18,9 @@ class ImageFile(types.ImageFile):
         pass
 
     def get_size(self):
-        # Get the file size
-        file_size = os.path.getsize(image_path)
-        print("File Size:", file_size, "bytes")
+        self.bytes = os.stat(self.path).st_size
 
-    def get_shape(image_path):
-        # Open the image
-        with Image.open(image_path) as img:
-            # Get the dimensions (shape) of the image
-            width, height = img.size
-            print("Image Shape (Width x Height):", width, "x", height)
+    def get_shape(self):
+
+        img = Image.open(self.path)
+        self.width, self.height = img.size
