@@ -1,35 +1,20 @@
 import pydantic
 import typing
+import datetime as datetime_module
 
 Nanoid = typing.NewType('Nanoid', str)
 
 
 ORIGINAL_KEY = typing.Literal['_original']
 
-
-class ImageVersion(pydantic.BaseModel):
-    version: typing.Literal[ORIGINAL_KEY] | str
-
-
-class ImageSize(pydantic.BaseModel):
-    size: typing.Literal[ORIGINAL_KEY] | str
-
-
-class ImageGroupId(str):
-    pass
-
-
-class ImageGroup(pydantic.BaseModel):
-    pass
-
-
-class ImageVersion(pydantic.BaseModel):
-    pass
+ImageVersion = typing.Literal[ORIGINAL_KEY] | str
+ImageSize = typing.Literal[ORIGINAL_KEY] | str
+EventId = str
 
 
 class ImageFile(pydantic.BaseModel):
     image_version: ImageVersion | None
-    size: typing.Optional[ImageSize]
+    size: ImageSize | None
     height: int
     width: int
     bytes: int
@@ -37,3 +22,13 @@ class ImageFile(pydantic.BaseModel):
 
 class Album:
     pass
+
+
+class ImageGroupId(str):
+    pass
+
+
+class Event(pydantic.BaseModel):
+    id: EventId
+    datetime: typing.Optional[datetime_module.datetime]
+    name: typing.Optional[str]

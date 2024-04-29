@@ -21,6 +21,12 @@ class ImageFile(types.ImageFile):
         self.bytes = os.stat(self.path).st_size
 
     def get_shape(self):
-
         img = Image.open(self.path)
         self.width, self.height = img.size
+
+    def get_average_color(self):
+        img = Image.open(self.path)
+        img = img.convert('RGB')
+
+        r, g, b = 0, 0, 0
+        pixels = img.load()
