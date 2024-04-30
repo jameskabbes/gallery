@@ -1,14 +1,14 @@
 from pymongo import MongoClient
-from src import config
-from src.objects.event import Event, Events
+from src import config, databases
+from src.objects import event
 
 # Initialize PyMongo client
 mongo_client = MongoClient(port=config.MONGODB_PORT)
 
-db_events = Events.get_db(mongo_client)
+mongo_databases = databases.get_databases(mongo_client)
 
-event_ids = Events.get_db_event_ids(db_events)
-print(event_ids[0])
-event = Event(id=event_ids[0])
-print(event)
-print(event.get_image_group_ids(db_events))
+
+wedding_collection = mongo_databases['images']['2023-11-17 Wedding']
+
+image_document = wedding_collection.find_one({'_id': '0138'})
+print(image_document)

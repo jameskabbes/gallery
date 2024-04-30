@@ -2,17 +2,13 @@ from PIL import Image
 import os
 from src import types
 from pathlib import Path
+import pydantic
 
 
-class ImageFile(types.ImageFile):
+class ImageFile(pydantic.BaseModel):
 
-    def __post_init__(self):
-        super().__post_init__()
-
+    def model_post_init(self, _):
         self.path = Path()
-
-        # Add extra initialization instructions
-        print("Extra initialization in Child class")
 
     def get_shape(self):
         pass

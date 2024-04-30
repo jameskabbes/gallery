@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pymongo import MongoClient
-from src import config
+from src import config, types, databases
 
 import os
 
@@ -9,12 +9,17 @@ app = FastAPI()
 
 # Initialize PyMongo client
 mongo_client = MongoClient(port=config.MONGODB_PORT)
-mongodb = mongo_client[config.MONGODB_DB]
+mongo_dbs = databases.get_databases(mongo_client)
 
 
 @app.get("/")
 async def read_root():
     return {"message": "Hello, FastAPI!"}
+
+
+@app.get("/event/{event_id}")
+async def get_event(event_id: types.EventId):
+    return
 
 
 @app.get("/image/{image_id}")
@@ -28,12 +33,6 @@ async def get_image_file(image_id: str):
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(path, media_type="image/jpeg")
 
-
-@ app.get("/users")
-async def get_users():
-    # Assuming you have a collection named 'users'
-    users = list(mongodb['test'].find())
-    return {"users": users}
 
 if __name__ == "__main__":
     # Start FastAPI server using Uvicorn

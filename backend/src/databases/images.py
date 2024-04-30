@@ -1,5 +1,7 @@
 from src.databases import base
+from src import types
 
 
-class Images(base.Base):
+class Database(base.Database):
     DATABASE_ID: str = 'images'
+    COLLECTION_ID: types.EventId
