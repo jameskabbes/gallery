@@ -1,5 +1,5 @@
-from src.databases import base
-from src import types
+from gallery.databases import base
+from gallery import types
 
 
 class Database(base.Database):

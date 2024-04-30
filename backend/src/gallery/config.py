@@ -1,6 +1,7 @@
 from pathlib import Path
 
-SRC_DIR = Path(__file__).parent
+GALLERY_DIR = Path(__file__).parent
+SRC_DIR = GALLERY_DIR.parent
 BACKEND_DIR = SRC_DIR.parent
 REPO_DIR = BACKEND_DIR.parent
 DATA_DIR = BACKEND_DIR / 'data'
@@ -16,6 +17,3 @@ UVICORN_PORT = 8087
 # MongoDB
 MONGODB_DATA_DIR = DATA_DIR / 'db'
 MONGODB_PORT = 27017
-
-#
-NANOID_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
