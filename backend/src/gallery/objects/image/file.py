@@ -26,3 +26,7 @@ class ImageFile(pydantic.BaseModel):
 
         r, g, b = 0, 0, 0
         pixels = img.load()
+
+
+class ImageFiles:
+    pass

@@ -12,3 +12,7 @@ class ImageVersion(pydantic.BaseModel):
     def get_image_file_sizes(cls, image_version_dict: dict) -> collections.abc.KeysView[types.ImageSizeId]:
         print(image_version_dict)
         return image_version_dict[cls._SIZES_KEY].keys()
+
+
+class ImageVersions:
+    pass
