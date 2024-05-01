@@ -1,6 +1,6 @@
 from pymongo import database, collection, MongoClient
 from gallery import types
-from gallery.objects.image import group, file
+from gallery.objects.image import group, image
 import pydantic
 import datetime as datetime_module
 from pathlib import Path
@@ -33,11 +33,11 @@ class Event(pydantic.BaseModel):
             self.name = self.id
             self.date = datetime_module.date.max
 
-    def add_image_file(self, image_file: file.File):
+    def add_image(self, image_file: image.Image):
         """Add an image file to the event."""
         if image_file.group_id not in self.image_groups:
             self.add_group(group.Group(id=image_file.group_id))
-        self.image_groups[image_file.group_id].add_file(image_file)
+        self.image_groups[image_file.group_id].add_image(image_file)
 
     def add_group(self, group: group.Group):
         self.image_groups[group.id] = group
@@ -47,7 +47,16 @@ class Event(pydantic.BaseModel):
         # load all files from the directory
         path = parent_path / self.id
         image_files = [f for f in path.iterdir() if f.is_file()]
+        print('----------')
         print(image_files)
+
+        for image_file in image_files:
+            im = image.Image(
+                **image.Image.id_to_defining_values(image_file.name))
+
+            print(im)
+            self.add_image(im)
+            print(self.image_groups)
 
 
 class Events:
