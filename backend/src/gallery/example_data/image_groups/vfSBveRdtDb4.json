@@ -1,0 +1,22 @@
+{
+  "_id": "vfSBveRdtDb4",
+  "event_id": "a6Qo099EtWEG",
+  "datetime": "2016-06-01T00:00:00Z",
+  "name": "IMG_1234",
+  "versions": {
+    "_original": {
+      "views": 0,
+      "downloads": 0,
+      "sizes": {
+        "_original": "mUwyhVsRWKaT"
+      }
+    },
+    "1": {
+      "views": 0,
+      "downloads": 0,
+      "sizes": {
+        "LG": "JaJogI0bCQr8"
+      }
+    }
+  }
+}
