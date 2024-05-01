@@ -1,76 +1,80 @@
-from typing import TypedDict
 from PIL import Image as PIL_Image
 import os
 from pathlib import Path
 from gallery import types
 import pydantic
 import typing
+import re
+
+FILENAME_TYPE = str
+FILENAME_KEYS = ['group_name', 'version', 'size', 'file_ending']
 
 
-class ImageBase(types.Image):
-
-    class Config:
-        _DELIM = '-'
-        DEFINING_KEYS = ['group_id', 'version_id', 'size_id', 'extension']
-        DEFINING_DICT = TypedDict('DEFINING_DICT', {
-            'group_id': types.Image.__annotations__['group_id'],
-            'version_id': types.Image.__annotations__['version_id'],
-            'size_id': types.Image.__annotations__['size_id'],
-            'extension': types.Image.__annotations__['extension']
-        })
+class FilenameIODict(typing.TypedDict):
+    group_name: types.ImageGroup.__annotations__['name']
+    version: types.ImageInit.version
+    size: types.ImageInit.size
+    file_ending: types.ImageInit.file_ending
 
 
-class Image(ImageBase):
-
-    @pydantic.root_validator(pre=True)
-    def generate_id(cls, values):
-
-        values['id'] = Image.id_from_defining_values(
-            {key: values[key] if key in values else None for key in Image.Config.DEFINING_KEYS})
-        return values
+class Image(types.Image):
 
     @staticmethod
-    def id_from_defining_values(defining_dict: ImageBase.Config.DEFINING_DICT) -> types.Image.__annotations__['id']:
-        """Generate the id from its components."""
+    def parse_filename(filename: FILENAME_TYPE) -> FilenameIODict:
+        """Split the filename into its defining keys."""
 
-        string = defining_dict['group_id']
-        if defining_dict['version_id']:
-            string += f'{Image.Config._DELIM}{defining_dict["version_id"]}'
-        if defining_dict['size_id']:
-            string += f'{Image.Config._DELIM}{defining_dict["size_id"]}'
-        string += f'.{defining_dict["extension"]}'
-        return string
+        # IMG_1234-A(SM).jpg
+        # IMG_1234-A.jpg
+        # IMG_1234(SM).jpg
+        # IMG_1234.jpg
+
+        d: FilenameIODict = {
+            'size': None,
+            'version': None
+        }
+
+        a = d['version']
+        a
+
+        args = filename.split('.', 1)
+        if len(args) < 2:
+            raise ValueError(
+                'Missing file extension on filename "{}"'.format(filename))
+        root, d['file_ending'] = args
+
+        # get size
+        last_beg_trigger = root.rfind(types.Image.Config._SIZE_BEG_TRIGGER)
+        if last_beg_trigger != -1:
+            next_end_trigger = root[last_beg_trigger:].find(
+                types.Image.Config._SIZE_END_TRIGGER)
+
+            if next_end_trigger != -1 and next_end_trigger == len(root)-last_beg_trigger-1:
+                d['size'] = root[last_beg_trigger +
+                                 1:next_end_trigger+last_beg_trigger]
+
+                root = root[:last_beg_trigger]
+
+        # get version
+        args = root.rsplit(types.Image.Config._VERSION_DELIM, 1)
+        if len(args) == 2:
+            d['version'] = args[-1]
+        d['group_name'] = args[0]
+
+        return d
 
     @staticmethod
-    def id_to_defining_values(id: types.ImageId) -> ImageBase.Config.DEFINING_DICT:
+    def build_filename(d: FilenameIODict) -> FILENAME_TYPE:
         """Parse the id into its defining keys."""
 
-        # IMG_1234-BW-50.jpg
-        # IMG_1234.jpg
-        # IMG_1234-50.jpg
-
-        defining_dict: Image.Config.DEFINING_DICT = {}
-
-        args = id.split('.', 1)
-
-        if len(args) != 2:
-            raise MissingFileExtension(id)
-
-        root, extension = args
-
-        items = root.split(Image.Config._DELIM, 2)
-        defining_dict['group_id'] = items[0]
-        defining_dict['extension'] = extension
-        defining_dict['size_id'] = None
-        defining_dict['version_id'] = None
-
-        if len(items) >= 2:
-            defining_dict['size_id'] = items[-1]
-
-            if len(items) == 3:
-                defining_dict['version_id'] = items[1]
-
-        return defining_dict
+        string: FILENAME_TYPE = d['group_name']
+        if d['version'] != None:
+            string += f'{types.Image.Config._VERSION_DELIM}{
+                d["version"]}'
+        if d['size'] != None:
+            string += f'{types.Image.Config._SIZE_BEG_TRIGGER}{types.Image.Config._VERSION_DELIM}{
+                d["size"]}{types.Image.Config._SIZE_END_TRIGGER}'
+        string += f'.{d["file_ending"]}'
+        return string
 
 
 """
@@ -94,11 +98,3 @@ class File:
         r, g, b = 0, 0, 0
         pixels = img.load()
 """
-
-
-class MissingFileExtension(Exception):
-
-    MESSAGE = 'Missing file extension on filename "{}"'
-
-    def __init__(self, filename):
-        super().__init__(self.MESSAGE.format(filename))

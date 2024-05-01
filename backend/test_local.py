@@ -1,24 +1,18 @@
+import re
 from pymongo import MongoClient
-from gallery import config, databases
+from gallery import config, databases, types
+from gallery.objects.image import image
 from gallery.objects import event
-from gallery.objects.image import group, image, version
+import datetime
+# from gallery.objects.image import group, image, version
 from pathlib import Path
 
 # Initialize PyMongo
-mongo_client = MongoClient(port=config.MONGODB_PORT)
-mongo_databases = databases.get_databases(mongo_client)
+# mongo_client = MongoClient(port=config.MONGODB_PORT)
+# db = mongo_client['gallery']
 
-#
-# event.Event(
-#    id='2023-11-18 Test').load_image_groups_from_directory(config.IMAGES_DIR)
-
-a = image.Image(group_id='IMG_1234', version_id='BW',
-                size_id='50', extension='jpg')
-print(a)
-a = image.Image(group_id='IMG_1234', extension='jpg')
-print(a)
-
-print(image.Image.id_to_defining_values(a.id))
-
-event.Event(id='2023-11-18 Test').load_image_groups_from_directory(
-    config.IMAGES_DIR)
+# read a local directory
+ev = event.Event(_id='a6Qo099EtWEG', date=datetime.date(
+    2023, 11, 17), name='Wedding')
+print(ev.directory_name)
+print('done')

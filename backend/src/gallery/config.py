@@ -12,8 +12,14 @@ START_MONGODB_SERVER_PATH = BACKEND_DIR / 'start_mongodb_server.sh'
 IMAGES_DIR = DATA_DIR / 'images'
 
 # Server
-UVICORN_PORT = 8087
+UVICORN_PORT: int = 8087
 
 # MongoDB
 MONGODB_DATA_DIR = DATA_DIR / 'db'
-MONGODB_PORT = 27017
+MONGODB_PORT: int = 27017
+
+# 1% change of collision at 1 Billion IDs
+NANOID_ALPHABET: str = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+NANOID_SIZE: int = 12
+
+ORIGINAL_KEY: str = '_original'

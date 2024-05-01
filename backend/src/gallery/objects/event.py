@@ -4,34 +4,44 @@ from gallery.objects.image import group, image
 import pydantic
 import datetime as datetime_module
 from pathlib import Path
+import typing
 
 
-class Event(pydantic.BaseModel):
+class DirectoryNameContents(typing.TypedDict):
+    date: types.EventInit.date
+    name: types.EventInit.name
 
-    id: types.EventId
-    date: datetime_module.date = pydantic.Field(
-        default=None, exclude=True)
-    name: str = pydantic.Field(default=None, exclude=True)
 
-    image_groups: dict[types.ImageGroupId, group.Group] = pydantic.Field(
-        default_factory=dict, exclude=True)
+class Event(types.Event):
 
-    class Config:
-        _IMAGES_KEY: str = 'images'
+    @property
+    def directory_name(self) -> str:
+        return self.build_directory_name({'date': self.date, 'name': self.name})
 
-    def model_post_init(self, _):
-        """Set the id from the datetime and name."""
+    @staticmethod
+    def parse_directory_name(directory_name: str) -> DirectoryNameContents:
+        """Split the directory name into its defining keys."""
+        args = directory_name.split(
+            types.Event.Config._DIRECTORY_NAME_DELIM, 1)
 
-        items = self.id.split(' ', 1)
-        if len(items) > 1:
-            self.name = items[-1]
-            try:
-                self.date = datetime_module.date.fromisoformat(items[0])
-            except:
-                self.date = datetime_module.date.max
-        else:
-            self.name = self.id
-            self.date = datetime_module.date.max
+        try:
+            date = datetime_module.date.fromisoformat(args[0])
+            name = args[1]
+        except:
+            date = None
+            name = directory_name
+
+        return {'date': date, 'name': name}
+
+    @staticmethod
+    def build_directory_name(d: DirectoryNameContents) -> str:
+
+        directory_name = ''
+        if d['date'] != None:
+            directory_name += d['date'].isoformat()
+            directory_name += types.Event.Config._DIRECTORY_NAME_DELIM
+        directory_name += d['name']
+        return directory_name
 
     def add_image(self, image_file: image.Image):
         """Add an image file to the event."""
@@ -57,10 +67,3 @@ class Event(pydantic.BaseModel):
             print(im)
             self.add_image(im)
             print(self.image_groups)
-
-
-class Events:
-    @ staticmethod
-    def get_event_ids(collection_events: collection.Collection) -> set[types.EventId]:
-        """Returns a set of event ids."""
-        return set([item['_id'] for item in collection_events.find({}, {'_id': 1})])
