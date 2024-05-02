@@ -1,7 +1,7 @@
 import re
 from pymongo import MongoClient
 from gallery import config, databases, types
-from gallery.objects.image import image
+from gallery.objects.media.image import size
 from gallery.objects import event
 import datetime
 # from gallery.objects.image import group, image, version

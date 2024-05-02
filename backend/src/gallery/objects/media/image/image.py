@@ -1,23 +1,18 @@
-from PIL import Image as PIL_Image
-import os
-from pathlib import Path
 from gallery import types
-import pydantic
 import typing
-import re
 
 FILENAME_TYPE = str
 FILENAME_KEYS = ['group_name', 'version', 'size', 'file_ending']
 
 
 class FilenameIODict(typing.TypedDict):
-    group_name: types.ImageGroup.__annotations__['name']
+    group_name: types.ImageGroupTypes.name
     version: types.ImageInit.version
     size: types.ImageInit.size
     file_ending: types.ImageInit.file_ending
 
 
-class Image(types.Image):
+class Image:
 
     @staticmethod
     def parse_filename(filename: FILENAME_TYPE) -> FilenameIODict:
