@@ -2,6 +2,7 @@ from gallery import types, config
 import pydantic
 import re
 import datetime as datetime_module
+from gallery.objects.bases.document_object import DocumentObject
 
 
 class Types:
@@ -20,9 +21,8 @@ class Init:
     file_ending = types.FileEnding
 
 
-class Model(pydantic.BaseModel):
+class Model(DocumentObject[Init.id]):
 
-    id: Init.id = pydantic.Field(alias='_id')
     event_id: Init.event_id
     datetime: Init.datetime = pydantic.Field(default=None)
     name: Init.name
@@ -30,4 +30,8 @@ class Model(pydantic.BaseModel):
 
 
 class File(Model):
-    pass
+
+    class Config:
+        COLLECTION_NAME = 'video_files'
+        ACCEPTABLE_VIDEO_FILE_ENDINGS = {'mp4', 'mkv', 'flv', 'avi',
+                                         'mov', 'wmv', 'rm', 'mpg', 'mpeg', '3gp', 'webm', 'vob', 'ogv'}

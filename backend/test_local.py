@@ -1,6 +1,6 @@
 import re
 from pymongo import MongoClient
-from gallery import config, databases, types
+from gallery import config, types
 from gallery.objects.media.image import size
 from gallery.objects import event
 import datetime
@@ -10,8 +10,16 @@ from pathlib import Path
 # Initialize PyMongo
 mongo_client = MongoClient(port=config.MONGODB_PORT)
 db = mongo_client['gallery']
+events_collection = db['events']
 
-# read a local directory
+try:
 
-ev = event.Event.load_from_db_collection_by_id(db['events'], 'a6Qo099EtWEG')
-print(ev)
+    # get all subfolders in images dir
+    subfolders = [f for f in config.IMAGES_DIR.iterdir() if f.is_dir()]
+
+    for subfolder in subfolders:
+        event.Event.load_by_directory(db['events'], subfolder)
+
+
+finally:
+    mongo_client.close()

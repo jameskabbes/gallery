@@ -1,4 +1,7 @@
+import typing
+from gallery import types
 from gallery import types, config
+from gallery.objects.bases.document_object import DocumentObject
 import pydantic
 import re
 
@@ -27,9 +30,8 @@ class Init:
     average_color = Types.average_color | None
 
 
-class Model(pydantic.BaseModel):
+class Model(DocumentObject[Init.id]):
 
-    id: Init.id = pydantic.Field(alias='_id')
     group_id: Init.group_id
     file_ending: Init.file_ending
 
@@ -46,6 +48,13 @@ class Model(pydantic.BaseModel):
         _VERSION_DELIM = '-'
         _SIZE_BEG_TRIGGER = '('
         _SIZE_END_TRIGGER = ')'
+        _FILENAME_TYPE = str
+
+        class FilenameIODict(typing.TypedDict):
+            group_name: types.ImageGroupName
+            version: Init.version
+            size: Init.size
+            file_ending: Init.file_ending
 
     @pydantic.field_validator('version')
     def validate_version(cls, v):
@@ -75,4 +84,83 @@ class Model(pydantic.BaseModel):
 
 
 class Size(Model):
+
+    @staticmethod
+    def parse_filename(filename: Model.Config._FILENAME_TYPE) -> Model.Config.FilenameIODict:
+        """Split the filename into its defining keys."""
+
+        # IMG_1234-A(SM).jpg
+        # IMG_1234-A.jpg
+        # IMG_1234(SM).jpg
+        # IMG_1234.jpg
+
+        d: Model.Config.FilenameIODict = {
+            'size': None,
+            'version': None
+        }
+
+        a = d['version']
+        a
+
+        args = filename.split('.', 1)
+        if len(args) < 2:
+            raise ValueError(
+                'Missing file extension on filename "{}"'.format(filename))
+        root, d['file_ending'] = args
+
+        # get size
+        last_beg_trigger = root.rfind(Model.Config._SIZE_BEG_TRIGGER)
+        if last_beg_trigger != -1:
+            next_end_trigger = root[last_beg_trigger:].find(
+                Model.Config._SIZE_END_TRIGGER)
+
+            if next_end_trigger != -1 and next_end_trigger == len(root)-last_beg_trigger-1:
+                d['size'] = root[last_beg_trigger +
+                                 1:next_end_trigger+last_beg_trigger]
+
+                root = root[:last_beg_trigger]
+
+        # get version
+        args = root.rsplit(Model.Config._VERSION_DELIM, 1)
+        if len(args) == 2:
+            d['version'] = args[-1]
+        d['group_name'] = args[0]
+
+        return d
+
+    @staticmethod
+    def build_filename(d: Model.Config.FilenameIODict) -> Model.Config._FILENAME_TYPE:
+        """Parse the id into its defining keys."""
+
+        string: Model.Config._FILENAME_TYPE = d['group_name']
+        if d['version'] != None:
+            string += f'{Model.Config._VERSION_DELIM}{
+                d["version"]}'
+        if d['size'] != None:
+            string += f'{Model.Config._SIZE_BEG_TRIGGER}{Model.Config._VERSION_DELIM}{
+                d["size"]}{Model.Config._SIZE_END_TRIGGER}'
+        string += f'.{d["file_ending"]}'
+        return string
+
+
+"""
+class File:
     pass
+
+    def get_shape(self):
+        pass
+
+    def get_size(self):
+        self.bytes = os.stat(self.path).st_size
+
+    def get_shape(self):
+        img = Image.open(self.path)
+        self.width, self.height = img.size
+
+    def get_average_color(self):
+        img = Image.open(self.path)
+        img = img.convert('RGB')
+
+        r, g, b = 0, 0, 0
+        pixels = img.load()
+"""

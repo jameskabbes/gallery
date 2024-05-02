@@ -5,11 +5,16 @@ import datetime as datetime_module
 import re
 from gallery import config
 
-ImageId = str
+DocumentId = str
+
+ImageId = DocumentId
+ImageGroupId = DocumentId
+EventId = DocumentId
+VideoId = DocumentId
+
+ImageGroupName = str
 ImageVersionId = str
 ImageSizeId = str
-ImageGroupId = str
-EventId = str
+
 HexColor = str
 FileEnding = str
-VideoId = str

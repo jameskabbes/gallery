@@ -23,3 +23,4 @@ NANOID_ALPHABET: str = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrst
 NANOID_SIZE: int = 12
 
 ORIGINAL_KEY: str = '_original'
+DOCUMENT_ID_KEY: str = '_id'

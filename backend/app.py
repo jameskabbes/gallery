@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pymongo import MongoClient
-from gallery import config, types, databases
+from gallery import config, types, db
 
 import os
 
