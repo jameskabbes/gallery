@@ -1,11 +1,13 @@
 from gallery import types
 from gallery.objects.media.image import size, version
 import pydantic
+import datetime as datetime_module
 
 
 class Types:
     id = types.ImageGroupId
     event_id = types.EventId
+    datetime = datetime_module.datetime
     name = str
     versions = dict[types.ImageVersionId, version.Version]
 
@@ -13,6 +15,7 @@ class Types:
 class Init:
     id = Types.id
     event_id = Types.event_id
+    datetime = Types.datetime | None
     name = Types.name
     versions = Types.versions
 
@@ -20,6 +23,7 @@ class Init:
 class Model(pydantic.BaseModel):
     id: Init.id = pydantic.Field(alias='_id')
     event_id: Init.event_id
+    datetime: Init.datetime = pydantic.Field(default=None)
     name: Init.name
     versions: Init.versions = pydantic.Field(
         default_factory=dict, exclude=True)
@@ -36,6 +40,9 @@ class Model(pydantic.BaseModel):
 
 
 class Group(Model):
+
+    class Config:
+        COLLECTION_NAME = 'image_groups'
 
     def add_image_size(self, im: size.Size):
         if im.version not in self.versions:

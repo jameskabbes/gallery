@@ -6,7 +6,7 @@ import re
 class Types:
     id = types.ImageId
     group_id = types.ImageGroupId
-    file_ending = str
+    file_ending = types.FileEnding
     version = types.ImageVersionId
     size = types.ImageSizeId
     height = int

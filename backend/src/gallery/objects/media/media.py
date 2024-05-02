@@ -3,7 +3,7 @@ from gallery.objects import media
 
 
 class Types:
-    content = dict[media.MediaId, media.TYPES_TYPE]
+    content = dict[media.MediaId, media.KEYS_TYPE]
 
 
 class Init:
@@ -11,8 +11,15 @@ class Init:
 
 
 class Model(pydantic.BaseModel):
-    content = Init.content = pydantic.Field(default_factory=dict)
+    content: Init.content = pydantic.Field(default_factory=dict)
 
 
 class Media(Model):
+
+    def load_content_object(self, id: media.MediaId):
+
+        media_type = self.content[id]
+
+        return self.content[id]
+
     pass
