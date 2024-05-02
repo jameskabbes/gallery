@@ -45,18 +45,6 @@ class Model(DocumentObject[Init.id]):
     bytes: Init.bytes = pydantic.Field(default=None)
     average_color: Init.average_color = pydantic.Field(default=None)
 
-    class Config:
-        _VERSION_DELIM = '-'
-        _SIZE_BEG_TRIGGER = '('
-        _SIZE_END_TRIGGER = ')'
-        _FILENAME_TYPE = str
-
-        class FilenameIODict(typing.TypedDict):
-            group_name: types.ImageGroupName
-            version: Init.version
-            size: Init.size
-            file_ending: Init.file_ending
-
     @pydantic.field_validator('version')
     def validate_version(cls, v):
         if v is not None and cls.Config._VERSION_DELIM in v:

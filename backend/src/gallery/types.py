@@ -6,15 +6,17 @@ import re
 from gallery import config
 
 DocumentId = str
+VersionId = str
+SizeId = str
+GroupId = str
+EventId = DocumentId
 
 ImageId = DocumentId
 ImageGroupId = DocumentId
-EventId = DocumentId
 VideoId = DocumentId
+VideoGroupId = DocumentId
 
 ImageGroupName = str
-ImageVersionId = str
-ImageSizeId = str
 
 HexColor = str
 FileEnding = str
