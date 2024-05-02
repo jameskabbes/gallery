@@ -4,7 +4,10 @@ from gallery import types, config, utils
 import pydantic
 
 
-class DocumentObject[ChildIdType](pydantic.BaseModel):
+ChildIdType = typing.TypeVar('ChildIdType', bound=types.DocumentId)
+
+
+class DocumentObject(pydantic.BaseModel, typing.Generic[ChildIdType]):
 
     id: ChildIdType = pydantic.Field(alias=config.DOCUMENT_ID_KEY)
 

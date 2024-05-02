@@ -2,6 +2,7 @@ import typing
 from gallery import types
 from gallery import types, config
 from gallery.objects.bases.document_object import DocumentObject
+from gallery.objects.media.bases import file as base_file
 import pydantic
 import re
 
@@ -83,7 +84,11 @@ class Model(DocumentObject[Init.id]):
         return v
 
 
-class Size(Model):
+class File(Model, base_file.File):
+
+    class Config:
+        ACCEPTABLE_FILE_ENDINGS = {'jpg', 'jpeg', 'png', 'gif', 'cr2',
+                                   'bmp', 'tiff', 'tif', 'ico', 'svg', 'webp', 'raw', 'heif', 'heic'}
 
     @staticmethod
     def parse_filename(filename: Model.Config._FILENAME_TYPE) -> Model.Config.FilenameIODict:
@@ -142,25 +147,21 @@ class Size(Model):
         string += f'.{d["file_ending"]}'
         return string
 
+    """
+        def get_shape(self):
+            pass
 
-"""
-class File:
-    pass
+        def get_size(self):
+            self.bytes = os.stat(self.path).st_size
 
-    def get_shape(self):
-        pass
+        def get_shape(self):
+            img = Image.open(self.path)
+            self.width, self.height = img.size
 
-    def get_size(self):
-        self.bytes = os.stat(self.path).st_size
+        def get_average_color(self):
+            img = Image.open(self.path)
+            img = img.convert('RGB')
 
-    def get_shape(self):
-        img = Image.open(self.path)
-        self.width, self.height = img.size
-
-    def get_average_color(self):
-        img = Image.open(self.path)
-        img = img.convert('RGB')
-
-        r, g, b = 0, 0, 0
-        pixels = img.load()
-"""
+            r, g, b = 0, 0, 0
+            pixels = img.load()
+    """

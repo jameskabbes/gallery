@@ -1,7 +1,8 @@
 from pymongo import database, collection, MongoClient
 from gallery import types, utils
 from gallery.objects.bases.document_object import DocumentObject
-from gallery.objects.media.image import group, size
+from gallery.objects.media.image import group
+from gallery.objects import media as media_module
 from gallery.objects.media import media
 import pydantic
 import datetime as datetime_module
@@ -92,7 +93,12 @@ class Event(Model):
         # get all files in directry
         for file in directory.iterdir():
             if file.is_file():
+
                 print(file)
 
-                # add it to media
-                media_file = None
+                media_type = media_module.get_media_type(file.suffix[1:])
+                if media_type == None:
+                    print('Skipping file: not a supported file type')
+                    continue
+
+                print(media_type)
