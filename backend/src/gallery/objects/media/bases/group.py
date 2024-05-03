@@ -4,11 +4,8 @@ from gallery.objects.media.bases import version as base_version, file as base_fi
 import datetime as datetime_module
 import typing
 
-ChildVersion = typing.TypeVar('ChildVersion', bound=base_version.Version)
-ChildFile = typing.TypeVar('ChildFile', bound=base_file.File)
 
-
-class Group(pydantic.BaseModel, typing.Generic[ChildVersion, ChildFile]):
+class Group(pydantic.BaseModel):
 
     event_id: types.EventId
     datetime: datetime_module.datetime | None = pydantic.Field(default=None)

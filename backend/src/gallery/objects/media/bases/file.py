@@ -9,6 +9,19 @@ class Init:
     file_ending = types.FileEnding
 
 
+class Base:
+    _VERSION_DELIM = '-'
+    _SIZE_BEG_TRIGGER = '('
+    _SIZE_END_TRIGGER = ')'
+    _FILENAME_TYPE = str
+
+    class FilenameIODict(typing.TypedDict):
+        group_name: types.ImageGroupName
+        version: Init.version
+        size: Init.size
+        file_ending: Init.file_ending
+
+
 class File(pydantic.BaseModel):
 
     group_id: types.GroupId
@@ -19,16 +32,6 @@ class File(pydantic.BaseModel):
     ACCEPTABLE_FILE_ENDINGS: set[types.FileEnding] = set()
 
     class Config:
-        _VERSION_DELIM = '-'
-        _SIZE_BEG_TRIGGER = '('
-        _SIZE_END_TRIGGER = ')'
-        _FILENAME_TYPE = str
-
-        class FilenameIODict(typing.TypedDict):
-            group_name: types.ImageGroupName
-            version: Init.version
-            size: Init.size
-            file_ending: Init.file_ending
 
     @pydantic.field_validator('version')
     def validate_version(cls, v):
