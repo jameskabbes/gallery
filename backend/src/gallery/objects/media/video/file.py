@@ -7,32 +7,11 @@ from gallery.objects.media.bases import file as base_file
 from gallery.objects.bases.document_object import DocumentObject
 
 
-class Types:
-    id = types.VideoId
-    event_id = types.EventId
-    datetime = datetime_module.datetime
-    name = str
-    file_ending = types.FileEnding
+class Model(DocumentObject[types.VideoId], base_file.File):
+    pass
 
 
-class Init:
-    id = Types.id
-    event_id = Types.event_id
-    datetime = Types.datetime | None
-    name = Types.name
-    file_ending = types.FileEnding
+class File(Model):
 
-
-class Model(DocumentObject[Init.id]):
-
-    event_id: Init.event_id
-    datetime: Init.datetime = pydantic.Field(default=None)
-    name: Init.name
-    file_ending: Init.file_ending
-
-
-class File(Model, base_file.File):
-
-    class Config:
-        ACCEPTABLE_FILE_ENDINGS = {'mp4', 'mkv', 'flv', 'avi',
-                                   'mov', 'wmv', 'rm', 'mpg', 'mpeg', '3gp', 'webm', 'vob', 'ogv'}
+    _ACCEPTABLE_FILE_ENDINGS = {'mp4', 'mkv', 'flv', 'avi',
+                                'mov', 'wmv', 'rm', 'mpg', 'mpeg', '3gp', 'webm', 'vob', 'ogv'}

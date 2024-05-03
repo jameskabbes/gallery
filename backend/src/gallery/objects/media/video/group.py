@@ -11,8 +11,4 @@ class Model(DocumentObject[types.VideoGroupId], base_group.Group[image_version.V
 
 
 class Group(Model):
-
-    class Config:
-        COLLECTION_NAME = 'image_groups'
-        ACCEPTABLE_FILE_ENDINGS = {'jpg', 'jpeg', 'png', 'gif', 'cr2',
-                                   'bmp', 'tiff', 'tif', 'ico', 'svg', 'webp', 'raw', 'heif', 'heic'}
+    _COLLECTION_NAME = 'video_groups'

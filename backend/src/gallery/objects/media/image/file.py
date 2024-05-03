@@ -7,57 +7,12 @@ import pydantic
 import re
 
 
-class Types:
-    id = types.ImageId
-    group_id = types.ImageGroupId
-    file_ending = types.FileEnding
-    version = types.ImageVersionId
-    size = types.ImageSizeId
-    height = int
-    width = int
-    bytes = int
-    average_color = types.HexColor
+class Model(DocumentObject[types.ImageId], base_file.File):
 
-
-class Init:
-    id = Types.id
-    group_id = Types.group_id
-    file_ending = Types.file_ending
-    version = Types.version | None
-    size = Types.size | None
-    height = Types.height | None
-    width = Types.width | None
-    bytes = Types.bytes | None
-    average_color = Types.average_color | None
-
-
-class Model(DocumentObject[Init.id]):
-
-    group_id: Init.group_id
-    file_ending: Init.file_ending
-
-    version: Init.version = pydantic.Field(
-        default=config.ORIGINAL_KEY)
-    size: Init.size = pydantic.Field(
-        default=config.ORIGINAL_KEY)
-    height: Init.height = pydantic.Field(default=None)
-    width: Init.width = pydantic.Field(default=None)
-    bytes: Init.bytes = pydantic.Field(default=None)
-    average_color: Init.average_color = pydantic.Field(default=None)
-
-    @pydantic.field_validator('version')
-    def validate_version(cls, v):
-        if v is not None and cls.Config._VERSION_DELIM in v:
-            raise ValueError('`version` must not contain "{}"'.format(
-                cls.Config._VERSION_DELIM))
-        return v
-
-    @ pydantic.field_validator('size')
-    def validate_size(cls, v):
-        if v is not None and (cls.Config._SIZE_BEG_TRIGGER in v or cls.Config._SIZE_END_TRIGGER in v):
-            raise ValueError('`size` cannot contain "{}" or "{}"'.format(
-                cls.Config._SIZE_BEG_TRIGGER, cls.Config._SIZE_END_TRIGGER))
-        return v
+    height: int = pydantic.Field(default=None)
+    width: int = pydantic.Field(default=None)
+    bytes: int = pydantic.Field(default=None)
+    average_color: types.HexColor = pydantic.Field(default=None)
 
     @ pydantic.field_validator('height', 'width', 'bytes')
     def validate_positive(cls, v):
@@ -72,13 +27,12 @@ class Model(DocumentObject[Init.id]):
         return v
 
 
-class File(Model, base_file.File):
+class File(Model):
 
-    class Config:
-        ACCEPTABLE_FILE_ENDINGS = {'jpg', 'jpeg', 'png', 'gif', 'cr2',
-                                   'bmp', 'tiff', 'tif', 'ico', 'svg', 'webp', 'raw', 'heif', 'heic'}
+    ACCEPTABLE_FILE_ENDINGS = pydantic.Field(default={'jpg', 'jpeg', 'png', 'gif', 'cr2',
+                                                      'bmp', 'tiff', 'tif', 'ico', 'svg', 'webp', 'raw', 'heif', 'heic'}, const=True, init=False, exclude=True)
 
-    @staticmethod
+    @ staticmethod
     def parse_filename(filename: Model.Config._FILENAME_TYPE) -> Model.Config.FilenameIODict:
         """Split the filename into its defining keys."""
 
@@ -121,7 +75,7 @@ class File(Model, base_file.File):
 
         return d
 
-    @staticmethod
+    @ staticmethod
     def build_filename(d: Model.Config.FilenameIODict) -> Model.Config._FILENAME_TYPE:
         """Parse the id into its defining keys."""
 

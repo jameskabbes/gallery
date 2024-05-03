@@ -6,7 +6,7 @@ import pydantic
 import datetime as datetime_module
 
 
-class Model(DocumentObject[types.ImageGroupId], base_group.Group):
+class Model(DocumentObject[types.ImageGroupId], base_group.Group[version.Version, file.File]):
 
     @pydantic.field_validator('name')
     def validate_name(cls, v: str):
@@ -20,8 +20,4 @@ class Model(DocumentObject[types.ImageGroupId], base_group.Group):
 
 
 class Group(Model):
-
-    class Config:
-        COLLECTION_NAME = 'image_groups'
-        ACCEPTABLE_FILE_ENDINGS = {'jpg', 'jpeg', 'png', 'gif', 'cr2',
-                                   'bmp', 'tiff', 'tif', 'ico', 'svg', 'webp', 'raw', 'heif', 'heic'}
+    _COLLECTION_NAME = 'image_groups'

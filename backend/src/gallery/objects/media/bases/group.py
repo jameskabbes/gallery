@@ -8,7 +8,7 @@ ChildVersion = typing.TypeVar('ChildVersion', bound=base_version.Version)
 ChildFile = typing.TypeVar('ChildFile', bound=base_file.File)
 
 
-class Group(pydantic.BaseModel, typing.Generic[ChildVersion], typing.Generic[ChildFile]):
+class Group(pydantic.BaseModel, typing.Generic[ChildVersion, ChildFile]):
 
     event_id: types.EventId
     datetime: datetime_module.datetime | None = pydantic.Field(default=None)
