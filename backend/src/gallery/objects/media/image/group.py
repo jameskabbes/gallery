@@ -1,45 +1,31 @@
 from gallery import types
-from gallery.objects.media.image import file, version
-from gallery.objects.media.bases import group as base_group
 from gallery.objects.bases.document_object import DocumentObject
+from gallery.objects.media.image import version, file
 import pydantic
 import datetime as datetime_module
+import typing
 
 
-class Model(DocumentObject[types.ImageGroupId], base_group.Group[version.Version, file.File]):
-
-    @pydantic.field_validator('name')
-    def validate_name(cls, v: str):
-        if v.endswith(file.File.Config._SIZE_BEG_TRIGGER):
-            raise ValueError('`name` must not end with "{}"'.format(
-                file.File.Config._SIZE_END_TRIGGER))
-        if file.File.Config._VERSION_DELIM in v:
-            raise ValueError('`name` must not contain "{}"'.format(
-                file.File.Config._VERSION_DELIM))
-        return v
+class Base:
+    pass
 
 
-class Group(Model):
-    _COLLECTION_NAME = 'image_groups'
-
-
-class Group(pydantic.BaseModel):
+class Group(Base, DocumentObject[types.ImageGroupId]):
 
     event_id: types.EventId
     datetime: datetime_module.datetime | None = pydantic.Field(default=None)
     name: str
-    versions: dict[types.VersionId, ChildVersion] = pydantic.Field(
+    versions: dict[types.VersionId, version.Version] = pydantic.Field(
         default_factory=dict)
 
-    def add_version(self, version: ChildVersion):
-        self.versions[version.id] = version
+    COLLECTION_NAME: typing.ClassVar[str] = 'image_groups'
 
     @pydantic.field_validator('name')
     def validate_name(cls, v: str):
-        if v.endswith(ChildFile.Config._SIZE_BEG_TRIGGER):
+        if v.endswith(file.File._SIZE_BEG_TRIGGER):
             raise ValueError('`name` must not end with "{}"'.format(
-                ChildFile.Config._SIZE_END_TRIGGER))
-        if ChildFile.Config._VERSION_DELIM in v:
+                file.File._SIZE_END_TRIGGER))
+        if file.File._VERSION_DELIM in v:
             raise ValueError('`name` must not contain "{}"'.format(
-                ChildFile.Config._VERSION_DELIM))
+                file.File._VERSION_DELIM))
         return v

@@ -20,4 +20,5 @@ ImageGroupName = str
 
 HexColor = str
 FileEnding = str
+AcceptableFileEndings = set[FileEnding]
 Filename = str

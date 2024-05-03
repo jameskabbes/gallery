@@ -7,6 +7,13 @@ import datetime
 # from gallery.objects.image import group, image, version
 from pathlib import Path
 
+
+image_file = file.File(_id='123', file_ending='jpg', group_id='123')
+
+print(image_file)
+
+"""
+
 # Initialize PyMongo
 mongo_client = MongoClient(port=config.MONGODB_PORT)
 db = mongo_client['gallery']
@@ -23,3 +30,6 @@ try:
 
 finally:
     mongo_client.close()
+
+
+"""

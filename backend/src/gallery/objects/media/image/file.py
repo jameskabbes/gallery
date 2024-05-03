@@ -15,7 +15,20 @@ import re
     """
 
 
-class Model(DocumentObject[types.ImageId], base_file.File):
+class Base:
+    _VERSION_DELIM: typing.ClassVar[str] = '-'
+    _SIZE_BEG_TRIGGER: typing.ClassVar[str] = '('
+    _SIZE_END_TRIGGER: typing.ClassVar[str] = ')'
+
+    FilenameIODict = typing.TypedDict('FilenameIODict', {
+        'group_name': types.ImageGroupName,
+        'version': types.VersionId,
+        'size': types.SizeId,
+        'file_ending': types.FileEnding
+    })
+
+
+class File(Base, DocumentObject[types.ImageId], base_file.File):
 
     group_id: types.GroupId
     version: types.VersionId = pydantic.Field(default=config.ORIGINAL_KEY)
@@ -26,13 +39,10 @@ class Model(DocumentObject[types.ImageId], base_file.File):
     bytes: int = pydantic.Field(default=None)
     average_color: types.HexColor = pydantic.Field(default=None)
 
-    ACCEPTABLE_FILE_ENDINGS: typing.ClassVar[set[types.FileEnding]] = {'jpg', 'jpeg', 'png', 'gif', 'cr2',
-                                                                       'bmp', 'tiff', 'tif', 'ico', 'svg', 'webp', 'raw', 'heif', 'heic'}
+    # class vars
+    ACCEPTABLE_FILE_ENDINGS: typing.ClassVar[types.AcceptableFileEndings] = {'jpg', 'jpeg', 'png', 'gif', 'cr2',
+                                                                             'bmp', 'tiff', 'tif', 'ico', 'svg', 'webp', 'raw', 'heif', 'heic'}
     COLLECTION_NAME: typing.ClassVar[str] = 'image_files'
-
-    _VERSION_DELIM: typing.ClassVar[str] = '-'
-    _SIZE_BEG_TRIGGER: typing.ClassVar[str] = '('
-    _SIZE_END_TRIGGER: typing.ClassVar[str] = ')'
 
     @ pydantic.field_validator('height', 'width', 'bytes')
     def validate_positive(cls, v):
@@ -60,11 +70,8 @@ class Model(DocumentObject[types.ImageId], base_file.File):
                 cls._SIZE_BEG_TRIGGER, cls._SIZE_END_TRIGGER))
         return v
 
-
-class File(Model):
-
     @ staticmethod
-    def parse_filename(filename: Model._FILENAME_TYPE) -> Model.FilenameIODict:
+    def parse_filename(filename: types.Filename) -> Base.FilenameIODict:
         """Split the filename into its defining keys."""
 
         # IMG_1234-A(SM).jpg
@@ -72,13 +79,10 @@ class File(Model):
         # IMG_1234(SM).jpg
         # IMG_1234.jpg
 
-        d: Model.Config.FilenameIODict = {
+        d: Base.FilenameIODict = {
             'size': None,
             'version': None
         }
-
-        a = d['version']
-        a
 
         args = filename.split('.', 1)
         if len(args) < 2:
@@ -87,10 +91,10 @@ class File(Model):
         root, d['file_ending'] = args
 
         # get size
-        last_beg_trigger = root.rfind(Model.Config._SIZE_BEG_TRIGGER)
+        last_beg_trigger = root.rfind(Base._SIZE_BEG_TRIGGER)
         if last_beg_trigger != -1:
             next_end_trigger = root[last_beg_trigger:].find(
-                Model.Config._SIZE_END_TRIGGER)
+                Base._SIZE_END_TRIGGER)
 
             if next_end_trigger != -1 and next_end_trigger == len(root)-last_beg_trigger-1:
                 d['size'] = root[last_beg_trigger +
@@ -99,7 +103,7 @@ class File(Model):
                 root = root[:last_beg_trigger]
 
         # get version
-        args = root.rsplit(Model.Config._VERSION_DELIM, 1)
+        args = root.rsplit(Base._VERSION_DELIM, 1)
         if len(args) == 2:
             d['version'] = args[-1]
         d['group_name'] = args[0]
@@ -107,16 +111,16 @@ class File(Model):
         return d
 
     @ staticmethod
-    def build_filename(d: Model.Config.FilenameIODict) -> Model.Config._FILENAME_TYPE:
+    def build_filename(d: Base.FilenameIODict) -> types.Filename:
         """Parse the id into its defining keys."""
 
-        string: Model.Config._FILENAME_TYPE = d['group_name']
+        string: types.Filename = d['group_name']
         if d['version'] != None:
-            string += f'{Model.Config._VERSION_DELIM}{
+            string += f'{Base._VERSION_DELIM}{
                 d["version"]}'
         if d['size'] != None:
-            string += f'{Model.Config._SIZE_BEG_TRIGGER}{Model.Config._VERSION_DELIM}{
-                d["size"]}{Model.Config._SIZE_END_TRIGGER}'
+            string += f'{Base._SIZE_BEG_TRIGGER}{Base._VERSION_DELIM}{
+                d["size"]}{Base._SIZE_END_TRIGGER}'
         string += f'.{d["file_ending"]}'
         return string
 
