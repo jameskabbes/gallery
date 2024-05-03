@@ -6,13 +6,33 @@ from gallery.objects.media.bases import file as base_file
 import pydantic
 import re
 
+"""
+    class FilenameIODict(typing.TypedDict):
+        group_name: types.ImageGroupName
+        version: Init.version
+        size: Init.size
+        file_ending: Init.file_ending
+    """
+
 
 class Model(DocumentObject[types.ImageId], base_file.File):
+
+    group_id: types.GroupId
+    version: types.VersionId = pydantic.Field(default=config.ORIGINAL_KEY)
+    size: types.SizeId = pydantic.Field(default=config.ORIGINAL_KEY)
 
     height: int = pydantic.Field(default=None)
     width: int = pydantic.Field(default=None)
     bytes: int = pydantic.Field(default=None)
     average_color: types.HexColor = pydantic.Field(default=None)
+
+    ACCEPTABLE_FILE_ENDINGS: typing.ClassVar[set[types.FileEnding]] = {'jpg', 'jpeg', 'png', 'gif', 'cr2',
+                                                                       'bmp', 'tiff', 'tif', 'ico', 'svg', 'webp', 'raw', 'heif', 'heic'}
+    COLLECTION_NAME: typing.ClassVar[str] = 'image_files'
+
+    _VERSION_DELIM: typing.ClassVar[str] = '-'
+    _SIZE_BEG_TRIGGER: typing.ClassVar[str] = '('
+    _SIZE_END_TRIGGER: typing.ClassVar[str] = ')'
 
     @ pydantic.field_validator('height', 'width', 'bytes')
     def validate_positive(cls, v):
@@ -26,14 +46,25 @@ class Model(DocumentObject[types.ImageId], base_file.File):
             raise ValueError('average_color must be a valid hex color or None')
         return v
 
+    @pydantic.field_validator('version')
+    def validate_version(cls, v):
+        if v is not None and cls._VERSION_DELIM in v:
+            raise ValueError('`version` must not contain "{}"'.format(
+                cls._VERSION_DELIM))
+        return v
+
+    @ pydantic.field_validator('size')
+    def validate_size(cls, v):
+        if v is not None and (cls._SIZE_BEG_TRIGGER in v or cls._SIZE_END_TRIGGER in v):
+            raise ValueError('`size` cannot contain "{}" or "{}"'.format(
+                cls._SIZE_BEG_TRIGGER, cls._SIZE_END_TRIGGER))
+        return v
+
 
 class File(Model):
 
-    ACCEPTABLE_FILE_ENDINGS = pydantic.Field(default={'jpg', 'jpeg', 'png', 'gif', 'cr2',
-                                                      'bmp', 'tiff', 'tif', 'ico', 'svg', 'webp', 'raw', 'heif', 'heic'}, const=True, init=False, exclude=True)
-
     @ staticmethod
-    def parse_filename(filename: Model.Config._FILENAME_TYPE) -> Model.Config.FilenameIODict:
+    def parse_filename(filename: Model._FILENAME_TYPE) -> Model.FilenameIODict:
         """Split the filename into its defining keys."""
 
         # IMG_1234-A(SM).jpg

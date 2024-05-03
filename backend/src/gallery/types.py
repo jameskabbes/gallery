@@ -20,3 +20,4 @@ ImageGroupName = str
 
 HexColor = str
 FileEnding = str
+Filename = str

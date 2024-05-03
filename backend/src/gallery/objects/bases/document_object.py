@@ -9,6 +9,7 @@ ChildIdType = typing.TypeVar('ChildIdType', bound=types.DocumentId)
 
 class DocumentObject(pydantic.BaseModel, typing.Generic[ChildIdType]):
 
+    COLLECTION_NAME: typing.ClassVar[str]
     id: ChildIdType = pydantic.Field(alias=config.DOCUMENT_ID_KEY)
 
     @ classmethod
