@@ -1,16 +1,21 @@
 from gallery import types
 from gallery.objects.bases.document_object import DocumentObject
 from gallery.objects.media.image import version, file
+from gallery.objects.media.bases import content_loader
 import pydantic
 import datetime as datetime_module
+from pymongo import collection
 import typing
+
+from gallery.types import DbCollections, EventId, Filename
 
 
 class Base:
-    pass
+    Basics = dict[types.ImageGroupName,
+                  dict[types.VersionId, dict[types.SizeId, set[types.FileEnding]]]]
 
 
-class Group(Base, DocumentObject[types.ImageGroupId]):
+class Group(Base, DocumentObject[types.ImageGroupId], content_loader.ContentLoader):
 
     event_id: types.EventId
     datetime: datetime_module.datetime | None = pydantic.Field(default=None)
@@ -29,3 +34,43 @@ class Group(Base, DocumentObject[types.ImageGroupId]):
             raise ValueError('`name` must not contain "{}"'.format(
                 file.File._VERSION_DELIM))
         return v
+
+    def add_file(self, image_file: file.File):
+        """Add file id to group"""
+
+        if image_file.version not in self.versions:
+            self.versions[image_file.version] = version.Version()
+
+        self.versions[image_file.version].add_file(image_file)
+
+    @classmethod
+    def load_basic_by_filenames(cls, filenames: list[types.Filename]) -> Base.Basics:
+
+        group_Basics_by_name: Base.Basics = {}
+
+        for filename in filenames:
+            image_filename_io_dict = file.File.parse_filename(filename)
+
+            image_group_name = image_filename_io_dict['group_name']
+            image_file_ending = image_filename_io_dict['file_ending']
+            image_size = image_filename_io_dict['size']
+            image_version = image_filename_io_dict['version']
+
+            # check image group name
+            if image_group_name not in group_Basics_by_name:
+                group_Basics_by_name[image_group_name] = {}
+
+            # check image version
+            if image_version not in group_Basics_by_name[image_group_name]:
+                group_Basics_by_name[image_group_name][image_version] = {}
+
+            # check image size
+            if image_size not in group_Basics_by_name[image_group_name][image_version]:
+                group_Basics_by_name[image_group_name][image_version][image_size] = set(
+                )
+
+            # add file ending
+            group_Basics_by_name[image_group_name][image_version][image_size].add(
+                image_file_ending)
+
+        return group_Basics_by_name

@@ -2,17 +2,9 @@ import typing
 from gallery import types
 from gallery import types, config
 from gallery.objects.bases.document_object import DocumentObject
-from gallery.objects.media.bases import file as base_file
+from gallery.objects.media.bases import content_loader, file as base_file
 import pydantic
 import re
-
-"""
-    class FilenameIODict(typing.TypedDict):
-        group_name: types.ImageGroupName
-        version: Init.version
-        size: Init.size
-        file_ending: Init.file_ending
-    """
 
 
 class Base:
@@ -30,14 +22,14 @@ class Base:
 
 class File(Base, DocumentObject[types.ImageId], base_file.File):
 
-    group_id: types.GroupId
+    group_name: types.ImageGroupName
     version: types.VersionId = pydantic.Field(default=config.ORIGINAL_KEY)
     size: types.SizeId = pydantic.Field(default=config.ORIGINAL_KEY)
 
-    height: int = pydantic.Field(default=None)
-    width: int = pydantic.Field(default=None)
-    bytes: int = pydantic.Field(default=None)
-    average_color: types.HexColor = pydantic.Field(default=None)
+    height: int | None = pydantic.Field(default=None)
+    width: int | None = pydantic.Field(default=None)
+    bytes: int | None = pydantic.Field(default=None)
+    average_color: types.HexColor | None = pydantic.Field(default=None)
 
     # class vars
     ACCEPTABLE_FILE_ENDINGS: typing.ClassVar[types.AcceptableFileEndings] = {'jpg', 'jpeg', 'png', 'gif', 'cr2',
@@ -72,16 +64,14 @@ class File(Base, DocumentObject[types.ImageId], base_file.File):
 
     @ staticmethod
     def parse_filename(filename: types.Filename) -> Base.FilenameIODict:
-        """Split the filename into its defining keys."""
+        """Split the filename into its defining keys.
 
-        # IMG_1234-A(SM).jpg
-        # IMG_1234-A.jpg
-        # IMG_1234(SM).jpg
-        # IMG_1234.jpg
+        IMG_1234-A(SM).jpg -> {'group_name': 'IMG_1234', 'version': 'A', 'size': 'SM', 'file_ending': 'jpg'}
+        """
 
         d: Base.FilenameIODict = {
-            'size': None,
-            'version': None
+            'size': config.ORIGINAL_KEY,
+            'version': config.ORIGINAL_KEY
         }
 
         args = filename.split('.', 1)
@@ -115,10 +105,10 @@ class File(Base, DocumentObject[types.ImageId], base_file.File):
         """Parse the id into its defining keys."""
 
         string: types.Filename = d['group_name']
-        if d['version'] != None:
+        if d['version'] != None and d['version'] != config.ORIGINAL_KEY:
             string += f'{Base._VERSION_DELIM}{
                 d["version"]}'
-        if d['size'] != None:
+        if d['size'] != None and d['size'] != config.ORIGINAL_KEY:
             string += f'{Base._SIZE_BEG_TRIGGER}{Base._VERSION_DELIM}{
                 d["size"]}{Base._SIZE_END_TRIGGER}'
         string += f'.{d["file_ending"]}'

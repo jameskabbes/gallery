@@ -1,14 +1,25 @@
 from gallery import types
 import pydantic
 import typing
+from abc import ABC, abstractmethod
 
 
-class File(pydantic.BaseModel):
+class Base:
+    FilenameIODict = typing.TypedDict('FilenameIODict', {})
 
+
+class File(Base, pydantic.BaseModel, ABC):
+
+    id: types.DocumentId
     file_ending: types.FileEnding
-    FILENAME_TYPE: typing.ClassVar[types.Filename]
     ACCEPTABLE_FILE_ENDINGS: typing.ClassVar[types.AcceptableFileEndings] = {}
 
     @classmethod
-    def load_into_event_from_filename(cls, filename: types.Filename, event) -> typing.Self:
-        pass
+    @abstractmethod
+    def parse_filename(cls, filename: types.Filename) -> Base.FilenameIODict:
+        """ Parse the filename into its defining keys."""
+
+    @classmethod
+    @abstractmethod
+    def build_filename(cls, i_o_dict: Base.FilenameIODict) -> types.Filename:
+        """ Build the filename from the defining keys."""

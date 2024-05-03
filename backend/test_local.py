@@ -8,28 +8,24 @@ import datetime
 from pathlib import Path
 
 
-image_file = file.File(_id='123', file_ending='jpg', group_id='123')
-
-print(image_file)
-
-"""
-
 # Initialize PyMongo
 mongo_client = MongoClient(port=config.MONGODB_PORT)
-db = mongo_client['gallery']
-events_collection = db['events']
+
+
+db_collections = {
+    'events': mongo_client['gallery']['events'],
+    'image_files': mongo_client['gallery']['image_files'],
+    'image_groups': mongo_client['gallery']['image_groups'],
+    'video_files': mongo_client['gallery']['video_files'],
+}
 
 try:
 
     # get all subfolders in images dir
     subfolders = [f for f in config.IMAGES_DIR.iterdir() if f.is_dir()]
-
     for subfolder in subfolders:
-        event.Event.load_by_directory(db['events'], subfolder)
+        event.Event.load_by_directory(db_collections, subfolder)
 
 
 finally:
     mongo_client.close()
-
-
-"""
