@@ -1,6 +1,6 @@
 from pymongo import database, collection, MongoClient
 from gallery import types, utils
-from gallery.objects.bases.document_object import DocumentObject
+from gallery.db.document_object import DocumentObject
 from gallery.objects.media.image import group
 from gallery.objects import media as media_module
 from gallery.objects.media.media import Media
@@ -78,7 +78,7 @@ class Event(Base, DocumentObject[types.EventId]):
         # get datetime and name from directory name
         datetime_and_name = Event.parse_directory_name(directory.name)
 
-        # find event in the db collection
+        # # find event in the db collection
         event_collection = db_collections[cls.COLLECTION_NAME]
         event = Event.find_by_datetime_and_name(
             event_collection, datetime_and_name)
@@ -93,21 +93,28 @@ class Event(Base, DocumentObject[types.EventId]):
         # split files by media type
         filenames_by_media_type: dict[media_module.KEYS_TYPE,
                                       list[types.Filename]] = {}
+
         for file in directory.iterdir():
             if file.is_file():
-                media_type = media_module.get_media_type(file.suffix[1:])
+                if not file.suffix.islower():
+                    file = file.rename(file.with_suffix(file.suffix.lower()))
+
+                media_type = media_module.get_media_type_by_file_ending(
+                    file.suffix[1:])
                 if media_type == None:
-                    # print('Skipping file: not a supported file type')
+                    print('Skipping file: not a supported file type')
                     continue
 
                 if media_type not in filenames_by_media_type:
                     filenames_by_media_type[media_type] = []
                 filenames_by_media_type[media_type].append(file.name)
 
+        print(filenames_by_media_type)
+
         # run media importer for each media type
         for media_type in filenames_by_media_type:
-            is_new_media_added = event.media.load_by_filenames(
-                db_collections, media_type, filenames_by_media_type[media_type], event.id)
+            is_new_media_added = event.media.load_basic_by_filenames(
+                media_type, filenames_by_media_type[media_type])
 
             print('-------------')
 

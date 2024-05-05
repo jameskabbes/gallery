@@ -9,8 +9,6 @@ DATA_DIR = BACKEND_DIR / 'data'
 PROJECT_CONFIG_PATH = REPO_DIR / 'config.json'
 START_MONGODB_SERVER_PATH = BACKEND_DIR / 'start_mongodb_server.sh'
 
-IMAGES_DIR = DATA_DIR / 'images'
-
 # Server
 UVICORN_PORT: int = 8087
 

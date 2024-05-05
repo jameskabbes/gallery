@@ -1,5 +1,5 @@
 from gallery import types
-from gallery.objects.bases.document_object import DocumentObject
+from gallery.db.document_object import DocumentObject
 from gallery.objects.media.image import version, file
 from gallery.objects.media.bases import content_loader
 import pydantic
@@ -46,7 +46,7 @@ class Group(Base, DocumentObject[types.ImageGroupId], content_loader.ContentLoad
     @classmethod
     def load_basic_by_filenames(cls, filenames: list[types.Filename]) -> Base.Basics:
 
-        group_Basics_by_name: Base.Basics = {}
+        group_basics_by_name: Base.Basics = {}
 
         for filename in filenames:
             image_filename_io_dict = file.File.parse_filename(filename)
@@ -57,20 +57,20 @@ class Group(Base, DocumentObject[types.ImageGroupId], content_loader.ContentLoad
             image_version = image_filename_io_dict['version']
 
             # check image group name
-            if image_group_name not in group_Basics_by_name:
-                group_Basics_by_name[image_group_name] = {}
+            if image_group_name not in group_basics_by_name:
+                group_basics_by_name[image_group_name] = {}
 
             # check image version
-            if image_version not in group_Basics_by_name[image_group_name]:
-                group_Basics_by_name[image_group_name][image_version] = {}
+            if image_version not in group_basics_by_name[image_group_name]:
+                group_basics_by_name[image_group_name][image_version] = {}
 
             # check image size
-            if image_size not in group_Basics_by_name[image_group_name][image_version]:
-                group_Basics_by_name[image_group_name][image_version][image_size] = set(
+            if image_size not in group_basics_by_name[image_group_name][image_version]:
+                group_basics_by_name[image_group_name][image_version][image_size] = set(
                 )
 
             # add file ending
-            group_Basics_by_name[image_group_name][image_version][image_size].add(
+            group_basics_by_name[image_group_name][image_version][image_size].add(
                 image_file_ending)
 
-        return group_Basics_by_name
+        return group_basics_by_name

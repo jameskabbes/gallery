@@ -9,12 +9,7 @@ ChildIdType = typing.TypeVar('ChildIdType', bound=types.DocumentId)
 
 class DocumentObject(pydantic.BaseModel, typing.Generic[ChildIdType]):
 
-    COLLECTION_NAME: typing.ClassVar[str]
     id: ChildIdType = pydantic.Field(alias=config.DOCUMENT_ID_KEY)
-
-    @classmethod
-    def get_collection(cls, database: database.Database) -> collection.Collection:
-        return database[cls.COLLECTION_NAME]
 
     @ classmethod
     def find_by_id(cls, collection: collection.Collection, id: types.DocumentId) -> typing.Self | None:

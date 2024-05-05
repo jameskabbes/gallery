@@ -1,14 +1,16 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pymongo import MongoClient
-from gallery import config, types, db
+from gallery import config, types, utils
+from gallery.objects import studio as studio_module
 
 import os
 
 app = FastAPI()
 
 # Initialize PyMongo client
-mongo_client = MongoClient(port=config.MONGODB_PORT)
+mongo_client = utils.get_pymongo_client()
+studio = studio_module.Studio(mongo_client=mongo_client)
 
 
 @app.get("/")

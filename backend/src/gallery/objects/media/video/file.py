@@ -3,7 +3,7 @@ import pydantic
 import re
 import datetime as datetime_module
 from gallery.objects.media.bases import file as base_file
-from gallery.objects.bases.document_object import DocumentObject
+from gallery.db.document_object import DocumentObject
 from gallery.objects.media.bases import content_loader
 import typing
 
