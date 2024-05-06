@@ -1,6 +1,6 @@
 from pathlib import Path
 import json
-from jameskabbes.gallery.backend.src import config
+from gallery import config
 from app import app as fastapi_app
 
 project_config = json.loads(config.PROJECT_CONFIG_PATH.read_text())

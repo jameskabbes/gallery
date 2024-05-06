@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pymongo import MongoClient
 from gallery import config, types, utils
-from gallery.objects import studio as studio_module
+from gallery.objects import studios, studio
 
 import os
 
@@ -10,7 +10,8 @@ app = FastAPI()
 
 # Initialize PyMongo client
 mongo_client = utils.get_pymongo_client()
-studio = studio_module.Studio(mongo_client=mongo_client)
+databases = {database: mongo_client.get_database(
+    database) for database in mongo_client.list_database_names()}
 
 
 @app.get("/")
@@ -18,24 +19,6 @@ async def read_root():
     return {"message": "Hello, FastAPI!"}
 
 
-@app.get("/event/{event_id}")
-async def get_event(event_id: types.EventId):
-    return
-
-
-@app.get("/image/{image_id}")
-async def get_image_file(image_id: str):
-    # Replace "path_to_your_image.jpg" with the path to your image file
-
-    path = str(config.IMAGES_DIR / '2023-11-17 Wedding' /
-               str(image_id + '.JPG'))
-
-    if not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(path, media_type="image/jpeg")
-
-
-if __name__ == "__main__":
-    # Start FastAPI server using Uvicorn
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=config.UVICORN_PORT)
+@app.get("/studios/")
+async def get_studios() -> studios.Studios.PluralByIdType:
+    return studios.Studios.find(databases[studios.Studios.COLLECTION_NAME])

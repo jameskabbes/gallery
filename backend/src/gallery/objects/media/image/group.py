@@ -1,5 +1,5 @@
 from gallery import types
-from gallery.db.document_object import DocumentObject
+from gallery.objects.db import document_object
 from gallery.objects.media.image import version, file
 from gallery.objects.media.bases import content_loader
 import pydantic
@@ -15,7 +15,7 @@ class Base:
                   dict[types.VersionId, dict[types.SizeId, set[types.FileEnding]]]]
 
 
-class Group(Base, DocumentObject[types.ImageGroupId], content_loader.ContentLoader):
+class Group(Base, document_object.DocumentObject[types.ImageGroupId], content_loader.ContentLoader):
 
     event_id: types.EventId
     datetime: datetime_module.datetime | None = pydantic.Field(default=None)

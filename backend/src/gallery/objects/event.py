@@ -1,6 +1,6 @@
 from pymongo import database, collection, MongoClient
 from gallery import types, utils
-from gallery.db.document_object import DocumentObject
+from gallery.objects.db import document_object
 from gallery.objects.media.image import group
 from gallery.objects import media as media_module
 from gallery.objects.media.media import Media
@@ -22,7 +22,7 @@ class Base:
     })
 
 
-class Event(Base, DocumentObject[types.EventId]):
+class Event(Base, document_object.DocumentObject[types.EventId]):
 
     datetime: Types.datetime = pydantic.Field(
         default=None)

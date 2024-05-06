@@ -13,9 +13,12 @@ mongo_client = utils.get_pymongo_client()
 db = mongo_client[studios_module.Studios.DB_NAME]
 
 studios = studios_module.Studios()
+studios.load_studios(db[studios_module.Studios.COLLECTION_NAME])
+print(studios)
 
 try:
-    studios.load_studios(studios_module.Studios.get_collection(db))
+    pass
+    # studios.load_studios(studios_module.Studios.get_collection(db))
 
 finally:
     mongo_client.close()

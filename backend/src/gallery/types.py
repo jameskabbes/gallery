@@ -6,25 +6,25 @@ import re
 from gallery import config
 from pymongo import collection
 
-DocumentId = str
-StudioId = DocumentId
+type DocumentId = str
+type StudioId = DocumentId
 
-VersionId = str
-SizeId = str
-GroupId = str
-EventId = DocumentId
-MediaName = str
+type VersionId = str
+type SizeId = str
+type GroupId = str
+type EventId = DocumentId
+type MediaName = str
 
-ImageId = DocumentId
-ImageGroupId = DocumentId
-VideoId = DocumentId
+type ImageId = DocumentId
+type ImageGroupId = DocumentId
+type VideoId = DocumentId
 
-ImageGroupName = MediaName
-VideoName = MediaName
+type ImageGroupName = MediaName
+type VideoName = MediaName
 
-DbCollections = dict[str, collection.Collection]
+type DbCollections = dict[str, collection.Collection]
 
-HexColor = str
-FileEnding = str
-AcceptableFileEndings = set[FileEnding]
-Filename = str
+type HexColor = str
+type FileEnding = str
+type AcceptableFileEndings = set[FileEnding]
+type Filename = str

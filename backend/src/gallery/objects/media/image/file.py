@@ -1,7 +1,7 @@
 import typing
 from gallery import types
 from gallery import types, config
-from gallery.db.document_object import DocumentObject
+from gallery.objects.db import document_object
 from gallery.objects.media.bases import content_loader, file as base_file
 import pydantic
 import re
@@ -20,7 +20,7 @@ class Base:
     })
 
 
-class File(Base, DocumentObject[types.ImageId], base_file.File):
+class File(Base, document_object.DocumentObject[types.ImageId], base_file.File):
 
     group_name: types.ImageGroupName
     version: types.VersionId = pydantic.Field(

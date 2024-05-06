@@ -3,7 +3,7 @@ import pydantic
 import re
 import datetime as datetime_module
 from gallery.objects.media.bases import file as base_file
-from gallery.db.document_object import DocumentObject
+from gallery.objects.db import document_object
 from gallery.objects.media.bases import content_loader
 import typing
 
@@ -16,7 +16,7 @@ class Base:
     })
 
 
-class File(Base, DocumentObject[types.VideoId], base_file.File):
+class File(Base, document_object.DocumentObject[types.VideoId], base_file.File):
 
     event_id: types.EventId
     datetime: datetime_module.datetime | None = pydantic.Field(default=None)

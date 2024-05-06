@@ -4,15 +4,21 @@ from gallery import types, config, utils
 import pydantic
 
 
-ChildIdType = typing.TypeVar('ChildIdType', bound=types.DocumentId)
-
-
-class DocumentObject(pydantic.BaseModel, typing.Generic[ChildIdType]):
+class DocumentObject[ChildIdType: types.DocumentId](pydantic.BaseModel):
 
     id: ChildIdType = pydantic.Field(alias=config.DOCUMENT_ID_KEY)
 
+    def delete(self, collection: collection.Collection) -> results.DeleteResult:
+        """Delete the document from the database."""
+        return collection.delete_one({config.DOCUMENT_ID_KEY: self.id})
+
     @ classmethod
-    def find_one_by_id(cls, collection: collection.Collection, id: types.DocumentId, projection: dict = {}) -> typing.Self | None:
+    def delete_by_id(cls, collection: collection.Collection, id: ChildIdType) -> results.DeleteResult:
+        """Delete a document from the database by its id."""
+        return collection.delete_one({config.DOCUMENT_ID_KEY: id})
+
+    @ classmethod
+    def find_by_id(cls, collection: collection.Collection, id: types.DocumentId, projection: dict = {}) -> typing.Self | None:
         """Load a document from the database by its id. If the document does not exist, return None."""
         result = collection.find_one(
             {config.DOCUMENT_ID_KEY: id}, projection=projection)
@@ -20,7 +26,7 @@ class DocumentObject(pydantic.BaseModel, typing.Generic[ChildIdType]):
             return None
         return cls(**result)
 
-    def update_all(self, collection: collection.Collection) -> results.UpdateResult:
+    def update_all_fields(self, collection: collection.Collection) -> results.UpdateResult:
         """Update the document in the database."""
         return collection.update_one({config.DOCUMENT_ID_KEY: self.id}, {
             '$set': self.model_dump(by_alias=True)})

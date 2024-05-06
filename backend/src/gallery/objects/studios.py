@@ -1,6 +1,6 @@
-from gallery.db import collection_object
 from gallery import types, config, utils
 from gallery.objects import studio as studio_module
+from gallery.objects.db import collection_object
 import typing
 import pydantic
 from pathlib import Path
@@ -8,10 +8,10 @@ from pymongo import collection
 
 
 class Studios(collection_object.CollectionObject, pydantic.BaseModel):
-    DB_NAME: typing.ClassVar[str] = 'gallery'
     COLLECTION_NAME: typing.ClassVar[str] = 'studios'
+    CHILD_DOCUMENT_CLASS: typing.ClassVar = studio_module.Studio
 
-    dir: Path = pydantic.Field(default=config.STUDIOS_DIR)
+    dir: Path = pydantic.Field(default=config.STUDIOS_DIR, exclude=True)
     studios: dict[types.StudioId, studio_module.Studio] = pydantic.Field(
         default_factory=dict)
 
@@ -33,13 +33,13 @@ class Studios(collection_object.CollectionObject, pydantic.BaseModel):
         need_to_add = local_dir_names - db_dir_names
         need_to_delete = db_dir_names - local_dir_names
 
-        print('need to add')
-        print(need_to_add)
-        print('need to delete')
-        print(need_to_delete)
-
-        for dir_name in need_to_add:
-            studio = studio_module.Studio(
-                _id=studio_module.Studio.generate_id(), dir_name=dir_name)
-            studio.insert(collection)
+        for dir_name in local_dir_names:
+            if dir_name in need_to_add:
+                studio = studio_module.Studio(
+                    _id=studio_module.Studio.generate_id(), dir_name=dir_name)
+                studio.insert(collection)
+            else:
+                studio = studio_module.Studio(
+                    **collection.find_one({'dir_name': dir_name}))
+            print(studio)
             self.studios[studio.id] = studio
