@@ -1,47 +1,52 @@
-import React, { useState, useEffect } from 'react';
-import axios, { AxiosResponse, AxiosError } from 'axios';
-
-type callApiParams = {
-  endpoint: string;
-  method?: string;
-  headers?: object;
-  data?: object;
-};
+import { useState, useEffect } from 'react';
+import siteConfig from '../../siteConfig.json';
+import {
+  ApiResponse,
+  ApiResponseData,
+  ApiResponseLoading,
+  ApiResponseStatus,
+  UseApiDataReturn,
+} from '../types';
 
 //utility func to make API calls
-async function callApi({
-  endpoint,
+async function callApi<T>(
+  endpoint: string,
   method = 'GET',
-  headers = {},
-  data = null,
-}: callApiParams) {
-  try {
-    const response = await axios({
-      method,
-      url: endpoint,
-      headers,
-      data,
-    });
+  data = null
+): Promise<ApiResponse<T>> {
+  const requestOptions = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: data ? JSON.stringify(data) : null,
+  };
 
-    return response.data;
-  } catch (error) {
-    console.error('Error calling API: ', error.message);
-    return {};
+  console.log('Calling API: ' + endpoint);
+  const response = await fetch(
+    '/' + siteConfig.api_endpoint_base + endpoint,
+    requestOptions
+  );
+
+  try {
+    const responseData = await response.json();
+    return { data: responseData, status: response.status };
+  } catch {
+    return { data: null, status: response.status };
   }
 }
 
-function useApiData<T>(callApiParams_: callApiParams): {
-  data: T | null;
-  loading: boolean;
-} {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
+function useApiData<T>(endpoint: string): UseApiDataReturn<T> {
+  const [apiData, setApiData] = useState<ApiResponseData<T>>(null);
+  const [loading, setLoading] = useState<ApiResponseLoading>(true);
+  const [status, setStatus] = useState<ApiResponseStatus>(null);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const result = await callApi(callApiParams_);
-        setData(result);
+        const response = await callApi<T>(endpoint);
+        setApiData(response.data);
+        setStatus(response.status);
         setLoading(false);
       } catch (error) {
         console.error(error);
@@ -49,36 +54,9 @@ function useApiData<T>(callApiParams_: callApiParams): {
       }
     }
     fetchData();
-  }, [callApiParams_]);
+  }, [endpoint]);
 
-  return { data, loading };
+  return [apiData, setApiData, loading, setLoading, status, setStatus];
 }
 
-type UseEffectOnLoadFn = (data: any) => void;
-
-function useConditionalRender(
-  data: any,
-  loading: boolean,
-  ComponentIfLoaded: React.FC<any>,
-  useEffectOnLoad: UseEffectOnLoadFn = (data: any) => {}
-) {
-  useEffect(() => {
-    if (!loading) {
-      if (data) {
-        useEffectOnLoad(data);
-      }
-    }
-  }, [loading]);
-
-  if (loading) {
-    return <p>Loading...</p>;
-  } else {
-    if (data) {
-      return ComponentIfLoaded(data);
-    } else {
-      return <p>Data not Available</p>;
-    }
-  }
-}
-
-export { callApi, useApiData, useConditionalRender };
+export { callApi, useApiData };

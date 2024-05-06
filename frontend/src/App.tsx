@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Home } from './pages/Home';
+import { Studios } from './pages/Studios';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 
@@ -11,6 +12,7 @@ function App(): JSX.Element {
         <Header />
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/studios" element={<Studios />} />
           <Route path="/404" element={<p>404</p>} />
           <Route path="*" element={<Navigate to="/404" />} />
         </Routes>

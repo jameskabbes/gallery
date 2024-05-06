@@ -2,15 +2,16 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import typescript from '@rollup/plugin-typescript';
 import tailwindcss from 'tailwindcss';
+import siteConfig from './siteConfig.json';
 
 function getTarget() {
   //npm run prod  -> 'https://softball.jameskabbes.com/api'
   //npm run dev  ->  'http://127.0.0.1:8086'
 
   if (process.env.JAMESKABBES_PROD == 'true') {
-    return 'https://softball.jameskabbes.com/api';
+    return `https://${siteConfig.domain_name}/${siteConfig.api_endpoint_base}`;
   } else {
-    return 'http://127.0.0.1:8086';
+    return 'http://127.0.0.1:8087';
   }
 }
 
@@ -21,7 +22,7 @@ export default defineConfig({
     host: true,
     port: 3000,
     proxy: {
-      '/api': {
+      [`/${siteConfig.api_endpoint_base}`]: {
         target: getTarget(),
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),

@@ -6,16 +6,12 @@
 
 export interface paths {
   "/": {
-    /** Home */
-    get: operations["home__get"];
+    /** Read Root */
+    get: operations["read_root__get"];
   };
-  "/image/{image_id}/": {
-    /** Get Image */
-    get: operations["get_image_image__image_id___get"];
-  };
-  "/person/{person_id}": {
-    /** Get Person By Id */
-    get: operations["get_person_by_id_person__person_id__get"];
+  "/studios/": {
+    /** Get Studios */
+    get: operations["get_studios_studios__get"];
   };
 }
 
@@ -23,26 +19,21 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
-    /** HTTPValidationError */
-    HTTPValidationError: {
-      /** Detail */
-      detail?: components["schemas"]["ValidationError"][];
-    };
-    /** Person */
-    Person: {
+    /** Studio */
+    Studio: {
       /** Id */
-      id: number;
+      _id: string;
+      /** Dir Name */
+      dir_name: string;
       /** Name */
-      name: string;
+      name?: string | null;
     };
-    /** ValidationError */
-    ValidationError: {
-      /** Location */
-      loc: (string | number)[];
-      /** Message */
-      msg: string;
-      /** Error Type */
-      type: string;
+    /** Studios */
+    Studios: {
+      /** Studios */
+      studios?: {
+        [key: string]: components["schemas"]["Studio"];
+      };
     };
   };
   responses: never;
@@ -58,57 +49,24 @@ export type external = Record<string, never>;
 
 export interface operations {
 
-  /** Home */
-  home__get: {
+  /** Read Root */
+  read_root__get: {
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": string;
+          "application/json": unknown;
         };
       };
     };
   };
-  /** Get Image */
-  get_image_image__image_id___get: {
-    parameters: {
-      path: {
-        image_id: string;
-      };
-    };
+  /** Get Studios */
+  get_studios_studios__get: {
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": string;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Get Person By Id */
-  get_person_by_id_person__person_id__get: {
-    parameters: {
-      path: {
-        person_id: number;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["Person"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
+          "application/json": components["schemas"]["Studios"];
         };
       };
     };
