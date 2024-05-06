@@ -7,6 +7,8 @@ from gallery import config
 from pymongo import collection
 
 DocumentId = str
+StudioId = DocumentId
+
 VersionId = str
 SizeId = str
 GroupId = str

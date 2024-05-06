@@ -12,10 +12,10 @@ class DocumentObject(pydantic.BaseModel, typing.Generic[ChildIdType]):
     id: ChildIdType = pydantic.Field(alias=config.DOCUMENT_ID_KEY)
 
     @ classmethod
-    def find_by_id(cls, collection: collection.Collection, id: types.DocumentId) -> typing.Self | None:
+    def find_one_by_id(cls, collection: collection.Collection, id: types.DocumentId, projection: dict = {}) -> typing.Self | None:
         """Load a document from the database by its id. If the document does not exist, return None."""
-
-        result = collection.find_one({config.DOCUMENT_ID_KEY: id})
+        result = collection.find_one(
+            {config.DOCUMENT_ID_KEY: id}, projection=projection)
         if result is None:
             return None
         return cls(**result)
@@ -34,12 +34,12 @@ class DocumentObject(pydantic.BaseModel, typing.Generic[ChildIdType]):
         return collection.insert_one(self.model_dump(
             by_alias=True))
 
-    @staticmethod
+    @ staticmethod
     def exists(collection: collection.Collection, id: ChildIdType) -> bool:
         """Check if the document's id exists in the database."""
         return collection.find_one({config.DOCUMENT_ID_KEY: id}) is not None
 
-    @classmethod
+    @ classmethod
     def generate_id(cls) -> ChildIdType:
         """Generate a new id for a document."""
         return utils.generate_nanoid()

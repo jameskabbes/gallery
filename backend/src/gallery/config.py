@@ -9,11 +9,14 @@ DATA_DIR = BACKEND_DIR / 'data'
 PROJECT_CONFIG_PATH = REPO_DIR / 'config.json'
 START_MONGODB_SERVER_PATH = BACKEND_DIR / 'start_mongodb_server.sh'
 
+# Studios
+STUDIOS_DIR = DATA_DIR / 'studios'
+
 # Server
 UVICORN_PORT: int = 8087
 
 # MongoDB
-MONGODB_DATA_DIR = DATA_DIR / 'db'
+MONGODB_DIR = DATA_DIR / 'db'
 MONGODB_PORT: int = 27017
 
 # 1% change of collision at 1 Billion IDs

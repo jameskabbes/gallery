@@ -6,8 +6,10 @@ from gallery.db import collection_object, document_object
 import pydantic
 
 
-class Studio(collection_object.CollectionObject, document_object.DocumentObject):
-    DB_NAME: typing.ClassVar[str] = 'studio'
-    COLLECTION_NAME: typing.ClassVar[str] = 'studio'
-    studio_dir: Path | None = pydantic.Field(default=None)
-    _id: str = 'studio'
+class Types:
+    dir_name = str
+
+
+class Studio(document_object.DocumentObject[types.StudioId]):
+    dir_name: Types.dir_name
+    name: str | None = pydantic.Field(default=None)
