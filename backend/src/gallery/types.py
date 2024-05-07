@@ -9,9 +9,9 @@ from pymongo import collection
 # types of documents in the database
 type DocumentId = str
 
-type StudioId = DocumentId
-type EventId = DocumentId
-type MediaId = DocumentId
+type StudioId = str
+type EventId = str
+type MediaId = str
 
 
 type VersionId = str
@@ -19,12 +19,12 @@ type SizeId = str
 type GroupId = str
 type MediaName = str
 
-type ImageId = DocumentId
-type ImageGroupId = DocumentId
-type VideoId = DocumentId
+type ImageId = str
+type ImageGroupId = str
+type VideoId = str
 
-type ImageGroupName = MediaName
-type VideoName = MediaName
+type ImageGroupName = str
+type VideoName = str
 
 type DbCollections = dict[str, collection.Collection]
 

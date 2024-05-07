@@ -1,6 +1,6 @@
 import typing
 from gallery.objects.db import collection_object
-from gallery.objects import media_types as media_module
+from gallery.objects import media as media_module
 from gallery import types
 
 
