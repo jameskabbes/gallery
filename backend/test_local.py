@@ -1,6 +1,6 @@
 import re
 from gallery import config, types, utils
-from gallery.objects import studios as studios_module, events as events_module, medias as medias_module
+from gallery.objects import studios, events, medias
 
 
 # Initialize PyMongo
@@ -9,8 +9,8 @@ db = mongo_client['gallery']
 
 
 try:
-    print(studios_module.Studios.find(
-        db[studios_module.Studios.COLLECTION_NAME]))
+    print(studios.Studios.find(
+        db[studios.Studios.COLLECTION_NAME]))
 
 finally:
     mongo_client.close()

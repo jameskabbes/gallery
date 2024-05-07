@@ -4,7 +4,7 @@ from gallery.objects.db import document_object
 from gallery import types
 
 
-class CollectionObject[DocumentType: type[document_object.DocumentObject], DocumentIdType: types.DocumentId]:
+class CollectionObject[DocumentIdType: types.DocumentId, DocumentType: document_object.DocumentObject]:
 
     COLLECTION_NAME: typing.ClassVar[str]
     CHILD_DOCUMENT_CLASS: typing.ClassVar[document_object.DocumentObject] = document_object.DocumentObject
