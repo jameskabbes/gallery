@@ -22,7 +22,7 @@ async def read_root():
     return {"home": datetime.datetime.now()}
 
 
-class StudiosResponse(pydantic.BaseModel):
+class StudiosResponse(typing.TypedDict):
     studios: studios.Studios.PluralByIdType
     dir_names_to_add: set[studio.Types.dir_name]
     ids_to_delete: set[types.StudioId]
@@ -34,11 +34,12 @@ async def get_studios() -> StudiosResponse:
     dir_names_to_add, studios_ids_to_delete = studios.Studios.get_add_and_delete(
         db[studios.Studios.COLLECTION_NAME])
 
-    return {
-        "studios": studios.Studios.find(db[studios.Studios.COLLECTION_NAME]),
-        "dir_names_to_add": dir_names_to_add,
-        "ids_to_delete": studios_ids_to_delete
-    }
+    d: StudiosResponse = {}
+    d['studios'] = studios.Studios.find(db[studios.Studios.COLLECTION_NAME])
+    d['dir_names_to_add'] = dir_names_to_add
+    d['ids_to_delete'] = studios_ids_to_delete
+
+    return d
 
 
 @app.post("/studios/{dir_name}/import/")
@@ -70,10 +71,28 @@ async def delete_studio(studio_id: types.StudioId) -> StudiosResponse:
     return await get_studios()
 
 
+class StudioResponse(typing.TypedDict):
+    studio: studio.Studio
+    events: events.Events.PluralByIdType
+
+
+@app.get("/studio/{studio_id}/")
+async def get_studio(studio_id: types.StudioId) -> StudioResponse:
+
+    print(studio_id)
+
+    d: StudioResponse = {}
+    d['studio'] = studio.Studio.find_by_id(
+        db[studios.Studios.COLLECTION_NAME], studio_id)
+    d['events'] = {}
+
+    return d
+
+
 @app.get("/events/")
 async def get_events() -> events.Events.PluralByIdType:
     return events.Events.find(db[events.Events.COLLECTION_NAME])
 
 
 if __name__ == "__main__":
-    uvicorn.run("app:app", port=config.UVICORN_PORT)
+    uvicorn.run("app:app", port=config.UVICORN_PORT, reload=True)
