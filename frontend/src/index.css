@@ -106,5 +106,9 @@ p {
   @apply h-full object-contain;
 }
 
+button {
+  @apply bg-color-invert text-color-invert rounded-lg p-2 m-2;
+}
+
 img {
 }

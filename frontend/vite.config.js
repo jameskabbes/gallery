@@ -11,7 +11,7 @@ function getTarget() {
   if (process.env.JAMESKABBES_PROD == 'true') {
     return `https://${siteConfig.domain_name}/${siteConfig.api_endpoint_base}`;
   } else {
-    return 'http://127.0.0.1:8087';
+    return 'http://127.0.0.1:8088';
   }
 }
 

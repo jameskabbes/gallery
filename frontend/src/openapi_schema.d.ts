@@ -13,28 +13,73 @@ export interface paths {
     /** Get Studios */
     get: operations["get_studios_studios__get"];
   };
+  "/studios/{dir_name}/import/": {
+    /** Post Studio Dir Name */
+    post: operations["post_studio_dir_name_studios__dir_name__import__post"];
+  };
+  "/events/": {
+    /** Get Events */
+    get: operations["get_events_events__get"];
+  };
 }
 
 export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
+    /** Event */
+    Event: {
+      _id: components["schemas"]["EventId"];
+      /** Datetime */
+      datetime?: string | null;
+      name?: components["schemas"]["ImageGroupName"];
+      media?: components["schemas"]["Media"];
+    };
+    EventId: string;
+    /** HTTPValidationError */
+    HTTPValidationError: {
+      /** Detail */
+      detail?: components["schemas"]["ValidationError"][];
+    };
+    ImageGroupId: string;
+    ImageGroupName: string;
+    /** Media */
+    Media: {
+      /** Content */
+      content?: {
+        [key: string]: "image" | "video";
+      };
+    };
     /** Studio */
     Studio: {
-      /** Id */
-      _id: string;
+      _id: components["schemas"]["StudioId"];
       /** Dir Name */
       dir_name: string;
       /** Name */
       name?: string | null;
     };
-    /** Studios */
-    Studios: {
+    StudioId: string;
+    /** StudiosResponse */
+    StudiosResponse: {
       /** Studios */
-      studios?: {
+      studios: {
         [key: string]: components["schemas"]["Studio"];
       };
+      /** Dir Names To Add */
+      dir_names_to_add: string[];
+      /** Ids To Delete */
+      ids_to_delete: components["schemas"]["StudioId"][];
     };
+    /** ValidationError */
+    ValidationError: {
+      /** Location */
+      loc: (string | number)[];
+      /** Message */
+      msg: string;
+      /** Error Type */
+      type: string;
+    };
+    VideoId: string;
   };
   responses: never;
   parameters: never;
@@ -66,7 +111,42 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["Studios"];
+          "application/json": components["schemas"]["StudiosResponse"];
+        };
+      };
+    };
+  };
+  /** Post Studio Dir Name */
+  post_studio_dir_name_studios__dir_name__import__post: {
+    parameters: {
+      path: {
+        dir_name: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["StudiosResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get Events */
+  get_events_events__get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": {
+            [key: string]: components["schemas"]["Event"];
+          };
         };
       };
     };
