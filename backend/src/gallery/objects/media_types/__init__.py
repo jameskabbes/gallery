@@ -1,7 +1,7 @@
 from gallery import types
-from gallery.objects.media.bases import content_loader, file as base_file
-from gallery.objects.media.video import file as video_file
-from gallery.objects.media.image import file as image_file, group as image_group
+from gallery.objects.media_types.bases import content_loader, file as base_file
+from gallery.objects.media_types.video import file as video_file
+from gallery.objects.media_types.image import file as image_file, group as image_group
 
 import typing
 

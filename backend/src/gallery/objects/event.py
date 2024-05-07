@@ -1,9 +1,9 @@
 from pymongo import database, collection, MongoClient
 from gallery import types, utils
 from gallery.objects.db import document_object
-from gallery.objects.media.image import group
-from gallery.objects import media as media_module
-from gallery.objects.media.media import Media
+from gallery.objects.media_types.image import group
+from gallery.objects import media_types as media_module
+from gallery.objects.media_types.media import Media
 import pydantic
 import datetime as datetime_module
 from pathlib import Path

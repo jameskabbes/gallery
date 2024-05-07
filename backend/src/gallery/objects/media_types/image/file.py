@@ -2,7 +2,7 @@ import typing
 from gallery import types
 from gallery import types, config
 from gallery.objects.db import document_object
-from gallery.objects.media.bases import content_loader, file as base_file
+from gallery.objects.media_types.bases import content_loader, file as base_file
 import pydantic
 import re
 

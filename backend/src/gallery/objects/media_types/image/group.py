@@ -1,7 +1,7 @@
 from gallery import types
 from gallery.objects.db import document_object
-from gallery.objects.media.image import version, file
-from gallery.objects.media.bases import content_loader
+from gallery.objects.media_types.image import version, file
+from gallery.objects.media_types.bases import content_loader
 import pydantic
 import datetime as datetime_module
 from pymongo import collection

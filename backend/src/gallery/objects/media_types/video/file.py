@@ -2,9 +2,9 @@ from gallery import types, config
 import pydantic
 import re
 import datetime as datetime_module
-from gallery.objects.media.bases import file as base_file
+from gallery.objects.media_types.bases import file as base_file
 from gallery.objects.db import document_object
-from gallery.objects.media.bases import content_loader
+from gallery.objects.media_types.bases import content_loader
 import typing
 
 

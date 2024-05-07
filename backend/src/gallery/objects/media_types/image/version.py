@@ -1,6 +1,6 @@
 import pydantic
 from gallery import types
-from gallery.objects.media.image import file
+from gallery.objects.media_types.image import file
 
 
 class Version(pydantic.BaseModel):

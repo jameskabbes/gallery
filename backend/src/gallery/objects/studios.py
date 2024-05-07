@@ -7,7 +7,7 @@ from pathlib import Path
 from pymongo import collection
 
 
-class Studios(collection_object.CollectionObject, pydantic.BaseModel):
+class Studios(pydantic.BaseModel, collection_object.CollectionObject[studio_module.Studio, types.StudioId]):
     COLLECTION_NAME: typing.ClassVar[str] = 'studios'
     CHILD_DOCUMENT_CLASS: typing.ClassVar = studio_module.Studio
 

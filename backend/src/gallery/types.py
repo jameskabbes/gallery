@@ -6,13 +6,17 @@ import re
 from gallery import config
 from pymongo import collection
 
+# types of documents in the database
 type DocumentId = str
+
 type StudioId = DocumentId
+type EventId = DocumentId
+type MediaId = DocumentId
+
 
 type VersionId = str
 type SizeId = str
 type GroupId = str
-type EventId = DocumentId
 type MediaName = str
 
 type ImageId = DocumentId

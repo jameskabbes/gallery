@@ -4,21 +4,21 @@ from gallery import types, config, utils
 import pydantic
 
 
-class DocumentObject[ChildIdType: types.DocumentId](pydantic.BaseModel):
+class DocumentObject[IdType: types.DocumentId](pydantic.BaseModel):
 
-    id: ChildIdType = pydantic.Field(alias=config.DOCUMENT_ID_KEY)
+    id: IdType = pydantic.Field(alias=config.DOCUMENT_ID_KEY)
 
     def delete(self, collection: collection.Collection) -> results.DeleteResult:
         """Delete the document from the database."""
         return collection.delete_one({config.DOCUMENT_ID_KEY: self.id})
 
     @ classmethod
-    def delete_by_id(cls, collection: collection.Collection, id: ChildIdType) -> results.DeleteResult:
+    def delete_by_id(cls, collection: collection.Collection, id: IdType) -> results.DeleteResult:
         """Delete a document from the database by its id."""
         return collection.delete_one({config.DOCUMENT_ID_KEY: id})
 
     @ classmethod
-    def find_by_id(cls, collection: collection.Collection, id: types.DocumentId, projection: dict = {}) -> typing.Self | None:
+    def find_by_id(cls, collection: collection.Collection, id: IdType, projection: dict = {}) -> typing.Self | None:
         """Load a document from the database by its id. If the document does not exist, return None."""
         result = collection.find_one(
             {config.DOCUMENT_ID_KEY: id}, projection=projection)
@@ -41,11 +41,11 @@ class DocumentObject[ChildIdType: types.DocumentId](pydantic.BaseModel):
             by_alias=True))
 
     @ staticmethod
-    def exists(collection: collection.Collection, id: ChildIdType) -> bool:
+    def exists(collection: collection.Collection, id: IdType) -> bool:
         """Check if the document's id exists in the database."""
         return collection.find_one({config.DOCUMENT_ID_KEY: id}) is not None
 
     @ classmethod
-    def generate_id(cls) -> ChildIdType:
+    def generate_id(cls) -> IdType:
         """Generate a new id for a document."""
         return utils.generate_nanoid()

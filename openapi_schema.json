@@ -1,1 +1,62 @@
-{"openapi": "3.1.0", "info": {"title": "FastAPI", "version": "0.1.0"}, "paths": {"/": {"get": {"summary": "Read Root", "operationId": "read_root__get", "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {}}}}}}}, "/studios/": {"get": {"summary": "Get Studios", "operationId": "get_studios_studios__get", "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Studios"}}}}}}}}, "components": {"schemas": {"Studio": {"properties": {"_id": {"type": "string", "title": " Id"}, "dir_name": {"type": "string", "title": "Dir Name"}, "name": {"anyOf": [{"type": "string"}, {"type": "null"}], "title": "Name"}}, "type": "object", "required": ["_id", "dir_name"], "title": "Studio"}, "Studios": {"properties": {"studios": {"additionalProperties": {"$ref": "#/components/schemas/Studio"}, "type": "object", "title": "Studios"}}, "type": "object", "title": "Studios"}}}}
+{
+  "openapi": "3.1.0",
+  "info": { "title": "FastAPI", "version": "0.1.0" },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Read Root",
+        "operationId": "read_root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          }
+        }
+      }
+    },
+    "/studios/": {
+      "get": {
+        "summary": "Get Studios",
+        "operationId": "get_studios_studios__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Studios" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Studio": {
+        "properties": {
+          "_id": { "type": "string", "title": " Id" },
+          "dir_name": { "type": "string", "title": "Dir Name" },
+          "name": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": ["_id", "dir_name"],
+        "title": "Studio"
+      },
+      "Studios": {
+        "properties": {
+          "studios": {
+            "additionalProperties": { "$ref": "#/components/schemas/Studio" },
+            "type": "object",
+            "title": "Studios"
+          }
+        },
+        "type": "object",
+        "title": "Studios"
+      }
+    }
+  }
+}
