@@ -1,1 +1,1 @@
-uvicorn app:app --reload --port 8087
+mongod --dbpath data\db --port 27017
