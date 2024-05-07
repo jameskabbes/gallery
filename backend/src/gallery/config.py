@@ -12,7 +12,7 @@ PROJECT_CONFIG_PATH = REPO_DIR / 'config.json'
 STUDIOS_DIR = DATA_DIR / 'studios'
 
 # Server
-UVICORN_PORT: int = 8088
+UVICORN_PORT: int = 8087
 START_UVICORN_SERVER_PATH = BACKEND_DIR / 'start_uvicorn_server.sh'
 
 # MongoDB
