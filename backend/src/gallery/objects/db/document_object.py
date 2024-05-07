@@ -36,16 +36,16 @@ class DocumentObject[IdType: types.DocumentId](pydantic.BaseModel):
     def update_all_fields(self, collection: collection.Collection) -> results.UpdateResult:
         """Update the document in the database."""
         return collection.update_one({config.DOCUMENT_ID_KEY: self.id}, {
-            '$set': self.model_dump(by_alias=True)})
+            '$set': self.model_dump(by_alias=True, exclude_defaults=True)})
 
     def update_fields(self, collection: collection.Collection, fields: set[str]) -> results.UpdateResult:
         return collection.update_one(
-            {config.DOCUMENT_ID_KEY: self.id}, {'$set': self.model_dump(by_alias=True, include=fields, exclude_defaults=True)})
+            {config.DOCUMENT_ID_KEY: self.id}, {'$set': self.model_dump(by_alias=True, include=fields)})
 
     def insert(self, collection: collection.Collection) -> results.UpdateResult:
         """Insert the document into the database."""
         return collection.insert_one(self.model_dump(
-            by_alias=True))
+            by_alias=True, exclude_defaults=True))
 
     @ staticmethod
     def exists(collection: collection.Collection, id: IdType) -> bool:

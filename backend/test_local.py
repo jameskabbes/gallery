@@ -1,17 +1,14 @@
+import asyncio
 import re
 from gallery import config, types, utils
 from gallery.objects import studios, events, medias
 
-
-# Initialize PyMongo
-mongo_client = utils.get_pymongo_client()
-db = mongo_client['gallery']
+import app
 
 
-try:
-    print(studios.Studios.find(
-        db[studios.Studios.COLLECTION_NAME]))
+async def main():
+    response = await app.delete_studio('p42pGYcU69z4')
+    print(response)
 
-finally:
-    mongo_client.close()
-    pass
+# Python 3.7+
+asyncio.run(main())

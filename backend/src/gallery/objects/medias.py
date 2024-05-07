@@ -7,3 +7,4 @@ from gallery import types
 class Medias(collection_object.CollectionObject[types.MediaId, media_module.Media]):
     COLLECTION_NAME: typing.ClassVar[str] = 'medias'
     CHILD_DOCUMENT_CLASS: typing.ClassVar = media_module.Media
+    PluralByIdType: typing.ClassVar = dict[types.MediaId, media_module.Media]

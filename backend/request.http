@@ -1,0 +1,4 @@
+POST http://localhost:8087/studios/gr5IrpAooaUi/delete
+
+
+GET http://localhost:8087/studios/

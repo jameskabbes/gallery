@@ -1,7 +1,7 @@
 import typing
 from pymongo import collection, database
 from gallery.objects.db import document_object
-from gallery import types
+from gallery import types, config
 
 
 class CollectionObject[DocumentIdType: types.DocumentId, DocumentType: document_object.DocumentObject]:
@@ -19,3 +19,7 @@ class CollectionObject[DocumentIdType: types.DocumentId, DocumentType: document_
         items = [cls.CHILD_DOCUMENT_CLASS(**i)
                  for i in collection.find(filter, projection=projection)]
         return {item.id: item for item in items}
+
+    @ classmethod
+    def get_ids(cls, collection: collection.Collection, filter: dict = {}) -> set[DocumentIdType]:
+        return {i[config.DOCUMENT_ID_KEY] for i in collection.find(filter, projection={config.DOCUMENT_ID_KEY: 1})}
