@@ -23,7 +23,61 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Studios" }
+                "schema": { "$ref": "#/components/schemas/StudiosResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/studios/{dir_name}/import/": {
+      "post": {
+        "summary": "Post Studio Dir Name",
+        "operationId": "post_studio_dir_name_studios__dir_name__import__post",
+        "parameters": [
+          {
+            "name": "dir_name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Dir Name" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StudiosResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/": {
+      "get": {
+        "summary": "Get Events",
+        "operationId": "get_events_events__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/Event"
+                  },
+                  "type": "object",
+                  "title": "Response Get Events Events  Get"
+                }
               }
             }
           }
@@ -33,9 +87,56 @@
   },
   "components": {
     "schemas": {
+      "Event": {
+        "properties": {
+          "_id": { "$ref": "#/components/schemas/EventId" },
+          "datetime": {
+            "anyOf": [
+              { "type": "string", "format": "date-time" },
+              { "type": "null" }
+            ],
+            "title": "Datetime"
+          },
+          "name": {
+            "allOf": [{ "$ref": "#/components/schemas/ImageGroupName" }]
+          },
+          "media": { "$ref": "#/components/schemas/Media" }
+        },
+        "type": "object",
+        "required": ["_id"],
+        "title": "Event"
+      },
+      "EventId": { "type": "string" },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": { "$ref": "#/components/schemas/ValidationError" },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ImageGroupId": { "type": "string" },
+      "ImageGroupName": { "type": "string" },
+      "Media": {
+        "properties": {
+          "content": {
+            "additionalProperties": {
+              "type": "string",
+              "enum": ["image", "video"]
+            },
+            "type": "object",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "title": "Media"
+      },
       "Studio": {
         "properties": {
-          "_id": { "type": "string", "title": " Id" },
+          "_id": { "$ref": "#/components/schemas/StudioId" },
           "dir_name": { "type": "string", "title": "Dir Name" },
           "name": {
             "anyOf": [{ "type": "string" }, { "type": "null" }],
@@ -46,17 +147,46 @@
         "required": ["_id", "dir_name"],
         "title": "Studio"
       },
-      "Studios": {
+      "StudioId": { "type": "string" },
+      "StudiosResponse": {
         "properties": {
           "studios": {
             "additionalProperties": { "$ref": "#/components/schemas/Studio" },
             "type": "object",
             "title": "Studios"
+          },
+          "dir_names_to_add": {
+            "items": { "type": "string" },
+            "type": "array",
+            "uniqueItems": true,
+            "title": "Dir Names To Add"
+          },
+          "ids_to_delete": {
+            "items": { "$ref": "#/components/schemas/StudioId" },
+            "type": "array",
+            "uniqueItems": true,
+            "title": "Ids To Delete"
           }
         },
         "type": "object",
-        "title": "Studios"
-      }
+        "required": ["studios", "dir_names_to_add", "ids_to_delete"],
+        "title": "StudiosResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": { "anyOf": [{ "type": "string" }, { "type": "integer" }] },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": { "type": "string", "title": "Message" },
+          "type": { "type": "string", "title": "Error Type" }
+        },
+        "type": "object",
+        "required": ["loc", "msg", "type"],
+        "title": "ValidationError"
+      },
+      "VideoId": { "type": "string" }
     }
   }
 }
