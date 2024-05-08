@@ -7,8 +7,6 @@ import datetime as datetime_module
 from pymongo import collection
 import typing
 
-from gallery.types import DbCollections, EventId, Filename
-
 
 class Base:
     Basics = dict[types.ImageGroupName,

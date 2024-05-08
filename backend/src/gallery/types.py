@@ -8,25 +8,27 @@ from pymongo import collection
 
 # types of documents in the database
 type DocumentId = str
+type PrviateDocumentId = str
 
 type StudioId = str
+type StudioPrivateId = str
 type EventId = str
+type EventPrivateId = str
 type MediaId = str
+type MediaPrivateId = str
 
+type ImageFileId = str
+type ImageFilePrivateId = str
+type VideoFileId = str
+type VideoFilePrivateId = str
+type ImageGroupId = str
+type ImageGroupPrivateId = str
 
 type VersionId = str
 type SizeId = str
 type GroupId = str
 type MediaName = str
 
-type ImageId = str
-type ImageGroupId = str
-type VideoId = str
-
-type ImageGroupName = str
-type VideoName = str
-
-type DbCollections = dict[str, collection.Collection]
 
 type HexColor = str
 type FileEnding = str

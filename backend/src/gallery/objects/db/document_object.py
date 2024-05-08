@@ -6,12 +6,12 @@ import pydantic
 # class DocumentObject[IdType: types.DocumentId](pydanctic.BaseModel):
 
 
-class DocumentObject[IdType: types.DocumentId](pydantic.BaseModel):
+class DocumentObject[IdType: types.DocumentId, PrivateIdType: types.PrivateDocumentId](pydantic.BaseModel):
 
     # currently a bug in pydantic in handling nested type aliases: https://github.com/pydantic/pydantic/issues/8984
     # for now, just redefine the ID alias in every child of DocumentObject
     id: IdType = pydantic.Field(alias=config.DOCUMENT_ID_KEY)
-    private_id: str
+    private_id: PrivateIdType
 
     class Config:
         arbitrary_types_allowed = True

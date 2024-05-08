@@ -5,6 +5,9 @@ from gallery.objects import studios, events, medias
 
 import app
 
+studios.Studios.sync_db_with_local(app.db)
+
+"""
 
 async def main():
     response = await app.delete_studio('p42pGYcU69z4')
@@ -12,3 +15,5 @@ async def main():
 
 # Python 3.7+
 asyncio.run(main())
+
+"""

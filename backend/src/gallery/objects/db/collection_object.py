@@ -23,3 +23,9 @@ class CollectionObject[DocumentIdType: types.DocumentId, DocumentType: document_
     @ classmethod
     def get_ids(cls, collection: collection.Collection, filter: dict = {}) -> set[DocumentIdType]:
         return {i[config.DOCUMENT_ID_KEY] for i in collection.find(filter, projection={config.DOCUMENT_ID_KEY: 1})}
+
+    @ classmethod
+    def find_empty_ids(cls, collection: collection.Collection) -> set[DocumentIdType]:
+        """find ids that have no document associated with them in the collection."""
+
+        return {i[config.DOCUMENT_ID_KEY] for i in collection.find(filter, projection={config.DOCUMENT_ID_KEY: 1}) if not i}

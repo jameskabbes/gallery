@@ -1,8 +1,8 @@
 from pymongo import database, collection, MongoClient
 from gallery import types
 from gallery.objects.db import document_object
-from gallery.objects import media_types as media_module
-from gallery.objects.media_types.media import Media
+from gallery.objects import media_types
+from gallery.objects import media as media_module
 import pydantic
 import datetime as datetime_module
 from pathlib import Path
@@ -12,6 +12,7 @@ import typing
 class Types:
     datetime = datetime_module.datetime | None
     name = types.ImageGroupName
+    studio_id = types.StudioId
 
 
 class Base:
@@ -22,11 +23,12 @@ class Base:
 
 
 class Event(Base, document_object.DocumentObject[types.EventId]):
-    studio_id: types.StudioId
+    studio_id: Types.studio_id
     datetime: Types.datetime = pydantic.Field(
         default=None)
     name: Types.name = pydantic.Field(default=None)
-    media: Media = pydantic.Field(default_factory=Media)
+    media: media_module.Media = pydantic.Field(
+        default_factory=media_module.Media)
 
     COLLECTION_NAME: typing.ClassVar[str] = 'events'
     _DIRECTORY_NAME_DELIM: typing.ClassVar[str] = ' '
@@ -72,7 +74,7 @@ class Event(Base, document_object.DocumentObject[types.EventId]):
         return cls(**result)
 
     @classmethod
-    def load_by_directory(cls, db_collections: types.DbCollections, directory: Path) -> typing.Self:
+    def load_by_directory(cls, db: database.Database, directory: Path) -> typing.Self:
 
         # get datetime and name from directory name
         datetime_and_name = Event.parse_directory_name(directory.name)
