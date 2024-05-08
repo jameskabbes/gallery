@@ -11,6 +11,7 @@ class DocumentObject[IdType: types.DocumentId](pydantic.BaseModel):
     # currently a bug in pydantic in handling nested type aliases: https://github.com/pydantic/pydantic/issues/8984
     # for now, just redefine the ID alias in every child of DocumentObject
     id: IdType = pydantic.Field(alias=config.DOCUMENT_ID_KEY)
+    private_id: str
 
     class Config:
         arbitrary_types_allowed = True
@@ -27,8 +28,12 @@ class DocumentObject[IdType: types.DocumentId](pydantic.BaseModel):
     @ classmethod
     def find_by_id(cls, collection: collection.Collection, id: IdType, projection: dict = {}) -> typing.Self | None:
         """Load a document from the database by its id. If the document does not exist, return None."""
-        result = collection.find_one(
-            {config.DOCUMENT_ID_KEY: id}, projection=projection)
+        return cls.find(collection, {config.DOCUMENT_ID_KEY: id}, projection)
+
+    @ classmethod
+    def find(cls, collection: collection.Collection, filter: dict = {}, projection: dict = {}) -> typing.Self | None:
+        """Load all documents from the database that match the filter."""
+        result = collection.find_one(filter, projection=projection)
         if result is None:
             return None
         return cls(**result)

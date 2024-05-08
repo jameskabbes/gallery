@@ -74,24 +74,24 @@ async def delete_studio(studio_id: types.StudioId) -> StudiosResponse:
 class StudioResponse(typing.TypedDict):
     studio: studio.Studio
     events: events.Events.PluralByIdType
+    event_dir_names_to_add: set[str]
+    event_ids_to_delete: set[types.EventId]
 
 
 @app.get("/studio/{studio_id}/")
 async def get_studio(studio_id: types.StudioId) -> StudioResponse:
 
-    print(studio_id)
+    given_studio = studio.Studio.find_by_id(
+        db[studios.Studios.COLLECTION_NAME], studio_id)
+
+    if given_studio == None:
+        raise HTTPException(status_code=404, detail="Studio not found")
 
     d: StudioResponse = {}
-    d['studio'] = studio.Studio.find_by_id(
-        db[studios.Studios.COLLECTION_NAME], studio_id)
-    d['events'] = {}
-
+    d['studio'] = given_studio
+    d['events'] = events.Events.find(
+        db[events.Events.COLLECTION_NAME], {'studio_id': studio_id})
     return d
-
-
-@app.get("/events/")
-async def get_events() -> events.Events.PluralByIdType:
-    return events.Events.find(db[events.Events.COLLECTION_NAME])
 
 
 if __name__ == "__main__":

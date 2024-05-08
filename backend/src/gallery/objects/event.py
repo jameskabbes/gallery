@@ -22,6 +22,7 @@ class Base:
 
 
 class Event(Base, document_object.DocumentObject[types.EventId]):
+    studio_id: types.StudioId
     datetime: Types.datetime = pydantic.Field(
         default=None)
     name: Types.name = pydantic.Field(default=None)

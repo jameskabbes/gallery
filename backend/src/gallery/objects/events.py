@@ -1,7 +1,8 @@
 import typing
 from gallery.objects.db import collection_object
 from gallery.objects import event as event_module
-from gallery import types
+from gallery import types, config
+from pymongo import collection
 
 
 class Events(collection_object.CollectionObject[types.EventId, event_module.Event]):

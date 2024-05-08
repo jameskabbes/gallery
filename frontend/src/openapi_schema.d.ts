@@ -14,12 +14,16 @@ export interface paths {
     get: operations["get_studios_studios__get"];
   };
   "/studios/{dir_name}/import/": {
-    /** Post Studio Dir Name */
-    post: operations["post_studio_dir_name_studios__dir_name__import__post"];
+    /** Import Studio */
+    post: operations["import_studio_studios__dir_name__import__post"];
   };
-  "/events/": {
-    /** Get Events */
-    get: operations["get_events_events__get"];
+  "/studios/{studio_id}/delete/": {
+    /** Delete Studio */
+    post: operations["delete_studio_studios__studio_id__delete__post"];
+  };
+  "/studio/{studio_id}/": {
+    /** Get Studio */
+    get: operations["get_studio_studio__studio_id___get"];
   };
 }
 
@@ -59,6 +63,14 @@ export interface components {
       name?: string | null;
     };
     StudioId: string;
+    /** StudioResponse */
+    StudioResponse: {
+      studio: components["schemas"]["Studio"];
+      /** Events */
+      events: {
+        [key: string]: components["schemas"]["Event"];
+      };
+    };
     /** StudiosResponse */
     StudiosResponse: {
       /** Studios */
@@ -116,8 +128,8 @@ export interface operations {
       };
     };
   };
-  /** Post Studio Dir Name */
-  post_studio_dir_name_studios__dir_name__import__post: {
+  /** Import Studio */
+  import_studio_studios__dir_name__import__post: {
     parameters: {
       path: {
         dir_name: string;
@@ -138,15 +150,46 @@ export interface operations {
       };
     };
   };
-  /** Get Events */
-  get_events_events__get: {
+  /** Delete Studio */
+  delete_studio_studios__studio_id__delete__post: {
+    parameters: {
+      path: {
+        studio_id: components["schemas"]["StudioId"];
+      };
+    };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": {
-            [key: string]: components["schemas"]["Event"];
-          };
+          "application/json": components["schemas"]["StudiosResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get Studio */
+  get_studio_studio__studio_id___get: {
+    parameters: {
+      path: {
+        studio_id: components["schemas"]["StudioId"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["StudioResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
