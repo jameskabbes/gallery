@@ -3,6 +3,7 @@ from pymongo import collection, results, database
 from gallery import types, config, utils
 import pydantic
 import nanoid
+from abc import ABC, abstractmethod
 
 # class DocumentObject[IdType: types.DocumentId](pydanctic.BaseModel):
 
@@ -12,6 +13,7 @@ class DocumentObject[IdType: types.DocumentId](pydantic.BaseModel):
     # currently a bug in pydantic in handling nested type aliases: https://github.com/pydantic/pydantic/issues/8984
     # for now, just redefine the ID alias in every child of DocumentObject
     id: IdType = pydantic.Field(alias=config.DOCUMENT_ID_KEY)
+    IDENTIFYING_KEYS: typing.ClassVar[tuple]
 
     class Config:
         arbitrary_types_allowed = True
@@ -61,3 +63,13 @@ class DocumentObject[IdType: types.DocumentId](pydantic.BaseModel):
     def generate_id(cls, alphabet, size) -> IdType:
         """Generate a new id for a document."""
         return nanoid.generate(alphabet, size)
+
+    @classmethod
+    @abstractmethod
+    def parse_into_id_keys(cls, string: str) -> tuple:
+        """Parse a string into the identifying keys."""
+
+    @classmethod
+    @abstractmethod
+    def build_from_id_keys(cls, id_keys: tuple) -> str:
+        """Build a string from identifying keys."""

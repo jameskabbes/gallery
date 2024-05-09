@@ -8,7 +8,9 @@ if __name__ == '__main__':
     common_prefix = os.path.commonprefix(
         [config.START_MONGODB_SERVER_PATH, c.pymongo_dir])
 
-    relative_path = os.path.relpath(c.pymongo_dir, common_prefix)
+    # replace '\' with '/'
+    relative_path = os.path.relpath(
+        c.pymongo_dir, common_prefix).replace('\\', '/')
 
     config.START_MONGODB_SERVER_PATH.write_text(
         'mongod --dbpath {} --port {}'.format(relative_path,

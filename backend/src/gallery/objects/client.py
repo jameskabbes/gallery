@@ -146,56 +146,24 @@ class Client:
             return
 
         # Studios
-
         # get the local names of the studios to add to the database
-        if self.dir.exists():
-            local_studio_dir_names = set()
-            for subdir in self.studios_dir.iterdir():
-                if subdir.is_dir():
-                    local_studio_dir_names.add(subdir.name)
-
-        db_studios = self.db[studios.Studios.COLLECTION_NAME].find({}, {
-            'dir_name': 1, '_id': 1
-        })
-        db_studio_ids_by_name = {
-            db_studio['dir_name']: db_studio['_id'] for db_studio in db_studios
-        }
-
-        db_studio_names = set(db_studio_ids_by_name.keys())
-
-        studio_names_to_add = local_studio_dir_names - db_studio_names
-        studio_names_to_delete = db_studio_names - local_studio_dir_names
-
-        print('Studios to Add')
-        print(studio_names_to_add)
-
-        for studio_name in studio_names_to_add:
-            new_studio = studio.Studio(
-                _id=studio.Studio.generate_id(self.nanoid_alphabet, self.nanoid_size), dir_name=studio_name)
-            new_studio.insert(self.db[studios.Studios.COLLECTION_NAME])
-
-        print('stale studios')
-        print(studio_names_to_delete)
-
-        for studio_name in studio_names_to_delete:
-            studio.Studio.delete_by_id(
-                self.db[studios.Studios.COLLECTION_NAME], db_studio_ids_by_name[studio_name])
+        studios.Studios.sync_db_with_local(
+            self.db[studios.Studios.COLLECTION_NAME], self.studios_dir, self.nanoid_alphabet, self.nanoid_size)
 
         # Events
-        studios_by_id = studios.Studios.find(
-            self.db[studios.Studios.COLLECTION_NAME], {}, {'_id': 1, 'dir_name': 1})
+        # remove events that reference studios that no longer exist
+        studio_ids = studios.Studios.get_ids(
+            self.db[studios.Studios.COLLECTION_NAME])
 
         # find events where the studio_id is not in the studio_ids
         stale_event_ids = events.Events.get_ids(
-            self.db[events.Events.COLLECTION_NAME], {'studio_id': {'$nin': list(studios_by_id.keys())}})
-
-        print('stale event ids')
-        print(stale_event_ids)
+            self.db[events.Events.COLLECTION_NAME], {'studio_id': {'$nin': list(studio_ids)}})
 
         for event_id in stale_event_ids:
             event.Event.delete_by_id(
                 self.db[events.Events.COLLECTION_NAME], event_id)
 
+        """
         # sync the events in each studio
         for studio_id in studios_by_id:
 
@@ -238,3 +206,4 @@ class Client:
             for event_datetime_and_time in db_events_to_delete:
                 event.Event.delete_by_datetime_and_name(
                     self.db[events.Events.COLLECTION_NAME], studio_id, event_datetime_and_time[0], event_datetime_and_time[1])
+        """

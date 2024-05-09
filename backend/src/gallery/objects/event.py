@@ -30,18 +30,19 @@ class Event(Base, document_object.DocumentObject[types.EventId]):
     # media: media_module.Media = pydantic.Field(
     #     default_factory=media_module.Media)
 
+    IDENTIFYING_KEYS: typing.ClassVar[tuple] = ('datetime', 'name')
+
     COLLECTION_NAME: typing.ClassVar[str] = 'events'
     _DIRECTORY_NAME_DELIM: typing.ClassVar[str] = ' '
     _DATE_FILENAME_FORMAT: typing.ClassVar[str] = '%Y-%m-%d'
 
     @property
     def directory_name(self) -> str:
-        return self.build_directory_name({'date': self.datetime, 'name': self.name})
+        return self.build_from_id_keys((self.datetime, self.name))
 
-    @staticmethod
-    def parse_directory_name(directory_name: str) -> Base.DirectoryNameContents:
-        """Split the directory name into its defining keys."""
-        args = directory_name.split(
+    @classmethod
+    def parse_into_id_keys(cls, dir_name) -> str:
+        args = dir_name.split(
             Event._DIRECTORY_NAME_DELIM, 1)
 
         try:
@@ -50,19 +51,22 @@ class Event(Base, document_object.DocumentObject[types.EventId]):
             name = args[1]
         except:
             datetime = None
-            name = directory_name
+            name = dir_name
 
-        return {'datetime': datetime, 'name': name}
+        return (datetime, name)
 
-    @staticmethod
-    def build_directory_name(d: Base.DirectoryNameContents) -> str:
+    @classmethod
+    def build_from_id_keys(cls, id_keys: tuple) -> str:
+
+        datetime: datetime_module.datetime | None = id_keys[0]
+        name = id_keys[1]
 
         directory_name = ''
-        if d['datetime'] != None:
-            directory_name += d['datetime'].strftime(
-                Event._DATE_FILENAME_FORMAT)
-            directory_name += Event._DIRECTORY_NAME_DELIM
-        directory_name += d['name']
+        if datetime != None:
+            directory_name += datetime.strftime(
+                cls._DATE_FILENAME_FORMAT)
+            directory_name += cls._DIRECTORY_NAME_DELIM
+        directory_name += name
         return directory_name
 
     @classmethod

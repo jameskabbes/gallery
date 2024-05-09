@@ -2,9 +2,11 @@ import typing
 from pymongo import collection, database
 from gallery.objects.db import document_object
 from gallery import types, config
+import pathlib
+from abc import ABC, abstractmethod
 
 
-class CollectionObject[DocumentIdType: types.DocumentId, DocumentType: document_object.DocumentObject]:
+class CollectionObject[DocumentIdType: types.DocumentId, DocumentType: document_object.DocumentObject](ABC):
 
     COLLECTION_NAME: typing.ClassVar[str]
     CHILD_DOCUMENT_CLASS: typing.ClassVar[document_object.DocumentObject] = document_object.DocumentObject
