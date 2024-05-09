@@ -13,7 +13,7 @@ FILE_MAPPING: dict[KEYS_TYPE, base_file.File] = {
     'video': video_file.File
 }
 
-MediaLoaderId = types.ImageGroupId | types.VideoId
+MediaLoaderId = types.ImageGroupId | types.VideoFileId
 
 MEDIA_LOADER_MAPPING: dict[KEYS_TYPE, content_loader.ContentLoader] = {
     'image': image_group.Group,

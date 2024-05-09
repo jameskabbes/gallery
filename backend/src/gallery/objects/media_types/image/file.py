@@ -13,16 +13,16 @@ class Base:
     _SIZE_END_TRIGGER: typing.ClassVar[str] = ')'
 
     FilenameIODict = typing.TypedDict('FilenameIODict', {
-        'group_name': types.ImageGroupName,
+        'group_name': types.ImageGroupPrivateId,
         'version': types.VersionId,
         'size': types.SizeId,
         'file_ending': types.FileEnding
     })
 
 
-class File(Base, document_object.DocumentObject[types.ImageId], base_file.File):
+class File(Base, document_object.DocumentObject[types.ImageFileId], base_file.File):
 
-    group_name: types.ImageGroupName
+    group_name: types.ImageGroupPrivateId
     version: types.VersionId = pydantic.Field(
         default=config.ORIGINAL_KEY)
     size: types.SizeId = pydantic.Field(default=config.ORIGINAL_KEY)

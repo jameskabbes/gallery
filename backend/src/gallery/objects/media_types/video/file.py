@@ -16,7 +16,7 @@ class Base:
     })
 
 
-class File(Base, document_object.DocumentObject[types.VideoId], base_file.File):
+class File(Base, document_object.DocumentObject[types.VideoFileId], base_file.File):
 
     event_id: types.EventId
     datetime: datetime_module.datetime | None = pydantic.Field(default=None)

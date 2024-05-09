@@ -2,7 +2,8 @@ import typing
 import pathlib
 from gallery import config, utils
 from pymongo import database, MongoClient
-
+from gallery.objects import studios, studio, events, event
+import nanoid
 
 type uvicorn_port_type = int
 
@@ -102,7 +103,6 @@ class Client:
     def __init__(self, config: Config = {}):
 
         merged_config: Config = utils.deep_merge_dicts(DefaultConfig, config)
-        print(merged_config)
 
         # dir
         self.dir = merged_config['full_path']
@@ -135,3 +135,106 @@ class Client:
         # import
         self.media_import_dir = get_path_from_config(
             merged_config['media_import'], self.dir)
+
+    def generate_nanoid(self) -> str:
+        return nanoid.generate(self.nanoid_alphabet, self.nanoid_size)
+
+    def sync_with_local(self):
+        """sync database with local directory contents"""
+
+        if input('Are you sure you want to sync with local? (y/n) ') != 'y':
+            return
+
+        # Studios
+
+        # get the local names of the studios to add to the database
+        if self.dir.exists():
+            local_studio_dir_names = set()
+            for subdir in self.studios_dir.iterdir():
+                if subdir.is_dir():
+                    local_studio_dir_names.add(subdir.name)
+
+        db_studios = self.db[studios.Studios.COLLECTION_NAME].find({}, {
+            'dir_name': 1, '_id': 1
+        })
+        db_studio_ids_by_name = {
+            db_studio['dir_name']: db_studio['_id'] for db_studio in db_studios
+        }
+
+        db_studio_names = set(db_studio_ids_by_name.keys())
+
+        studio_names_to_add = local_studio_dir_names - db_studio_names
+        studio_names_to_delete = db_studio_names - local_studio_dir_names
+
+        print('Studios to Add')
+        print(studio_names_to_add)
+
+        for studio_name in studio_names_to_add:
+            new_studio = studio.Studio(
+                _id=studio.Studio.generate_id(self.nanoid_alphabet, self.nanoid_size), dir_name=studio_name)
+            new_studio.insert(self.db[studios.Studios.COLLECTION_NAME])
+
+        print('stale studios')
+        print(studio_names_to_delete)
+
+        for studio_name in studio_names_to_delete:
+            studio.Studio.delete_by_id(
+                self.db[studios.Studios.COLLECTION_NAME], db_studio_ids_by_name[studio_name])
+
+        # Events
+        studios_by_id = studios.Studios.find(
+            self.db[studios.Studios.COLLECTION_NAME], {}, {'_id': 1, 'dir_name': 1})
+
+        # find events where the studio_id is not in the studio_ids
+        stale_event_ids = events.Events.get_ids(
+            self.db[events.Events.COLLECTION_NAME], {'studio_id': {'$nin': list(studios_by_id.keys())}})
+
+        print('stale event ids')
+        print(stale_event_ids)
+
+        for event_id in stale_event_ids:
+            event.Event.delete_by_id(
+                self.db[events.Events.COLLECTION_NAME], event_id)
+
+        # sync the events in each studio
+        for studio_id in studios_by_id:
+
+            studio_dir = self.studios_dir.joinpath(
+                studios_by_id[studio_id].dir_name)
+
+            local_event_datetimes_and_names = set()
+            for subdir in studio_dir.iterdir():
+                if subdir.is_dir():
+                    a = event.Event.parse_directory_name(
+                        subdir.name)
+
+                    event_tuple = (a['datetime'], a['name'])
+                    if event_tuple in local_event_datetimes_and_names:
+                        raise ValueError(
+                            'Duplicate event datetime and name found')
+
+                    local_event_datetimes_and_names.add(event_tuple)
+
+            db_events_datetime_and_names = set([(item['datetime'], item['name']) for item in self.db[events.Events.COLLECTION_NAME].find(
+                {'studio_id': studio_id}, {'datetime': 1, 'name': 1})])
+
+            db_events_to_add = local_event_datetimes_and_names - db_events_datetime_and_names
+            db_events_to_delete = db_events_datetime_and_names - local_event_datetimes_and_names
+
+            print(studios_by_id[studio_id])
+
+            print('Events to Add')
+            print(db_events_to_add)
+
+            for event_datetime_and_time in db_events_to_add:
+                new_event = event.Event(
+                    _id=event.Event.generate_id(self.nanoid_alphabet, self.nanoid_size), studio_id=studio_id, datetime=event_datetime_and_time[0], name=event_datetime_and_time[1])
+                print(new_event)
+                new_event.insert(self.db[events.Events.COLLECTION_NAME])
+
+            print('Events to delete')
+            print(db_events_to_delete)
+
+            for event_datetime_and_time in db_events_to_delete:
+                event.Event.delete_by_datetime_and_name(
+                    self.db[events.Events.COLLECTION_NAME], studio_id, event_datetime_and_time[0], event_datetime_and_time[1])

@@ -2,10 +2,10 @@
 # import re
 # from gallery import config, types, utils
 # from gallery.objects import studios, events, medias
-from gallery.objects import client
 
-c = client.Client(config={'uvicorn': {'port': 8088},
-                  'mongodb': {'port': 27018}})
+from app import c
+
+c.sync_with_local()
 
 """
 

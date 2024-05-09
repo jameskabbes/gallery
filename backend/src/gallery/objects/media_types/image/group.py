@@ -9,7 +9,7 @@ import typing
 
 
 class Base:
-    Basics = dict[types.ImageGroupName,
+    Basics = dict[types.ImageGroupPrivateId,
                   dict[types.VersionId, dict[types.SizeId, set[types.FileEnding]]]]
 
 

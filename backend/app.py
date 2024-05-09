@@ -23,7 +23,7 @@ async def read_root():
 
 class StudiosResponse(typing.TypedDict):
     studios: studios.Studios.PluralByIdType
-    dir_names_to_add: set[studio.Types.dir_name]
+    dir_names_to_add: set[str]  # fix
     ids_to_delete: set[types.StudioId]
 
 
@@ -42,7 +42,7 @@ async def get_studios() -> StudiosResponse:
 
 
 @app.post("/studios/{dir_name}/import/")
-async def import_studio(dir_name: studio.Types.dir_name) -> StudiosResponse:
+async def import_studio(dir_name: str) -> StudiosResponse:
 
     # make sure this studio doesn't already exist
     if c.db[studios.Studios.COLLECTION_NAME].find_one({"dir_name": dir_name}):

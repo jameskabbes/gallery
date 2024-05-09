@@ -11,7 +11,7 @@ import typing
 
 class Types:
     datetime = datetime_module.datetime | None
-    name = types.ImageGroupName
+    name = str
     studio_id = types.StudioId
 
 
@@ -27,8 +27,8 @@ class Event(Base, document_object.DocumentObject[types.EventId]):
     datetime: Types.datetime = pydantic.Field(
         default=None)
     name: Types.name = pydantic.Field(default=None)
-    media: media_module.Media = pydantic.Field(
-        default_factory=media_module.Media)
+    # media: media_module.Media = pydantic.Field(
+    #     default_factory=media_module.Media)
 
     COLLECTION_NAME: typing.ClassVar[str] = 'events'
     _DIRECTORY_NAME_DELIM: typing.ClassVar[str] = ' '

@@ -8,7 +8,7 @@ from pymongo import collection
 
 # types of documents in the database
 type DocumentId = str
-type PrviateDocumentId = str
+type PrivateDocumentId = str
 
 type StudioId = str
 type StudioPrivateId = str

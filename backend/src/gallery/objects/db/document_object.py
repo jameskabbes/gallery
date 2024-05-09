@@ -2,16 +2,16 @@ import typing
 from pymongo import collection, results, database
 from gallery import types, config, utils
 import pydantic
+import nanoid
 
 # class DocumentObject[IdType: types.DocumentId](pydanctic.BaseModel):
 
 
-class DocumentObject[IdType: types.DocumentId, PrivateIdType: types.PrivateDocumentId](pydantic.BaseModel):
+class DocumentObject[IdType: types.DocumentId](pydantic.BaseModel):
 
     # currently a bug in pydantic in handling nested type aliases: https://github.com/pydantic/pydantic/issues/8984
     # for now, just redefine the ID alias in every child of DocumentObject
     id: IdType = pydantic.Field(alias=config.DOCUMENT_ID_KEY)
-    private_id: PrivateIdType
 
     class Config:
         arbitrary_types_allowed = True
@@ -57,7 +57,7 @@ class DocumentObject[IdType: types.DocumentId, PrivateIdType: types.PrivateDocum
         """Check if the document's id exists in the database."""
         return collection.find_one({config.DOCUMENT_ID_KEY: id}) is not None
 
-    @ classmethod
-    def generate_id(cls) -> IdType:
+    @classmethod
+    def generate_id(cls, alphabet, size) -> IdType:
         """Generate a new id for a document."""
-        return utils.generate_nanoid()
+        return nanoid.generate(alphabet, size)
