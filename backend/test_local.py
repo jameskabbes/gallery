@@ -1,11 +1,11 @@
-import asyncio
-import re
-from gallery import config, types, utils
-from gallery.objects import studios, events, medias
+# import asyncio
+# import re
+# from gallery import config, types, utils
+# from gallery.objects import studios, events, medias
+from gallery.objects import client
 
-import app
-
-studios.Studios.sync_db_with_local(app.db)
+c = client.Client(config={'uvicorn': {'port': 8088},
+                  'mongodb': {'port': 27018}})
 
 """
 

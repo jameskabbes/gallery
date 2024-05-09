@@ -8,21 +8,8 @@ DATA_DIR = BACKEND_DIR / 'data'
 
 PROJECT_CONFIG_PATH = REPO_DIR / 'config.json'
 
-# Studios
-STUDIOS_DIR = DATA_DIR / 'studios'
-
-# Server
-UVICORN_PORT: int = 8087
 START_UVICORN_SERVER_PATH = BACKEND_DIR / 'start_uvicorn_server.sh'
-
-# MongoDB
-MONGODB_DIR = DATA_DIR / 'db'
-MONGODB_PORT: int = 27017
 START_MONGODB_SERVER_PATH = BACKEND_DIR / 'start_mongodb_server.sh'
-
-# 1% change of collision at 1 Billion IDs
-NANOID_ALPHABET: str = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-NANOID_SIZE: int = 12
 
 ORIGINAL_KEY: str = '_original'
 DOCUMENT_ID_KEY: str = '_id'

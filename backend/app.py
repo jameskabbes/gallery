@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pymongo import MongoClient
 from gallery import config, types, utils
-from gallery.objects import studios, studio, events, event
+from gallery.objects import studios, studio, events, event, client
 
 import pydantic
 import datetime
@@ -12,9 +12,8 @@ import os
 
 app = FastAPI()
 
-# Initialize PyMongo client
-mongo_client = utils.get_pymongo_client()
-db = mongo_client['gallery']
+# get the gallery client
+c = client.Client()
 
 
 @app.get("/")
@@ -32,10 +31,10 @@ class StudiosResponse(typing.TypedDict):
 async def get_studios() -> StudiosResponse:
 
     dir_names_to_add, studios_ids_to_delete = studios.Studios.get_add_and_delete(
-        db[studios.Studios.COLLECTION_NAME])
+        c.db[studios.Studios.COLLECTION_NAME])
 
     d: StudiosResponse = {}
-    d['studios'] = studios.Studios.find(db[studios.Studios.COLLECTION_NAME])
+    d['studios'] = studios.Studios.find(c.db[studios.Studios.COLLECTION_NAME])
     d['dir_names_to_add'] = dir_names_to_add
     d['ids_to_delete'] = studios_ids_to_delete
 
@@ -46,7 +45,7 @@ async def get_studios() -> StudiosResponse:
 async def import_studio(dir_name: studio.Types.dir_name) -> StudiosResponse:
 
     # make sure this studio doesn't already exist
-    if db[studios.Studios.COLLECTION_NAME].find_one({"dir_name": dir_name}):
+    if c.db[studios.Studios.COLLECTION_NAME].find_one({"dir_name": dir_name}):
         raise HTTPException(status_code=400, detail="Studio already exists")
 
     # make sure the dir already exists
@@ -56,7 +55,7 @@ async def import_studio(dir_name: studio.Types.dir_name) -> StudiosResponse:
 
     new_studio = studio.Studio(
         _id=studio.Studio.generate_id(), dir_name=dir_name)
-    new_studio.insert(db[studios.Studios.COLLECTION_NAME])
+    new_studio.insert(c.db[studios.Studios.COLLECTION_NAME])
 
     return await get_studios()
 
@@ -64,10 +63,11 @@ async def import_studio(dir_name: studio.Types.dir_name) -> StudiosResponse:
 @app.post("/studios/{studio_id}/delete/")
 async def delete_studio(studio_id: types.StudioId) -> StudiosResponse:
 
-    if not studio.Studio.exists(db[studios.Studios.COLLECTION_NAME], studio_id):
+    if not studio.Studio.exists(c.db[studios.Studios.COLLECTION_NAME], studio_id):
         raise HTTPException(status_code=404, detail="Studio not found")
 
-    studio.Studio.delete_by_id(db[studios.Studios.COLLECTION_NAME], studio_id)
+    studio.Studio.delete_by_id(
+        c.db[studios.Studios.COLLECTION_NAME], studio_id)
     return await get_studios()
 
 
@@ -82,7 +82,7 @@ class StudioResponse(typing.TypedDict):
 async def get_studio(studio_id: types.StudioId) -> StudioResponse:
 
     given_studio = studio.Studio.find_by_id(
-        db[studios.Studios.COLLECTION_NAME], studio_id)
+        c.db[studios.Studios.COLLECTION_NAME], studio_id)
 
     if given_studio == None:
         raise HTTPException(status_code=404, detail="Studio not found")
@@ -90,9 +90,9 @@ async def get_studio(studio_id: types.StudioId) -> StudioResponse:
     d: StudioResponse = {}
     d['studio'] = given_studio
     d['events'] = events.Events.find(
-        db[events.Events.COLLECTION_NAME], {'studio_id': studio_id})
+        c.db[events.Events.COLLECTION_NAME], {'studio_id': studio_id})
     return d
 
 
 if __name__ == "__main__":
-    uvicorn.run("app:app", port=config.UVICORN_PORT, reload=True)
+    uvicorn.run("app:app", port=c.uvicorn_port, reload=True)

@@ -1,3 +1,4 @@
+from app import c
 from gallery import config
 import os
 
@@ -5,11 +6,11 @@ if __name__ == '__main__':
 
     # find where the mongodb dir is relative to the start_mongodb_server.sh
     common_prefix = os.path.commonprefix(
-        [config.START_MONGODB_SERVER_PATH, config.MONGODB_DIR])
+        [config.START_MONGODB_SERVER_PATH, c.pymongo_dir])
 
-    relative_path = os.path.relpath(config.MONGODB_DIR, common_prefix)
+    relative_path = os.path.relpath(c.pymongo_dir, common_prefix)
 
     config.START_MONGODB_SERVER_PATH.write_text(
         'mongod --dbpath {} --port {}'.format(relative_path,
-                                              config.MONGODB_PORT)
+                                              c.pymongo_port)
     )
