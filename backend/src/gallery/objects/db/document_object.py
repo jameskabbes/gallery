@@ -23,22 +23,26 @@ class DocumentObject[IdType: types.DocumentId](pydantic.BaseModel):
         return collection.delete_one({config.DOCUMENT_ID_KEY: self.id})
 
     @ classmethod
+    def make_from_id_keys(cls, id_keys: tuple) -> typing.Self:
+        return cls(**{**{id_key: id_keys[i] for i, id_key in enumerate(cls.IDENTIFYING_KEYS)}, **{config.DOCUMENT_ID_KEY: cls.generate_id()}})
+
+    @ classmethod
     def delete_by_id(cls, collection: collection.Collection, id: IdType) -> results.DeleteResult:
         """Delete a document from the database by its id."""
         return collection.delete_one({config.DOCUMENT_ID_KEY: id})
 
     @ classmethod
-    def find_by_id(cls, collection: collection.Collection, id: IdType, projection: dict = {}) -> typing.Self | None:
-        """Load a document from the database by its id. If the document does not exist, return None."""
-        return cls.find(collection, {config.DOCUMENT_ID_KEY: id}, projection)
-
-    @ classmethod
-    def find(cls, collection: collection.Collection, filter: dict = {}, projection: dict = {}) -> typing.Self | None:
+    def get(cls, collection: collection.Collection, filter: dict = {}, projection: dict = {}) -> typing.Self | None:
         """Load all documents from the database that match the filter."""
         result = collection.find_one(filter, projection=projection)
-        if result is None:
+        if result == None:
             return None
         return cls(**result)
+
+    @classmethod
+    def get_by_id(cls, collection: collection.Collection, id: IdType, projection: dict = {}) -> typing.Self | None:
+        """Load a document from the database by its id. If the document does not exist, return None."""
+        return cls.get(collection, {config.DOCUMENT_ID_KEY: id}, projection)
 
     def update_all_fields(self, collection: collection.Collection) -> results.UpdateResult:
         """Update the document in the database."""
@@ -60,9 +64,9 @@ class DocumentObject[IdType: types.DocumentId](pydantic.BaseModel):
         return collection.find_one({config.DOCUMENT_ID_KEY: id}) is not None
 
     @classmethod
-    def generate_id(cls, alphabet, size) -> IdType:
+    def generate_id(cls) -> IdType:
         """Generate a new id for a document."""
-        return nanoid.generate(alphabet, size)
+        return nanoid.generate(config.NANOID_ALPHABET, config.NANOID_SIZE)
 
     @classmethod
     @abstractmethod

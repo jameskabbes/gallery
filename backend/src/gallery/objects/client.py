@@ -29,15 +29,6 @@ class StudiosConfig(typing.TypedDict):
     folder_name: str
 
 
-type nanoid_alphabet_type = str
-type nanoid_size_type = int
-
-
-class NanoidConfig(typing.TypedDict):
-    alphabet: nanoid_alphabet_type
-    size: nanoid_size_type
-
-
 class ImportConfig(typing.TypedDict):
     full_path: pathlib.Path
     folder_name: str
@@ -47,7 +38,6 @@ class Config(typing.TypedDict):
     uvicorn: UvicornConfig
     mongodb: MongoDBConfig
     studios: StudiosConfig
-    nanoid: NanoidConfig
     media_import: ImportConfig
     full_path: pathlib.Path
 
@@ -63,10 +53,6 @@ DefaultConfig: Config = {
     },
     'studios': {
         'folder_name': 'studios'
-    },
-    'nanoid': {
-        'alphabet': '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
-        'size': 12
     },
     "media_import": {
         'folder_name': 'media_import'
@@ -96,8 +82,6 @@ class Client:
     pymongo_dir: pathlib.Path
     db: database.Database  # just calling it db for short
     studios_dir: pathlib.Path
-    nanoid_alphabet: nanoid_alphabet_type
-    nanoid_size: nanoid_size_type
     media_import_dir: pathlib.Path
 
     def __init__(self, config: Config = {}):
@@ -128,16 +112,9 @@ class Client:
         self.studios_dir = get_path_from_config(
             merged_config['studios'], self.dir)
 
-        # nanoid
-        self.nanoid_alphabet = merged_config['nanoid']['alphabet']
-        self.nanoid_size = merged_config['nanoid']['size']
-
         # import
         self.media_import_dir = get_path_from_config(
             merged_config['media_import'], self.dir)
-
-    def generate_nanoid(self) -> str:
-        return nanoid.generate(self.nanoid_alphabet, self.nanoid_size)
 
     def sync_with_local(self):
         """sync database with local directory contents"""
@@ -146,22 +123,34 @@ class Client:
             return
 
         # Studios
-        # get the local names of the studios to add to the database
-        studios.Studios.sync_db_with_local(
-            self.db[studios.Studios.COLLECTION_NAME], self.studios_dir, self.nanoid_alphabet, self.nanoid_size)
+        studio_id_keys_to_add, studio_ids_to_delete = studios.Studios.get_to_add_and_delete(
+            self.db[studios.Studios.COLLECTION_NAME], self.studios_dir)
+
+        for studio_id_keys in studio_id_keys_to_add:
+            new_studio = studio.Studio.make_from_id_keys(studio_id_keys)
+            new_studio.insert(self.db[studios.Studios.COLLECTION_NAME])
+
+        for studio_id in studio_ids_to_delete:
+            studio.Studio.delete_by_id(
+                self.db[studios.Studios.COLLECTION_NAME], studio_id)
 
         # Events
-        # remove events that reference studios that no longer exist
-        studio_ids = studios.Studios.get_ids(
-            self.db[studios.Studios.COLLECTION_NAME])
+        studio_id_and_dir_names = studios.Studios.find(
+            self.db[studios.Studios.COLLECTION_NAME], projection={'dir_name': 1})
+        print(studio_id_and_dir_names)
 
-        # find events where the studio_id is not in the studio_ids
-        stale_event_ids = events.Events.get_ids(
-            self.db[events.Events.COLLECTION_NAME], {'studio_id': {'$nin': list(studio_ids)}})
+        # # Events
+        # # remove events that reference studios that no longer exist
+        # studio_ids = studios.Studios.get_ids(
+        #     self.db[studios.Studios.COLLECTION_NAME])
 
-        for event_id in stale_event_ids:
-            event.Event.delete_by_id(
-                self.db[events.Events.COLLECTION_NAME], event_id)
+        # # find events where the studio_id is not in the studio_ids
+        # stale_event_ids = events.Events.get_ids(
+        #     self.db[events.Events.COLLECTION_NAME], {'studio_id': {'$nin': list(studio_ids)}})
+
+        # for event_id in stale_event_ids:
+        #     event.Event.delete_by_id(
+        #         self.db[events.Events.COLLECTION_NAME], event_id)
 
         """
         # sync the events in each studio

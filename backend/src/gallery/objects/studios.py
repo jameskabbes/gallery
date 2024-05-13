@@ -18,6 +18,7 @@ class Studios(pydantic.BaseModel, collection_object.CollectionObject[types.Studi
 
     @classmethod
     def find_child_document_id_keys_in_dir(cls, dir: pathlib.Path) -> set[tuple]:
+        """parse the given directory and return the identifying keys of the child documents."""
         local_ids_keys = set()
         for subdir in dir.iterdir():
             if subdir.is_dir():

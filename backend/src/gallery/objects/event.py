@@ -84,7 +84,7 @@ class Event(Base, document_object.DocumentObject[types.EventId]):
         datetime_and_name = Event.parse_directory_name(directory.name)
 
         # # find event in the db collection
-        event_collection = db_collections[cls.COLLECTION_NAME]
+        event_collection = db[cls.COLLECTION_NAME]
         event = Event.find_by_datetime_and_name(
             event_collection, datetime_and_name)
 
@@ -129,8 +129,8 @@ class Event(Base, document_object.DocumentObject[types.EventId]):
         # write back to db
         if 'new_event' in update_modes:
             print('writing new event')
-            event.insert(db_collections[cls.COLLECTION_NAME])
+            event.insert(db[cls.COLLECTION_NAME])
         elif 'new_media' in update_modes:
             print('update event media')
             event.update_fields(
-                db_collections[cls.COLLECTION_NAME], {'media', })
+                db[cls.COLLECTION_NAME], {'media', })

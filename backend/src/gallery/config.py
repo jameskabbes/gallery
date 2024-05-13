@@ -13,3 +13,6 @@ START_MONGODB_SERVER_PATH = BACKEND_DIR / 'start_mongodb_server.sh'
 
 ORIGINAL_KEY: str = '_original'
 DOCUMENT_ID_KEY: str = '_id'
+
+NANOID_ALPHABET: str = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+NANOID_SIZE: int = 12
