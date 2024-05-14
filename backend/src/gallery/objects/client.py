@@ -2,8 +2,7 @@ import typing
 import pathlib
 from gallery import config, utils
 from pymongo import database, MongoClient
-from gallery.objects import studios, studio, events, event
-import nanoid
+from gallery.objects import studio, event, media
 
 type uvicorn_port_type = int
 
@@ -123,8 +122,8 @@ class Client:
             return
 
         # Studios
-        studio_id_keys_to_add, studio_ids_to_delete = studios.Studios.find_to_add_and_delete(
-            self.db[studios.Studios.COLLECTION_NAME], self.studios_dir)
+        studio_id_keys_to_add, studio_ids_to_delete = studio.Studio.find_to_add_and_delete(
+            self.db[studio.Studio.COLLECTION_NAME], self.studios_dir)
 
         print('Studios to add')
         print(studio_id_keys_to_add)
@@ -134,41 +133,74 @@ class Client:
 
         for studio_id_keys in studio_id_keys_to_add:
             new_studio = studio.Studio.make_from_id_keys(studio_id_keys)
-            new_studio.insert(self.db[studios.Studios.COLLECTION_NAME])
+            new_studio.insert(self.db[studio.Studio.COLLECTION_NAME])
 
-        studios.Studios.delete_by_ids(
-            self.db[studios.Studios.COLLECTION_NAME], list(studio_ids_to_delete))
+        studio.Studio.delete_by_ids(
+            self.db[studio.Studio.COLLECTION_NAME], list(studio_ids_to_delete))
 
         # Events
         # remove events that reference studios that no longer exist
-        valid_studios = tuple(self.db[studios.Studios.COLLECTION_NAME].find(projection={
-            'dir_name': 1}))
+        studio_id_keys_by_id = studio.Studio.find_id_keys_by_id(
+            self.db[studio.Studio.COLLECTION_NAME])
 
-        stale_event_ids = events.Events.find_event_ids_with_stale_studio_ids(
-            self.db[events.Events.COLLECTION_NAME], list(
-                item[studio.Studio.ID_KEY] for item in valid_studios)
+        stale_event_ids = event.Event.find_event_ids_with_stale_studio_ids(
+            self.db[event.Event.COLLECTION_NAME], list(
+                studio_id_keys_by_id.keys())
         )
 
-        events.Events.delete_by_ids(
-            self.db[events.Events.COLLECTION_NAME], list(stale_event_ids))
+        print('Stale event ids')
+        print(stale_event_ids)
+        print()
+
+        event.Event.delete_by_ids(
+            self.db[event.Event.COLLECTION_NAME], list(stale_event_ids))
 
         # loop through existing studios and update events
-        for studio_obj in valid_studios:
-            studio_id = studio_obj[studio.Studio.ID_KEY]
-            studio_dir_name = studio_obj['dir_name']
-
+        for studio_id in studio_id_keys_by_id:
+            studio_dir_name = studio_id_keys_by_id[studio_id][0]
             studio_dir = self.studios_dir.joinpath(studio_dir_name)
 
-            event_id_keys_to_add, event_ids_to_delete = events.Events.find_to_add_and_delete(
-                self.db[events.Events.COLLECTION_NAME], studio_dir, studio_id)
+            event_id_keys_to_add, event_ids_to_delete = event.Event.find_to_add_and_delete(
+                self.db[event.Event.COLLECTION_NAME], studio_dir, studio_id)
 
-            print(studio_obj)
+            print(studio_id)
             print(event_id_keys_to_add)
             print(event_ids_to_delete)
+            print()
 
             for event_id_keys in event_id_keys_to_add:
                 new_event = event.Event.make_from_id_keys(event_id_keys)
-                new_event.insert(self.db[events.Events.COLLECTION_NAME])
+                new_event.insert(self.db[event.Event.COLLECTION_NAME])
 
-            events.Events.delete_by_ids(
-                self.db[events.Events.COLLECTION_NAME], list(event_ids_to_delete))
+            event.Event.delete_by_ids(
+                self.db[event.Event.COLLECTION_NAME], list(event_ids_to_delete))
+
+        # Medias
+        # remove medias that reference events that no longer exist
+        event_id_keys_by_id = event.Event.find_id_keys_by_id(
+            self.db[event.Event.COLLECTION_NAME])
+
+        stale_media_ids = media.Media.find_media_ids_with_stale_event_ids(
+            self.db[media.Media.COLLECTION_NAME], list(
+                event_id_keys_by_id.keys())
+        )
+
+        print('Stale media ids')
+        print(stale_media_ids)
+        print()
+
+        media.Media.delete_by_ids(
+            self.db[media.Media.COLLECTION_NAME], list(stale_media_ids))
+
+        for event_id in event_id_keys_by_id:
+            event_datetime = event_id_keys_by_id[event_id][0]
+            event_name = event_id_keys_by_id[event_id][1]
+            event_studio_id = event_id_keys_by_id[event_id][2]
+
+            event_dir = self.studios_dir.joinpath(studio_id_keys_by_id[event_studio_id][0]).joinpath(
+                event.Event.build_directory_name(
+                    {'datetime': event_datetime, 'name': event_name})
+            )
+
+            media_id_keys_to_add, media_ids_to_delete = media.Media.find_to_add_and_delete(
+                self.db[event.Event.COLLECTION_NAME], event_dir, event_id)

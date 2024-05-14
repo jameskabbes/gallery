@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pymongo import MongoClient
 from gallery import config, types, utils
-from gallery.objects import studios, studio, events, event, client
+from gallery.objects import studio, event, client
 
 import pydantic
 import datetime
@@ -20,9 +20,11 @@ c = client.Client()
 async def read_root():
     return {"home": datetime.datetime.now()}
 
+"""
+
 
 class StudiosResponse(typing.TypedDict):
-    studios: studios.Studios.PluralByIdType
+    studios: studio.Studio.PluralByIdType
     dir_names_to_add: set[str]  # fix
     ids_to_delete: set[types.StudioId]
 
@@ -92,7 +94,7 @@ async def get_studio(studio_id: types.StudioId) -> StudioResponse:
     d['events'] = events.Events.find(
         c.db[events.Events.COLLECTION_NAME], {'studio_id': studio_id})
     return d
-
+"""
 
 if __name__ == "__main__":
     uvicorn.run("app:app", port=c.uvicorn_port, reload=True)

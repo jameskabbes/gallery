@@ -1,10 +1,10 @@
-from pymongo import database, collection, MongoClient
+from pymongo import database, collection as pymongo_collection, MongoClient
 from gallery import types
 from gallery.objects.db import document_object
 from gallery.objects import media as media_module
 import pydantic
 import datetime as datetime_module
-from pathlib import Path
+import pathlib
 import typing
 
 
@@ -33,6 +33,7 @@ class Event(Base, document_object.DocumentObject[types.EventId, Types.ID_TYPES])
     #     default_factory=media_module.Media)
 
     IDENTIFYING_KEYS: typing.ClassVar[tuple[Types.ID_TYPES]] = Types.ID_KEYS
+    COLLECTION_NAME: typing.ClassVar[str] = 'events'
 
     _DIRECTORY_NAME_DELIM: typing.ClassVar[str] = ' '
     _DATE_FILENAME_FORMAT: typing.ClassVar[str] = '%Y-%m-%d'
@@ -50,7 +51,7 @@ class Event(Base, document_object.DocumentObject[types.EventId, Types.ID_TYPES])
 
         try:
             datetime = datetime_module.datetime.strptime(
-                args[0], Event._DATE_FILENAME_FORMAT)
+                args[0], cls._DATE_FILENAME_FORMAT)
             d['name'] = args[1]
             d['datetime'] = datetime
         except:
@@ -70,59 +71,46 @@ class Event(Base, document_object.DocumentObject[types.EventId, Types.ID_TYPES])
         return directory_name
 
     @classmethod
-    def load_by_directory(cls, db: database.Database, directory: Path) -> typing.Self:
+    def find_event_ids_with_stale_studio_ids(cls, collection: pymongo_collection.Collection, studio_ids: list[types.StudioId]) -> set[types.EventId]:
+        return cls.find_ids(collection, filter={'studio_id': {'$nin': studio_ids}})
 
-        # get datetime and name from directory name
-        datetime_and_name = Event.parse_directory_name(directory.name)
+    @ classmethod
+    def find_to_add_and_delete(cls, collection: pymongo_collection.Collection, dir: pathlib.Path, studio_id: types.StudioId):
 
-        # # find event in the db collection
-        event_collection = db[cls.COLLECTION_NAME]
-        event = Event.find_by_datetime_and_name(
-            event_collection, datetime_and_name)
+        local_id_keys: set[tuple[Types.ID_TYPES]] = set()
+        for subdir in dir.iterdir():
+            if subdir.is_dir():
+                d = cls.parse_directory_name(subdir.name)
 
-        update_modes = set()
+                id_key_values = []
+                for id_key in Types.ID_KEYS:
+                    if id_key in d:
+                        id_key_values.append(d[id_key])
+                    elif id_key == 'studio_id':
+                        id_key_values.append(studio_id)
+                local_id_keys.add(tuple(id_key_values))
 
-        # create new event if not found
-        if event is None:
-            event = Event(_id=cls.generate_id(), **datetime_and_name)
-            update_modes.add('new_event')
+        # ids and id_keys in the database
+        db_id_and_id_keys = collection.find({'studio_id': studio_id}, projection={
+            ID_KEY: 1 for ID_KEY in Types.ID_KEYS})
 
-        # split files by media type
-        filenames_by_media_type: dict[media_module.KEYS_TYPE,
-                                      list[types.Filename]] = {}
+        # { (datetime.datetime(2023,12,20,0,0,0), 'Event Name'): 'sjk320sjk3' }
+        db_id_by_id_keys: dict[tuple[Types.ID_TYPES],
+                               types.EventId] = {}
 
-        for file in directory.iterdir():
-            if file.is_file():
-                if not file.suffix.islower():
-                    file = file.rename(file.with_suffix(file.suffix.lower()))
+        for item in db_id_and_id_keys:
+            id_keys_tuple = tuple(
+                item[k] for k in Types.ID_KEYS)
+            if id_keys_tuple in db_id_by_id_keys:
+                raise ValueError(
+                    f"Duplicate keys in db: {cls.IDENTIFYING_KEYS}={id_keys_tuple}")
+            db_id_by_id_keys[id_keys_tuple] = item[cls.ID_KEY]
 
-                media_type = media_module.get_media_type_by_file_ending(
-                    file.suffix[1:])
-                if media_type == None:
-                    print('Skipping file: not a supported file type')
-                    continue
+        db_id_keys = set(db_id_by_id_keys.keys())
 
-                if media_type not in filenames_by_media_type:
-                    filenames_by_media_type[media_type] = []
-                filenames_by_media_type[media_type].append(file.name)
+        id_keys_to_add = local_id_keys - db_id_keys
+        id_keys_to_remove = db_id_keys - local_id_keys
+        ids_to_remove = set([db_id_by_id_keys[id_keys]
+                             for id_keys in id_keys_to_remove])
 
-        print(filenames_by_media_type)
-
-        # run media importer for each media type
-        for media_type in filenames_by_media_type:
-            is_new_media_added = event.media.load_basic_by_filenames(
-                media_type, filenames_by_media_type[media_type])
-
-            print('-------------')
-
-            if is_new_media_added:
-                update_modes.add('new_media')
-
-        # write back to db
-        if 'new_event' in update_modes:
-            print('writing new event')
-            event.insert(db[cls.COLLECTION_NAME])
-        elif 'new_media' in update_modes:
-            print('update event media')
-            event.update_fields(
-                db[cls.COLLECTION_NAME], {'media', })
+        return id_keys_to_add, ids_to_remove

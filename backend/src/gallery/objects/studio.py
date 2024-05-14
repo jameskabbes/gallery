@@ -1,9 +1,10 @@
 import typing
 from pathlib import Path
 from gallery import config, utils, types
-from pymongo import MongoClient, database
-from gallery.objects.db import collection_object, document_object
+from pymongo import MongoClient, database, collection as pymongo_collection
+from gallery.objects.db import document_object
 import pydantic
+import pathlib
 
 
 class Types:
@@ -24,11 +25,47 @@ class Studio(document_object.DocumentObject[types.StudioId, Types.ID_TYPES]):
     dir_name: Types.dir_name
     name: Types.name | None = pydantic.Field(default=None)
     IDENTIFYING_KEYS: typing.ClassVar[tuple[Types.ID_TYPES]] = Types.ID_KEYS
+    COLLECTION_NAME: typing.ClassVar[str] = 'studios'
 
     @classmethod
     def parse_directory_name(cls, dir_name: str) -> Base.DirectoryNameContents:
         return {'dir_name': dir_name}
 
     @classmethod
-    def buidl_directory_name(cls, d: Base.DirectoryNameContents) -> str:
+    def build_directory_name(cls, d: Base.DirectoryNameContents) -> str:
         return d['dir_name']
+
+    @classmethod
+    def find_to_add_and_delete(cls, collection: pymongo_collection.Collection, dir: pathlib.Path):
+
+        local_id_keys: set[tuple[Types.ID_TYPES]] = set()
+        for subdir in dir.iterdir():
+            if subdir.is_dir():
+                d = cls.parse_directory_name(subdir.name)
+                local_id_keys.add(tuple(d[k]
+                                        for k in Types.ID_KEYS))
+
+        # ids and id_keys in the database
+        db_id_and_id_keys = collection.find(projection={
+            ID_KEY: 1 for ID_KEY in Types.ID_KEYS})
+
+        # { ('studio1',): 'sjk320sjk3' }
+        db_id_by_id_keys: dict[tuple[Types.ID_TYPES],
+                               types.StudioId] = {}
+
+        for item in db_id_and_id_keys:
+            id_keys_tuple = tuple(
+                item[k] for k in Types.ID_KEYS)
+            if id_keys_tuple in db_id_by_id_keys:
+                raise ValueError(
+                    f"Duplicate keys in db: {cls.IDENTIFYING_KEYS}={id_keys_tuple}")
+            db_id_by_id_keys[id_keys_tuple] = item[Studio.ID_KEY]
+
+        db_id_keys = set(db_id_by_id_keys.keys())
+
+        id_keys_to_add = local_id_keys - db_id_keys
+        id_keys_to_remove = db_id_keys - local_id_keys
+        ids_to_remove = set([db_id_by_id_keys[id_keys]
+                             for id_keys in id_keys_to_remove])
+
+        return id_keys_to_add, ids_to_remove
