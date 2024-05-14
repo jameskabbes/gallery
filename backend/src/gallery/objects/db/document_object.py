@@ -4,8 +4,6 @@ from gallery import types, config
 import pydantic
 import nanoid
 
-# class DocumentObject[IdType: types.DocumentId](pydanctic.BaseModel):
-
 
 class DocumentObject[IdType: types.DocumentId, IdentifyingKeysType](pydantic.BaseModel):
 
@@ -15,7 +13,7 @@ class DocumentObject[IdType: types.DocumentId, IdentifyingKeysType](pydantic.Bas
     id: IdType = pydantic.Field(alias=ID_KEY)
 
     COLLECTION_NAME: typing.ClassVar[str]
-    IDENTIFYING_KEYS_TYPE: typing.ClassVar
+    IDENTIFYING_KEYS_TYPE: typing.ClassVar = IdentifyingKeysType
     IDENTIFYING_KEYS: typing.ClassVar[tuple[IdentifyingKeysType]]
     PluralByIDType: typing.ClassVar[dict[IdType, typing.Self]]
 

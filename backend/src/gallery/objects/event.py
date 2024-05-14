@@ -79,14 +79,8 @@ class Event(Base, document_object.DocumentObject[types.EventId, Types.ID_TYPES])
         for subdir in dir.iterdir():
             if subdir.is_dir():
                 d = cls.parse_directory_name(subdir.name)
-
-                id_key_values = []
-                for id_key in Types.ID_KEYS:
-                    if id_key in d:
-                        id_key_values.append(d[id_key])
-                    elif id_key == 'studio_id':
-                        id_key_values.append(studio_id)
-                local_id_keys.add(tuple(id_key_values))
+                d['studio_id'] = studio_id
+                local_id_keys.add(tuple(d[id_key] for id_key in Types.ID_KEYS))
 
         # ids and id_keys in the database
         db_id_and_id_keys = collection.find({'studio_id': studio_id}, projection={

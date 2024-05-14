@@ -19,7 +19,8 @@ type ImageGroupId = str
 type ImageGroupName = str
 
 type MediaId = ImageFileId | VideoFileId | ImageGroupId
-
+type MediaType = typing.Literal['image.file', 'image.group', 'video.file']
+type MediaCoreType = typing.Literal['image', 'video']
 
 type VersionId = str
 type SizeId = str

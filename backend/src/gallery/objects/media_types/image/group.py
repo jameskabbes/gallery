@@ -8,9 +8,9 @@ import typing
 
 
 class Types:
-    datetime: datetime_module.datetime
-    name: str
-    versions: dict[types.VersionId, version.Version]
+    datetime = datetime_module.datetime
+    name = str
+    versions = dict[types.VersionId, version.Version]
     ALL_TYPES = typing.Literal['datetime', 'name', 'versions']
     ID_TYPES = typing.Literal['name', 'event_id']
     ID_KEYS = ('name', 'event_id')
@@ -26,6 +26,8 @@ class Group(Base, document_object.DocumentObject[types.ImageGroupId, str]):
     name: Types.name
     versions: Types.versions = pydantic.Field(
         default_factory=dict)
+
+    media_type: typing.ClassVar[str] = 'image.group'
 
     @pydantic.field_validator('name')
     def validate_name(cls, v: str):

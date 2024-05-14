@@ -50,6 +50,8 @@ class File(Base, document_object.DocumentObject[types.ImageFileId, Types.ID_TYPE
     # class vars
     ACCEPTABLE_FILE_ENDINGS: typing.ClassVar[types.AcceptableFileEndings] = {'jpg', 'jpeg', 'png', 'gif', 'cr2',
                                                                              'bmp', 'tiff', 'tif', 'ico', 'svg', 'webp', 'raw', 'heif', 'heic'}
+    media_type: typing.ClassVar[str] = 'image.file'
+    IDENTIFYING_KEYS: typing.ClassVar[tuple[Types.ID_TYPES]] = Types.ID_KEYS
 
     @ pydantic.field_validator('height', 'width', 'bytes')
     def validate_positive(cls, v):

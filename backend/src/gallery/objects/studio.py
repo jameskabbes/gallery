@@ -42,8 +42,8 @@ class Studio(document_object.DocumentObject[types.StudioId, Types.ID_TYPES]):
         for subdir in dir.iterdir():
             if subdir.is_dir():
                 d = cls.parse_directory_name(subdir.name)
-                local_id_keys.add(tuple(d[k]
-                                        for k in Types.ID_KEYS))
+                local_id_keys.add(tuple(d[id_key]
+                                        for id_key in Types.ID_KEYS))
 
         # ids and id_keys in the database
         db_id_and_id_keys = collection.find(projection={

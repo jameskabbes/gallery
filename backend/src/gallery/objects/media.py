@@ -26,10 +26,17 @@ class Media(document_object.DocumentObject[types.MediaId, str]):
                 if file_type is None:
                     continue
 
-                file_class = media_types.FILE_MAPPING[file_type]
-                d = file_class.parse_filename(file.name)
-                d['event_id'] = event_id
+                file_class_type = media_types.FILE_CLASS_MAPPING[file_type]
+                d = file_class_type.parse_filename(file.name)
+
                 print(d)
 
-        #
+                d['event_id'] = event_id
+                d['media_type'] = file_class_type.media_type
+
+                local_id_keys.add(tuple(d[id_key]
+                                  for id_key in file_class_type.IDENTIFYING_KEYS))
+
+        print(local_id_keys)
+
         return set(), []
