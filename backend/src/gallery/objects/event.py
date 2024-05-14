@@ -1,7 +1,6 @@
 from pymongo import database, collection, MongoClient
 from gallery import types
 from gallery.objects.db import document_object
-from gallery.objects import media_types
 from gallery.objects import media as media_module
 import pydantic
 import datetime as datetime_module
@@ -13,6 +12,9 @@ class Types:
     datetime = datetime_module.datetime | None
     name = str
     studio_id = types.StudioId
+    ALL_TYPES = typing.Literal['datetime', 'name', 'studio_id']
+    ID_TYPES = typing.Literal['datetime', 'name', 'studio_id']
+    ID_KEYS = ('datetime', 'name', 'studio_id')
 
 
 class Base:
@@ -22,7 +24,7 @@ class Base:
     })
 
 
-class Event(Base, document_object.DocumentObject[types.EventId]):
+class Event(Base, document_object.DocumentObject[types.EventId, Types.ID_TYPES]):
     studio_id: Types.studio_id
     datetime: Types.datetime = pydantic.Field(
         default=None)
@@ -30,52 +32,42 @@ class Event(Base, document_object.DocumentObject[types.EventId]):
     # media: media_module.Media = pydantic.Field(
     #     default_factory=media_module.Media)
 
-    IDENTIFYING_KEYS: typing.ClassVar[tuple] = ('datetime', 'name')
+    IDENTIFYING_KEYS: typing.ClassVar[tuple[Types.ID_TYPES]] = Types.ID_KEYS
 
-    COLLECTION_NAME: typing.ClassVar[str] = 'events'
     _DIRECTORY_NAME_DELIM: typing.ClassVar[str] = ' '
     _DATE_FILENAME_FORMAT: typing.ClassVar[str] = '%Y-%m-%d'
 
     @property
     def directory_name(self) -> str:
-        return self.build_from_id_keys((self.datetime, self.name))
+        return self.build_directory_name({'datetime': self.datetime, 'name': self.name})
 
     @classmethod
-    def parse_into_id_keys(cls, dir_name) -> str:
+    def parse_directory_name(cls, dir_name: str) -> Base.DirectoryNameContents:
         args = dir_name.split(
             Event._DIRECTORY_NAME_DELIM, 1)
+
+        d: Base.DirectoryNameContents = {'datetime': None}
 
         try:
             datetime = datetime_module.datetime.strptime(
                 args[0], Event._DATE_FILENAME_FORMAT)
-            name = args[1]
+            d['name'] = args[1]
+            d['datetime'] = datetime
         except:
-            datetime = None
-            name = dir_name
+            d['name'] = dir_name
 
-        return (datetime, name)
+        return d
 
     @classmethod
-    def build_from_id_keys(cls, id_keys: tuple) -> str:
-
-        datetime: datetime_module.datetime | None = id_keys[0]
-        name = id_keys[1]
+    def build_directory_name(cls, d: Base.DirectoryNameContents) -> str:
 
         directory_name = ''
-        if datetime != None:
-            directory_name += datetime.strftime(
+        if d['datetime'] != None:
+            directory_name += d['datetime'].strftime(
                 cls._DATE_FILENAME_FORMAT)
             directory_name += cls._DIRECTORY_NAME_DELIM
-        directory_name += name
+        directory_name += d['name']
         return directory_name
-
-    @classmethod
-    def find_by_datetime_and_name(cls, collection: collection.Collection, d: Base.DirectoryNameContents) -> typing.Self | None:
-
-        result = collection.find_one(d)
-        if result is None:
-            return None
-        return cls(**result)
 
     @classmethod
     def load_by_directory(cls, db: database.Database, directory: Path) -> typing.Self:

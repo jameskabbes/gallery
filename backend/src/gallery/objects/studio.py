@@ -8,20 +8,27 @@ import pydantic
 
 class Types:
     dir_name = str
+    name = str
+    ALL_TYPES = typing.Literal['dir_name', 'name']
+    ID_TYPES = typing.Literal['dir_name']
+    ID_KEYS = ('dir_name',)
 
 
-class Studio(document_object.DocumentObject[types.StudioId]):
+class Base:
+    DirectoryNameContents: typing.ClassVar = typing.TypedDict('DirectoryNameContents', {
+        'dir_name': Types.dir_name,
+    })
+
+
+class Studio(document_object.DocumentObject[types.StudioId, Types.ID_TYPES]):
     dir_name: Types.dir_name
-    name: str | None = pydantic.Field(default=None)
-
-    IDENTIFYING_KEYS = ('dir_name',)
-
-    @classmethod
-    def parse_into_id_keys(cls, dir_name: str) -> tuple:
-        """Parse a string into the identifying keys."""
-        return (dir_name,)
+    name: Types.name | None = pydantic.Field(default=None)
+    IDENTIFYING_KEYS: typing.ClassVar[tuple[Types.ID_TYPES]] = Types.ID_KEYS
 
     @classmethod
-    def build_from_id_keys(cls, id_keys: tuple) -> tuple:
-        """Build a string from the id keys."""
-        return id_keys[0]
+    def parse_directory_name(cls, dir_name: str) -> Base.DirectoryNameContents:
+        return {'dir_name': dir_name}
+
+    @classmethod
+    def buidl_directory_name(cls, d: Base.DirectoryNameContents) -> str:
+        return d['dir_name']

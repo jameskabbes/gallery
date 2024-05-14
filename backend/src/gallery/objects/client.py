@@ -123,76 +123,52 @@ class Client:
             return
 
         # Studios
-        studio_id_keys_to_add, studio_ids_to_delete = studios.Studios.get_to_add_and_delete(
+        studio_id_keys_to_add, studio_ids_to_delete = studios.Studios.find_to_add_and_delete(
             self.db[studios.Studios.COLLECTION_NAME], self.studios_dir)
+
+        print('Studios to add')
+        print(studio_id_keys_to_add)
+        print('Studios to delete')
+        print(studio_ids_to_delete)
+        print()
 
         for studio_id_keys in studio_id_keys_to_add:
             new_studio = studio.Studio.make_from_id_keys(studio_id_keys)
             new_studio.insert(self.db[studios.Studios.COLLECTION_NAME])
 
-        for studio_id in studio_ids_to_delete:
-            studio.Studio.delete_by_id(
-                self.db[studios.Studios.COLLECTION_NAME], studio_id)
+        studios.Studios.delete_by_ids(
+            self.db[studios.Studios.COLLECTION_NAME], list(studio_ids_to_delete))
 
         # Events
-        studio_id_and_dir_names = studios.Studios.find(
-            self.db[studios.Studios.COLLECTION_NAME], projection={'dir_name': 1})
-        print(studio_id_and_dir_names)
+        # remove events that reference studios that no longer exist
+        valid_studios = tuple(self.db[studios.Studios.COLLECTION_NAME].find(projection={
+            'dir_name': 1}))
 
-        # # Events
-        # # remove events that reference studios that no longer exist
-        # studio_ids = studios.Studios.get_ids(
-        #     self.db[studios.Studios.COLLECTION_NAME])
+        stale_event_ids = events.Events.find_event_ids_with_stale_studio_ids(
+            self.db[events.Events.COLLECTION_NAME], list(
+                item[studio.Studio.ID_KEY] for item in valid_studios)
+        )
 
-        # # find events where the studio_id is not in the studio_ids
-        # stale_event_ids = events.Events.get_ids(
-        #     self.db[events.Events.COLLECTION_NAME], {'studio_id': {'$nin': list(studio_ids)}})
+        events.Events.delete_by_ids(
+            self.db[events.Events.COLLECTION_NAME], list(stale_event_ids))
 
-        # for event_id in stale_event_ids:
-        #     event.Event.delete_by_id(
-        #         self.db[events.Events.COLLECTION_NAME], event_id)
+        # loop through existing studios and update events
+        for studio_obj in valid_studios:
+            studio_id = studio_obj[studio.Studio.ID_KEY]
+            studio_dir_name = studio_obj['dir_name']
 
-        """
-        # sync the events in each studio
-        for studio_id in studios_by_id:
+            studio_dir = self.studios_dir.joinpath(studio_dir_name)
 
-            studio_dir = self.studios_dir.joinpath(
-                studios_by_id[studio_id].dir_name)
+            event_id_keys_to_add, event_ids_to_delete = events.Events.find_to_add_and_delete(
+                self.db[events.Events.COLLECTION_NAME], studio_dir, studio_id)
 
-            local_event_datetimes_and_names = set()
-            for subdir in studio_dir.iterdir():
-                if subdir.is_dir():
-                    a = event.Event.parse_directory_name(
-                        subdir.name)
+            print(studio_obj)
+            print(event_id_keys_to_add)
+            print(event_ids_to_delete)
 
-                    event_tuple = (a['datetime'], a['name'])
-                    if event_tuple in local_event_datetimes_and_names:
-                        raise ValueError(
-                            'Duplicate event datetime and name found')
-
-                    local_event_datetimes_and_names.add(event_tuple)
-
-            db_events_datetime_and_names = set([(item['datetime'], item['name']) for item in self.db[events.Events.COLLECTION_NAME].find(
-                {'studio_id': studio_id}, {'datetime': 1, 'name': 1})])
-
-            db_events_to_add = local_event_datetimes_and_names - db_events_datetime_and_names
-            db_events_to_delete = db_events_datetime_and_names - local_event_datetimes_and_names
-
-            print(studios_by_id[studio_id])
-
-            print('Events to Add')
-            print(db_events_to_add)
-
-            for event_datetime_and_time in db_events_to_add:
-                new_event = event.Event(
-                    _id=event.Event.generate_id(self.nanoid_alphabet, self.nanoid_size), studio_id=studio_id, datetime=event_datetime_and_time[0], name=event_datetime_and_time[1])
-                print(new_event)
+            for event_id_keys in event_id_keys_to_add:
+                new_event = event.Event.make_from_id_keys(event_id_keys)
                 new_event.insert(self.db[events.Events.COLLECTION_NAME])
 
-            print('Events to delete')
-            print(db_events_to_delete)
-
-            for event_datetime_and_time in db_events_to_delete:
-                event.Event.delete_by_datetime_and_name(
-                    self.db[events.Events.COLLECTION_NAME], studio_id, event_datetime_and_time[0], event_datetime_and_time[1])
-        """
+            events.Events.delete_by_ids(
+                self.db[events.Events.COLLECTION_NAME], list(event_ids_to_delete))
