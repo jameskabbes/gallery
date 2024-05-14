@@ -29,8 +29,6 @@ class Event(Base, document_object.DocumentObject[types.EventId, Types.ID_TYPES])
     datetime: Types.datetime = pydantic.Field(
         default=None)
     name: Types.name = pydantic.Field(default=None)
-    # media: media_module.Media = pydantic.Field(
-    #     default_factory=media_module.Media)
 
     IDENTIFYING_KEYS: typing.ClassVar[tuple[Types.ID_TYPES]] = Types.ID_KEYS
     COLLECTION_NAME: typing.ClassVar[str] = 'events'
@@ -75,7 +73,7 @@ class Event(Base, document_object.DocumentObject[types.EventId, Types.ID_TYPES])
         return cls.find_ids(collection, filter={'studio_id': {'$nin': studio_ids}})
 
     @ classmethod
-    def find_to_add_and_delete(cls, collection: pymongo_collection.Collection, dir: pathlib.Path, studio_id: types.StudioId):
+    def find_to_add_and_delete(cls, collection: pymongo_collection.Collection, dir: pathlib.Path, studio_id: types.StudioId) -> tuple[set[tuple[Types.ID_TYPES]], set[types.EventId]]:
 
         local_id_keys: set[tuple[Types.ID_TYPES]] = set()
         for subdir in dir.iterdir():

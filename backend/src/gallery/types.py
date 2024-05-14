@@ -11,24 +11,18 @@ type DocumentId = str
 type PrivateDocumentId = str
 
 type StudioId = str
-type StudioPrivateId = str
 type EventId = str
-type EventPrivateId = str
-type MediaId = str
-type MediaPrivateId = str
 
 type ImageFileId = str
-type ImageFilePrivateId = str
 type VideoFileId = str
-type VideoFilePrivateId = str
 type ImageGroupId = str
-type ImageGroupPrivateId = str
+type ImageGroupName = str
+
+type MediaId = ImageFileId | VideoFileId | ImageGroupId
+
 
 type VersionId = str
 type SizeId = str
-type GroupId = str
-type MediaName = str
-
 
 type HexColor = str
 type FileEnding = str

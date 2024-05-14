@@ -1,27 +1,31 @@
 from gallery import types
 from gallery.objects.db import document_object
 from gallery.objects.media_types.image import version, file
-from gallery.objects.media_types.bases import content_loader
 import pydantic
 import datetime as datetime_module
 from pymongo import collection
 import typing
 
 
+class Types:
+    datetime: datetime_module.datetime
+    name: str
+    versions: dict[types.VersionId, version.Version]
+    ALL_TYPES = typing.Literal['datetime', 'name', 'versions']
+    ID_TYPES = typing.Literal['name', 'event_id']
+    ID_KEYS = ('name', 'event_id')
+
+
 class Base:
-    Basics = dict[types.ImageGroupPrivateId,
+    Basics = dict[types.ImageGroupName,
                   dict[types.VersionId, dict[types.SizeId, set[types.FileEnding]]]]
 
 
-class Group(Base, document_object.DocumentObject[types.ImageGroupId], content_loader.ContentLoader):
-
-    event_id: types.EventId
-    datetime: datetime_module.datetime | None = pydantic.Field(default=None)
-    name: str
-    versions: dict[types.VersionId, version.Version] = pydantic.Field(
+class Group(Base, document_object.DocumentObject[types.ImageGroupId, str]):
+    datetime: Types.datetime | None = pydantic.Field(default=None)
+    name: Types.name
+    versions: Types.versions = pydantic.Field(
         default_factory=dict)
-
-    COLLECTION_NAME: typing.ClassVar[str] = 'image_groups'
 
     @pydantic.field_validator('name')
     def validate_name(cls, v: str):
@@ -34,8 +38,6 @@ class Group(Base, document_object.DocumentObject[types.ImageGroupId], content_lo
         return v
 
     def add_file(self, image_file: file.File):
-        """Add file id to group"""
-
         if image_file.version not in self.versions:
             self.versions[image_file.version] = version.Version()
 

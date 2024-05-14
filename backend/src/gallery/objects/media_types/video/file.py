@@ -4,8 +4,15 @@ import re
 import datetime as datetime_module
 from gallery.objects.media_types.bases import file as base_file
 from gallery.objects.db import document_object
-from gallery.objects.media_types.bases import content_loader
 import typing
+
+
+class Types:
+    datetime: datetime_module.datetime
+    name: str
+    ALL_TYPES = typing.Literal['datetime', 'name', 'versions']
+    ID_TYPES = typing.Literal['name', 'event_id']
+    ID_KEYS = ('name', 'event_id')
 
 
 class Base:
@@ -16,9 +23,7 @@ class Base:
     })
 
 
-class File(Base, document_object.DocumentObject[types.VideoFileId], base_file.File):
-
-    event_id: types.EventId
+class File(Base, document_object.DocumentObject[types.VideoFileId, str], base_file.File):
     datetime: datetime_module.datetime | None = pydantic.Field(default=None)
     name: str
 

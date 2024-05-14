@@ -36,7 +36,7 @@ class Studio(document_object.DocumentObject[types.StudioId, Types.ID_TYPES]):
         return d['dir_name']
 
     @classmethod
-    def find_to_add_and_delete(cls, collection: pymongo_collection.Collection, dir: pathlib.Path):
+    def find_to_add_and_delete(cls, collection: pymongo_collection.Collection, dir: pathlib.Path) -> tuple[set[tuple[Types.ID_TYPES]], set[types.StudioId]]:
 
         local_id_keys: set[tuple[Types.ID_TYPES]] = set()
         for subdir in dir.iterdir():

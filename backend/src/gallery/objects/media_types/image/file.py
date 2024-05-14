@@ -2,9 +2,24 @@ import typing
 from gallery import types
 from gallery import types, config
 from gallery.objects.db import document_object
-from gallery.objects.media_types.bases import content_loader, file as base_file
+from gallery.objects.media_types.bases import file as base_file
 import pydantic
 import re
+
+
+class Types:
+    group_name = types.ImageGroupName
+    version = types.VersionId
+    size = types.SizeId
+    height = int
+    width = int
+    bytes = int
+    average_color = types.HexColor
+
+    ID_TYPES = typing.Literal['media_type', 'event_id', 'group_name',
+                              'version', 'size', 'file_ending']
+    ID_KEYS = ('media_type', 'event_id', 'group_name',
+               'version', 'size', 'file_ending')
 
 
 class Base:
@@ -13,29 +28,28 @@ class Base:
     _SIZE_END_TRIGGER: typing.ClassVar[str] = ')'
 
     FilenameIODict = typing.TypedDict('FilenameIODict', {
-        'group_name': types.ImageGroupPrivateId,
-        'version': types.VersionId,
-        'size': types.SizeId,
-        'file_ending': types.FileEnding
+        'group_name': Types.group_name,
+        'version': Types.version,
+        'size': Types.size,
+        'file_ending': base_file.Types.file_ending
     })
 
 
-class File(Base, document_object.DocumentObject[types.ImageFileId], base_file.File):
+class File(Base, document_object.DocumentObject[types.ImageFileId, Types.ID_TYPES], base_file.File):
 
-    group_name: types.ImageGroupPrivateId
-    version: types.VersionId = pydantic.Field(
+    group_name: Types.group_name
+    version: Types.version = pydantic.Field(
         default=config.ORIGINAL_KEY)
-    size: types.SizeId = pydantic.Field(default=config.ORIGINAL_KEY)
+    size: Types.size = pydantic.Field(default=config.ORIGINAL_KEY)
 
-    height: int | None = pydantic.Field(default=None)
-    width: int | None = pydantic.Field(default=None)
-    bytes: int | None = pydantic.Field(default=None)
-    average_color: types.HexColor | None = pydantic.Field(default=None)
+    height: Types.height | None = pydantic.Field(default=None)
+    width: Types.width | None = pydantic.Field(default=None)
+    bytes: Types.bytes | None = pydantic.Field(default=None)
+    average_color: Types.average_color | None = pydantic.Field(default=None)
 
     # class vars
     ACCEPTABLE_FILE_ENDINGS: typing.ClassVar[types.AcceptableFileEndings] = {'jpg', 'jpeg', 'png', 'gif', 'cr2',
                                                                              'bmp', 'tiff', 'tif', 'ico', 'svg', 'webp', 'raw', 'heif', 'heic'}
-    COLLECTION_NAME: typing.ClassVar[str] = 'image_files'
 
     @ pydantic.field_validator('height', 'width', 'bytes')
     def validate_positive(cls, v):
@@ -71,8 +85,8 @@ class File(Base, document_object.DocumentObject[types.ImageFileId], base_file.Fi
         """
 
         d: Base.FilenameIODict = {
-            'size': config.ORIGINAL_KEY,
-            'version': config.ORIGINAL_KEY
+            'size': None,
+            'version': None
         }
 
         args = filename.split('.', 1)
