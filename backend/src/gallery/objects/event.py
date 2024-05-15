@@ -1,7 +1,6 @@
 from pymongo import database, collection as pymongo_collection, MongoClient
 from gallery import types
 from gallery.objects.db import document_object
-from gallery.objects import media as media_module
 import pydantic
 import datetime as datetime_module
 import pathlib
@@ -9,7 +8,7 @@ import typing
 
 
 class Types:
-    datetime = datetime_module.datetime | None
+    datetime = datetime_module.datetime
     name = str
     studio_id = types.StudioId
     ALL_TYPES = typing.Literal['datetime', 'name', 'studio_id']
@@ -26,7 +25,7 @@ class Base:
 
 class Event(Base, document_object.DocumentObject[types.EventId, Types.ID_TYPES]):
     studio_id: Types.studio_id
-    datetime: Types.datetime = pydantic.Field(
+    datetime: Types.datetime | None = pydantic.Field(
         default=None)
     name: Types.name = pydantic.Field(default=None)
 
@@ -68,10 +67,6 @@ class Event(Base, document_object.DocumentObject[types.EventId, Types.ID_TYPES])
         directory_name += d['name']
         return directory_name
 
-    @classmethod
-    def find_event_ids_with_stale_studio_ids(cls, collection: pymongo_collection.Collection, studio_ids: list[types.StudioId]) -> set[types.EventId]:
-        return cls.find_ids(collection, filter={'studio_id': {'$nin': studio_ids}})
-
     @ classmethod
     def find_to_add_and_delete(cls, collection: pymongo_collection.Collection, dir: pathlib.Path, studio_id: types.StudioId) -> tuple[set[tuple[Types.ID_TYPES]], set[types.EventId]]:
 
@@ -80,23 +75,11 @@ class Event(Base, document_object.DocumentObject[types.EventId, Types.ID_TYPES])
             if subdir.is_dir():
                 d = cls.parse_directory_name(subdir.name)
                 d['studio_id'] = studio_id
-                local_id_keys.add(tuple(d[id_key] for id_key in Types.ID_KEYS))
+                local_id_keys.add(cls.dict_id_keys_to_tuple(d))
 
         # ids and id_keys in the database
-        db_id_and_id_keys = collection.find({'studio_id': studio_id}, projection={
-            ID_KEY: 1 for ID_KEY in Types.ID_KEYS})
-
-        # { (datetime.datetime(2023,12,20,0,0,0), 'Event Name'): 'sjk320sjk3' }
-        db_id_by_id_keys: dict[tuple[Types.ID_TYPES],
-                               types.EventId] = {}
-
-        for item in db_id_and_id_keys:
-            id_keys_tuple = tuple(
-                item[k] for k in Types.ID_KEYS)
-            if id_keys_tuple in db_id_by_id_keys:
-                raise ValueError(
-                    f"Duplicate keys in db: {cls.IDENTIFYING_KEYS}={id_keys_tuple}")
-            db_id_by_id_keys[id_keys_tuple] = item[cls.ID_KEY]
+        db_id_by_id_keys = cls.find_id_by_id_keys(
+            collection, {'studio_id': studio_id})
 
         db_id_keys = set(db_id_by_id_keys.keys())
 

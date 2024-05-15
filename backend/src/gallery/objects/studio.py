@@ -21,7 +21,7 @@ class Base:
     })
 
 
-class Studio(document_object.DocumentObject[types.StudioId, Types.ID_TYPES]):
+class Studio(Base, document_object.DocumentObject[types.StudioId, Types.ID_TYPES]):
     dir_name: Types.dir_name
     name: Types.name | None = pydantic.Field(default=None)
     IDENTIFYING_KEYS: typing.ClassVar[tuple[Types.ID_TYPES]] = Types.ID_KEYS
@@ -42,25 +42,9 @@ class Studio(document_object.DocumentObject[types.StudioId, Types.ID_TYPES]):
         for subdir in dir.iterdir():
             if subdir.is_dir():
                 d = cls.parse_directory_name(subdir.name)
-                local_id_keys.add(tuple(d[id_key]
-                                        for id_key in Types.ID_KEYS))
+                local_id_keys.add(cls.dict_id_keys_to_tuple(d))
 
-        # ids and id_keys in the database
-        db_id_and_id_keys = collection.find(projection={
-            ID_KEY: 1 for ID_KEY in Types.ID_KEYS})
-
-        # { ('studio1',): 'sjk320sjk3' }
-        db_id_by_id_keys: dict[tuple[Types.ID_TYPES],
-                               types.StudioId] = {}
-
-        for item in db_id_and_id_keys:
-            id_keys_tuple = tuple(
-                item[k] for k in Types.ID_KEYS)
-            if id_keys_tuple in db_id_by_id_keys:
-                raise ValueError(
-                    f"Duplicate keys in db: {cls.IDENTIFYING_KEYS}={id_keys_tuple}")
-            db_id_by_id_keys[id_keys_tuple] = item[Studio.ID_KEY]
-
+        db_id_by_id_keys = cls.find_id_by_id_keys(collection)
         db_id_keys = set(db_id_by_id_keys.keys())
 
         id_keys_to_add = local_id_keys - db_id_keys

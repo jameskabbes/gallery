@@ -8,7 +8,6 @@ import re
 
 
 class Types:
-    group_name = types.ImageGroupName
     version = types.VersionId
     size = types.SizeId
     height = int
@@ -16,10 +15,8 @@ class Types:
     bytes = int
     average_color = types.HexColor
 
-    ID_TYPES = typing.Literal['media_type', 'event_id', 'group_name',
-                              'version', 'size', 'file_ending']
-    ID_KEYS = ('media_type', 'event_id', 'group_name',
-               'version', 'size', 'file_ending')
+    ID_TYPES = base_file.Types.ID_TYPES | typing.Literal['version', 'size']
+    ID_KEYS = base_file.Types.ID_KEYS + ('version', 'size')
 
 
 class Base:
@@ -28,7 +25,7 @@ class Base:
     _SIZE_END_TRIGGER: typing.ClassVar[str] = ')'
 
     FilenameIODict = typing.TypedDict('FilenameIODict', {
-        'group_name': Types.group_name,
+        'name': str,
         'version': Types.version,
         'size': Types.size,
         'file_ending': base_file.Types.file_ending
@@ -37,11 +34,8 @@ class Base:
 
 class File(Base, document_object.DocumentObject[types.ImageFileId, Types.ID_TYPES], base_file.File):
 
-    group_name: Types.group_name
-    version: Types.version = pydantic.Field(
-        default=config.ORIGINAL_KEY)
-    size: Types.size = pydantic.Field(default=config.ORIGINAL_KEY)
-
+    version: Types.version | None = pydantic.Field(default=None)
+    size: Types.size | None = pydantic.Field(default=None)
     height: Types.height | None = pydantic.Field(default=None)
     width: Types.width | None = pydantic.Field(default=None)
     bytes: Types.bytes | None = pydantic.Field(default=None)
@@ -50,7 +44,6 @@ class File(Base, document_object.DocumentObject[types.ImageFileId, Types.ID_TYPE
     # class vars
     ACCEPTABLE_FILE_ENDINGS: typing.ClassVar[types.AcceptableFileEndings] = {'jpg', 'jpeg', 'png', 'gif', 'cr2',
                                                                              'bmp', 'tiff', 'tif', 'ico', 'svg', 'webp', 'raw', 'heif', 'heic'}
-    media_type: typing.ClassVar[str] = 'image.file'
     IDENTIFYING_KEYS: typing.ClassVar[tuple[Types.ID_TYPES]] = Types.ID_KEYS
 
     @ pydantic.field_validator('height', 'width', 'bytes')
@@ -83,7 +76,7 @@ class File(Base, document_object.DocumentObject[types.ImageFileId, Types.ID_TYPE
     def parse_filename(filename: types.Filename) -> Base.FilenameIODict:
         """Split the filename into its defining keys.
 
-        IMG_1234-A(SM).jpg -> {'group_name': 'IMG_1234', 'version': 'A', 'size': 'SM', 'file_ending': 'jpg'}
+        IMG_1234-A(SM).jpg -> {'name': 'IMG_1234', 'version': 'A', 'size': 'SM', 'file_ending': 'jpg'}
         """
 
         d: Base.FilenameIODict = {
@@ -113,7 +106,7 @@ class File(Base, document_object.DocumentObject[types.ImageFileId, Types.ID_TYPE
         args = root.rsplit(Base._VERSION_DELIM, 1)
         if len(args) == 2:
             d['version'] = args[-1]
-        d['group_name'] = args[0]
+        d['name'] = args[0]
 
         return d
 
@@ -121,7 +114,7 @@ class File(Base, document_object.DocumentObject[types.ImageFileId, Types.ID_TYPE
     def build_filename(d: Base.FilenameIODict) -> types.Filename:
         """Parse the id into its defining keys."""
 
-        string: types.Filename = d['group_name']
+        string: types.Filename = d['name']
         if d['version'] != None and d['version'] != config.ORIGINAL_KEY:
             string += f'{Base._VERSION_DELIM}{
                 d["version"]}'

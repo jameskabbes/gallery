@@ -12,15 +12,16 @@ type PrivateDocumentId = str
 
 type StudioId = str
 type EventId = str
+type GroupId = str
 
 type ImageFileId = str
 type VideoFileId = str
-type ImageGroupId = str
 type ImageGroupName = str
 
-type MediaId = ImageFileId | VideoFileId | ImageGroupId
-type MediaType = typing.Literal['image.file', 'image.group', 'video.file']
-type MediaCoreType = typing.Literal['image', 'video']
+type MediaId = ImageFileId | VideoFileId
+type MediaType = typing.Literal['image.file',
+                                'image.group', 'video.file', 'audio.file']
+type MediaCoreType = typing.Literal['image', 'video', 'audio']
 
 type VersionId = str
 type SizeId = str

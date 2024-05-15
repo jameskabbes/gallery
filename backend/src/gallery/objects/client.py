@@ -2,7 +2,7 @@ import typing
 import pathlib
 from gallery import config, utils
 from pymongo import database, MongoClient
-from gallery.objects import studio, event, media
+from gallery.objects import studio, event, file
 
 type uvicorn_port_type = int
 
@@ -143,10 +143,8 @@ class Client:
         studio_id_keys_by_id = studio.Studio.find_id_keys_by_id(
             self.db[studio.Studio.COLLECTION_NAME])
 
-        stale_event_ids = event.Event.find_event_ids_with_stale_studio_ids(
-            self.db[event.Event.COLLECTION_NAME], list(
-                studio_id_keys_by_id.keys())
-        )
+        stale_event_ids = event.Event.find_ids(
+            self.db[event.Event.COLLECTION_NAME], filter={'studio_id': {'$nin': list(studio_id_keys_by_id.keys())}})
 
         print('Stale event ids')
         print(stale_event_ids)
@@ -175,32 +173,41 @@ class Client:
             event.Event.delete_by_ids(
                 self.db[event.Event.COLLECTION_NAME], list(event_ids_to_delete))
 
-        # Medias
-        # remove medias that reference events that no longer exist
+        # groups
+        # remove groups that reference events that no longer exist
         event_id_keys_by_id = event.Event.find_id_keys_by_id(
             self.db[event.Event.COLLECTION_NAME])
 
-        stale_media_ids = media.Media.find_media_ids_with_stale_event_ids(
-            self.db[media.Media.COLLECTION_NAME], list(
-                event_id_keys_by_id.keys())
-        )
+        stale_file_ids = file.File.find_ids(
+            self.db[file.File.COLLECTION_NAME], filter={'event_id': {'$nin': list(event_id_keys_by_id.keys())}})
 
-        print('Stale media ids')
-        print(stale_media_ids)
+        print('Stale file ids')
+        print(stale_file_ids)
         print()
 
-        media.Media.delete_by_ids(
-            self.db[media.Media.COLLECTION_NAME], list(stale_media_ids))
+        file.File.delete_by_ids(
+            self.db[file.File.COLLECTION_NAME], list(stale_file_ids))
 
+        # loop through existing events and update groups
         for event_id in event_id_keys_by_id:
-            event_datetime = event_id_keys_by_id[event_id][0]
-            event_name = event_id_keys_by_id[event_id][1]
-            event_studio_id = event_id_keys_by_id[event_id][2]
+            event_dict = event.Event.id_keys_to_dict(
+                event_id_keys_by_id[event_id])
 
-            event_dir = self.studios_dir.joinpath(studio_id_keys_by_id[event_studio_id][0]).joinpath(
+            event_dir = self.studios_dir.joinpath(studio_id_keys_by_id[event_dict['studio_id']][0]).joinpath(
                 event.Event.build_directory_name(
-                    {'datetime': event_datetime, 'name': event_name})
+                    {'datetime': event_dict['datetime'], 'name': event_dict['name']})
             )
 
-            media_id_keys_to_add, media_ids_to_delete = media.Media.find_to_add_and_delete(
-                self.db[event.Event.COLLECTION_NAME], event_dir, event_id)
+            file_id_keys_to_add, file_ids_to_delete = file.File.find_to_add_and_delete(
+                self.db[file.File.COLLECTION_NAME], event_dir, event_id)
+
+            print(event_id)
+            print(file_id_keys_to_add)
+            print(file_ids_to_delete)
+
+            for file_id_keys in file_id_keys_to_add:
+                new_file = file.File.make_from_id_keys(file_id_keys)
+                new_file.insert(self.db[file.File.COLLECTION_NAME])
+            for file_id in file_ids_to_delete:
+                file.File.delete_by_ids(
+                    self.db[file.File.COLLECTION_NAME], [file_id])
