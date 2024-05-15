@@ -10,6 +10,7 @@ from pymongo import collection
 type DocumentId = str
 type PrivateDocumentId = str
 
+type FileId = str
 type StudioId = str
 type EventId = str
 type GroupId = str

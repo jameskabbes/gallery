@@ -2,7 +2,7 @@ import typing
 from pathlib import Path
 from gallery import config, utils, types
 from pymongo import MongoClient, database, collection as pymongo_collection
-from gallery.objects.db import document_object
+from gallery.objects.bases import document_object
 import pydantic
 import pathlib
 

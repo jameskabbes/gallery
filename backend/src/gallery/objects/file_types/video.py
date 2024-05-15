@@ -2,8 +2,8 @@ from gallery import types, config
 import pydantic
 import re
 import datetime as datetime_module
-from gallery.objects.media_types.bases import file as base_file
-from gallery.objects.db import document_object
+from gallery.objects.file_types import base as base_file
+from gallery.objects.bases import document_object
 import typing
 
 
@@ -16,6 +16,7 @@ class Types:
 
 class Base:
     Basics = dict[str, set[types.FileEnding]]
+    FILENAME_IO_KEYS: typing.ClassVar = ('name', 'file_ending')
     FilenameIODict = typing.TypedDict('FilenameIODict', {
         'name': str,
         'file_ending': base_file.Types.file_ending

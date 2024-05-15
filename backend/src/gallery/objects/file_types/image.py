@@ -1,8 +1,8 @@
 import typing
 from gallery import types
 from gallery import types, config
-from gallery.objects.db import document_object
-from gallery.objects.media_types.bases import file as base_file
+from gallery.objects.bases import document_object
+from gallery.objects.file_types import base as base_file
 import pydantic
 import re
 
@@ -24,6 +24,8 @@ class Base:
     _SIZE_BEG_TRIGGER: typing.ClassVar[str] = '('
     _SIZE_END_TRIGGER: typing.ClassVar[str] = ')'
 
+    FILENAME_IO_KEYS: typing.ClassVar = (
+        'name', 'version', 'size', 'file_ending')
     FilenameIODict = typing.TypedDict('FilenameIODict', {
         'name': str,
         'version': Types.version,

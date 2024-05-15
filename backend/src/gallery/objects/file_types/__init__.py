@@ -1,10 +1,10 @@
 from gallery import types
 
-from gallery.objects.media_types import image as image_module, video as video_module, audio as audio_module
+from gallery.objects.file_types import image as image_module, video as video_module, audio as audio_module
 
-from gallery.objects.media_types.video import file as video_file
-from gallery.objects.media_types.image import file as image_file
-from gallery.objects.media_types.audio import file as audio_file
+from gallery.objects.file_types.video import video as video_file
+from gallery.objects.file_types.image import image as image_file
+from gallery.objects.file_types.audio import audio as audio_file
 
 import typing
 
