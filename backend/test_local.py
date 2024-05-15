@@ -1,8 +1,8 @@
 import asyncio
 import re
 from gallery import config, types, utils
-from gallery.objects import studio, event, file, media_types
-from gallery.objects.media_types.image import file as image_file
+from gallery.objects import studio, event, file, file_types
+from gallery.objects.file_types.image import image as image_file
 
 from app import c
 

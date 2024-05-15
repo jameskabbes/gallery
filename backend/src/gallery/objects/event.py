@@ -1,6 +1,6 @@
 from pymongo import database, collection as pymongo_collection, MongoClient
 from gallery import types
-from gallery.objects.db import document_object
+from gallery.objects.bases import document_object
 import pydantic
 import datetime as datetime_module
 import pathlib
