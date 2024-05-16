@@ -1,3 +1,4 @@
+from fastapi import HTTPException, status
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
@@ -23,8 +24,8 @@ async def read_root():
 
 class StudiosResponse(typing.TypedDict):
     studios: dict[types.StudioId, studio.Studio]
-    studio_id_keys_to_add: set[tuple[studio.Studio.IDENTIFYING_KEYS_TYPE]]
-    studio_ids_to_delete: set[types.StudioId]
+    studios_to_add: dict[types.StudioId, studio.Studio]
+    studio_ids_to_delete: dict[types.StudioId, None]
 
 
 @app.get("/studios/")
@@ -32,12 +33,47 @@ async def get_studios() -> StudiosResponse:
     studio_id_keys_to_add, studios_ids_to_delete = studio.Studio.find_to_add_and_delete(
         c.db[studio.Studio.COLLECTION_NAME], c.studios_dir)
 
+    studios_to_add = {}
+    for studio_id_keys in studio_id_keys_to_add:
+        studio_inst = studio.Studio.make_from_id_keys(studio_id_keys)
+        studios_to_add[studio_inst.id] = studio_inst
+
     d: StudiosResponse = {}
     d['studios'] = studio.Studio.get_all(c.db[studio.Studio.COLLECTION_NAME])
-    d['studio_id_keys_to_add'] = studio_id_keys_to_add
-    d['studio_ids_to_delete'] = studios_ids_to_delete
+    d['studios_to_add'] = studios_to_add
+    d['studio_ids_to_delete'] = {
+        studio_id: None for studio_id in studios_ids_to_delete}
 
     return d
+
+
+@app.post("/studios/")
+async def create_studio(given_studio: studio.Studio):
+
+    if studio.Studio.id_exists(c.db[studio.Studio.COLLECTION_NAME], given_studio.id):
+        raise HTTPException(status_code=400, detail="Studio already exists")
+
+    result = given_studio.insert(c.db[studio.Studio.COLLECTION_NAME])
+
+    # make sure this was successful
+    if result.inserted_id == None:
+        raise HTTPException(
+            status_code=500, detail="Failed to insert studio into database")
+
+
+@app.delete("/studios/{studio_id}")
+async def delete_studio(studio_id: types.StudioId):
+    # Query the database to delete the studio
+    result = studio.Studio.delete_by_id(
+        c.db[studio.Studio.COLLECTION_NAME], studio_id)
+
+    # Check if a studio was actually deleted
+    if result.deleted_count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Studio not found")
+
+    # Return a message indicating the deletion was successful
+    return {"message": "Studio deleted successfully"}
 
 
 @app.get('/file/{file_id}/content/')

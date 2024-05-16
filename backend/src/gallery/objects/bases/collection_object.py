@@ -29,6 +29,6 @@ class CollectionObject[IdType]:
         return {i[cls.ID_KEY] for i in collection.find(filter, projection={cls.ID_KEY: 1})}
 
     @ classmethod
-    def exists(cls, collection: pymongo_collection.Collection, id: IdType) -> bool:
+    def id_exists(cls, collection: pymongo_collection.Collection, id: IdType) -> bool:
         """Check if the document's id exists in the database."""
         return collection.find_one({cls.ID_KEY: id}) is not None

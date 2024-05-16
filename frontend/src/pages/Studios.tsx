@@ -10,45 +10,97 @@ function Studios(): JSX.Element {
       paths[typeof API_PATH]['get']['responses']['200']['content']['application/json']
     >(API_PATH);
 
-  // set of whatever the ids_to_delete are
-  const [idsToDeleteSet, setIdsToDeleteSet] = useState<
-    Set<components['schemas']['StudioId']>
-  >(new Set());
-
-  // useEffect whenever data.studios.ids_to_delete changes, convert it to a set
   useEffect(() => {
-    if (data) {
-      setIdsToDeleteSet(new Set(data.ids_to_delete));
-    }
+    console.log('data changed');
+    console.log(data);
   }, [data]);
 
-  console.log(data);
+  async function deleteStudioId(studioId: components['schemas']['StudioId']) {
+    // remove studioId from data.studios and data.studio_ids_to_delete
 
-  async function deleteStudio(studioId: components['schemas']['StudioId']) {
+    const studioToBeDeleted = data.studios[studioId];
+
+    setData((prev) => {
+      if (!prev) {
+        return prev;
+      }
+
+      let newStudios = { ...prev.studios };
+      delete newStudios[studioId];
+      let newStudioIdsToDelete = { ...prev.studio_ids_to_delete };
+      delete newStudioIdsToDelete[studioId];
+
+      return {
+        ...prev,
+        studios: newStudios,
+        studio_ids_to_delete: newStudioIdsToDelete,
+      };
+    });
+
     setLoading(true);
     const response = await callApi<
-      paths[typeof API_PATH]['get']['responses']['200']['content']['application/json']
-    >(`/studios/${studioId}/delete/`, 'POST');
-    if (response.status === 200) {
-      setData(response.data);
-      setStatus(response.status);
-    } else {
+      paths['/studios/{studio_id}']['delete']['responses']['200']['content']['application/json']
+    >(`/studios/${studioId}`, 'DELETE');
+    if (response.status !== 200 && response.status !== 204) {
       console.error(`Error deleting studio: ${response.status}`);
+      setData((prev) => {
+        if (!prev) {
+          return prev;
+        }
+        let newStudios = { ...prev.studios };
+        newStudios[studioId] = studioToBeDeleted;
+        let newStudioIdsToDelete = { ...prev.studio_ids_to_delete };
+        newStudioIdsToDelete[studioId] = null;
+        return {
+          ...prev,
+          studios: newStudios,
+          studio_ids_to_delete: newStudioIdsToDelete,
+        };
+      });
     }
     setLoading(false);
   }
-  async function importStudio(
-    dirName: components['schemas']['Studio']['dir_name']
-  ) {
+  async function importStudio(studio: components['schemas']['Studio']) {
+    //add studio to data.studios
+    //remove studio from data.stusions_to_add
+
+    setData((prev) => {
+      if (!prev) {
+        return prev;
+      }
+
+      let newStudios = { ...prev.studios };
+      newStudios[studio._id] = studio;
+      let newStudiosToAdd = { ...prev.studios_to_add };
+      delete newStudiosToAdd[studio._id];
+
+      return {
+        ...prev,
+        studios: newStudios,
+        studios_to_add: newStudiosToAdd,
+      };
+    });
+
     setLoading(true);
     const response = await callApi<
-      paths[typeof API_PATH]['get']['responses']['200']['content']['application/json']
-    >(`/studios/${dirName}/import/`, 'POST');
-    if (response.status === 200) {
-      setData(response.data);
-      setStatus(response.status);
-    } else {
+      paths['/studios/']['post']['responses']['200']['content']['application/json']
+    >(`/studios/`, 'POST', studio);
+    console.log(response);
+
+    if (response.status !== 200 && response.status !== 204) {
       console.error(`Error importing studio: ${response.status}`);
+      // remove studio from studios
+      setData((prev) => {
+        if (!prev) {
+          return prev;
+        }
+        const newStudios = { ...prev.studios };
+        delete newStudios[studio._id];
+        return {
+          ...prev,
+          studios: newStudios,
+        };
+      });
     }
     setLoading(false);
   }
@@ -59,39 +111,33 @@ function Studios(): JSX.Element {
       {data && (
         <div>
           <ul>
-            {Object.keys(data.studios).map((key) => (
-              <li key={key}>
-                <div className="card">{data.studios[key].dir_name}</div>
+            {Object.keys(data.studios).map((studioId) => (
+              <li key={studioId}>
+                <div className="card">
+                  {data.studios[studioId].dir_name}
+                  {studioId in data.studio_ids_to_delete && (
+                    <button onClick={() => deleteStudioId(studioId)}>
+                      Delete
+                    </button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
-          {data.dir_names_to_add.length !== 0 && (
+          {Object.keys(data.studios_to_add).length !== 0 && (
             <>
               <h2>Studios to Add</h2>
               <ul>
-                {data.dir_names_to_add.map((dirName) => (
-                  <li key={dirName}>
+                {Object.keys(data.studios_to_add).map((studioId) => (
+                  <li key={data.studios_to_add[studioId]._id}>
                     <div className="card">
-                      {dirName}
-                      <button onClick={() => importStudio(dirName)}>
+                      {data.studios_to_add[studioId].dir_name}
+                      <button
+                        onClick={() =>
+                          importStudio(data.studios_to_add[studioId])
+                        }
+                      >
                         Import
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-          {data.ids_to_delete.length !== 0 && (
-            <>
-              <h2>Studios to Delete</h2>
-              <ul>
-                {data.ids_to_delete.map((studioId) => (
-                  <li key={studioId}>
-                    <div className="card">
-                      <span>{data.studios[studioId].dir_name}</span>
-                      <button onClick={() => deleteStudio(studioId)}>
-                        Delete
                       </button>
                     </div>
                   </li>

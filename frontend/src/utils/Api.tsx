@@ -36,27 +36,28 @@ async function callApi<T>(
   }
 }
 
+async function updateApiStates<T>(setApiData, setLoading, setStatus, endpoint) {
+  try {
+    const response = await callApi<T>(endpoint);
+    setApiData(response.data);
+    setStatus(response.status);
+    setLoading(false);
+  } catch (error) {
+    console.error(error);
+    setLoading(false);
+  }
+}
+
 function useApiData<T>(endpoint: string): UseApiDataReturn<T> {
   const [apiData, setApiData] = useState<ApiResponseData<T>>(null);
   const [loading, setLoading] = useState<ApiResponseLoading>(true);
   const [status, setStatus] = useState<ApiResponseStatus>(null);
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const response = await callApi<T>(endpoint);
-        setApiData(response.data);
-        setStatus(response.status);
-        setLoading(false);
-      } catch (error) {
-        console.error(error);
-        setLoading(false);
-      }
-    }
-    fetchData();
+    updateApiStates<T>(setApiData, setLoading, setStatus, endpoint);
   }, [endpoint]);
 
   return [apiData, setApiData, loading, setLoading, status, setStatus];
 }
 
-export { callApi, useApiData };
+export { callApi, updateApiStates, useApiData };

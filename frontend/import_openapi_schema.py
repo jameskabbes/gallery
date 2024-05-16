@@ -5,8 +5,8 @@ from pathlib import Path
 
 project_config = json.loads(Path('../config.json').read_text())
 
-COMMAND = 'npx openapi-typescript ../{} -o ./src/openapi_schema.d.ts'.format(
-    project_config['openapi_schema_path'])
+COMMAND = ['npx', 'openapi-typescript', '../{}'.format(
+    project_config['openapi_schema_path']), '-o', './src/openapi_schema.d.ts']
 
 
 def run_command():

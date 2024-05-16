@@ -12,18 +12,16 @@ export interface paths {
   "/studios/": {
     /** Get Studios */
     get: operations["get_studios_studios__get"];
+    /** Create Studio */
+    post: operations["create_studio_studios__post"];
   };
-  "/studios/{dir_name}/import/": {
-    /** Import Studio */
-    post: operations["import_studio_studios__dir_name__import__post"];
-  };
-  "/studios/{studio_id}/delete/": {
+  "/studios/{studio_id}": {
     /** Delete Studio */
-    post: operations["delete_studio_studios__studio_id__delete__post"];
+    delete: operations["delete_studio_studios__studio_id__delete"];
   };
-  "/studio/{studio_id}/": {
-    /** Get Studio */
-    get: operations["get_studio_studio__studio_id___get"];
+  "/file/{file_id}/content/": {
+    /** Get File */
+    get: operations["get_file_file__file_id__content__get"];
   };
 }
 
@@ -31,29 +29,14 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
-    /** Event */
-    Event: {
-      _id: components["schemas"]["EventId"];
-      /** Datetime */
-      datetime?: string | null;
-      name?: components["schemas"]["ImageGroupName"];
-      media?: components["schemas"]["Media"];
-    };
-    EventId: string;
+    AudioId: string;
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
       detail?: components["schemas"]["ValidationError"][];
     };
-    ImageGroupId: string;
-    ImageGroupName: string;
-    /** Media */
-    Media: {
-      /** Content */
-      content?: {
-        [key: string]: "image" | "video";
-      };
-    };
+    ImageId: string;
+    MediaIdType: components["schemas"]["ImageId"] | components["schemas"]["VideoId"] | components["schemas"]["AudioId"];
     /** Studio */
     Studio: {
       _id: components["schemas"]["StudioId"];
@@ -63,24 +46,20 @@ export interface components {
       name?: string | null;
     };
     StudioId: string;
-    /** StudioResponse */
-    StudioResponse: {
-      studio: components["schemas"]["Studio"];
-      /** Events */
-      events: {
-        [key: string]: components["schemas"]["Event"];
-      };
-    };
     /** StudiosResponse */
     StudiosResponse: {
       /** Studios */
       studios: {
         [key: string]: components["schemas"]["Studio"];
       };
-      /** Dir Names To Add */
-      dir_names_to_add: string[];
-      /** Ids To Delete */
-      ids_to_delete: components["schemas"]["StudioId"][];
+      /** Studios To Add */
+      studios_to_add: {
+        [key: string]: components["schemas"]["Studio"];
+      };
+      /** Studio Ids To Delete */
+      studio_ids_to_delete: {
+        [key: string]: null;
+      };
     };
     /** ValidationError */
     ValidationError: {
@@ -128,18 +107,18 @@ export interface operations {
       };
     };
   };
-  /** Import Studio */
-  import_studio_studios__dir_name__import__post: {
-    parameters: {
-      path: {
-        dir_name: string;
+  /** Create Studio */
+  create_studio_studios__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Studio"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["StudiosResponse"];
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */
@@ -151,7 +130,7 @@ export interface operations {
     };
   };
   /** Delete Studio */
-  delete_studio_studios__studio_id__delete__post: {
+  delete_studio_studios__studio_id__delete: {
     parameters: {
       path: {
         studio_id: components["schemas"]["StudioId"];
@@ -161,7 +140,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["StudiosResponse"];
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */
@@ -172,18 +151,18 @@ export interface operations {
       };
     };
   };
-  /** Get Studio */
-  get_studio_studio__studio_id___get: {
+  /** Get File */
+  get_file_file__file_id__content__get: {
     parameters: {
       path: {
-        studio_id: components["schemas"]["StudioId"];
+        file_id: components["schemas"]["MediaIdType"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["StudioResponse"];
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */

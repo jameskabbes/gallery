@@ -73,7 +73,7 @@ class DocumentObject[IdType: types.DocumentId, IdentifyingKeysType](pydantic.Bas
         return collection.update_one(
             {self.ID_KEY: self.id}, {'$set': self.model_dump(by_alias=True, include=fields)})
 
-    def insert(self, collection: pymongo_collection.Collection) -> results.UpdateResult:
+    def insert(self, collection: pymongo_collection.Collection) -> results.InsertOneResult:
         """Insert the document into the database."""
         return collection.insert_one(self.model_dump(
             by_alias=True, exclude_defaults=True))
