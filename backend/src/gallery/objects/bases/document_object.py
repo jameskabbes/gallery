@@ -13,7 +13,11 @@ class DocumentObject[IdType: types.DocumentId, IdentifyingKeysType](pydantic.Bas
 
     IDENTIFYING_KEYS_TYPE: typing.ClassVar = IdentifyingKeysType
     IDENTIFYING_KEYS: typing.ClassVar[tuple[IdentifyingKeysType]]
-    PluralByIDType: typing.ClassVar[dict[IdType, typing.Self]]
+
+    @classmethod
+    def get_all(cls, collection: pymongo_collection.Collection) -> dict[IdType, typing.Self]:
+        """Load all documents from the database."""
+        return {i[cls.ID_KEY]: cls(**i) for i in collection.find()}
 
     @ classmethod
     def get_by_id(cls, collection: pymongo_collection.Collection, id: IdType, projection: dict = {}) -> typing.Self | None:

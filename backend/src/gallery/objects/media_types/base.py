@@ -38,7 +38,7 @@ class File(Base, document_object.DocumentObject[types.MediaId, Types.ID_TYPES], 
     file_ending: Types.file_ending
     relative_path: Types.relative_path
     ACCEPTABLE_FILE_ENDINGS: typing.ClassVar[types.AcceptableFileEndings] = {}
-    COLLECTION_NAME: typing.ClassVar[str] = 'files'
+    COLLECTION_NAME: typing.ClassVar[str] = 'media'
 
     @property
     def filename(self):

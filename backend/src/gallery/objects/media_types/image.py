@@ -121,7 +121,7 @@ class File(Base, document_object.DocumentObject[types.ImageId, Types.ID_TYPES], 
             string += f'{Base._VERSION_DELIM}{
                 d["version"]}'
         if d['size'] != None and d['size'] != config.ORIGINAL_KEY:
-            string += f'{Base._SIZE_BEG_TRIGGER}{Base._VERSION_DELIM}{
+            string += f'{Base._SIZE_BEG_TRIGGER}{
                 d["size"]}{Base._SIZE_END_TRIGGER}'
         string += f'.{d["file_ending"]}'
         return string

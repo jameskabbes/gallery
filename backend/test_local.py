@@ -4,21 +4,15 @@ from gallery import config, types, utils
 from gallery.objects import media, studio, event, media_types
 
 from app import c
+import app
 
-c.sync_with_local()
 
-# im = image_file.File.get_by_id(c.db['files'], 'Hr0aOpWOF5b3')
-# print(im)
+id = 'nqWxD2VvRLXP'
 
-# print(im.build_path(config.DATA_DIR))
-
-"""
 
 async def main():
-    response = await app.delete_studio('p42pGYcU69z4')
+    response = await app.get_studios()
     print(response)
 
-# Python 3.7+
-asyncio.run(main())
-
-"""
+if __name__ == '__main__':
+    asyncio.run(main())

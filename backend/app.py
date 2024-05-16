@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pymongo import MongoClient
 from gallery import config, types, utils
-from gallery.objects import media, studio, event, client
+from gallery.objects import media, studio, event, client, media_types
 
 import pydantic
 import datetime
@@ -20,37 +20,57 @@ c = client.Client()
 async def read_root():
     return {"home": datetime.datetime.now()}
 
-    """
-
-@app.get('/file/{file_id}/')
-async def get_file(file_id: types.FileId):
-
-    db_obj = media.File.find_by_id(c.db[media.File.COLLECTION_NAME], file_id)
-
-    file_inst = media.File.find_by_id(c.db['files'], file_id)
-
-    return FileResponse(c.db['files'].find_one(file_id)['path'])
-
-
 
 class StudiosResponse(typing.TypedDict):
-    studios: studio.Studio.PluralByIdType
-    dir_names_to_add: set[str]  # fix
-    ids_to_delete: set[types.StudioId]
+    studios: dict[types.StudioId, studio.Studio]
+    studio_id_keys_to_add: set[tuple[studio.Studio.IDENTIFYING_KEYS_TYPE]]
+    studio_ids_to_delete: set[types.StudioId]
 
 
 @app.get("/studios/")
 async def get_studios() -> StudiosResponse:
-
-    dir_names_to_add, studios_ids_to_delete = studios.Studios.get_add_and_delete(
-        c.db[studios.Studios.COLLECTION_NAME])
+    studio_id_keys_to_add, studios_ids_to_delete = studio.Studio.find_to_add_and_delete(
+        c.db[studio.Studio.COLLECTION_NAME], c.studios_dir)
 
     d: StudiosResponse = {}
-    d['studios'] = studios.Studios.find(c.db[studios.Studios.COLLECTION_NAME])
-    d['dir_names_to_add'] = dir_names_to_add
-    d['ids_to_delete'] = studios_ids_to_delete
+    d['studios'] = studio.Studio.get_all(c.db[studio.Studio.COLLECTION_NAME])
+    d['studio_id_keys_to_add'] = studio_id_keys_to_add
+    d['studio_ids_to_delete'] = studios_ids_to_delete
 
     return d
+
+
+@app.get('/file/{file_id}/content/')
+async def get_file(file_id: types.MediaIdType) -> FileResponse:
+
+    media_file_dict = media.Media.find_by_id(
+        c.db[media.Media.COLLECTION_NAME], file_id, {'media_type': 1})
+
+    if media_file_dict == None:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    media_type: types.MediaType = media_file_dict['media_type']
+    if media_type not in media_types.TYPES:
+        raise HTTPException(status_code=404, detail="Media type not found")
+
+    file_class = media_types.FILE_CLASS_MAPPING[media_type]
+    file_obj = file_class.get_by_id(c.db[media.Media.COLLECTION_NAME], file_id)
+    if file_obj == None:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    event_obj = event.Event.get_by_id(
+        c.db[event.Event.COLLECTION_NAME], file_obj.event_id)
+    if event_obj == None:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    studio_dict = studio.Studio.find_by_id(
+        c.db[studio.Studio.COLLECTION_NAME], event_obj.studio_id)
+    if studio_dict == None:
+        raise HTTPException(status_code=404, detail="Studio not found")
+
+    return FileResponse(file_obj.build_path(c.studios_dir.joinpath(studio_dict['dir_name']).joinpath(event_obj.directory_name)))
+
+    """
 
 
 @app.post("/studios/{dir_name}/import/")
