@@ -2,7 +2,7 @@ import typing
 import pathlib
 from gallery import config, utils
 from pymongo import database, MongoClient
-from gallery.objects import studio, event, file
+from gallery.objects import media, studio, event
 
 type uvicorn_port_type = int
 
@@ -178,15 +178,15 @@ class Client:
         event_id_keys_by_id = event.Event.find_id_keys_by_id(
             self.db[event.Event.COLLECTION_NAME])
 
-        stale_file_ids = file.File.find_ids(
-            self.db[file.File.COLLECTION_NAME], filter={'event_id': {'$nin': list(event_id_keys_by_id.keys())}})
+        stale_file_ids = media.Media.find_ids(
+            self.db[media.Media.COLLECTION_NAME], filter={'event_id': {'$nin': list(event_id_keys_by_id.keys())}})
 
         print('Stale file ids')
         print(stale_file_ids)
         print()
 
-        file.File.delete_by_ids(
-            self.db[file.File.COLLECTION_NAME], list(stale_file_ids))
+        media.Media.delete_by_ids(
+            self.db[media.Media.COLLECTION_NAME], list(stale_file_ids))
 
         # loop through existing events and update groups
         for event_id in event_id_keys_by_id:
@@ -198,16 +198,22 @@ class Client:
                     {'datetime': event_dict['datetime'], 'name': event_dict['name']})
             )
 
-            file_id_keys_to_add, file_ids_to_delete = file.File.find_to_add_and_delete(
-                self.db[file.File.COLLECTION_NAME], event_dir, event_id)
+            file_id_keys_to_add, file_ids_to_delete = media.Media.find_to_add_and_delete(
+                self.db[media.Media.COLLECTION_NAME], event_dir, event_id)
 
             print(event_id)
             print(file_id_keys_to_add)
             print(file_ids_to_delete)
 
             for file_id_keys in file_id_keys_to_add:
-                new_file = file.File.make_from_id_keys(file_id_keys)
-                new_file.insert(self.db[file.File.COLLECTION_NAME])
-            for file_id in file_ids_to_delete:
-                file.File.delete_by_ids(
-                    self.db[file.File.COLLECTION_NAME], [file_id])
+                file_class = media.Media.get_media_type_from_id_keys(
+                    file_id_keys)
+                if file_class is None:
+                    Warning('File ending not recognized {} not recognized on file {}'.format(
+                        file_id_keys['file_ending'], file_id_keys))
+                    continue
+                new_file = file_class.make_from_id_keys(file_id_keys)
+                new_file.insert(self.db[media.Media.COLLECTION_NAME])
+
+            media.Media.delete_by_ids(
+                self.db[media.Media.COLLECTION_NAME], list(file_ids_to_delete))

@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pymongo import MongoClient
 from gallery import config, types, utils
-from gallery.objects import studio, event, client, file
+from gallery.objects import media, studio, event, client
 
 import pydantic
 import datetime
@@ -20,17 +20,17 @@ c = client.Client()
 async def read_root():
     return {"home": datetime.datetime.now()}
 
+    """
 
 @app.get('/file/{file_id}/')
 async def get_file(file_id: types.FileId):
 
-    db_obj = file.File.find_by_id(c.db[file.File.COLLECTION_NAME], file_id)
+    db_obj = media.File.find_by_id(c.db[media.File.COLLECTION_NAME], file_id)
 
-    file_inst = file.File.find_by_id(c.db['files'], file_id)
+    file_inst = media.File.find_by_id(c.db['files'], file_id)
 
     return FileResponse(c.db['files'].find_one(file_id)['path'])
 
-    """
 
 
 class StudiosResponse(typing.TypedDict):

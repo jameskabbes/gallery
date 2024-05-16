@@ -1,7 +1,7 @@
 from gallery import types, config
 import pydantic
 import datetime as datetime_module
-from gallery.objects.file_types import base as base_file
+from gallery.objects.media_types import base as base_file
 from gallery.objects.bases import document_object
 import typing
 
@@ -22,7 +22,7 @@ class Base:
     })
 
 
-class File(Base, document_object.DocumentObject[types.VideoFileId, Types.ID_KEYS], base_file.File):
+class File(Base, document_object.DocumentObject[types.AudioId, Types.ID_KEYS], base_file.File):
     datetime: datetime_module.datetime | None = pydantic.Field(default=None)
     name: str
 

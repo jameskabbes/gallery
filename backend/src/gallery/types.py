@@ -8,21 +8,17 @@ from pymongo import collection
 
 # types of documents in the database
 type DocumentId = str
-type PrivateDocumentId = str
 
-type FileId = str
+# types of files
+type MediaId = str
+type MediaType = typing.Literal['image', 'video', 'audio']
+type ImageId = str
+type VideoId = str
+type AudioId = str
+type MediaIdType = ImageId | VideoId | AudioId
+
 type StudioId = str
 type EventId = str
-type GroupId = str
-
-type ImageFileId = str
-type VideoFileId = str
-type ImageGroupName = str
-
-type MediaId = ImageFileId | VideoFileId
-type MediaType = typing.Literal['image.file',
-                                'image.group', 'video.file', 'audio.file']
-type MediaCoreType = typing.Literal['image', 'video', 'audio']
 
 type VersionId = str
 type SizeId = str

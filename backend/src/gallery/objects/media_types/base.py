@@ -9,7 +9,7 @@ import pathlib
 
 
 class Types:
-    media_type = types.MediaCoreType
+    media_type = types.MediaType
     event_id = str
     name = str
     file_ending = types.FileEnding
