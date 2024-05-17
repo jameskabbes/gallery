@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { callApi, useApiData } from '../utils/Api';
 import { paths, operations, components } from '../openapi_schema';
 
-const API_PATH = '/studio/{studio_id}/';
+const API_PATH = '/studios/{studio_id}/';
 
 function Studio(): JSX.Element {
   const { studioId } = useParams();
@@ -12,7 +12,7 @@ function Studio(): JSX.Element {
     paths[typeof API_PATH]['get']['responses']['200']['content']['application/json']
   >(API_PATH.replace('{studio_id}', studioId));
 
-  console.log(data);
+  console.log(studioId);
 
   return (
     <>
@@ -22,7 +22,35 @@ function Studio(): JSX.Element {
             {data.studio.dir_name} {data.studio.name}
           </h1>
           <h2>Events</h2>
-          <button>Update Events</button>
+          <ul>
+            {Object.keys(data.events).map((eventId) => (
+              <div className="card">
+                <li key={eventId}>
+                  {data.events[eventId].datetime}
+                  {data.events[eventId].name}
+                  {eventId in data.event_ids_to_delete && (
+                    <button onClick={() => {}}>Delete</button>
+                  )}
+                </li>
+              </div>
+            ))}
+          </ul>
+          {Object.keys(data.events_to_add).length !== 0 && (
+            <>
+              <h2>Events to Add</h2>
+              <ul>
+                {Object.keys(data.events_to_add).map((eventId) => (
+                  <li key={data.events_to_add[eventId]._id}>
+                    <div className="card">
+                      {data.events_to_add[eventId]?.name}
+                      {data.events_to_add[eventId]?.datetime}
+                      <button onClick={() => {}}>Import</button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </>
       )}
     </>

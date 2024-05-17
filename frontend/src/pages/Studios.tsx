@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { callApi, useApiData } from '../utils/Api';
 import { paths, operations, components } from '../openapi_schema';
+import { Link } from 'react-router-dom';
 
 const API_PATH = '/studios/';
 
@@ -9,11 +10,6 @@ function Studios(): JSX.Element {
     useApiData<
       paths[typeof API_PATH]['get']['responses']['200']['content']['application/json']
     >(API_PATH);
-
-  useEffect(() => {
-    console.log('data changed');
-    console.log(data);
-  }, [data]);
 
   async function deleteStudioId(studioId: components['schemas']['StudioId']) {
     // remove studioId from data.studios and data.studio_ids_to_delete
@@ -39,7 +35,7 @@ function Studios(): JSX.Element {
 
     setLoading(true);
     const response = await callApi<
-      paths['/studios/{studio_id}']['delete']['responses']['200']['content']['application/json']
+      paths['/studios/{studio_id}/']['delete']['responses']['200']['content']['application/json']
     >(`/studios/${studioId}`, 'DELETE');
     if (response.status !== 200 && response.status !== 204) {
       console.error(`Error deleting studio: ${response.status}`);
@@ -113,14 +109,16 @@ function Studios(): JSX.Element {
           <ul>
             {Object.keys(data.studios).map((studioId) => (
               <li key={studioId}>
-                <div className="card">
-                  {data.studios[studioId].dir_name}
-                  {studioId in data.studio_ids_to_delete && (
-                    <button onClick={() => deleteStudioId(studioId)}>
-                      Delete
-                    </button>
-                  )}
-                </div>
+                <Link to={`/studios/${studioId}`}>
+                  <div className="card">
+                    {data.studios[studioId].dir_name}
+                    {studioId in data.studio_ids_to_delete && (
+                      <button onClick={() => deleteStudioId(studioId)}>
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                </Link>
               </li>
             ))}
           </ul>

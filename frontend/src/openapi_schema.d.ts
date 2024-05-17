@@ -10,14 +10,16 @@ export interface paths {
     get: operations["read_root__get"];
   };
   "/studios/": {
-    /** Get Studios */
-    get: operations["get_studios_studios__get"];
+    /** Studios Page */
+    get: operations["studios_page_studios__get"];
     /** Create Studio */
     post: operations["create_studio_studios__post"];
   };
-  "/studios/{studio_id}": {
+  "/studios/{studio_id}/": {
+    /** Studio Page */
+    get: operations["studio_page_studios__studio_id___get"];
     /** Delete Studio */
-    delete: operations["delete_studio_studios__studio_id__delete"];
+    delete: operations["delete_studio_studios__studio_id___delete"];
   };
   "/file/{file_id}/content/": {
     /** Get File */
@@ -30,6 +32,16 @@ export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
     AudioId: string;
+    /** Event */
+    Event: {
+      _id: components["schemas"]["EventId"];
+      studio_id: components["schemas"]["StudioId"];
+      /** Datetime */
+      datetime?: string | null;
+      /** Name */
+      name?: string;
+    };
+    EventId: string;
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
@@ -46,6 +58,22 @@ export interface components {
       name?: string | null;
     };
     StudioId: string;
+    /** StudioResponse */
+    StudioResponse: {
+      studio: components["schemas"]["Studio"];
+      /** Events */
+      events: {
+        [key: string]: components["schemas"]["Event"];
+      };
+      /** Events To Add */
+      events_to_add: {
+        [key: string]: components["schemas"]["Event"];
+      };
+      /** Event Ids To Delete */
+      event_ids_to_delete: {
+        [key: string]: null;
+      };
+    };
     /** StudiosResponse */
     StudiosResponse: {
       /** Studios */
@@ -96,8 +124,8 @@ export interface operations {
       };
     };
   };
-  /** Get Studios */
-  get_studios_studios__get: {
+  /** Studios Page */
+  studios_page_studios__get: {
     responses: {
       /** @description Successful Response */
       200: {
@@ -129,8 +157,30 @@ export interface operations {
       };
     };
   };
+  /** Studio Page */
+  studio_page_studios__studio_id___get: {
+    parameters: {
+      path: {
+        studio_id: components["schemas"]["StudioId"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["StudioResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   /** Delete Studio */
-  delete_studio_studios__studio_id__delete: {
+  delete_studio_studios__studio_id___delete: {
     parameters: {
       path: {
         studio_id: components["schemas"]["StudioId"];

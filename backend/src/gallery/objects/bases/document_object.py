@@ -15,9 +15,14 @@ class DocumentObject[IdType: types.DocumentId, IdentifyingKeysType](pydantic.Bas
     IDENTIFYING_KEYS: typing.ClassVar[tuple[IdentifyingKeysType]]
 
     @classmethod
+    def get(cls, collection: pymongo_collection.Collection, filter: dict = {}, projection: dict = {}) -> dict[IdType, typing.Self]:
+        """Load all documents from the database that match the filter."""
+        return {i[cls.ID_KEY]: cls(**i) for i in collection.find(filter, projection)}
+
+    @classmethod
     def get_all(cls, collection: pymongo_collection.Collection) -> dict[IdType, typing.Self]:
         """Load all documents from the database."""
-        return {i[cls.ID_KEY]: cls(**i) for i in collection.find()}
+        return cls.get(collection)
 
     @ classmethod
     def get_by_id(cls, collection: pymongo_collection.Collection, id: IdType, projection: dict = {}) -> typing.Self | None:

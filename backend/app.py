@@ -29,7 +29,7 @@ class StudiosResponse(typing.TypedDict):
 
 
 @app.get("/studios/")
-async def get_studios() -> StudiosResponse:
+async def studios_page() -> StudiosResponse:
     studio_id_keys_to_add, studios_ids_to_delete = studio.Studio.find_to_add_and_delete(
         c.db[studio.Studio.COLLECTION_NAME], c.studios_dir)
 
@@ -61,7 +61,7 @@ async def create_studio(given_studio: studio.Studio):
             status_code=500, detail="Failed to insert studio into database")
 
 
-@app.delete("/studios/{studio_id}")
+@app.delete("/studios/{studio_id}/")
 async def delete_studio(studio_id: types.StudioId):
     # Query the database to delete the studio
     result = studio.Studio.delete_by_id(
@@ -97,6 +97,42 @@ async def update_studio(studio_id: types.StudioId, given_studio: studio.Studio):
 
     return studio_inst
 """
+
+
+class StudioResponse(typing.TypedDict):
+    studio: studio.Studio
+    events: dict[types.EventId, event.Event]
+    events_to_add: dict[types.EventId, event.Event]
+    event_ids_to_delete: dict[types.EventId, None]
+
+
+@app.get('/studios/{studio_id}/')
+async def studio_page(studio_id: types.StudioId) -> StudioResponse:
+
+    studio_inst = studio.Studio.get_by_id(
+        c.db[studio.Studio.COLLECTION_NAME], studio_id)
+
+    if studio_inst == None:
+        raise HTTPException(status_code=404, detail="Studio not found")
+
+    events = event.Event.get(
+        c.db[event.Event.COLLECTION_NAME], {'studio_id': studio_id})
+    event_id_keys_to_add, event_ids_to_delete = event.Event.find_to_add_and_delete(
+        c.db[event.Event.COLLECTION_NAME], c.studios_dir.joinpath(studio_inst.dir_name), studio_id)
+
+    events_to_add = {}
+    for event_id_keys in event_id_keys_to_add:
+        event_inst = event.Event.make_from_id_keys(event_id_keys)
+        events_to_add[event_inst.id] = event_inst
+
+    d: StudioResponse = {}
+    d['studio'] = studio_inst
+    d['events'] = events
+    d['events_to_add'] = events_to_add
+    d['event_ids_to_delete'] = {
+        event_id: None for event_id in event_ids_to_delete}
+
+    return d
 
 
 @app.get('/file/{file_id}/content/')

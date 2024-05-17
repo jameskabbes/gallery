@@ -14,7 +14,7 @@ function App(): JSX.Element {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/studios" element={<Studios />} />
-          <Route path="/studio/:studioId" element={<Studio />} />
+          <Route path="/studios/:studioId" element={<Studio />} />
           <Route path="/404" element={<p>404</p>} />
           <Route path="*" element={<Navigate to="/404" />} />
         </Routes>
