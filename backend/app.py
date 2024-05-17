@@ -25,11 +25,14 @@ async def read_root():
 # Studios
 
 
-def test[T1: int, T2: int](a: T1, b: T2) -> dict[T1, T2]:
+def test[T1, T2](a: T1, b: T2) -> dict[T1, T2]:
     return a + b
 
 
-result = test(1, 2)
+a: int = 1
+b: int = 2
+
+result = test(a, b)
 
 
 def delete_record[IdType: types.DocumentId, ItemType: collection_object.CollectionObject](id: IdType, collection_object_class: typing.Type[ItemType]):
@@ -43,12 +46,16 @@ def delete_record[IdType: types.DocumentId, ItemType: collection_object.Collecti
     return {"message": "Record deleted successfully"}
 
 
-def get_records[IdType: types.DocumentId, ItemType: document_object.DocumentObject](document_object_class: typing.Type[ItemType]) -> dict[IdType, ItemType]:
-    return document_object_class.get_all(
-        c.db[document_object_class.COLLECTION_NAME])
+def get_records[IdType: types.DocumentId, ItemType: document_object.DocumentObject](_: IdType, document_object_class: typing.Type[ItemType]) -> dict[IdType, ItemType]:
+    return document_object_class.get_all(c.db[document_object_class.COLLECTION_NAME])
 
 
-a = get_records(studio.Studio)
+def test2() -> types.StudioId:
+    return '123'
+
+
+c1: types.StudioId['123']
+d = get_records(c1, studio.Studio)
 
 
 @app.delete("/studios/{studio_id}")
@@ -58,7 +65,8 @@ async def delete_studio(studio_id: types.StudioId):
 
 @app.get("/studios")
 async def get_studios() -> dict[types.StudioId, studio.Studio]:
-    return studio.Studio.get_all(c.db[studio.Studio.COLLECTION_NAME])
+    asdf: types.StudioId
+    e = get_records(asdf, studio.Studio)
 
 
 class StudiosPageResponse(typing.TypedDict):
