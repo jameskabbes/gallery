@@ -25,7 +25,14 @@ async def read_root():
 # Studios
 
 
-async def delete_record[IdType: types.DocumentId, ItemType: collection_object.CollectionObject](id: IdType, collection_object_class: ItemType):
+def test[T1: int, T2: int](a: T1, b: T2) -> dict[T1, T2]:
+    return a + b
+
+
+result = test(1, 2)
+
+
+def delete_record[IdType: types.DocumentId, ItemType: collection_object.CollectionObject](id: IdType, collection_object_class: typing.Type[ItemType]):
 
     result = collection_object_class.delete_by_id(
         c.db[collection_object_class.COLLECTION_NAME], id)
@@ -36,12 +43,12 @@ async def delete_record[IdType: types.DocumentId, ItemType: collection_object.Co
     return {"message": "Record deleted successfully"}
 
 
-async def get_records[IdType: types.DocumentId, ItemType: document_object.DocumentObject](document_object_class: ItemType) -> dict[IdType, ItemType]:
+def get_records[IdType: types.DocumentId, ItemType: document_object.DocumentObject](document_object_class: typing.Type[ItemType]) -> dict[IdType, ItemType]:
     return document_object_class.get_all(
         c.db[document_object_class.COLLECTION_NAME])
 
 
-a = get_records[types.StudioId, studio.Studio](types.StudioId, studio.Studio)
+a = get_records(studio.Studio)
 
 
 @app.delete("/studios/{studio_id}")

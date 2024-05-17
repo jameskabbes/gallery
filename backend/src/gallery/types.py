@@ -7,18 +7,17 @@ from gallery import config
 from pymongo import collection
 
 # types of documents in the database
-type DocumentId = str
-
 # types of files
-type MediaId = str
 type MediaType = typing.Literal['image', 'video', 'audio']
+
 type ImageId = str
 type VideoId = str
 type AudioId = str
-type MediaIdType = ImageId | VideoId | AudioId
+type MediaId = ImageId | VideoId | AudioId
 
 type StudioId = str
 type EventId = str
+type DocumentId = MediaId | StudioId | EventId
 
 type VersionId = str
 type SizeId = str
