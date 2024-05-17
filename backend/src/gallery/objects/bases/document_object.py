@@ -17,7 +17,7 @@ class DocumentObject[IdType: types.DocumentId, IdentifyingKeysType](pydantic.Bas
     @classmethod
     def get(cls, collection: pymongo_collection.Collection, filter: dict = {}, projection: dict = {}) -> dict[IdType, typing.Self]:
         """Load all documents from the database that match the filter."""
-        return {i[cls.ID_KEY]: cls(**i) for i in collection.find(filter, projection)}
+        return {i[cls.ID_KEY]: cls(**i) for i in collection.find(filter, projection=projection)}
 
     @classmethod
     def get_all(cls, collection: pymongo_collection.Collection) -> dict[IdType, typing.Self]:

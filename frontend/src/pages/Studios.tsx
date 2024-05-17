@@ -3,7 +3,7 @@ import { callApi, useApiData } from '../utils/Api';
 import { paths, operations, components } from '../openapi_schema';
 import { Link } from 'react-router-dom';
 
-const API_PATH = '/studios/';
+const API_PATH = '/studios/page';
 
 function Studios(): JSX.Element {
   const [data, setData, loading, setLoading, status, setStatus] =
@@ -35,7 +35,7 @@ function Studios(): JSX.Element {
 
     setLoading(true);
     const response = await callApi<
-      paths['/studios/{studio_id}/']['delete']['responses']['200']['content']['application/json']
+      paths['/studios/{studio_id}']['delete']['responses']['200']['content']['application/json']
     >(`/studios/${studioId}`, 'DELETE');
     if (response.status !== 200 && response.status !== 204) {
       console.error(`Error deleting studio: ${response.status}`);
@@ -79,7 +79,7 @@ function Studios(): JSX.Element {
 
     setLoading(true);
     const response = await callApi<
-      paths['/studios/']['post']['responses']['200']['content']['application/json']
+      paths['/studios']['post']['responses']['200']['content']['application/json']
     >(`/studios/`, 'POST', studio);
     console.log(response);
 

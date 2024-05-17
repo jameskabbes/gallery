@@ -2,9 +2,10 @@ from fastapi import HTTPException, status
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
-from pymongo import MongoClient
+from pymongo import MongoClient, collection as pymongo_collection
 from gallery import config, types, utils
 from gallery.objects import media, studio, event, client, media_types
+from gallery.objects.bases import document_object, collection_object
 
 import pydantic
 import datetime
@@ -21,15 +22,46 @@ c = client.Client()
 async def read_root():
     return {"home": datetime.datetime.now()}
 
+# Studios
 
-class StudiosResponse(typing.TypedDict):
+
+async def delete_record[IdType: types.DocumentId, ItemType: collection_object.CollectionObject](id: IdType, collection_object_class: ItemType):
+
+    result = collection_object_class.delete_by_id(
+        c.db[collection_object_class.COLLECTION_NAME], id)
+    if result.deleted_count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Record not found")
+
+    return {"message": "Record deleted successfully"}
+
+
+async def get_records[IdType: types.DocumentId, ItemType: document_object.DocumentObject](document_object_class: ItemType) -> dict[IdType, ItemType]:
+    return document_object_class.get_all(
+        c.db[document_object_class.COLLECTION_NAME])
+
+
+a = get_records[types.StudioId, studio.Studio](types.StudioId, studio.Studio)
+
+
+@app.delete("/studios/{studio_id}")
+async def delete_studio(studio_id: types.StudioId):
+    return await delete_record(studio_id, studio.Studio)
+
+
+@app.get("/studios")
+async def get_studios() -> dict[types.StudioId, studio.Studio]:
+    return studio.Studio.get_all(c.db[studio.Studio.COLLECTION_NAME])
+
+
+class StudiosPageResponse(typing.TypedDict):
     studios: dict[types.StudioId, studio.Studio]
     studios_to_add: dict[types.StudioId, studio.Studio]
     studio_ids_to_delete: dict[types.StudioId, None]
 
 
-@app.get("/studios/")
-async def studios_page() -> StudiosResponse:
+@app.get("/studios/page")
+async def get_studios_page() -> StudiosPageResponse:
     studio_id_keys_to_add, studios_ids_to_delete = studio.Studio.find_to_add_and_delete(
         c.db[studio.Studio.COLLECTION_NAME], c.studios_dir)
 
@@ -38,17 +70,29 @@ async def studios_page() -> StudiosResponse:
         studio_inst = studio.Studio.make_from_id_keys(studio_id_keys)
         studios_to_add[studio_inst.id] = studio_inst
 
-    d: StudiosResponse = {}
-    d['studios'] = studio.Studio.get_all(c.db[studio.Studio.COLLECTION_NAME])
+    d: StudiosPageResponse = {}
+    d['studios'] = await get_studios()
     d['studios_to_add'] = studios_to_add
     d['studio_ids_to_delete'] = {
         studio_id: None for studio_id in studios_ids_to_delete}
 
     return d
 
+# Studio
 
-@app.post("/studios/")
-async def create_studio(given_studio: studio.Studio):
+
+@app.get("/studios/{studio_id}")
+async def get_studio(studio_id: types.StudioId) -> studio.Studio:
+
+    studio_inst = studio.Studio.get_by_id(
+        c.db[studio.Studio.COLLECTION_NAME], studio_id)
+    if studio_inst == None:
+        raise HTTPException(status_code=404, detail="Studio not found")
+    return studio_inst
+
+
+@app.post("/studios")
+async def post_studio(given_studio: studio.Studio):
 
     if studio.Studio.id_exists(c.db[studio.Studio.COLLECTION_NAME], given_studio.id):
         raise HTTPException(status_code=400, detail="Studio already exists")
@@ -61,19 +105,128 @@ async def create_studio(given_studio: studio.Studio):
             status_code=500, detail="Failed to insert studio into database")
 
 
-@app.delete("/studios/{studio_id}/")
-async def delete_studio(studio_id: types.StudioId):
-    # Query the database to delete the studio
-    result = studio.Studio.delete_by_id(
+class StudioPageResponse(typing.TypedDict):
+    studio: studio.Studio
+    events: dict[types.EventId, event.Event]
+    events_to_add: dict[types.EventId, event.Event]
+    event_ids_to_delete: dict[types.EventId, None]
+
+
+@app.get('/studios/{studio_id}/page')
+async def get_studio_page(studio_id: types.StudioId) -> StudioPageResponse:
+
+    studio_inst = studio.Studio.get_by_id(
         c.db[studio.Studio.COLLECTION_NAME], studio_id)
+
+    if studio_inst == None:
+        raise HTTPException(status_code=404, detail="Studio not found")
+
+    events = event.Event.get(
+        c.db[event.Event.COLLECTION_NAME], {'studio_id': studio_id})
+    event_id_keys_to_add, event_ids_to_delete = event.Event.find_to_add_and_delete(
+        c.db[event.Event.COLLECTION_NAME], c.studios_dir.joinpath(studio_inst.dir_name), studio_id)
+
+    events_to_add = {}
+    for event_id_keys in event_id_keys_to_add:
+        event_inst = event.Event.make_from_id_keys(event_id_keys)
+        events_to_add[event_inst.id] = event_inst
+
+    d: StudioPageResponse = {}
+    d['studio'] = studio_inst
+    d['events'] = events
+    d['events_to_add'] = events_to_add
+    d['event_ids_to_delete'] = {
+        event_id: None for event_id in event_ids_to_delete}
+
+    return d
+
+
+# Events
+
+@app.get("studios/{studio_id}/events")
+async def get_studio_events(studio_id: types.StudioId) -> dict[types.EventId, event.Event]:
+    return event.Event.get_all(c.db[event.Event.COLLECTION_NAME], {'studio_id': studio_id})
+
+
+@app.post("/events")
+async def post_event(given_event: event.Event):
+
+    if event.Event.id_exists(c.db[event.Event.COLLECTION_NAME], given_event.id):
+        raise HTTPException(status_code=400, detail="Event already exists")
+
+    result = given_event.insert(c.db[event.Event.COLLECTION_NAME])
+
+    # make sure this was successful
+    if result.inserted_id == None:
+        raise HTTPException(
+            status_code=500, detail="Failed to insert event into database")
+
+
+@app.delete("/events/{event_id}")
+async def delete_event(event_id: types.EventId):
+    # Query the database to delete the studio
+    result = event.Event.delete_by_id(
+        c.db[event.Event.COLLECTION_NAME], event_id)
 
     # Check if a studio was actually deleted
     if result.deleted_count == 0:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Studio not found")
+            status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     # Return a message indicating the deletion was successful
     return {"message": "Studio deleted successfully"}
+
+
+class EventResponse(typing.TypedDict):
+    event: event.Event
+    medias: dict[types.MediaIdType, media_types.FILE_CLASS_TYPE]
+    medias_to_add: dict[types.MediaIdType, media_types.FILE_CLASS_TYPE]
+    media_ids_to_delete: dict[types.MediaIdType, None]
+
+
+@app.get('/events/{event_id}')
+async def event_page(event_id: types.EventId) -> EventResponse:
+
+    event_inst = event.Event.get_by_id(
+        c.db[event.Event.COLLECTION_NAME], event_id)
+
+    if event_inst == None:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    studio_inst = studio.Studio.get_by_id(
+        c.db[studio.Studio.COLLECTION_NAME], event_inst.studio_id)
+
+    if studio_inst == None:
+        raise HTTPException(
+            status_code=404, detail="Event Studio Id not found")
+
+    media_id_keys_to_add, media_ids_to_delete = media.Media.find_to_add_and_delete(
+        c.db[event.Event.COLLECTION_NAME], c.studios_dir.joinpath(studio_inst.dir_name).joinpath(event_inst.directory_name), event_id)
+
+    medias = media.Media.get(c.db[media.Media.COLLECTION_NAME], {
+                             'event_id': event_id})
+    medias_to_add = {}
+    for media_id_keys in media_id_keys_to_add:
+        media_type = media.Media.get_media_type_from_id_keys(media_id_keys)
+        if media_type not in media_types.TYPES:
+            continue
+
+        file_class: media_types.FILE_CLASS_TYPE = media_types.FILE_CLASS_MAPPING[media_type]
+        media_inst = file_class.make_from_id_keys(
+            media_id_keys)
+        medias_to_add[media_inst.id] = media_inst
+
+    d: EventResponse = {}
+    d['event'] = event_inst
+    d['medias'] = medias
+    d['medias_to_add'] = medias_to_add
+    d['media_ids_to_delete'] = {
+        media_id: None for media_id in media_ids_to_delete}
+
+    return d
+
+# Media
+
 """
 
 @app.put("/studios/{studio_id}")
@@ -99,43 +252,7 @@ async def update_studio(studio_id: types.StudioId, given_studio: studio.Studio):
 """
 
 
-class StudioResponse(typing.TypedDict):
-    studio: studio.Studio
-    events: dict[types.EventId, event.Event]
-    events_to_add: dict[types.EventId, event.Event]
-    event_ids_to_delete: dict[types.EventId, None]
-
-
-@app.get('/studios/{studio_id}/')
-async def studio_page(studio_id: types.StudioId) -> StudioResponse:
-
-    studio_inst = studio.Studio.get_by_id(
-        c.db[studio.Studio.COLLECTION_NAME], studio_id)
-
-    if studio_inst == None:
-        raise HTTPException(status_code=404, detail="Studio not found")
-
-    events = event.Event.get(
-        c.db[event.Event.COLLECTION_NAME], {'studio_id': studio_id})
-    event_id_keys_to_add, event_ids_to_delete = event.Event.find_to_add_and_delete(
-        c.db[event.Event.COLLECTION_NAME], c.studios_dir.joinpath(studio_inst.dir_name), studio_id)
-
-    events_to_add = {}
-    for event_id_keys in event_id_keys_to_add:
-        event_inst = event.Event.make_from_id_keys(event_id_keys)
-        events_to_add[event_inst.id] = event_inst
-
-    d: StudioResponse = {}
-    d['studio'] = studio_inst
-    d['events'] = events
-    d['events_to_add'] = events_to_add
-    d['event_ids_to_delete'] = {
-        event_id: None for event_id in event_ids_to_delete}
-
-    return d
-
-
-@app.get('/file/{file_id}/content/')
+@ app.get('/file/{file_id}/content')
 async def get_file(file_id: types.MediaIdType) -> FileResponse:
 
     media_file_dict = media.Media.find_by_id(

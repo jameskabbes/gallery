@@ -6,11 +6,32 @@ import pydantic
 import datetime as datetime_module
 import pathlib
 import typing
+import time
 
 
 class Media(collection_object.CollectionObject[types.MediaId]):
     COLLECTION_NAME: typing.ClassVar[str] = 'media'
     MEDIA_TYPE_ID_KEY_INDEX: typing.ClassVar[int] = 0
+
+    @classmethod
+    def get(cls, collection: pymongo_collection.Collection, filter: dict = {}, projection: dict = {}) -> dict[types.MediaId, media_types.FILE_CLASS_TYPE]:
+        """Load all documents from the database that match the filter."""
+
+        d: dict[types.MediaId, media_types.FILE_CLASS_TYPE] = {}
+        result = collection.find(
+            filter, projection)
+        for item in result:
+            media_type = item['media_type']
+
+            if media_type not in media_types.TYPES:
+                continue
+
+            file_class = media_types.FILE_CLASS_MAPPING[
+                media_type]
+            file_inst: media_types.FILE_CLASS_TYPE = file_class(**item)
+            d[file_inst.id] = file_inst
+
+        return d
 
     @classmethod
     def get_media_type_from_id_keys(cls, id_keys: tuple) -> media_types.FILE_CLASS_TYPE | None:
