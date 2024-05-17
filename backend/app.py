@@ -74,6 +74,29 @@ async def delete_studio(studio_id: types.StudioId):
 
     # Return a message indicating the deletion was successful
     return {"message": "Studio deleted successfully"}
+"""
+
+@app.put("/studios/{studio_id}")
+async def update_studio(studio_id: types.StudioId, given_studio: studio.Studio):
+    # Get the studio from the database
+    studio_inst = studio.Studio.get_by_id(
+        c.db[studio.Studio.COLLECTION_NAME], studio_id)
+    if studio_inst == None:
+        raise HTTPException(status_code=404, detail="Studio not found")
+
+    if studio_inst.dir_name is not None:
+
+        # Update the studio
+    if studio_update.dir_name is not None:
+        studio_inst.dir_name = studio_update.dir_name
+    if studio_update.name is not None:
+        studio_inst.name = studio_update.name
+
+    # Save the updated studio to the database
+    studio_inst.save(c.db[studio.Studio.COLLECTION_NAME])
+
+    return studio_inst
+"""
 
 
 @app.get('/file/{file_id}/content/')
