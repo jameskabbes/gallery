@@ -1,5 +1,5 @@
 from pymongo import database, collection as pymongo_collection, MongoClient
-from gallery import types
+from gallery import custom_types
 from gallery.objects.bases import document_object
 import pydantic
 import datetime as datetime_module
@@ -10,7 +10,7 @@ import typing
 class Types:
     datetime = datetime_module.datetime
     name = str
-    studio_id = types.StudioId
+    studio_id = custom_types.StudioId
     ALL_TYPES = typing.Literal['datetime', 'name', 'studio_id']
     ID_TYPES = typing.Literal['datetime', 'name', 'studio_id']
     ID_KEYS = ('datetime', 'name', 'studio_id')
@@ -23,7 +23,7 @@ class Base:
     })
 
 
-class Event(Base, document_object.DocumentObject[types.EventId, Types.ID_TYPES]):
+class Event(Base, document_object.DocumentObject[custom_types.EventId, Types.ID_TYPES]):
     studio_id: Types.studio_id
     datetime: Types.datetime | None = pydantic.Field(
         default=None)
@@ -68,7 +68,7 @@ class Event(Base, document_object.DocumentObject[types.EventId, Types.ID_TYPES])
         return directory_name
 
     @ classmethod
-    def find_to_add_and_delete(cls, collection: pymongo_collection.Collection, dir: pathlib.Path, studio_id: types.StudioId) -> tuple[set[tuple[Types.ID_TYPES]], set[types.EventId]]:
+    def find_to_add_and_delete(cls, collection: pymongo_collection.Collection, dir: pathlib.Path, studio_id: custom_types.StudioId) -> tuple[set[tuple[Types.ID_TYPES]], set[custom_types.EventId]]:
 
         local_id_keys: set[tuple[Types.ID_TYPES]] = set()
         for subdir in dir.iterdir():

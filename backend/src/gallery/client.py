@@ -1,121 +1,80 @@
 import typing
 import pathlib
 from gallery import config, utils
-from pymongo import database, MongoClient
-from gallery.objects import media, studio, event
+from sqlalchemy import create_engine, Engine
+from sqlmodel import SQLModel
 
 type uvicorn_port_type = int
+
+
+class PathConfig(typing.TypedDict):
+    path: pathlib.Path
+    parent_dir: pathlib.Path
+    filename: str
 
 
 class UvicornConfig(typing.TypedDict):
     port: uvicorn_port_type
 
 
-type mongodb_port_type = int
-
-
-class MongoDBConfig(typing.TypedDict):
-    port: mongodb_port_type
-    full_path: pathlib.Path
-    folder_name: str
-    db: database.Database
-    db_name: str
-    client: MongoClient
-
-
-class StudiosConfig(typing.TypedDict):
-    full_path: pathlib.Path
-    folder_name: str
-
-
-class ImportConfig(typing.TypedDict):
-    full_path: pathlib.Path
-    folder_name: str
+class DbConfig(typing.TypedDict):
+    engine: Engine
+    path: PathConfig
 
 
 class Config(typing.TypedDict):
     uvicorn: UvicornConfig
-    mongodb: MongoDBConfig
-    studios: StudiosConfig
-    media_import: ImportConfig
-    full_path: pathlib.Path
+    db: DbConfig
 
 
 DefaultConfig: Config = {
     'uvicorn': {
         'port': 8087,
     },
-    'mongodb': {
-        'port': 27017,
-        'folder_name': 'db',
-        'db_name': 'gallery'
-    },
-    'studios': {
-        'folder_name': 'studios'
-    },
-    "media_import": {
-        'folder_name': 'media_import'
-    },
-    'full_path': config.DATA_DIR
+    'db': {
+        'path': {
+            'parent_dir': config.DATA_DIR,
+            'filename': 'gallery.db',
+        }
+    }
 }
 
 
-class PathOrFolderConfig(typing.TypedDict):
-    full_path: pathlib.Path
-    folder_name: str
+def get_path_from_config(d: PathConfig) -> pathlib.Path:
+    if 'path' in d:
+        return d['path']
 
+    if 'parent_dir' in d:
+        if 'filename' in d:
+            return d['parent_dir'].joinpath(d['filename'])
 
-def get_path_from_config(d: PathOrFolderConfig, base_dir: pathlib.Path) -> pathlib.Path:
-    if 'full_path' in d:
-        return d['full_path']
-    else:
-        return base_dir.joinpath(d['folder_name'])
+        raise ValueError('dir key must be accompanied by filename or folder')
+    raise ValueError('path or dir key must be present')
 
 
 class Client:
 
-    dir: pathlib.Path
     uvicorn_port: uvicorn_port_type
-    pymongo_port: mongodb_port_type
-    pymongo_client: MongoClient
-    pymongo_dir: pathlib.Path
-    db: database.Database  # just calling it db for short
-    studios_dir: pathlib.Path
-    media_import_dir: pathlib.Path
+    db_engine: Engine
 
     def __init__(self, config: Config = {}):
 
         merged_config: Config = utils.deep_merge_dicts(DefaultConfig, config)
 
-        # dir
-        self.dir = merged_config['full_path']
-
         # uvicorn
         self.uvicorn_port = merged_config['uvicorn']['port']
 
-        # pymongo
-        self.pymongo_port = merged_config['mongodb']['port']
-        self.pymongo_dir = get_path_from_config(
-            merged_config['mongodb'], self.dir)
+        # db
+        db_engine_path = get_path_from_config(merged_config['db']['path'])
+        print(db_engine_path)
+        self.db_engine = create_engine(f'sqlite:///{db_engine_path}')
 
-        if 'client' not in merged_config['mongodb']:
-            merged_config['mongodb']['client'] = MongoClient(
-                port=merged_config['mongodb']['port'])
-        self.pymongo_client = merged_config['mongodb']['client']
+    def create_tables(self):
+        print(SQLModel.metadata)
+        SQLModel.metadata.create_all(self.db_engine)
 
-        if 'db' not in merged_config['mongodb']:
-            merged_config['mongodb']['db'] = merged_config['mongodb']['client'][merged_config['mongodb']['db_name']]
-        self.db = merged_config['mongodb']['db']
-
-        # studios
-        self.studios_dir = get_path_from_config(
-            merged_config['studios'], self.dir)
-
-        # import
-        self.media_import_dir = get_path_from_config(
-            merged_config['media_import'], self.dir)
-
-    def sync_with_local(self):
+    '''
+        def sync_with_local(self):
         """sync database with local directory contents"""
 
         if input('Are you sure you want to sync with local? (y/n) ') != 'y':
@@ -217,3 +176,4 @@ class Client:
 
             media.Media.delete_by_ids(
                 self.db[media.Media.COLLECTION_NAME], list(file_ids_to_delete))
+        '''

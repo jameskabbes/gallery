@@ -1,6 +1,6 @@
 import typing
-from gallery import types
-from gallery import types, config
+from gallery import custom_types, custom_types
+from gallery import config
 from gallery.objects.bases import document_object
 from gallery.objects.media_types import base as base_file
 import pydantic
@@ -8,12 +8,12 @@ import re
 
 
 class Types:
-    version = types.VersionId
-    size = types.SizeId
+    version = custom_types.VersionId
+    size = custom_types.SizeId
     height = int
     width = int
     bytes = int
-    average_color = types.HexColor
+    average_color = custom_types.HexColor
 
     ID_TYPES = base_file.Types.ID_TYPES | typing.Literal['version', 'size']
     ID_KEYS = base_file.Types.ID_KEYS + ('version', 'size')
@@ -34,7 +34,7 @@ class Base:
     })
 
 
-class File(Base, document_object.DocumentObject[types.ImageId, Types.ID_TYPES], base_file.File):
+class File(Base, document_object.DocumentObject[custom_types.ImageId, Types.ID_TYPES], base_file.File):
 
     version: Types.version | None = pydantic.Field(default=None)
     size: Types.size | None = pydantic.Field(default=None)
@@ -44,8 +44,8 @@ class File(Base, document_object.DocumentObject[types.ImageId, Types.ID_TYPES], 
     average_color: Types.average_color | None = pydantic.Field(default=None)
 
     # class vars
-    ACCEPTABLE_FILE_ENDINGS: typing.ClassVar[types.AcceptableFileEndings] = {'jpg', 'jpeg', 'png', 'gif', 'cr2',
-                                                                             'bmp', 'tiff', 'tif', 'ico', 'svg', 'webp', 'raw', 'heif', 'heic'}
+    ACCEPTABLE_FILE_ENDINGS: typing.ClassVar[custom_types.AcceptableFileEndings] = {'jpg', 'jpeg', 'png', 'gif', 'cr2',
+                                                                                    'bmp', 'tiff', 'tif', 'ico', 'svg', 'webp', 'raw', 'heif', 'heic'}
     IDENTIFYING_KEYS: typing.ClassVar[tuple[Types.ID_TYPES]] = Types.ID_KEYS
 
     @ pydantic.field_validator('height', 'width', 'bytes')
@@ -75,7 +75,7 @@ class File(Base, document_object.DocumentObject[types.ImageId, Types.ID_TYPES], 
         return v
 
     @ staticmethod
-    def parse_filename(filename: types.Filename) -> Base.FilenameIODict:
+    def parse_filename(filename: custom_types.Filename) -> Base.FilenameIODict:
         """Split the filename into its defining keys.
 
         IMG_1234-A(SM).jpg -> {'name': 'IMG_1234', 'version': 'A', 'size': 'SM', 'file_ending': 'jpg'}
@@ -113,10 +113,10 @@ class File(Base, document_object.DocumentObject[types.ImageId, Types.ID_TYPES], 
         return d
 
     @ staticmethod
-    def build_filename(d: Base.FilenameIODict) -> types.Filename:
+    def build_filename(d: Base.FilenameIODict) -> custom_types.Filename:
         """Parse the id into its defining keys."""
 
-        string: types.Filename = d['name']
+        string: custom_types.Filename = d['name']
         if d['version'] != None and d['version'] != config.ORIGINAL_KEY:
             string += f'{Base._VERSION_DELIM}{
                 d["version"]}'

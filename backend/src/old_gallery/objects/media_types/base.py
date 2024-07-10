@@ -1,18 +1,18 @@
-from gallery import types
+from gallery import custom_types
 import pydantic
 import typing
 from abc import ABC, abstractmethod
 
 from gallery.objects.bases import document_object
-from gallery import types
+from gallery import custom_types
 import pathlib
 
 
 class Types:
-    media_type = types.MediaType
+    media_type = custom_types.MediaType
     event_id = str
     name = str
-    file_ending = types.FileEnding
+    file_ending = custom_types.FileEnding
     relative_path = str
 
     ID_TYPES = typing.Literal['media_type', 'event_id',
@@ -31,13 +31,14 @@ class Base:
     })
 
 
-class File(Base, document_object.DocumentObject[types.MediaId, Types.ID_TYPES], ABC):
+class File(Base, document_object.DocumentObject[custom_types.MediaId, Types.ID_TYPES], ABC):
     media_type: Types.media_type
     event_id: Types.event_id
     name: Types.name
     file_ending: Types.file_ending
     relative_path: Types.relative_path
-    ACCEPTABLE_FILE_ENDINGS: typing.ClassVar[types.AcceptableFileEndings] = {}
+    ACCEPTABLE_FILE_ENDINGS: typing.ClassVar[custom_types.AcceptableFileEndings] = {
+    }
     COLLECTION_NAME: typing.ClassVar[str] = 'media'
 
     @property
@@ -48,12 +49,12 @@ class File(Base, document_object.DocumentObject[types.MediaId, Types.ID_TYPES], 
 
     @classmethod
     @abstractmethod
-    def parse_filename(cls, filename: types.Filename):
+    def parse_filename(cls, filename: custom_types.Filename):
         """ Parse the filename into its defining keys."""
 
     @classmethod
     @abstractmethod
-    def build_filename(cls, i_o_dict: dict) -> types.Filename:
+    def build_filename(cls, i_o_dict: dict) -> custom_types.Filename:
         """ Build the filename from the defining keys."""
 
     def build_path(self, event_dir: pathlib.Path):

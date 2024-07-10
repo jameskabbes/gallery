@@ -1,4 +1,4 @@
-from gallery import types, config
+from gallery import custom_types, config
 import pydantic
 import datetime as datetime_module
 from gallery.objects.media_types import base as base_file
@@ -14,7 +14,7 @@ class Types:
 
 
 class Base:
-    Basics = dict[str, set[types.FileEnding]]
+    Basics = dict[str, set[custom_types.FileEnding]]
     FILENAME_IO_KEYS: typing.ClassVar = ('name', 'file_ending')
     FilenameIODict = typing.TypedDict('FilenameIODict', {
         'name': str,
@@ -22,11 +22,11 @@ class Base:
     })
 
 
-class File(Base, document_object.DocumentObject[types.AudioId, Types.ID_KEYS], base_file.File):
+class File(Base, document_object.DocumentObject[custom_types.AudioId, Types.ID_KEYS], base_file.File):
     datetime: datetime_module.datetime | None = pydantic.Field(default=None)
     name: str
 
-    ACCEPTABLE_FILE_ENDINGS: typing.ClassVar[types.AcceptableFileEndings] = {
+    ACCEPTABLE_FILE_ENDINGS: typing.ClassVar[custom_types.AcceptableFileEndings] = {
         'mp4', 'mkv', 'flv', 'avi', }
 
     IDENTIFYING_KEYS: typing.ClassVar[tuple[Types.ID_TYPES]] = Types.ID_KEYS

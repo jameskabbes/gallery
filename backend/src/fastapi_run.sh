@@ -1,0 +1,1 @@
+fastapi run main.py --port 8087

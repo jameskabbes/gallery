@@ -1,4 +1,4 @@
-from gallery import types, config
+from gallery import custom_types, config
 import pydantic
 import re
 import datetime as datetime_module
@@ -15,7 +15,7 @@ class Types:
 
 
 class Base:
-    Basics = dict[str, set[types.FileEnding]]
+    Basics = dict[str, set[custom_types.FileEnding]]
     FILENAME_IO_KEYS: typing.ClassVar = ('name', 'file_ending')
     FilenameIODict = typing.TypedDict('FilenameIODict', {
         'name': str,
@@ -23,16 +23,16 @@ class Base:
     })
 
 
-class File(Base, document_object.DocumentObject[types.VideoId, Types.ID_KEYS], base_file.File):
+class File(Base, document_object.DocumentObject[custom_types.VideoId, Types.ID_KEYS], base_file.File):
     datetime: datetime_module.datetime | None = pydantic.Field(default=None)
     name: str
 
-    ACCEPTABLE_FILE_ENDINGS: typing.ClassVar[types.AcceptableFileEndings] = {'mp4', 'mkv', 'flv', 'avi',
-                                                                             'mov', 'wmv', 'rm', 'mpg', 'mpeg', '3gp', 'webm', 'vob', 'ogv'}
+    ACCEPTABLE_FILE_ENDINGS: typing.ClassVar[custom_types.AcceptableFileEndings] = {'mp4', 'mkv', 'flv', 'avi',
+                                                                                    'mov', 'wmv', 'rm', 'mpg', 'mpeg', '3gp', 'webm', 'vob', 'ogv'}
     IDENTIFYING_KEYS: typing.ClassVar[tuple[Types.ID_TYPES]] = Types.ID_KEYS
 
     @classmethod
-    def parse_filename(cls, filename: types.Filename) -> Base.FilenameIODict:
+    def parse_filename(cls, filename: custom_types.Filename) -> Base.FilenameIODict:
         """ Parse the filename into its defining keys."""
 
         d: Base.FilenameIODict = {}
@@ -40,7 +40,7 @@ class File(Base, document_object.DocumentObject[types.VideoId, Types.ID_KEYS], b
         return d
 
     @classmethod
-    def build_filename(cls, i_o_dict: Base.FilenameIODict) -> types.Filename:
+    def build_filename(cls, i_o_dict: Base.FilenameIODict) -> custom_types.Filename:
         """ Build the filename from the defining keys."""
 
         return '{}.{}'.format(i_o_dict['name'], i_o_dict['file_ending'])

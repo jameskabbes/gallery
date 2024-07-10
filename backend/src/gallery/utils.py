@@ -1,7 +1,3 @@
-from pymongo import MongoClient, collection
-import nanoid
-from gallery import config
-
 
 def deep_merge_dicts(primary_dict: dict, secondary_dict: dict) -> dict:
     """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of

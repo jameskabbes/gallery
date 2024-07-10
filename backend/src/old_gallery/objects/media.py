@@ -1,5 +1,5 @@
 from pymongo import database, collection as pymongo_collection, MongoClient
-from gallery import types
+from gallery import custom_types
 from gallery.objects.bases import document_object, collection_object
 from gallery.objects import media_types
 import pydantic
@@ -9,15 +9,15 @@ import typing
 import time
 
 
-class Media(collection_object.CollectionObject[types.MediaId]):
+class Media(collection_object.CollectionObject[custom_types.MediaId]):
     COLLECTION_NAME: typing.ClassVar[str] = 'media'
     MEDIA_TYPE_ID_KEY_INDEX: typing.ClassVar[int] = 0
 
     @classmethod
-    def get(cls, collection: pymongo_collection.Collection, filter: dict = {}, projection: dict = {}) -> dict[types.MediaId, media_types.FILE_CLASS_TYPE]:
+    def get(cls, collection: pymongo_collection.Collection, filter: dict = {}, projection: dict = {}) -> dict[custom_types.MediaId, media_types.FILE_CLASS_TYPE]:
         """Load all documents from the database that match the filter."""
 
-        d: dict[types.MediaId, media_types.FILE_CLASS_TYPE] = {}
+        d: dict[custom_types.MediaId, media_types.FILE_CLASS_TYPE] = {}
         result = collection.find(
             filter, projection)
         for item in result:
@@ -35,13 +35,13 @@ class Media(collection_object.CollectionObject[types.MediaId]):
 
     @classmethod
     def get_media_type_from_id_keys(cls, id_keys: tuple) -> media_types.FILE_CLASS_TYPE | None:
-        media_type: types.MediaType = id_keys[cls.MEDIA_TYPE_ID_KEY_INDEX]
+        media_type: custom_types.MediaType = id_keys[cls.MEDIA_TYPE_ID_KEY_INDEX]
         if media_type not in media_types.TYPES:
             return None
         return media_types.FILE_CLASS_MAPPING[media_type]
 
     @ classmethod
-    def find_to_add_and_delete(cls, collection: pymongo_collection.Collection, dir: pathlib.Path, event_id: types.EventId) -> tuple[set[tuple], set[types.MediaIdType]]:
+    def find_to_add_and_delete(cls, collection: pymongo_collection.Collection, dir: pathlib.Path, event_id: custom_types.EventId) -> tuple[set[tuple], set[custom_types.MediaIdType]]:
 
         local_id_keys_by_media_type: dict[media_types.TYPES, set[tuple]] = {
         }

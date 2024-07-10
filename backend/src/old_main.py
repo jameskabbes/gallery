@@ -3,8 +3,8 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pymongo import MongoClient, collection as pymongo_collection
-from gallery import config, types, utils
-from gallery.objects import media, studio, event, client, media_types
+from gallery import client, config, custom_types, utils
+from gallery.objects import media, studio, event, media_types
 from gallery.objects.bases import document_object, collection_object
 
 import pydantic
@@ -35,7 +35,7 @@ b: int = 2
 result = test(a, b)
 
 
-def delete_record[IdType: types.DocumentId, ItemType: collection_object.CollectionObject](id: IdType, collection_object_class: typing.Type[ItemType]):
+def delete_record[IdType: custom_types.DocumentId, ItemType: collection_object.CollectionObject](id: IdType, collection_object_class: typing.Type[ItemType]):
 
     result = collection_object_class.delete_by_id(
         c.db[collection_object_class.COLLECTION_NAME], id)
@@ -46,33 +46,33 @@ def delete_record[IdType: types.DocumentId, ItemType: collection_object.Collecti
     return {"message": "Record deleted successfully"}
 
 
-def get_records[IdType: types.DocumentId, ItemType: document_object.DocumentObject](_: IdType, document_object_class: typing.Type[ItemType]) -> dict[IdType, ItemType]:
+def get_records[IdType: custom_types.DocumentId, ItemType: document_object.DocumentObject](_: IdType, document_object_class: typing.Type[ItemType]) -> dict[IdType, ItemType]:
     return document_object_class.get_all(c.db[document_object_class.COLLECTION_NAME])
 
 
-def test2() -> types.StudioId:
+def test2() -> custom_types.StudioId:
     return '123'
 
 
-c1: types.StudioId['123']
+c1: custom_types.StudioId['123']
 d = get_records(c1, studio.Studio)
 
 
 @app.delete("/studios/{studio_id}")
-async def delete_studio(studio_id: types.StudioId):
+async def delete_studio(studio_id: custom_types.StudioId):
     return await delete_record(studio_id, studio.Studio)
 
 
 @app.get("/studios")
-async def get_studios() -> dict[types.StudioId, studio.Studio]:
-    asdf: types.StudioId
+async def get_studios() -> dict[custom_types.StudioId, studio.Studio]:
+    asdf: custom_types.StudioId
     e = get_records(asdf, studio.Studio)
 
 
 class StudiosPageResponse(typing.TypedDict):
-    studios: dict[types.StudioId, studio.Studio]
-    studios_to_add: dict[types.StudioId, studio.Studio]
-    studio_ids_to_delete: dict[types.StudioId, None]
+    studios: dict[custom_types.StudioId, studio.Studio]
+    studios_to_add: dict[custom_types.StudioId, studio.Studio]
+    studio_ids_to_delete: dict[custom_types.StudioId, None]
 
 
 @app.get("/studios/page")
@@ -97,7 +97,7 @@ async def get_studios_page() -> StudiosPageResponse:
 
 
 @app.get("/studios/{studio_id}")
-async def get_studio(studio_id: types.StudioId) -> studio.Studio:
+async def get_studio(studio_id: custom_types.StudioId) -> studio.Studio:
 
     studio_inst = studio.Studio.get_by_id(
         c.db[studio.Studio.COLLECTION_NAME], studio_id)
@@ -122,13 +122,13 @@ async def post_studio(given_studio: studio.Studio):
 
 class StudioPageResponse(typing.TypedDict):
     studio: studio.Studio
-    events: dict[types.EventId, event.Event]
-    events_to_add: dict[types.EventId, event.Event]
-    event_ids_to_delete: dict[types.EventId, None]
+    events: dict[custom_types.EventId, event.Event]
+    events_to_add: dict[custom_types.EventId, event.Event]
+    event_ids_to_delete: dict[custom_types.EventId, None]
 
 
 @app.get('/studios/{studio_id}/page')
-async def get_studio_page(studio_id: types.StudioId) -> StudioPageResponse:
+async def get_studio_page(studio_id: custom_types.StudioId) -> StudioPageResponse:
 
     studio_inst = studio.Studio.get_by_id(
         c.db[studio.Studio.COLLECTION_NAME], studio_id)
@@ -159,7 +159,7 @@ async def get_studio_page(studio_id: types.StudioId) -> StudioPageResponse:
 # Events
 
 @app.get("studios/{studio_id}/events")
-async def get_studio_events(studio_id: types.StudioId) -> dict[types.EventId, event.Event]:
+async def get_studio_events(studio_id: custom_types.StudioId) -> dict[custom_types.EventId, event.Event]:
     return event.Event.get_all(c.db[event.Event.COLLECTION_NAME], {'studio_id': studio_id})
 
 
@@ -178,7 +178,7 @@ async def post_event(given_event: event.Event):
 
 
 @app.delete("/events/{event_id}")
-async def delete_event(event_id: types.EventId):
+async def delete_event(event_id: custom_types.EventId):
     # Query the database to delete the studio
     result = event.Event.delete_by_id(
         c.db[event.Event.COLLECTION_NAME], event_id)
@@ -194,13 +194,13 @@ async def delete_event(event_id: types.EventId):
 
 class EventResponse(typing.TypedDict):
     event: event.Event
-    medias: dict[types.MediaIdType, media_types.FILE_CLASS_TYPE]
-    medias_to_add: dict[types.MediaIdType, media_types.FILE_CLASS_TYPE]
-    media_ids_to_delete: dict[types.MediaIdType, None]
+    medias: dict[custom_types.MediaIdType, media_types.FILE_CLASS_TYPE]
+    medias_to_add: dict[custom_types.MediaIdType, media_types.FILE_CLASS_TYPE]
+    media_ids_to_delete: dict[custom_types.MediaIdType, None]
 
 
 @app.get('/events/{event_id}')
-async def event_page(event_id: types.EventId) -> EventResponse:
+async def event_page(event_id: custom_types.EventId) -> EventResponse:
 
     event_inst = event.Event.get_by_id(
         c.db[event.Event.COLLECTION_NAME], event_id)
@@ -268,7 +268,7 @@ async def update_studio(studio_id: types.StudioId, given_studio: studio.Studio):
 
 
 @ app.get('/file/{file_id}/content')
-async def get_file(file_id: types.MediaIdType) -> FileResponse:
+async def get_file(file_id: custom_types.MediaIdType) -> FileResponse:
 
     media_file_dict = media.Media.find_by_id(
         c.db[media.Media.COLLECTION_NAME], file_id, {'media_type': 1})
@@ -276,7 +276,7 @@ async def get_file(file_id: types.MediaIdType) -> FileResponse:
     if media_file_dict == None:
         raise HTTPException(status_code=404, detail="File not found")
 
-    media_type: types.MediaType = media_file_dict['media_type']
+    media_type: custom_types.MediaType = media_file_dict['media_type']
     if media_type not in media_types.TYPES:
         raise HTTPException(status_code=404, detail="Media type not found")
 

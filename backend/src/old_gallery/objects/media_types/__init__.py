@@ -1,4 +1,4 @@
-from gallery import types
+from gallery import custom_types
 
 from gallery.objects.media_types import image, video, audio
 
@@ -34,7 +34,7 @@ FILE_CLASS_MAPPING: FileClassMappingType = {
 }
 
 
-def get_media_type_from_file_ending(file_ending: types.FileEnding) -> types.MediaType | None:
+def get_media_type_from_file_ending(file_ending: custom_types.FileEnding) -> custom_types.MediaType | None:
     """Get media type from given file ending """
 
     for media_type in TYPES:

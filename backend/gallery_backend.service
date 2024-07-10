@@ -6,7 +6,7 @@ After=network.target
 User=pi
 WorkingDirectory=/home/pi/Repos/gallery/backend
 Environment="PATH=/home/pi/Repos/gallery/backend/venv/bin"
-ExecStart=/home/pi/Repos/gallery/backend/python app.py
+ExecStart=/home/pi/Repos/gallery/backend/venv/bin/fastapi run main.py --port 8086 --root-path /api
 
 [Install]
 WantedBy=multi-user.target

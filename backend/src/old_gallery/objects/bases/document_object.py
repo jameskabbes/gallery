@@ -1,12 +1,12 @@
 import typing
 from pymongo import collection as pymongo_collection, results, database
-from gallery import types, config
+from gallery import custom_types, config
 from gallery.objects.bases import collection_object
 import pydantic
 import nanoid
 
 
-class DocumentObject[IdType: types.DocumentId, IdentifyingKeysType](pydantic.BaseModel, collection_object.CollectionObject[IdType]):
+class DocumentObject[IdType: custom_types.DocumentId, IdentifyingKeysType](pydantic.BaseModel, collection_object.CollectionObject[IdType]):
 
     id: IdType = pydantic.Field(
         alias=collection_object.CollectionObject.ID_KEY)

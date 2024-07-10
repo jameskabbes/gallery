@@ -1,6 +1,6 @@
 import typing
 from pathlib import Path
-from gallery import config, utils, types
+from gallery import config, custom_types, utils
 from pymongo import MongoClient, database, collection as pymongo_collection
 from gallery.objects.bases import document_object
 import pydantic
@@ -21,7 +21,7 @@ class Base:
     })
 
 
-class Studio(Base, document_object.DocumentObject[types.StudioId, Types.ID_TYPES]):
+class Studio(Base, document_object.DocumentObject[custom_types.StudioId, Types.ID_TYPES]):
     dir_name: Types.dir_name
     name: Types.name | None = pydantic.Field(default=None)
     IDENTIFYING_KEYS: typing.ClassVar[tuple[Types.ID_TYPES]] = Types.ID_KEYS
@@ -36,7 +36,7 @@ class Studio(Base, document_object.DocumentObject[types.StudioId, Types.ID_TYPES
         return d['dir_name']
 
     @classmethod
-    def find_to_add_and_delete(cls, collection: pymongo_collection.Collection, dir: pathlib.Path) -> tuple[set[tuple[Types.ID_TYPES]], set[types.StudioId]]:
+    def find_to_add_and_delete(cls, collection: pymongo_collection.Collection, dir: pathlib.Path) -> tuple[set[tuple[Types.ID_TYPES]], set[custom_types.StudioId]]:
 
         local_id_keys: set[tuple[Types.ID_TYPES]] = set()
         for subdir in dir.iterdir():
