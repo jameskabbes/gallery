@@ -1,4 +1,5 @@
 import typing
 
 
-StudioID = typing.NewType('StudioID', str)
+type StudioID = str
+type UserID = str

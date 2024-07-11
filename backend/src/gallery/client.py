@@ -66,11 +66,9 @@ class Client:
 
         # db
         db_engine_path = get_path_from_config(merged_config['db']['path'])
-        print(db_engine_path)
         self.db_engine = create_engine(f'sqlite:///{db_engine_path}')
 
     def create_tables(self):
-        print(SQLModel.metadata)
         SQLModel.metadata.create_all(self.db_engine)
 
     '''

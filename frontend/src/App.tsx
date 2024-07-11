@@ -1,10 +1,10 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Home } from './pages/Home';
-import { Studios } from './pages/Studios';
-import { Studio } from './pages/Studio';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
+import { Studios } from './pages/Studios';
+import { Studio } from './pages/Studio';
 
 function App(): JSX.Element {
   return (
