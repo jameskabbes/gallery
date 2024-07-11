@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.security import OAuth2AuthorizationCodeBearer
 from gallery import get_client, custom_types, models
 import datetime
 from sqlmodel import Session, SQLModel, select
@@ -21,7 +22,7 @@ async def read_root():
     return {"home": datetime.datetime.now()}
 
 
-@app.get('/studios/{studio_id}')
+@app.get('/studios/{studio_id}/')
 async def get_studio(studio_id: custom_types.StudioID) -> models.StudioPublic:
     with Session(c.db_engine) as session:
         studio = session.get(models.Studio, studio_id)
@@ -43,7 +44,7 @@ async def post_studio(studio: models.StudioCreate) -> models.StudioPublic:
         return db_studio
 
 
-@app.patch('/studios/{studio_id}')
+@app.patch('/studios/{studio_id}/')
 async def patch_studio(studio_id: custom_types.StudioID, studio: models.StudioUpdate) -> models.StudioPublic:
 
     with Session(c.db_engine) as session:
@@ -57,7 +58,7 @@ async def patch_studio(studio_id: custom_types.StudioID, studio: models.StudioUp
         return db_studio
 
 
-@app.delete('/studios/{studio_id}')
+@app.delete('/studios/{studio_id}/')
 async def delete_studio(studio_id: custom_types.StudioID):
     with Session(c.db_engine) as session:
         studio = session.get(models.Studio, studio_id)
@@ -68,9 +69,37 @@ async def delete_studio(studio_id: custom_types.StudioID):
         return {'ok': True}
 
 
-@ app.get('/studios/')
-async def get_studios(offset: int = 0, limit: int = Query(default=100, le=100)) -> list[models.StudioPublic]:
+@app.get('/studios/')
+async def get_studios(offset: int = Query(default=0, ge=0), limit: int = Query(default=100, ge=0, le=100)) -> list[models.StudioPublic]:
+    print(offset, limit)
+
     with Session(c.db_engine) as session:
-        objects = session.exec(
+        studios = session.exec(
             select(models.Studio).offset(offset).limit(limit)).all()
-        return objects
+        return studios
+
+# Pages
+
+
+class PagesStudiosResponse(typing.TypedDict):
+    studios: list[models.StudioPublic]
+
+
+@app.get('/pages/studios/')
+async def get_pages_studios() -> PagesStudiosResponse:
+    d: PagesStudiosResponse = {
+        'studios': await get_studios(offset=0, limit=100)
+    }
+    return d
+
+
+class PagesStudioResponse(typing.TypedDict):
+    studio: models.StudioPublic
+
+
+@app.get('/pages/studios/{studio_id}/')
+async def get_pages_studio(studio_id: custom_types.StudioID) -> PagesStudioResponse:
+    d: PagesStudioResponse = {
+        'studio': await get_studio(studio_id)
+    }
+    return d

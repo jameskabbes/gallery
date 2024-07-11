@@ -9,33 +9,27 @@ export interface paths {
     /** Read Root */
     get: operations["read_root__get"];
   };
-  "/studios": {
-    /** Get Studios */
-    get: operations["get_studios_studios_get"];
-    /** Post Studio */
-    post: operations["post_studio_studios_post"];
-  };
-  "/studios/page": {
-    /** Studios Page */
-    get: operations["studios_page_studios_page_get"];
-  };
-  "/studios/{studio_id}": {
+  "/studios/{studio_id}/": {
     /** Get Studio */
-    get: operations["get_studio_studios__studio_id__get"];
+    get: operations["get_studio_studios__studio_id___get"];
     /** Delete Studio */
-    delete: operations["delete_studio_studios__studio_id__delete"];
+    delete: operations["delete_studio_studios__studio_id___delete"];
+    /** Patch Studio */
+    patch: operations["patch_studio_studios__studio_id___patch"];
   };
-  "/studios/{studio_id}/page": {
-    /** Studio Page */
-    get: operations["studio_page_studios__studio_id__page_get"];
+  "/studios/": {
+    /** Get Studios */
+    get: operations["get_studios_studios__get"];
+    /** Post Studio */
+    post: operations["post_studio_studios__post"];
   };
-  "/events/{event_id}": {
-    /** Event Page */
-    get: operations["event_page_events__event_id__get"];
+  "/pages/studios/": {
+    /** Get Pages Studios */
+    get: operations["get_pages_studios_pages_studios__get"];
   };
-  "/file/{file_id}/content": {
-    /** Get File */
-    get: operations["get_file_file__file_id__content_get"];
+  "/pages/studios/{studio_id}/": {
+    /** Get Pages Studio */
+    get: operations["get_pages_studio_pages_studios__studio_id___get"];
   };
 }
 
@@ -43,84 +37,36 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
-    AudioId: string;
-    /** Event */
-    Event: {
-      _id: components["schemas"]["EventId"];
-      studio_id: components["schemas"]["StudioId"];
-      /** Datetime */
-      datetime?: string | null;
-      /** Name */
-      name?: string;
-    };
-    EventId: string;
-    /** EventResponse */
-    EventResponse: {
-      event: components["schemas"]["Event"];
-      /** Medias */
-      medias: {
-        [key: string]: components["schemas"]["gallery__objects__media_types__image__File"] | components["schemas"]["gallery__objects__media_types__video__File"] | components["schemas"]["gallery__objects__media_types__audio__File"];
-      };
-      /** Medias To Add */
-      medias_to_add: {
-        [key: string]: components["schemas"]["gallery__objects__media_types__image__File"] | components["schemas"]["gallery__objects__media_types__video__File"] | components["schemas"]["gallery__objects__media_types__audio__File"];
-      };
-      /** Media Ids To Delete */
-      media_ids_to_delete: {
-        [key: string]: null;
-      };
-    };
-    FileEnding: string;
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
       detail?: components["schemas"]["ValidationError"][];
     };
-    HexColor: string;
-    ImageId: string;
-    MediaIdType: components["schemas"]["ImageId"] | components["schemas"]["VideoId"] | components["schemas"]["AudioId"];
-    /** @enum {string} */
-    MediaType: "image" | "video" | "audio";
-    SizeId: string;
-    /** Studio */
-    Studio: {
-      _id: components["schemas"]["StudioId"];
-      /** Dir Name */
-      dir_name: string;
+    /** PagesStudioResponse */
+    PagesStudioResponse: {
+      studio: components["schemas"]["StudioPublic"];
+    };
+    /** PagesStudiosResponse */
+    PagesStudiosResponse: {
+      /** Studios */
+      studios: components["schemas"]["StudioPublic"][];
+    };
+    /** StudioCreate */
+    StudioCreate: {
+      /** Name */
+      name: string;
+    };
+    StudioID: string;
+    /** StudioPublic */
+    StudioPublic: {
+      /** Name */
+      name: string;
+      id: components["schemas"]["StudioID"];
+    };
+    /** StudioUpdate */
+    StudioUpdate: {
       /** Name */
       name?: string | null;
-    };
-    StudioId: string;
-    /** StudioPageResponse */
-    StudioPageResponse: {
-      studio: components["schemas"]["Studio"];
-      /** Events */
-      events: {
-        [key: string]: components["schemas"]["Event"];
-      };
-      /** Events To Add */
-      events_to_add: {
-        [key: string]: components["schemas"]["Event"];
-      };
-      /** Event Ids To Delete */
-      event_ids_to_delete: {
-        [key: string]: null;
-      };
-    };
-    /** StudiosPageResponse */
-    StudiosPageResponse: {
-      /** Studios */
-      studios: {
-        [key: string]: components["schemas"]["Studio"];
-      };
-      /** Studios To Add */
-      studios_to_add: {
-        [key: string]: components["schemas"]["Studio"];
-      };
-      /** Studio Ids To Delete */
-      studio_ids_to_delete: {
-        [key: string]: null;
-      };
     };
     /** ValidationError */
     ValidationError: {
@@ -130,57 +76,6 @@ export interface components {
       msg: string;
       /** Error Type */
       type: string;
-    };
-    VersionId: string;
-    VideoId: string;
-    /** File */
-    gallery__objects__media_types__audio__File: {
-      _id: components["schemas"]["AudioId"];
-      media_type: components["schemas"]["MediaType"];
-      /** Event Id */
-      event_id: string;
-      /** Name */
-      name: string;
-      file_ending: components["schemas"]["FileEnding"];
-      /** Relative Path */
-      relative_path: string;
-      /** Datetime */
-      datetime?: string | null;
-    };
-    /** File */
-    gallery__objects__media_types__image__File: {
-      _id: components["schemas"]["ImageId"];
-      media_type: components["schemas"]["MediaType"];
-      /** Event Id */
-      event_id: string;
-      /** Name */
-      name: string;
-      file_ending: components["schemas"]["FileEnding"];
-      /** Relative Path */
-      relative_path: string;
-      version?: components["schemas"]["VersionId"] | null;
-      size?: components["schemas"]["SizeId"] | null;
-      /** Height */
-      height?: number | null;
-      /** Width */
-      width?: number | null;
-      /** Bytes */
-      bytes?: number | null;
-      average_color?: components["schemas"]["HexColor"] | null;
-    };
-    /** File */
-    gallery__objects__media_types__video__File: {
-      _id: components["schemas"]["VideoId"];
-      media_type: components["schemas"]["MediaType"];
-      /** Event Id */
-      event_id: string;
-      /** Name */
-      name: string;
-      file_ending: components["schemas"]["FileEnding"];
-      /** Relative Path */
-      relative_path: string;
-      /** Datetime */
-      datetime?: string | null;
     };
   };
   responses: never;
@@ -207,64 +102,18 @@ export interface operations {
       };
     };
   };
-  /** Get Studios */
-  get_studios_studios_get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": {
-            [key: string]: components["schemas"]["Studio"];
-          };
-        };
-      };
-    };
-  };
-  /** Post Studio */
-  post_studio_studios_post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["Studio"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Studios Page */
-  studios_page_studios_page_get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["StudiosPageResponse"];
-        };
-      };
-    };
-  };
   /** Get Studio */
-  get_studio_studios__studio_id__get: {
+  get_studio_studios__studio_id___get: {
     parameters: {
       path: {
-        studio_id: components["schemas"]["StudioId"];
+        studio_id: components["schemas"]["StudioID"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["Studio"];
+          "application/json": components["schemas"]["StudioPublic"];
         };
       };
       /** @description Validation Error */
@@ -276,10 +125,10 @@ export interface operations {
     };
   };
   /** Delete Studio */
-  delete_studio_studios__studio_id__delete: {
+  delete_studio_studios__studio_id___delete: {
     parameters: {
       path: {
-        studio_id: components["schemas"]["StudioId"];
+        studio_id: components["schemas"]["StudioID"];
       };
     };
     responses: {
@@ -297,18 +146,23 @@ export interface operations {
       };
     };
   };
-  /** Studio Page */
-  studio_page_studios__studio_id__page_get: {
+  /** Patch Studio */
+  patch_studio_studios__studio_id___patch: {
     parameters: {
       path: {
-        studio_id: components["schemas"]["StudioId"];
+        studio_id: components["schemas"]["StudioID"];
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["StudioUpdate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["StudioPageResponse"];
+          "application/json": components["schemas"]["StudioPublic"];
         };
       };
       /** @description Validation Error */
@@ -319,18 +173,19 @@ export interface operations {
       };
     };
   };
-  /** Event Page */
-  event_page_events__event_id__get: {
+  /** Get Studios */
+  get_studios_studios__get: {
     parameters: {
-      path: {
-        event_id: components["schemas"]["EventId"];
+      query?: {
+        offset?: number;
+        limit?: number;
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["EventResponse"];
+          "application/json": components["schemas"]["StudioPublic"][];
         };
       };
       /** @description Validation Error */
@@ -341,18 +196,51 @@ export interface operations {
       };
     };
   };
-  /** Get File */
-  get_file_file__file_id__content_get: {
-    parameters: {
-      path: {
-        file_id: components["schemas"]["MediaIdType"];
+  /** Post Studio */
+  post_studio_studios__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["StudioCreate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": components["schemas"]["StudioPublic"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get Pages Studios */
+  get_pages_studios_pages_studios__get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["PagesStudiosResponse"];
+        };
+      };
+    };
+  };
+  /** Get Pages Studio */
+  get_pages_studio_pages_studios__studio_id___get: {
+    parameters: {
+      path: {
+        studio_id: components["schemas"]["StudioID"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["PagesStudioResponse"];
         };
       };
       /** @description Validation Error */
