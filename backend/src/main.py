@@ -1,10 +1,22 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, status
 from fastapi.security import OAuth2AuthorizationCodeBearer
 from gallery import get_client, custom_types, models
 import datetime
 from sqlmodel import Session, SQLModel, select
 import typing
+
+
+class DetailOnlyResponse(typing.TypedDict):
+    detail: str
+
+
+class NotFoundResponse(DetailOnlyResponse):
+    pass
+
+
+class SuccessfulDeleteResponse(DetailOnlyResponse):
+    ok: bool
 
 
 @asynccontextmanager
@@ -22,12 +34,13 @@ async def read_root():
     return {"home": datetime.datetime.now()}
 
 
-@app.get('/studios/{studio_id}/')
+@app.get('/studios/{studio_id}/',  responses={404: {"description": 'Studio not found', 'model': NotFoundResponse}})
 async def get_studio(studio_id: custom_types.StudioID) -> models.StudioPublic:
     with Session(c.db_engine) as session:
         studio = session.get(models.Studio, studio_id)
         if not studio:
-            raise HTTPException(status_code=404, detail='Studio not found')
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail='Studio not found')
         return studio
 
 
@@ -97,7 +110,7 @@ class PagesStudioResponse(typing.TypedDict):
     studio: models.StudioPublic
 
 
-@app.get('/pages/studios/{studio_id}/')
+@app.get('/pages/studios/{studio_id}/', responses={404: {"description": 'Studio not found', 'model': NotFoundResponse}})
 async def get_pages_studio(studio_id: custom_types.StudioID) -> PagesStudioResponse:
     d: PagesStudioResponse = {
         'studio': await get_studio(studio_id)

@@ -18,7 +18,7 @@ class Studio(StudioBase, table=True):
 
     @classmethod
     def generate_id(cls):
-        return custom_types.StudioID(str(uuid.uuid4()))
+        return str(uuid.uuid4())
 
 
 class StudioCreate(StudioBase):

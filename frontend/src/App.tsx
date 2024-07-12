@@ -5,6 +5,7 @@ import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { Studios } from './pages/Studios';
 import { Studio } from './pages/Studio';
+import { CreateStudio } from './components/Studio/CreateStudio';
 
 function App(): JSX.Element {
   return (
@@ -15,6 +16,7 @@ function App(): JSX.Element {
           <Route path="/" element={<Home />} />
           <Route path="/studios" element={<Studios />} />
           <Route path="/studios/:studioId" element={<Studio />} />
+          <Route path="/add_studio" element={<CreateStudio />} />
           <Route path="/404" element={<p>404</p>} />
           <Route path="*" element={<Navigate to="/404" />} />
         </Routes>

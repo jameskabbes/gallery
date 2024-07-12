@@ -42,6 +42,11 @@ export interface components {
       /** Detail */
       detail?: components["schemas"]["ValidationError"][];
     };
+    /** NotFoundResponse */
+    NotFoundResponse: {
+      /** Detail */
+      detail: string;
+    };
     /** PagesStudioResponse */
     PagesStudioResponse: {
       studio: components["schemas"]["StudioPublic"];
@@ -114,6 +119,12 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["StudioPublic"];
+        };
+      };
+      /** @description Studio not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
         };
       };
       /** @description Validation Error */
@@ -241,6 +252,12 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["PagesStudioResponse"];
+        };
+      };
+      /** @description Studio not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
         };
       };
       /** @description Validation Error */

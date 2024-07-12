@@ -57,7 +57,7 @@ function useApiData<T>(endpoint: string): UseApiDataReturn<T> {
     updateApiStates<T>(setApiData, setLoading, setStatus, endpoint);
   }, [endpoint]);
 
-  return [apiData, setApiData, loading, setLoading, status, setStatus];
+  return { apiData, setApiData, loading, setLoading, status, setStatus };
 }
 
 export { callApi, updateApiStates, useApiData };

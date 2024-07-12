@@ -9,14 +9,22 @@ type ApiResponseData<T> = T | null;
 type ApiResponseLoading = boolean;
 type ApiResponseStatus = number | null;
 
-type UseApiDataReturn<T> = [
-  ApiResponseData<T>, //data
-  React.Dispatch<React.SetStateAction<ApiResponseData<T>>>,
-  ApiResponseLoading, //loading
-  React.Dispatch<React.SetStateAction<ApiResponseLoading>>,
-  ApiResponseStatus, //status
-  React.Dispatch<React.SetStateAction<ApiResponseStatus>>
-];
+type UseApiDataReturn<T> = {
+  apiData: ApiResponseData<T>; //data
+  setApiData: React.Dispatch<React.SetStateAction<ApiResponseData<T>>>;
+  loading: ApiResponseLoading; //loading
+  setLoading: React.Dispatch<React.SetStateAction<ApiResponseLoading>>;
+  status: ApiResponseStatus; //status
+  setStatus: React.Dispatch<React.SetStateAction<ApiResponseStatus>>;
+};
+
+type ExtractResponseTypes<T> = {
+  [K in keyof T]: T[K] extends {
+    content: { 'application/json': infer ContentType };
+  }
+    ? ContentType
+    : never;
+};
 
 export {
   ApiResponse,
@@ -24,4 +32,5 @@ export {
   ApiResponseLoading,
   ApiResponseStatus,
   UseApiDataReturn,
+  ExtractResponseTypes,
 };

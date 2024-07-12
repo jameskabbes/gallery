@@ -1,16 +1,16 @@
 import { paths, operations, components } from '../../openapi_schema';
 import { callApi } from '../../utils/Api';
+import { ApiResponse, ExtractResponseTypes } from '../../types';
 
 const API_PATH = '/studios/{studio_id}/';
+const API_METHOD = 'delete';
 
-async function deleteStudio(
-  studioId: paths[typeof API_PATH]['delete']['parameters']['path']['studio_id']
-): {
-  let a = callApi<paths[typeof API_PATH]['delete']['responses']['200']['content']['application/json']>(
-    `/studios/${studioId}/`,
-    'DELETE'
-  );
-  console.log(a);
+type AllResponseTypes = ExtractResponseTypes<
+  paths[typeof API_PATH][typeof API_METHOD]['responses']
+>;
+
+async function deleteStudio(studioId: components['schemas']['StudioID']) {
+  callApi(API_PATH.replace('{studio_id}', studioId), API_METHOD);
 }
 
 export { deleteStudio };
