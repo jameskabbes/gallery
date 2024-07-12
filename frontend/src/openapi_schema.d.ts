@@ -144,9 +144,13 @@ export interface operations {
     };
     responses: {
       /** @description Successful Response */
-      200: {
+      204: {
+        content: never;
+      };
+      /** @description Studio not found */
+      404: {
         content: {
-          "application/json": unknown;
+          "application/json": components["schemas"]["NotFoundResponse"];
         };
       };
       /** @description Validation Error */

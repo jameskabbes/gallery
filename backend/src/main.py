@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Query, status
+from fastapi import FastAPI, HTTPException, Query, status, Response
 from fastapi.security import OAuth2AuthorizationCodeBearer
 from gallery import get_client, custom_types, models
 import datetime
@@ -71,7 +71,7 @@ async def patch_studio(studio_id: custom_types.StudioID, studio: models.StudioUp
         return db_studio
 
 
-@app.delete('/studios/{studio_id}/')
+@app.delete('/studios/{studio_id}/', status_code=204, responses={404: {"description": 'Studio not found', 'model': NotFoundResponse}})
 async def delete_studio(studio_id: custom_types.StudioID):
     with Session(c.db_engine) as session:
         studio = session.get(models.Studio, studio_id)
@@ -79,7 +79,7 @@ async def delete_studio(studio_id: custom_types.StudioID):
             raise HTTPException(status_code=404, detail='Studio not found')
         session.delete(studio)
         session.commit()
-        return {'ok': True}
+        return Response(status_code=204)
 
 
 @app.get('/studios/')

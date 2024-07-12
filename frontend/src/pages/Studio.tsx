@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { callApi, useApiData } from '../utils/Api';
 import { paths, operations, components } from '../openapi_schema';
 import { ApiResponse, ExtractResponseTypes } from '../types';
+import { useDeleteStudio } from '../components/Studio/useDeleteStudio';
 
 const API_PATH = '/pages/studios/{studio_id}/';
 const API_METHOD = 'get';
@@ -13,6 +14,7 @@ type AllResponseTypes = ExtractResponseTypes<
 
 function Studio(): JSX.Element {
   const { studioId } = useParams();
+  const handleDeleteClick = useDeleteStudio(studioId);
 
   const { apiData, loading, status } = useApiData(
     API_PATH.replace('{studio_id}', studioId)
@@ -24,7 +26,7 @@ function Studio(): JSX.Element {
     return (
       <div>
         <h1>{data === null ? 'loading...' : data.studio.name}</h1>
-        <button>Delete Studio</button>
+        <button onClick={handleDeleteClick}>Delete Studio</button>
       </div>
     );
   } else if (status == 404) {

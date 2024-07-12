@@ -26,6 +26,23 @@ type ExtractResponseTypes<T> = {
     : never;
 };
 
+interface DarkModeContext {
+  state: boolean;
+  toggle: () => void;
+}
+
+interface ConfirmationModalContext {
+  isActive: boolean;
+  isConfirmed: boolean | null;
+  title: string | null;
+  message: string | null;
+  setIsActive: React.Dispatch<React.SetStateAction<boolean>>;
+  confirm: () => void;
+  cancel: () => void;
+  reset: () => void;
+  setTitle: (title: string | null) => void;
+  setMessage: (message: string | null) => void;
+}
 export {
   ApiResponse,
   ApiResponseData,
@@ -33,4 +50,6 @@ export {
   ApiResponseStatus,
   UseApiDataReturn,
   ExtractResponseTypes,
+  DarkModeContext,
+  ConfirmationModalContext,
 };
