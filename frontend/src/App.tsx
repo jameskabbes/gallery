@@ -22,7 +22,6 @@ function App(): JSX.Element {
             <Route path="/" element={<Home />} />
             <Route path="/studios" element={<Studios />} />
             <Route path="/studios/:studioId" element={<Studio />} />
-            <Route path="/add_studio" element={<CreateStudio />} />
             <Route path="/404" element={<p>404</p>} />
             <Route path="*" element={<Navigate to="/404" />} />
           </Routes>

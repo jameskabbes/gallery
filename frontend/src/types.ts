@@ -1,4 +1,4 @@
-// extend the contents from openapi_schema.d.ts
+import { paths, operations, components } from './openapi_schema';
 
 // API Response
 interface ApiResponse<T> {
@@ -43,6 +43,20 @@ interface ConfirmationModalContext {
   setTitle: (title: string | null) => void;
   setMessage: (message: string | null) => void;
 }
+
+interface DataContext {
+  studios: Map<
+    components['schemas']['StudioID'],
+    components['schemas']['StudioPublic']
+  >;
+  addStudio: (studio: components['schemas']['StudioCreate']) => void;
+  removeStudio: (studioId: components['schemas']['StudioID']) => void;
+}
+
+interface ToastContext {
+  toasts: string[];
+}
+
 export {
   ApiResponse,
   ApiResponseData,
@@ -52,4 +66,6 @@ export {
   ExtractResponseTypes,
   DarkModeContext,
   ConfirmationModalContext,
+  DataContext,
+  ToastContext,
 };

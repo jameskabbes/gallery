@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
 import { callApi } from '../../utils/Api';
+import { DataContext } from '../../contexts/Data';
 
 type StudioCreate = components['schemas']['StudioCreate'];
-
 const API_PATH = '/studios/';
 
 function CreateStudio() {
@@ -15,6 +15,7 @@ function CreateStudio() {
     return studio;
   }
 
+  const { addStudio } = React.useContext(DataContext);
   const [studio, setStudio] = useState<components['schemas']['StudioCreate']>(
     getBlankStudio()
   );
@@ -31,18 +32,12 @@ function CreateStudio() {
   };
 
   const handleCreate = () => {
-    callApi<paths[typeof API_PATH]['post']['responses']>(
-      API_PATH,
-      'POST',
-      studio
-    );
+    addStudio(studio);
     setStudio(getBlankStudio());
   };
 
   return (
     <div>
-      <h1>Create Studio</h1>
-
       <label htmlFor="studioName">Name: </label>
       <input
         type="text"
