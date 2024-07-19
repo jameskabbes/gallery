@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
-import { callApi } from '../../utils/Api';
 import { DataContext } from '../../contexts/Data';
+import { createStudioFunc } from './createStudioFunc';
 
 type StudioCreate = components['schemas']['StudioCreate'];
-const API_PATH = '/studios/';
 
 function CreateStudio() {
   function getBlankStudio(): StudioCreate {
@@ -15,12 +14,19 @@ function CreateStudio() {
     return studio;
   }
 
-  const { addStudio } = React.useContext(DataContext);
   const [studio, setStudio] = useState<components['schemas']['StudioCreate']>(
     getBlankStudio()
   );
+  const [validCreate, setValidCreate] = useState<boolean>(false);
+  const Data = React.useContext(DataContext);
 
-  const handleChange = (fieldName) => (event) => {
+  // check if studio.name is not empty
+  useEffect(() => {
+    setValidCreate(studio.name.length > 0);
+  }, [studio]);
+
+  // make fieldName one of the keys in StudioCreate
+  const handleChange = (fieldName: keyof StudioCreate) => (event) => {
     setStudio({
       ...studio,
       [fieldName]: event.target.value,
@@ -32,7 +38,7 @@ function CreateStudio() {
   };
 
   const handleCreate = () => {
-    addStudio(studio);
+    createStudioFunc(studio, Data.studios.dispatch);
     setStudio(getBlankStudio());
   };
 
@@ -47,7 +53,12 @@ function CreateStudio() {
       />
       <br></br>
       <button onClick={handleCancel}>Cancel</button>
-      <button onClick={handleCreate}>Create</button>
+      <button
+        className={validCreate ? 'button-valid' : 'button-invalid'}
+        onClick={validCreate ? handleCreate : () => null}
+      >
+        Create
+      </button>
     </div>
   );
 }

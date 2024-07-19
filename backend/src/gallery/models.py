@@ -7,12 +7,16 @@ import uuid
 class Singular[IDType]:
     _ID_COL: typing.ClassVar[str] = 'id'
 
+    @property
+    def _id(self) -> IDType:
+        return getattr(self, self._ID_COL)
+
 
 class StudioBase(SQLModel):
     name: str
 
 
-class Studio(StudioBase, table=True):
+class Studio(StudioBase, Singular, table=True):
     id: custom_types.StudioID.__value__ = Field(
         primary_key=True, index=True)
 

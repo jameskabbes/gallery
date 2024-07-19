@@ -31,30 +31,52 @@ interface DarkModeContext {
   toggle: () => void;
 }
 
-interface ConfirmationModalContext {
+interface ConfirmationModalContextState {
   isActive: boolean;
   isConfirmed: boolean | null;
   title: string | null;
   message: string | null;
-  setIsActive: React.Dispatch<React.SetStateAction<boolean>>;
-  confirm: () => void;
-  cancel: () => void;
-  reset: () => void;
-  setTitle: (title: string | null) => void;
-  setMessage: (message: string | null) => void;
 }
 
-interface DataContext {
-  studios: Map<
-    components['schemas']['StudioID'],
-    components['schemas']['StudioPublic']
-  >;
-  addStudio: (studio: components['schemas']['StudioCreate']) => void;
-  removeStudio: (studioId: components['schemas']['StudioID']) => void;
+type ConfirmationModalContextAction =
+  | { type: 'SET_IS_ACTIVE'; payload: boolean }
+  | { type: 'CONFIRM' }
+  | { type: 'CANCEL' }
+  | { type: 'RESET' }
+  | { type: 'SET_TITLE'; payload: string }
+  | { type: 'SET_MESSAGE'; payload: string };
+
+interface ConfirmationModalContext {
+  state: ConfirmationModalContextState;
+  dispatch: (action: ConfirmationModalContextAction) => void;
 }
 
 interface ToastContext {
   toasts: string[];
+}
+
+//
+type Studios = Map<
+  components['schemas']['StudioID'],
+  components['schemas']['StudioPublic']
+>;
+
+type StudiosReducerState = Studios;
+type StudiosReducerAction =
+  | { type: 'SET'; payload: Studios }
+  | {
+      type: 'ADD';
+      payload: components['schemas']['StudioPublic'];
+    }
+  | { type: 'DELETE'; payload: components['schemas']['StudioID'] };
+
+interface Reducer<State, Dispatch> {
+  state: State;
+  dispatch: (action: Dispatch) => void;
+}
+
+interface DataContext {
+  studios: Reducer<StudiosReducerState, StudiosReducerAction>;
 }
 
 export {
@@ -65,7 +87,12 @@ export {
   UseApiDataReturn,
   ExtractResponseTypes,
   DarkModeContext,
+  ConfirmationModalContextState,
+  ConfirmationModalContextAction,
   ConfirmationModalContext,
+  StudiosReducerState,
+  StudiosReducerAction,
   DataContext,
   ToastContext,
+  Studios,
 };
