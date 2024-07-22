@@ -31,6 +31,8 @@ function toastReducer(
       };
       newState.toasts.delete(action.payload);
       return newState;
+    case 'CLEAR':
+      return defaultContextValue;
     default:
       return state;
   }
@@ -55,7 +57,7 @@ function ToastContextProvider({ children }: Props) {
 
     setTimeout(() => {
       dispatch({ type: 'DELETE', payload: id });
-    }, 5000);
+    }, 3000);
   }
 
   return (

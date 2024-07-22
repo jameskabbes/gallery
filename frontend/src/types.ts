@@ -71,7 +71,8 @@ interface ToastContextState {
 
 type ToastContextAction =
   | { type: 'ADD'; payload: Toast }
-  | { type: 'DELETE'; payload: Toast['id'] };
+  | { type: 'DELETE'; payload: Toast['id'] }
+  | { type: 'CLEAR' };
 
 type ToastContextAddToast = (toast: Omit<Toast, 'id'>) => void;
 
