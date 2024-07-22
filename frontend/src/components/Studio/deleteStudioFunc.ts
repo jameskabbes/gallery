@@ -1,8 +1,11 @@
 import React, { Component } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
-import { ExtractResponseTypes } from '../../types';
+import { ExtractResponseTypes, ToastContextAddToast } from '../../types';
 import { callApi } from '../../utils/Api';
-import { StudiosReducerAction } from '../../types';
+import {
+  StudiosReducerAction,
+  ConfirmationModalContextShowModal,
+} from '../../types';
 
 const API_PATH = '/studios/{studio_id}/';
 const API_METHOD = 'delete';
@@ -13,19 +16,32 @@ type AllResponseTypes = ExtractResponseTypes<
 
 async function deleteStudioFunc(
   studio: components['schemas']['StudioPublic'],
-  studios_dispatch: React.Dispatch<StudiosReducerAction>
+  studiosDispatch: React.Dispatch<StudiosReducerAction>,
+  showConfirmationModal: ConfirmationModalContextShowModal,
+  addToast: ToastContextAddToast
 ) {
-  console.log('calling delete');
-  console.log(studio);
-  studios_dispatch({ type: 'DELETE', payload: studio.id });
+  const isConfirmed = await showConfirmationModal(
+    'Delete Studio',
+    'Are you sure you want to delete this studio?'
+  );
+
+  console.log('isConfirmed', isConfirmed);
+
+  if (!isConfirmed) return;
+
+  studiosDispatch({ type: 'DELETE', payload: studio.id });
   const { data, status } = await callApi<
     AllResponseTypes[keyof AllResponseTypes]
   >(API_PATH.replace('{studio_id}', studio.id), API_METHOD);
 
   if (status === 204) {
     const apiData = data as AllResponseTypes['204'];
+    addToast({
+      message: 'Studio deleted',
+      type: 'success',
+    });
   } else {
-    studios_dispatch({ type: 'ADD', payload: studio });
+    studiosDispatch({ type: 'ADD', payload: studio });
   }
 }
 

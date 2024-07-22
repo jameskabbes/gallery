@@ -46,13 +46,39 @@ type ConfirmationModalContextAction =
   | { type: 'SET_TITLE'; payload: string }
   | { type: 'SET_MESSAGE'; payload: string };
 
+type ConfirmationModalContextShowModal = (
+  title: string,
+  message: string
+) => boolean | PromiseLike<boolean>;
+
 interface ConfirmationModalContext {
   state: ConfirmationModalContextState;
-  dispatch: (action: ConfirmationModalContextAction) => void;
+  dispatch: React.Dispatch<ConfirmationModalContextAction>;
+  showModal: ConfirmationModalContextShowModal;
 }
 
+type ToastType = 'info' | 'success' | 'warning' | 'error';
+
+interface Toast {
+  id: number;
+  message: string;
+  type: ToastType;
+}
+
+interface ToastContextState {
+  toasts: Map<Toast['id'], Toast>;
+}
+
+type ToastContextAction =
+  | { type: 'ADD'; payload: Toast }
+  | { type: 'DELETE'; payload: Toast['id'] };
+
+type ToastContextAddToast = (toast: Omit<Toast, 'id'>) => void;
+
 interface ToastContext {
-  toasts: string[];
+  state: ToastContextState;
+  dispatch: React.Dispatch<ToastContextAction>;
+  addToast: ToastContextAddToast;
 }
 
 //
@@ -90,9 +116,15 @@ export {
   ConfirmationModalContextState,
   ConfirmationModalContextAction,
   ConfirmationModalContext,
+  ConfirmationModalContextShowModal,
   StudiosReducerState,
   StudiosReducerAction,
   DataContext,
+  Toast,
+  ToastType,
   ToastContext,
+  ToastContextAction,
+  ToastContextState,
+  ToastContextAddToast,
   Studios,
 };

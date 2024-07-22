@@ -5,7 +5,9 @@ import { ApiResponse, ExtractResponseTypes } from '../types';
 import { Link as StudioLink } from '../components/Studio/Link';
 import { CreateStudio } from '../components/Studio/CreateStudio';
 import { DataContext } from '../contexts/Data';
+import { ConfirmationModalContext } from '../contexts/ConfirmationModal';
 import { deleteStudioFunc } from '../components/Studio/deleteStudioFunc';
+import { ToastContext } from '../contexts/Toast';
 
 const API_PATH = '/pages/studios/';
 const API_METHOD = 'get';
@@ -18,6 +20,9 @@ function Studios(): JSX.Element {
   const { apiData, loading, status } =
     useApiData<ResponseTypesByStatus[keyof ResponseTypesByStatus]>(API_PATH);
   const Data = useContext(DataContext);
+  const ConfirmationModal = useContext(ConfirmationModalContext);
+  const Toast = useContext(ToastContext);
+
   const [creatingStudio, setCreatingStudio] = useState(false);
 
   // update the studios in the DataContext with the API result
@@ -57,7 +62,12 @@ function Studios(): JSX.Element {
 
                     <button
                       onClick={() => {
-                        deleteStudioFunc(studio, Data.studios.dispatch);
+                        deleteStudioFunc(
+                          studio,
+                          Data.studios.dispatch,
+                          ConfirmationModal.showModal,
+                          Toast.addToast
+                        );
                       }}
                     >
                       Delete

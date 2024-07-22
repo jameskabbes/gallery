@@ -1,12 +1,45 @@
-import React, { useState, useEffect, createContext } from 'react';
-import { ToastContext as ToastContextType } from '../types';
+import React, { useState, useEffect, createContext, useReducer } from 'react';
+import {
+  ToastContext as ToastContextType,
+  ToastContextAction,
+  ToastContextAddToast,
+  ToastContextState,
+  ToastType,
+  Toast,
+} from '../types';
 
-const defaultContextValue: ToastContextType = {
-  toasts: [],
+const defaultContextValue: ToastContextState = {
+  toasts: new Map(),
 };
 
+function toastReducer(
+  state: ToastContextState,
+  action: ToastContextAction
+): ToastContextState {
+  switch (action.type) {
+    case 'ADD':
+      var newState = {
+        ...state,
+        toasts: new Map(state.toasts),
+      };
+      newState.toasts.set(action.payload.id, action.payload);
+      return newState;
+    case 'DELETE':
+      var newState = {
+        ...state,
+        toasts: new Map(state.toasts),
+      };
+      newState.toasts.delete(action.payload);
+      return newState;
+    default:
+      return state;
+  }
+}
+
 const ToastContext = createContext<ToastContextType>({
-  ...defaultContextValue,
+  state: defaultContextValue,
+  dispatch: () => null,
+  addToast: () => null,
 });
 
 interface Props {
@@ -14,14 +47,23 @@ interface Props {
 }
 
 function ToastContextProvider({ children }: Props) {
-  const [toasts, setToasts] = useState<ToastContextType['toasts']>(
-    defaultContextValue.toasts
-  );
+  const [state, dispatch] = useReducer(toastReducer, defaultContextValue);
+  function addToast(toast: Omit<Toast, 'id'>) {
+    const id = Math.random();
+    let newToast: Toast = { ...toast, id };
+    dispatch({ type: 'ADD', payload: newToast });
+
+    setTimeout(() => {
+      dispatch({ type: 'DELETE', payload: id });
+    }, 5000);
+  }
 
   return (
     <ToastContext.Provider
       value={{
-        toasts,
+        state,
+        dispatch,
+        addToast,
       }}
     >
       {children}

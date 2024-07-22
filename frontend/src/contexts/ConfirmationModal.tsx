@@ -1,4 +1,4 @@
-import React, { useReducer, createContext } from 'react';
+import React, { useReducer, createContext, useEffect } from 'react';
 import {
   ConfirmationModalContext as ConfirmationModalContextType,
   ConfirmationModalContextAction,
@@ -37,6 +37,7 @@ function confirmationModalReducer(
 const ConfirmationModalContext = createContext<ConfirmationModalContextType>({
   state: defaultStateValue,
   dispatch: () => null,
+  showModal: () => false,
 });
 
 interface Props {
@@ -48,12 +49,32 @@ function ConfirmationModalContextProvider({ children }: Props) {
     confirmationModalReducer,
     defaultStateValue
   );
+  const [resolve, setResolve] = React.useState<
+    ((value: boolean | PromiseLike<boolean>) => void) | null
+  >();
+
+  function showModal(title: string, message: string): Promise<boolean> {
+    dispatch({ type: 'SET_TITLE', payload: title });
+    dispatch({ type: 'SET_MESSAGE', payload: message });
+    dispatch({ type: 'SET_IS_ACTIVE', payload: true });
+    return new Promise((resolve) => {
+      setResolve(() => resolve);
+    });
+  }
+
+  useEffect(() => {
+    if (state.isConfirmed !== null) {
+      resolve?.(state.isConfirmed);
+      dispatch({ type: 'RESET' });
+    }
+  }, [state.isConfirmed]);
 
   return (
     <ConfirmationModalContext.Provider
       value={{
         state,
         dispatch,
+        showModal,
       }}
     >
       {children}

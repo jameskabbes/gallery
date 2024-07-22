@@ -3,6 +3,7 @@ import { paths, operations, components } from '../../openapi_schema';
 import { ExtractResponseTypes } from '../../types';
 import { callApi } from '../../utils/Api';
 import { StudiosReducerAction } from '../../types';
+import { ToastContextAddToast } from '../../types';
 
 const API_PATH = '/studios/';
 const API_METHOD = 'post';
@@ -13,7 +14,8 @@ type AllResponseTypes = ExtractResponseTypes<
 
 async function createStudioFunc(
   studio: components['schemas']['StudioCreate'],
-  studios_dispatch: React.Dispatch<StudiosReducerAction>
+  studios_dispatch: React.Dispatch<StudiosReducerAction>,
+  addToast: ToastContextAddToast
 ) {
   let publicStudio: components['schemas']['StudioPublic'] = {
     ...studio,
@@ -28,12 +30,19 @@ async function createStudioFunc(
 
   if (status === 200) {
     const apiData = data as AllResponseTypes['200'];
-    // sleep for 2 seconds
     studios_dispatch({ type: 'DELETE', payload: '__loading__' });
     studios_dispatch({ type: 'ADD', payload: apiData });
+    addToast({
+      message: 'Studio created',
+      type: 'success',
+    });
   } else {
     studios_dispatch({ type: 'DELETE', payload: '__loading__' });
     console.error('Error creating studio:', status, data);
+    addToast({
+      message: 'Error creating studio',
+      type: 'error',
+    });
   }
 }
 
