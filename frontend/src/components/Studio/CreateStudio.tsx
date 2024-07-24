@@ -2,7 +2,6 @@ import React, { useState, useEffect, useContext } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
 import { DataContext } from '../../contexts/Data';
 import { createStudioFunc } from './createStudioFunc';
-import { ToastContext } from '../../contexts/Toast';
 
 type StudioCreate = components['schemas']['StudioCreate'];
 
@@ -20,7 +19,6 @@ function CreateStudio() {
   );
   const [validCreate, setValidCreate] = useState<boolean>(false);
   const Data = useContext(DataContext);
-  const Toast = useContext(ToastContext);
 
   // check if studio.name is not empty
   useEffect(() => {
@@ -40,7 +38,7 @@ function CreateStudio() {
   };
 
   const handleCreate = () => {
-    createStudioFunc(studio, Data.studios.dispatch, Toast.addToast);
+    createStudioFunc(studio, Data.studios.dispatch);
     setStudio(getBlankStudio());
   };
 
@@ -48,6 +46,7 @@ function CreateStudio() {
     <div>
       <label htmlFor="studioName">Name: </label>
       <input
+        className="border-2 border-black"
         type="text"
         id="studioName"
         value={studio.name}

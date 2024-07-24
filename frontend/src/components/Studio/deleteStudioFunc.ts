@@ -1,11 +1,13 @@
 import React, { Component } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
-import { ExtractResponseTypes, ToastContextAddToast } from '../../types';
+import { ExtractResponseTypes } from '../../types';
 import { callApi } from '../../utils/Api';
 import {
   StudiosReducerAction,
   ConfirmationModalContextShowModal,
 } from '../../types';
+
+import { toast } from 'react-toastify';
 
 const API_PATH = '/studios/{studio_id}/';
 const API_METHOD = 'delete';
@@ -17,18 +19,16 @@ type AllResponseTypes = ExtractResponseTypes<
 async function deleteStudioFunc(
   studio: components['schemas']['StudioPublic'],
   studiosDispatch: React.Dispatch<StudiosReducerAction>,
-  showConfirmationModal: ConfirmationModalContextShowModal,
-  addToast: ToastContextAddToast
+  showConfirmationModal: ConfirmationModalContextShowModal
 ) {
   const isConfirmed = await showConfirmationModal(
     'Delete Studio',
     'Are you sure you want to delete this studio?'
   );
 
-  console.log('isConfirmed', isConfirmed);
-
   if (!isConfirmed) return;
 
+  let toastId = toast.loading('Deleting studio');
   studiosDispatch({ type: 'DELETE', payload: studio.id });
   const { data, status } = await callApi<
     AllResponseTypes[keyof AllResponseTypes]
@@ -36,12 +36,20 @@ async function deleteStudioFunc(
 
   if (status === 204) {
     const apiData = data as AllResponseTypes['204'];
-    addToast({
-      message: 'Studio deleted',
+    toast.update(toastId, {
+      render: 'Studio deleted',
       type: 'success',
+      isLoading: false,
+      autoClose: 5000,
     });
   } else {
     studiosDispatch({ type: 'ADD', payload: studio });
+    toast.update(toastId, {
+      render: 'Could not delete studio',
+      type: 'error',
+      isLoading: false,
+      autoClose: 5000,
+    });
   }
 }
 

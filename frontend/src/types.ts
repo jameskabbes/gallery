@@ -57,31 +57,6 @@ interface ConfirmationModalContext {
   showModal: ConfirmationModalContextShowModal;
 }
 
-type ToastType = 'info' | 'success' | 'warning' | 'error';
-
-interface Toast {
-  id: number;
-  message: string;
-  type: ToastType;
-}
-
-interface ToastContextState {
-  toasts: Map<Toast['id'], Toast>;
-}
-
-type ToastContextAction =
-  | { type: 'ADD'; payload: Toast }
-  | { type: 'DELETE'; payload: Toast['id'] }
-  | { type: 'CLEAR' };
-
-type ToastContextAddToast = (toast: Omit<Toast, 'id'>) => void;
-
-interface ToastContext {
-  state: ToastContextState;
-  dispatch: React.Dispatch<ToastContextAction>;
-  addToast: ToastContextAddToast;
-}
-
 //
 type Studios = Map<
   components['schemas']['StudioID'],
@@ -121,11 +96,5 @@ export {
   StudiosReducerState,
   StudiosReducerAction,
   DataContext,
-  Toast,
-  ToastType,
-  ToastContext,
-  ToastContextAction,
-  ToastContextState,
-  ToastContextAddToast,
   Studios,
 };

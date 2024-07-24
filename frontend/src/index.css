@@ -122,3 +122,14 @@ button {
 .card {
   @apply rounded-xl overflow-hidden shadow-lg component p-2 m-1;
 }
+
+.toast-container {
+}
+
+.toast-card {
+  @apply card;
+}
+
+.toast-body {
+  @apply text-color;
+}
