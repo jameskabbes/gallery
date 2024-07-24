@@ -21,8 +21,6 @@ function Studios(): JSX.Element {
   const Data = useContext(DataContext);
   const ConfirmationModal = useContext(ConfirmationModalContext);
 
-  const [creatingStudio, setCreatingStudio] = useState(false);
-
   // update the studios in the DataContext with the API result
   useEffect(() => {
     if (status === 200) {
@@ -74,11 +72,7 @@ function Studios(): JSX.Element {
               ))}
           </ul>
         )}
-        {creatingStudio ? (
-          <CreateStudio />
-        ) : (
-          <button onClick={() => setCreatingStudio(true)}>Create Studio</button>
-        )}
+        <CreateStudio />
       </div>
     );
   } else {

@@ -1,7 +1,12 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { IoMdClose } from 'react-icons/io';
+
+const toastTemplate = {
+  isLoading: false,
+  autoClose: 3000,
+  closeOnClick: true,
+};
 
 function Toast(): JSX.Element {
   return (
@@ -10,11 +15,8 @@ function Toast(): JSX.Element {
       pauseOnFocusLoss={false}
       pauseOnHover={false}
       hideProgressBar={true}
-      closeButton={<IoMdClose />}
-      toastClassName={'toast-card'}
-      bodyClassName={'toast-body'}
     />
   );
 }
 
-export { Toast };
+export { Toast, toastTemplate };

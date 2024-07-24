@@ -4,6 +4,7 @@ import { ExtractResponseTypes } from '../../types';
 import { callApi } from '../../utils/Api';
 import { StudiosReducerAction } from '../../types';
 import { toast } from 'react-toastify';
+import { toastTemplate } from '../Toast';
 
 const API_PATH = '/studios/';
 const API_METHOD = 'post';
@@ -33,19 +34,17 @@ async function createStudioFunc(
     studios_dispatch({ type: 'DELETE', payload: '__loading__' });
     studios_dispatch({ type: 'ADD', payload: apiData });
     toast.update(toastId, {
+      ...toastTemplate,
       render: 'Studio created',
       type: 'success',
-      isLoading: false,
-      autoClose: 5000,
     });
   } else {
     studios_dispatch({ type: 'DELETE', payload: '__loading__' });
     console.error('Error creating studio:', status, data);
     toast.update(toastId, {
+      ...toastTemplate,
       render: 'Could not create studio',
       type: 'error',
-      isLoading: false,
-      autoClose: 5000,
     });
   }
 }

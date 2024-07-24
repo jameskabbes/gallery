@@ -5,7 +5,11 @@ import { createStudioFunc } from './createStudioFunc';
 
 type StudioCreate = components['schemas']['StudioCreate'];
 
-function CreateStudio() {
+interface Props {
+  alwaysActive?: boolean;
+}
+
+function CreateStudio({ alwaysActive = false }: Props): JSX.Element {
   function getBlankStudio(): StudioCreate {
     let studio: StudioCreate = {
       name: '',
@@ -33,33 +37,32 @@ function CreateStudio() {
     });
   };
 
-  const handleCancel = () => {
-    setStudio(getBlankStudio());
-  };
-
   const handleCreate = () => {
     createStudioFunc(studio, Data.studios.dispatch);
     setStudio(getBlankStudio());
   };
 
   return (
-    <div>
+    <div className="card w-fit">
+      <h3 className="text-center">Create Studio</h3>
       <label htmlFor="studioName">Name: </label>
       <input
-        className="border-2 border-black"
+        className="rounded-lg p-2"
         type="text"
         id="studioName"
         value={studio.name}
         onChange={handleChange('name')}
       />
       <br></br>
-      <button onClick={handleCancel}>Cancel</button>
-      <button
-        className={validCreate ? 'button-valid' : 'button-invalid'}
-        onClick={validCreate ? handleCreate : () => null}
-      >
-        Create
-      </button>
+      <div className="flex flex-row space-x-2 justify-center mt-2">
+        <button onClick={() => setStudio(getBlankStudio())}>Reset</button>
+        <button
+          className={validCreate ? 'button-valid' : 'button-invalid'}
+          onClick={validCreate ? handleCreate : () => null}
+        >
+          Create
+        </button>
+      </div>
     </div>
   );
 }

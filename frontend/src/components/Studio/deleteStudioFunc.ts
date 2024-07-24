@@ -8,6 +8,7 @@ import {
 } from '../../types';
 
 import { toast } from 'react-toastify';
+import { toastTemplate } from '../Toast';
 
 const API_PATH = '/studios/{studio_id}/';
 const API_METHOD = 'delete';
@@ -37,18 +38,16 @@ async function deleteStudioFunc(
   if (status === 204) {
     const apiData = data as AllResponseTypes['204'];
     toast.update(toastId, {
-      render: 'Studio deleted',
+      ...toastTemplate,
+      render: 'Studio Deleted',
       type: 'success',
-      isLoading: false,
-      autoClose: 5000,
     });
   } else {
     studiosDispatch({ type: 'ADD', payload: studio });
     toast.update(toastId, {
+      ...toastTemplate,
       render: 'Could not delete studio',
       type: 'error',
-      isLoading: false,
-      autoClose: 5000,
     });
   }
 }
