@@ -7,7 +7,7 @@ import { Studios } from './pages/Studios';
 import { Studio } from './pages/Studio';
 import { CreateStudio } from './components/Studio/CreateStudio';
 import { ApplicationContextProvider } from './contexts/Application';
-import { ConfirmationModal } from './components/ConfirmationModal';
+import { ConfirmationModal } from './components/ConfirmationModal/ConfirmationModal';
 import { Toast } from './components/Toast';
 
 function App(): JSX.Element {
