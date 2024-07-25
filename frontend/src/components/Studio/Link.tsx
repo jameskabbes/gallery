@@ -6,8 +6,8 @@ type Props = {
   children: React.ReactNode;
 };
 
-function Link({ studio_id, children }: Props) {
+function StudioLink({ studio_id, children }: Props) {
   return <a href={`/studios/${studio_id}`}>{children}</a>;
 }
 
-export { Link };
+export { StudioLink };

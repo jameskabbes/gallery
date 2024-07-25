@@ -5,7 +5,6 @@ import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { Studios } from './pages/Studios';
 import { Studio } from './pages/Studio';
-import { CreateStudio } from './components/Studio/CreateStudio';
 import { ApplicationContextProvider } from './contexts/Application';
 import { ConfirmationModal } from './components/ConfirmationModal/ConfirmationModal';
 import { Toast } from './components/Toast';
