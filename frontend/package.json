@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-oauth/google": "^0.12.1",
     "add-to-calendar-button-react": "^2.4.3",
     "axios": "^1.6.2",
     "luxon": "^3.4.4",
