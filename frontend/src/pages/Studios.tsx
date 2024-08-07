@@ -4,8 +4,10 @@ import { StudioLink } from '../components/Studio/Link';
 import { CreateStudio } from '../components/Studio/CreateStudio';
 import { DataContext } from '../contexts/Data';
 import { ConfirmationModalContext } from '../contexts/ConfirmationModal';
-import { deleteStudioFunc } from '../components/Studio/deleteStudioFunc';
 import { StudioCard } from '../components/Studio/Card';
+
+import { ExtractResponseTypes } from '../types';
+import { useBackendApiCall } from '../utils/Api';
 
 const API_PATH = '/pages/studios/';
 const API_METHOD = 'get';
@@ -15,26 +17,35 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 >;
 
 function Studios(): JSX.Element {
-  const { apiData, loading, status } =
-    useApiData<ResponseTypesByStatus[keyof ResponseTypesByStatus]>(API_PATH);
+  const {
+    data: apiData,
+    loading,
+    response,
+  } = useBackendApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>({
+    endpoint: API_PATH,
+    method: 'GET',
+  });
+
   const Data = useContext(DataContext);
   const ConfirmationModal = useContext(ConfirmationModalContext);
 
   // update the studios in the DataContext with the API result
   useEffect(() => {
-    if (status === 200) {
-      const data = apiData as ResponseTypesByStatus['200'];
-      if (data !== null) {
-        let newStudios = new Map();
-        data.studios.forEach((studio) => {
-          newStudios.set(studio.id, studio);
-        });
-        Data.studios.dispatch({ type: 'SET', payload: newStudios });
+    if (!loading) {
+      if (response.status === 200) {
+        const data = apiData as ResponseTypesByStatus['200'];
+        if (data !== null) {
+          let newStudios = new Map();
+          data.studios.forEach((studio) => {
+            newStudios.set(studio.id, studio);
+          });
+          Data.studios.dispatch({ type: 'SET', payload: newStudios });
+        }
       }
     }
-  }, [status, apiData]);
+  }, [loading]);
 
-  if (loading || status == 200) {
+  if (loading || response.status == 200) {
     const data = apiData as ResponseTypesByStatus['200'];
     return (
       <div>
@@ -62,7 +73,7 @@ function Studios(): JSX.Element {
   } else {
     return (
       <div>
-        <h1>Error {status}</h1>
+        <h1>Error {response.status}</h1>
       </div>
     );
   }

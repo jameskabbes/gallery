@@ -19,10 +19,10 @@ function App(): JSX.Element {
           <Header />
           <Routes>
             <Route path="/" element={<Home />} />
-            {/* <Route path="/studios" element={<Studios />} />
+            <Route path="/studios" element={<Studios />} />
             <Route path="/studios/:studioId" element={<Studio />} />
             <Route path="/404" element={<p>404</p>} />
-            <Route path="*" element={<Navigate to="/404" />} /> */}
+            <Route path="*" element={<Navigate to="/404" />} />
           </Routes>
           <Footer />
         </BrowserRouter>
