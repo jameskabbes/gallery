@@ -13,6 +13,11 @@ interface DarkModeContext {
   toggle: () => void;
 }
 
+interface LoginContext {
+  state: boolean;
+  toggle: () => void;
+}
+
 interface ConfirmationModalContextState {
   isActive: boolean;
   isConfirmed: boolean | null;
@@ -76,6 +81,7 @@ interface DataContext {
 export {
   ExtractResponseTypes,
   DarkModeContext,
+  LoginContext,
   ConfirmationModalContextState,
   ConfirmationModalContextAction,
   ConfirmationModalContext,

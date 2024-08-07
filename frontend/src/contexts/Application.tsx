@@ -2,13 +2,16 @@ import React from 'react';
 import { DarkModeContextProvider } from './DarkMode';
 import { ConfirmationModalContextProvider } from './ConfirmationModal';
 import { DataContextProvider } from './Data';
+import { LoginContextProvider } from './Login';
 
 const ApplicationContextProvider = ({ children }) => {
   return (
     <DataContextProvider>
-      <ConfirmationModalContextProvider>
-        <DarkModeContextProvider>{children}</DarkModeContextProvider>
-      </ConfirmationModalContextProvider>
+      <LoginContextProvider>
+        <ConfirmationModalContextProvider>
+          <DarkModeContextProvider>{children}</DarkModeContextProvider>
+        </ConfirmationModalContextProvider>
+      </LoginContextProvider>
     </DataContextProvider>
   );
 };

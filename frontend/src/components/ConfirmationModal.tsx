@@ -1,25 +1,14 @@
 import React, { useContext, useRef } from 'react';
-import { ConfirmationModalContext } from '../../contexts/ConfirmationModal';
-import { CSSTransition } from 'react-transition-group';
-import './ConfirmationModal.css'; // Import the CSS file for animations
+import { ConfirmationModalContext } from '../contexts/ConfirmationModal';
+
+import { Modal } from './Modal';
 
 function ConfirmationModal(): JSX.Element {
   let context = useContext(ConfirmationModalContext);
-  const nodeRef = useRef(null);
 
   return (
-    <CSSTransition
-      nodeRef={nodeRef}
-      in={context.state.isActive}
-      timeout={300}
-      classNames="modal"
-      mountOnEnter
-      unmountOnExit
-    >
-      <div
-        ref={nodeRef}
-        className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center"
-      >
+    <Modal close={() => context.dispatch({ type: 'CANCEL' })}>
+      <div className="modal flex justify-center items-center">
         <div className="p-4 card">
           <h4>{context.state.title}</h4>
           <p>{context.state.message}</p>
@@ -33,7 +22,7 @@ function ConfirmationModal(): JSX.Element {
           </div>
         </div>
       </div>
-    </CSSTransition>
+    </Modal>
   );
 }
 

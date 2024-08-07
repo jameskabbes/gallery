@@ -1,4 +1,60 @@
-import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+import React, { useState, useContext } from 'react';
+import { LoginContext } from '../contexts/Login';
+import { Modal } from './Modal';
+
+function Login() {
+  let context = useContext(LoginContext);
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+  }
+
+  if (!context.state) {
+    return null;
+  } else {
+    return (
+      // if user presses escape key, close the modal
+
+      <Modal close={context.toggle}>
+        <div className="flex justify-center items-center">
+          <div className="card">
+            <form onSubmit={handleLogin}>
+              <div className="form-group">
+                <label htmlFor="email">Email:</label>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="password">Password:</label>
+                <input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <button onClick={context.toggle}>Cancel</button>
+              <button>Login</button>
+            </form>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
+}
+
+//   );
+
+export { Login };
 
 // const clientId =
 //   '1855778612-f8jc05eb675d4226q50kqea1vp354ra0.apps.googleusercontent.com';

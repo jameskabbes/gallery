@@ -6,8 +6,9 @@ import { Footer } from './components/Footer';
 import { Studios } from './pages/Studios';
 import { Studio } from './pages/Studio';
 import { ApplicationContextProvider } from './contexts/Application';
-import { ConfirmationModal } from './components/ConfirmationModal/ConfirmationModal';
+import { ConfirmationModal } from './components/ConfirmationModal';
 import { Toast } from './components/Toast';
+import { Login } from './components/Login';
 
 function App(): JSX.Element {
   return (
@@ -15,6 +16,7 @@ function App(): JSX.Element {
       <div className="App">
         <ConfirmationModal />
         <Toast />
+        <Login />
         <BrowserRouter>
           <Header />
           <Routes>
