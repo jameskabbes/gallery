@@ -16,13 +16,20 @@ async function callApiBase<T>(
   }
 }
 
-interface CallProps<T> {
+interface CallApiProps<T> {
   endpoint: string;
   method: RequestInit['method'];
   data?: T;
 }
 
-async function callApi<T>(props: CallProps<T>): Promise<Response> {
+interface CallApiReturn<T> {
+  data: T | null;
+  response: Response | null;
+}
+
+async function callApi<TResponseData, TRequestData = any>(
+  props: CallApiProps<TRequestData>
+): Promise<CallApiReturn<TResponseData>> {
   const init: RequestInit = {
     method: props.method,
     headers: {
@@ -30,17 +37,18 @@ async function callApi<T>(props: CallProps<T>): Promise<Response> {
     },
     body: props.data ? JSON.stringify(props.data) : null,
   };
-
-  const info: RequestInfo = props.endpoint;
-  return await callApiBase(info, init);
+  const response = await callApiBase(props.endpoint, init);
+  return { data: await response.json(), response };
 }
 
 function convertBackendSlugToEndpoint(slug: string): string {
   return `/${config.api_endpoint_base}${slug}`;
 }
 
-async function callBackendApi<T>(props: CallProps<T>): Promise<Response> {
-  return await callApi<T>({
+async function callBackendApi<TResponeData, TRequestData = any>(
+  props: CallApiProps<TRequestData>
+): Promise<CallApiReturn<TResponeData>> {
+  return await callApi<TResponeData, TRequestData>({
     ...props,
     endpoint: convertBackendSlugToEndpoint(props.endpoint),
   });
@@ -59,18 +67,24 @@ interface UseApiCallReturn<T> {
   >;
 }
 
-function useApiCall<T>(props: CallProps<T>): UseApiCallReturn<T> {
-  const [data, setData] = useState<UseApiCallReturn<T>['data']>(null);
-  const [loading, setLoading] = useState<UseApiCallReturn<T>['loading']>(true);
+function useApiCall<TResponseData, TRequestData = any>(
+  props: CallApiProps<TRequestData>
+): UseApiCallReturn<TResponseData> {
+  const [data, setData] =
+    useState<UseApiCallReturn<TResponseData>['data']>(null);
+  const [loading, setLoading] =
+    useState<UseApiCallReturn<TResponseData>['loading']>(true);
   const [response, setResponse] =
-    useState<UseApiCallReturn<T>['response']>(null);
+    useState<UseApiCallReturn<TResponseData>['response']>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const response = await callApi<T>(props);
+      const { data, response } = await callApi<TResponseData, TRequestData>(
+        props
+      );
       setResponse(response);
-      setData(await response.json());
+      setData(data);
       setLoading(false);
     };
 
@@ -80,8 +94,10 @@ function useApiCall<T>(props: CallProps<T>): UseApiCallReturn<T> {
   return { data, setData, loading, setLoading, response, setResponse };
 }
 
-function useBackendApiCall<T>(props: CallProps<T>): UseApiCallReturn<T> {
-  return useApiCall<T>({
+function useBackendApiCall<TResponseData, TRequestData = any>(
+  props: CallApiProps<TRequestData>
+): UseApiCallReturn<TResponseData> {
+  return useApiCall<TResponseData, TRequestData>({
     ...props,
     endpoint: convertBackendSlugToEndpoint(props.endpoint),
   });

@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
 import { ExtractResponseTypes } from '../../types';
-import { callApi } from '../../utils/Api';
+import { callBackendApi } from '../../utils/Api';
 import { StudiosReducerAction } from '../../types';
 import { toast } from 'react-toastify';
 import { toastTemplate } from '../Toast';
@@ -25,11 +25,16 @@ async function createStudioFunc(
   let toastId = toast.loading('Creating studio');
   studios_dispatch({ type: 'ADD', payload: publicStudio });
 
-  const { data, status } = await callApi<
-    AllResponseTypes[keyof AllResponseTypes]
-  >(API_PATH, API_METHOD, studio);
+  const { data, response } = await callBackendApi<
+    AllResponseTypes[keyof AllResponseTypes],
+    components['schemas']['StudioCreate']
+  >({
+    endpoint: API_PATH,
+    method: API_METHOD,
+    data: studio,
+  });
 
-  if (status === 200) {
+  if (response.status === 200) {
     const apiData = data as AllResponseTypes['200'];
     studios_dispatch({ type: 'DELETE', payload: '__loading__' });
     studios_dispatch({ type: 'ADD', payload: apiData });
@@ -40,7 +45,7 @@ async function createStudioFunc(
     });
   } else {
     studios_dispatch({ type: 'DELETE', payload: '__loading__' });
-    console.error('Error creating studio:', status, data);
+    console.error('Error creating studio:', response.status, data);
     toast.update(toastId, {
       ...toastTemplate,
       render: 'Could not create studio',

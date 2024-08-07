@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
 import { ExtractResponseTypes } from '../../types';
-import { callApi } from '../../utils/Api';
+import { callBackendApi } from '../../utils/Api';
 import {
   StudiosReducerAction,
   ConfirmationModalContextShowModal,
@@ -31,11 +31,14 @@ async function deleteStudioFunc(
 
   let toastId = toast.loading('Deleting studio');
   studiosDispatch({ type: 'DELETE', payload: studio.id });
-  const { data, status } = await callApi<
+  const { data, response } = await callBackendApi<
     AllResponseTypes[keyof AllResponseTypes]
-  >(API_PATH.replace('{studio_id}', studio.id), API_METHOD);
+  >({
+    endpoint: API_PATH.replace('{studio_id}', studio.id),
+    method: API_METHOD,
+  });
 
-  if (status === 204) {
+  if (response.status === 204) {
     const apiData = data as AllResponseTypes['204'];
     toast.update(toastId, {
       ...toastTemplate,
