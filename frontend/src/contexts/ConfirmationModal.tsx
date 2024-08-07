@@ -3,13 +3,20 @@ import {
   ConfirmationModalContext as ConfirmationModalContextType,
   ConfirmationModalContextAction,
   ConfirmationModalContextState,
+  ConfirmationModalContextShowModalProps,
+  ConfirmationModalContextShowModalReturn,
 } from '../types';
+
+const defaultConfirmText = 'Confirm';
+const defaultCancelText = 'Cancel';
 
 const defaultStateValue: ConfirmationModalContextState = {
   isActive: false,
   isConfirmed: null,
   title: null,
   message: null,
+  confirmText: defaultConfirmText,
+  cancelText: defaultCancelText,
 };
 
 function confirmationModalReducer(
@@ -29,6 +36,10 @@ function confirmationModalReducer(
       return { ...state, title: action.payload };
     case 'SET_MESSAGE':
       return { ...state, message: action.payload };
+    case 'SET_CONFIRM_TEXT':
+      return { ...state, confirmText: action.payload };
+    case 'SET_CANCEL_TEXT':
+      return { ...state, cancelText: action.payload };
     default:
       return state;
   }
@@ -53,10 +64,17 @@ function ConfirmationModalContextProvider({ children }: Props) {
     ((value: boolean | PromiseLike<boolean>) => void) | null
   >();
 
-  function showModal(title: string, message: string): Promise<boolean> {
-    dispatch({ type: 'SET_TITLE', payload: title });
-    dispatch({ type: 'SET_MESSAGE', payload: message });
+  function showModal(
+    props: ConfirmationModalContextShowModalProps
+  ): ConfirmationModalContextShowModalReturn {
+    dispatch({ type: 'SET_TITLE', payload: props.title });
+    dispatch({ type: 'SET_MESSAGE', payload: props.message });
+    props.confirmText &&
+      dispatch({ type: 'SET_CONFIRM_TEXT', payload: props.confirmText });
+    props.cancelText &&
+      dispatch({ type: 'SET_CANCEL_TEXT', payload: props.cancelText });
     dispatch({ type: 'SET_IS_ACTIVE', payload: true });
+
     return new Promise((resolve) => {
       setResolve(() => resolve);
     });

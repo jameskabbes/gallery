@@ -8,6 +8,7 @@ import { StudioCard } from '../components/Studio/Card';
 
 import { ExtractResponseTypes } from '../types';
 import { useBackendApiCall } from '../utils/Api';
+import { deleteStudioFunc } from '../components/Studio/deleteStudioFunc';
 
 const API_PATH = '/pages/studios/';
 const API_METHOD = 'get';
@@ -23,7 +24,7 @@ function Studios(): JSX.Element {
     response,
   } = useBackendApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>({
     endpoint: API_PATH,
-    method: 'GET',
+    method: API_METHOD,
   });
 
   const Data = useContext(DataContext);
@@ -63,6 +64,17 @@ function Studios(): JSX.Element {
                   <StudioLink studio_id={studio.id}>
                     <StudioCard studio={studio} />
                   </StudioLink>
+                  <button
+                    onClick={() =>
+                      deleteStudioFunc(
+                        studio,
+                        Data.studios.dispatch,
+                        ConfirmationModal.showModal
+                      )
+                    }
+                  >
+                    Delete
+                  </button>
                 </li>
               ))}
           </ul>

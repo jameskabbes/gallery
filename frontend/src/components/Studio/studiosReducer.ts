@@ -15,7 +15,6 @@ function studiosReducer(
       newState.set(action.payload.id, action.payload);
       return newState;
     case 'DELETE':
-      console.log(action.payload);
       const newStateDelete = new Map(state);
       newStateDelete.delete(action.payload);
       return newStateDelete;

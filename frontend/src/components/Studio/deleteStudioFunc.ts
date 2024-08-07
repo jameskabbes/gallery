@@ -2,10 +2,7 @@ import React, { Component } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
 import { ExtractResponseTypes } from '../../types';
 import { callBackendApi } from '../../utils/Api';
-import {
-  StudiosReducerAction,
-  ConfirmationModalContextShowModal,
-} from '../../types';
+import { StudiosReducerAction, ConfirmationModalContext } from '../../types';
 
 import { toast } from 'react-toastify';
 import { toastTemplate } from '../Toast';
@@ -20,12 +17,14 @@ type AllResponseTypes = ExtractResponseTypes<
 async function deleteStudioFunc(
   studio: components['schemas']['StudioPublic'],
   studiosDispatch: React.Dispatch<StudiosReducerAction>,
-  showConfirmationModal: ConfirmationModalContextShowModal
+  showConfirmationModal: ConfirmationModalContext['showModal']
 ) {
-  const isConfirmed = await showConfirmationModal(
-    'Delete Studio',
-    'Are you sure you want to delete this studio?'
-  );
+  const isConfirmed = await showConfirmationModal({
+    message: 'Are you sure you want to delete this studio?',
+    title: 'Delete Studio',
+    confirmText: 'Delete',
+    cancelText: 'Cancel',
+  });
 
   if (!isConfirmed) return;
 
@@ -37,6 +36,7 @@ async function deleteStudioFunc(
     endpoint: API_PATH.replace('{studio_id}', studio.id),
     method: API_METHOD,
   });
+  console.log('got it back');
 
   if (response.status === 204) {
     const apiData = data as AllResponseTypes['204'];

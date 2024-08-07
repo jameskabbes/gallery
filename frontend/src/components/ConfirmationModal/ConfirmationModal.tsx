@@ -25,10 +25,10 @@ function ConfirmationModal(): JSX.Element {
           <p>{context.state.message}</p>
           <div className="flex flex-row justify-center space-x-2">
             <button onClick={() => context.dispatch({ type: 'CANCEL' })}>
-              Cancel
+              {context.state.cancelText}
             </button>
             <button onClick={() => context.dispatch({ type: 'CONFIRM' })}>
-              Confirm
+              {context.state.confirmText}
             </button>
           </div>
         </div>

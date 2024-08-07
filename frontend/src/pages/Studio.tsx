@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom';
 import { paths, operations, components } from '../openapi_schema';
 import { ExtractResponseTypes } from '../types';
 import { useBackendApiCall } from '../utils/Api';
-import { deleteStudioFunc } from '../components/Studio/deleteStudioFunc';
 
 const API_PATH = '/pages/studios/{studio_id}/';
 const API_METHOD = 'get';
@@ -20,7 +19,7 @@ function Studio(): JSX.Element {
     response,
   } = useBackendApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>({
     endpoint: API_PATH.replace('{studio_id}', studioId),
-    method: 'GET',
+    method: API_METHOD,
   });
 
   if (loading || response.status == 200) {

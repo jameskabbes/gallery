@@ -38,7 +38,14 @@ async function callApi<TResponseData, TRequestData = any>(
     body: props.data ? JSON.stringify(props.data) : null,
   };
   const response = await callApiBase(props.endpoint, init);
-  return { data: await response.json(), response };
+
+  let data: CallApiReturn<TResponseData>['data'] = null;
+  try {
+    data = await response.json();
+  } catch (error) {
+    data = null;
+  }
+  return { data, response };
 }
 
 function convertBackendSlugToEndpoint(slug: string): string {

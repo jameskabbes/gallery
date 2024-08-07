@@ -18,6 +18,8 @@ interface ConfirmationModalContextState {
   isConfirmed: boolean | null;
   title: string | null;
   message: string | null;
+  confirmText: string;
+  cancelText: string;
 }
 
 type ConfirmationModalContextAction =
@@ -26,17 +28,25 @@ type ConfirmationModalContextAction =
   | { type: 'CANCEL' }
   | { type: 'RESET' }
   | { type: 'SET_TITLE'; payload: string }
-  | { type: 'SET_MESSAGE'; payload: string };
+  | { type: 'SET_MESSAGE'; payload: string }
+  | { type: 'SET_CONFIRM_TEXT'; payload: string }
+  | { type: 'SET_CANCEL_TEXT'; payload: string };
 
-type ConfirmationModalContextShowModal = (
-  title: string,
-  message: string
-) => boolean | PromiseLike<boolean>;
+interface ConfirmationModalContextShowModalProps {
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+}
+
+type ConfirmationModalContextShowModalReturn = boolean | PromiseLike<boolean>;
 
 interface ConfirmationModalContext {
   state: ConfirmationModalContextState;
   dispatch: React.Dispatch<ConfirmationModalContextAction>;
-  showModal: ConfirmationModalContextShowModal;
+  showModal: (
+    props: ConfirmationModalContextShowModalProps
+  ) => ConfirmationModalContextShowModalReturn;
 }
 
 //
@@ -69,7 +79,8 @@ export {
   ConfirmationModalContextState,
   ConfirmationModalContextAction,
   ConfirmationModalContext,
-  ConfirmationModalContextShowModal,
+  ConfirmationModalContextShowModalReturn,
+  ConfirmationModalContextShowModalProps,
   StudiosReducerState,
   StudiosReducerAction,
   DataContext,
