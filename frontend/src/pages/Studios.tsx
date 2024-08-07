@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { callApi, useApiData } from '../utils/Api';
 import { paths, operations, components } from '../openapi_schema';
-import { ApiResponse, ExtractResponseTypes } from '../types';
 import { StudioLink } from '../components/Studio/Link';
 import { CreateStudio } from '../components/Studio/CreateStudio';
 import { DataContext } from '../contexts/Data';

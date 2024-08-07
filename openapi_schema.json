@@ -1,1 +1,349 @@
-{"openapi": "3.1.0", "info": {"title": "FastAPI", "version": "0.1.0"}, "paths": {"/": {"get": {"summary": "Read Root", "operationId": "read_root__get", "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {}}}}}}}, "/studios/{studio_id}/": {"get": {"summary": "Get Studio", "operationId": "get_studio_studios__studio_id___get", "parameters": [{"name": "studio_id", "in": "path", "required": true, "schema": {"$ref": "#/components/schemas/StudioID"}}], "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/StudioPublic"}}}}, "404": {"description": "Studio not found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/NotFoundResponse"}}}}, "422": {"description": "Validation Error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}}}}, "patch": {"summary": "Patch Studio", "operationId": "patch_studio_studios__studio_id___patch", "parameters": [{"name": "studio_id", "in": "path", "required": true, "schema": {"$ref": "#/components/schemas/StudioID"}}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/StudioUpdate"}}}}, "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/StudioPublic"}}}}, "422": {"description": "Validation Error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}}}}, "delete": {"summary": "Delete Studio", "operationId": "delete_studio_studios__studio_id___delete", "parameters": [{"name": "studio_id", "in": "path", "required": true, "schema": {"$ref": "#/components/schemas/StudioID"}}], "responses": {"204": {"description": "Successful Response"}, "404": {"description": "Studio not found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/NotFoundResponse"}}}}, "422": {"description": "Validation Error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}}}}}, "/studios/": {"post": {"summary": "Post Studio", "operationId": "post_studio_studios__post", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/StudioCreate"}}}}, "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/StudioPublic"}}}}, "422": {"description": "Validation Error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}}}}, "get": {"summary": "Get Studios", "operationId": "get_studios_studios__get", "parameters": [{"name": "offset", "in": "query", "required": false, "schema": {"type": "integer", "minimum": 0, "default": 0, "title": "Offset"}}, {"name": "limit", "in": "query", "required": false, "schema": {"type": "integer", "maximum": 100, "minimum": 0, "default": 100, "title": "Limit"}}], "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/StudioPublic"}, "title": "Response Get Studios Studios  Get"}}}}, "422": {"description": "Validation Error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}}}}}, "/pages/studios/": {"get": {"summary": "Get Pages Studios", "operationId": "get_pages_studios_pages_studios__get", "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PagesStudiosResponse"}}}}}}}, "/pages/studios/{studio_id}/": {"get": {"summary": "Get Pages Studio", "operationId": "get_pages_studio_pages_studios__studio_id___get", "parameters": [{"name": "studio_id", "in": "path", "required": true, "schema": {"$ref": "#/components/schemas/StudioID"}}], "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PagesStudioResponse"}}}}, "404": {"description": "Studio not found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/NotFoundResponse"}}}}, "422": {"description": "Validation Error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}}}}}}, "components": {"schemas": {"HTTPValidationError": {"properties": {"detail": {"items": {"$ref": "#/components/schemas/ValidationError"}, "type": "array", "title": "Detail"}}, "type": "object", "title": "HTTPValidationError"}, "NotFoundResponse": {"properties": {"detail": {"type": "string", "title": "Detail"}}, "type": "object", "required": ["detail"], "title": "NotFoundResponse"}, "PagesStudioResponse": {"properties": {"studio": {"$ref": "#/components/schemas/StudioPublic"}}, "type": "object", "required": ["studio"], "title": "PagesStudioResponse"}, "PagesStudiosResponse": {"properties": {"studios": {"items": {"$ref": "#/components/schemas/StudioPublic"}, "type": "array", "title": "Studios"}}, "type": "object", "required": ["studios"], "title": "PagesStudiosResponse"}, "StudioCreate": {"properties": {"name": {"type": "string", "title": "Name"}}, "type": "object", "required": ["name"], "title": "StudioCreate"}, "StudioID": {"type": "string"}, "StudioPublic": {"properties": {"name": {"type": "string", "title": "Name"}, "id": {"$ref": "#/components/schemas/StudioID"}}, "type": "object", "required": ["name", "id"], "title": "StudioPublic"}, "StudioUpdate": {"properties": {"name": {"anyOf": [{"type": "string"}, {"type": "null"}], "title": "Name"}}, "type": "object", "title": "StudioUpdate"}, "ValidationError": {"properties": {"loc": {"items": {"anyOf": [{"type": "string"}, {"type": "integer"}]}, "type": "array", "title": "Location"}, "msg": {"type": "string", "title": "Message"}, "type": {"type": "string", "title": "Error Type"}}, "type": "object", "required": ["loc", "msg", "type"], "title": "ValidationError"}}}}
+{
+  "openapi": "3.1.0",
+  "info": { "title": "FastAPI", "version": "0.1.0" },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Read Root",
+        "operationId": "read_root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          }
+        }
+      }
+    },
+    "/studios/{studio_id}/": {
+      "get": {
+        "summary": "Get Studio",
+        "operationId": "get_studio_studios__studio_id___get",
+        "parameters": [
+          {
+            "name": "studio_id",
+            "in": "path",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/StudioID" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StudioPublic" }
+              }
+            }
+          },
+          "404": {
+            "description": "Studio not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/NotFoundResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Patch Studio",
+        "operationId": "patch_studio_studios__studio_id___patch",
+        "parameters": [
+          {
+            "name": "studio_id",
+            "in": "path",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/StudioID" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/StudioUpdate" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StudioPublic" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Studio",
+        "operationId": "delete_studio_studios__studio_id___delete",
+        "parameters": [
+          {
+            "name": "studio_id",
+            "in": "path",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/StudioID" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "404": {
+            "description": "Studio not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/NotFoundResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/studios/": {
+      "post": {
+        "summary": "Post Studio",
+        "operationId": "post_studio_studios__post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/StudioCreate" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StudioPublic" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get Studios",
+        "operationId": "get_studios_studios__get",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 0,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/StudioPublic" },
+                  "title": "Response Get Studios Studios  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pages/studios/": {
+      "get": {
+        "summary": "Get Pages Studios",
+        "operationId": "get_pages_studios_pages_studios__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagesStudiosResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pages/studios/{studio_id}/": {
+      "get": {
+        "summary": "Get Pages Studio",
+        "operationId": "get_pages_studio_pages_studios__studio_id___get",
+        "parameters": [
+          {
+            "name": "studio_id",
+            "in": "path",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/StudioID" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PagesStudioResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Studio not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/NotFoundResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": { "$ref": "#/components/schemas/ValidationError" },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "NotFoundResponse": {
+        "properties": { "detail": { "type": "string", "title": "Detail" } },
+        "type": "object",
+        "required": ["detail"],
+        "title": "NotFoundResponse"
+      },
+      "PagesStudioResponse": {
+        "properties": {
+          "studio": { "$ref": "#/components/schemas/StudioPublic" }
+        },
+        "type": "object",
+        "required": ["studio"],
+        "title": "PagesStudioResponse"
+      },
+      "PagesStudiosResponse": {
+        "properties": {
+          "studios": {
+            "items": { "$ref": "#/components/schemas/StudioPublic" },
+            "type": "array",
+            "title": "Studios"
+          }
+        },
+        "type": "object",
+        "required": ["studios"],
+        "title": "PagesStudiosResponse"
+      },
+      "StudioCreate": {
+        "properties": { "name": { "type": "string", "title": "Name" } },
+        "type": "object",
+        "required": ["name"],
+        "title": "StudioCreate"
+      },
+      "StudioID": { "type": "string" },
+      "StudioPublic": {
+        "properties": {
+          "name": { "type": "string", "title": "Name" },
+          "id": { "$ref": "#/components/schemas/StudioID" }
+        },
+        "type": "object",
+        "required": ["name", "id"],
+        "title": "StudioPublic"
+      },
+      "StudioUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "title": "StudioUpdate"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": { "anyOf": [{ "type": "string" }, { "type": "integer" }] },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": { "type": "string", "title": "Message" },
+          "type": { "type": "string", "title": "Error Type" }
+        },
+        "type": "object",
+        "required": ["loc", "msg", "type"],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

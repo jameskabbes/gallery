@@ -1,7 +1,7 @@
 from gallery import custom_types
-from sqlmodel import Field, Session, SQLModel, select, column
 import typing
 import uuid
+from sqlmodel import SQLModel, Field, Column
 
 
 class Singular[IDType]:
@@ -11,12 +11,15 @@ class Singular[IDType]:
     def _id(self) -> IDType:
         return getattr(self, self._ID_COL)
 
+# Studio
+
 
 class StudioBase(SQLModel):
     name: str
 
 
 class Studio(StudioBase, Singular, table=True):
+    __tablename__ = 'studio'
     id: custom_types.StudioID.__value__ = Field(
         primary_key=True, index=True)
 

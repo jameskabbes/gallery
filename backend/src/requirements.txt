@@ -4,3 +4,4 @@ sqlmodel
 sqlalchemy
 uvicorn
 google-auth
+requests

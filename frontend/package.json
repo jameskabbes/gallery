@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "prod": "JAMESKABBES_PROD=true vite ",
-    "build": "vite build",
+    "dev": "cross-env VITE_APP_MODE=development vite",
+    "prod": "cross-env VITE_APP_MODE=production vite",
+    "build": "cross-env VITE_APP_MODE=production vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "format": "npx prettier --write .",
     "preview": "vite preview"
@@ -14,7 +14,6 @@
   "dependencies": {
     "@react-oauth/google": "^0.12.1",
     "add-to-calendar-button-react": "^2.4.3",
-    "axios": "^1.6.2",
     "luxon": "^3.4.4",
     "openapi-typescript": "^6.7.5",
     "pexels": "^1.4.0",
@@ -34,6 +33,7 @@
     "@types/react-dom": "^18.2.13",
     "@vitejs/plugin-react": "^4.0.3",
     "autoprefixer": "^10.4.15",
+    "cross-env": "^7.0.3",
     "eslint": "^8.45.0",
     "eslint-plugin-react": "^7.32.2",
     "eslint-plugin-react-hooks": "^4.6.0",

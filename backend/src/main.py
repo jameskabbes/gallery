@@ -5,6 +5,8 @@ from gallery import get_client, custom_types, models
 import datetime
 from sqlmodel import Session, SQLModel, select
 import typing
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
 
 class DetailOnlyResponse(typing.TypedDict):
@@ -116,3 +118,32 @@ async def get_pages_studio(studio_id: custom_types.StudioID) -> PagesStudioRespo
         'studio': await get_studio(studio_id)
     }
     return d
+
+
+# auth
+
+class Credential(SQLModel):
+    credential: str
+
+
+@app.post('/auth/google/')
+async def auth_google(credential: Credential):
+    try:
+        # Specify the CLIENT_ID of the app that accesses the backend
+        CLIENT_ID = '1855778612-f8jc05eb675d4226q50kqea1vp354ra0.apps.googleusercontent.com'
+
+        # Verify the token
+        id_info = id_token.verify_oauth2_token(
+            credential.credential, requests.Request(), CLIENT_ID)
+
+        # ID token is valid. Get the user's Google Account ID from the decoded token.
+        user_id = id_info['sub']
+
+        print(id_info)
+
+        # You can now use the user information (e.g., create a session, store in database)
+        return {"message": "Authentication successful", "user": id_info}
+    except ValueError as e:
+        # Invalid token
+        raise HTTPException(
+            status_code=400, detail="Authentication failed") from e
