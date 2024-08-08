@@ -2,7 +2,7 @@ import React, { Component, useContext } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
 import {
   ExtractResponseTypes,
-  ModalContext as ModalContextType,
+  ModalsContext as ModalsContextType,
 } from '../../types';
 import { callBackendApi } from '../../utils/Api';
 import { StudiosReducerAction } from '../../types';
@@ -21,7 +21,7 @@ type AllResponseTypes = ExtractResponseTypes<
 async function deleteStudioFunc(
   studio: components['schemas']['StudioPublic'],
   studiosDispatch: React.Dispatch<StudiosReducerAction>,
-  modalContext: ModalContextType
+  modalContext: ModalsContextType
 ) {
   function onCancel() {}
   async function onConfirm() {

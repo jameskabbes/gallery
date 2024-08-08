@@ -1,10 +1,10 @@
 import React, { useContext } from 'react';
 import { DarkModeToggle } from './DarkModeToggle';
-import { ModalContext } from '../contexts/Modal';
+import { ModalsContext } from '../contexts/Modals';
 import { Login } from './Login';
 
 function Header(): JSX.Element {
-  let modalContext = useContext(ModalContext);
+  let modalsContext = useContext(ModalsContext);
 
   return (
     <header>
@@ -14,7 +14,7 @@ function Header(): JSX.Element {
           <DarkModeToggle />
           <button
             onClick={() =>
-              modalContext.dispatch({ type: 'PUSH', payload: <Login /> })
+              modalsContext.dispatch({ type: 'PUSH', payload: <Login /> })
             }
           >
             Sign In

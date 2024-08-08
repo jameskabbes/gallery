@@ -38,24 +38,24 @@ interface DataContext {
 }
 
 type Modal = React.ReactNode;
-interface ModalReducerState {
+interface ModalsReducerState {
   stack: Modal[];
 }
 
-type ModalReducerAction = { type: 'PUSH'; payload: Modal } | { type: 'POP' };
+type ModalsReducerAction = { type: 'PUSH'; payload: Modal } | { type: 'POP' };
 
-interface ModalContext {
-  state: ModalReducerState;
-  dispatch: React.Dispatch<ModalReducerAction>;
+interface ModalsContext {
+  state: ModalsReducerState;
+  dispatch: React.Dispatch<ModalsReducerAction>;
 }
 
 export {
   ExtractResponseTypes,
   DarkModeContext,
   Modal,
-  ModalContext,
-  ModalReducerState,
-  ModalReducerAction,
+  ModalsContext,
+  ModalsReducerState,
+  ModalsReducerAction,
   StudiosReducerState,
   StudiosReducerAction,
   DataContext,

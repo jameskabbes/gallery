@@ -1,14 +1,14 @@
 import React from 'react';
 import { DarkModeContextProvider } from './DarkMode';
 import { DataContextProvider } from './Data';
-import { ModalContextProvider } from './Modal';
+import { ModalsContextProvider } from './Modals';
 
 const ApplicationContextProvider = ({ children }) => {
   return (
     <DataContextProvider>
-      <ModalContextProvider>
+      <ModalsContextProvider>
         <DarkModeContextProvider>{children}</DarkModeContextProvider>
-      </ModalContextProvider>
+      </ModalsContextProvider>
     </DataContextProvider>
   );
 };

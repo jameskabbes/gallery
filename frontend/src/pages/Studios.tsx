@@ -8,7 +8,7 @@ import { StudioCard } from '../components/Studio/Card';
 import { ExtractResponseTypes } from '../types';
 import { useBackendApiCall } from '../utils/Api';
 import { deleteStudioFunc } from '../components/Studio/deleteStudioFunc';
-import { ModalContext } from '../contexts/Modal';
+import { ModalsContext } from '../contexts/Modals';
 
 const API_PATH = '/pages/studios/';
 const API_METHOD = 'get';
@@ -28,7 +28,7 @@ function Studios(): JSX.Element {
   });
 
   const Data = useContext(DataContext);
-  const modalContext = useContext(ModalContext);
+  const modalContext = useContext(ModalsContext);
 
   // update the studios in the DataContext with the API result
   useEffect(() => {

@@ -133,10 +133,6 @@ button {
   @apply text-color;
 }
 
-.modal {
-  @apply fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center;
-}
-
 /*
 --gunmetal: #2d3142ff;
 --paynes-gray: #4f5d75ff;
