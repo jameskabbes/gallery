@@ -1,9 +1,10 @@
 import React, { useContext } from 'react';
 import { DarkModeToggle } from './DarkModeToggle';
-import { LoginContext } from '../contexts/Login';
+import { ModalContext } from '../contexts/Modal';
+import { Login } from './Login';
 
 function Header(): JSX.Element {
-  let loginContext = useContext(LoginContext);
+  let modalContext = useContext(ModalContext);
 
   return (
     <header>
@@ -11,7 +12,13 @@ function Header(): JSX.Element {
         <p>Gallery</p>
         <div className="flex flex-row items-center space-x-2">
           <DarkModeToggle />
-          <button onClick={loginContext.toggle}>Login</button>
+          <button
+            onClick={() =>
+              modalContext.dispatch({ type: 'PUSH', payload: <Login /> })
+            }
+          >
+            Sign In
+          </button>
         </div>
       </div>
     </header>

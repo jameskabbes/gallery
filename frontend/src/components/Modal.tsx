@@ -1,19 +1,20 @@
-import React, { useEffect, useRef } from 'react';
-import { CSSTransition } from 'react-transition-group';
-import './Modal.css'; // Import the CSS file for animations
+import React, { useContext, useEffect } from 'react';
+import { ModalContext } from '../contexts/Modal';
 
-interface Props {
+function Modal({
+  children,
+  onCancel,
+}: {
   children: React.ReactNode;
-  close: () => void;
-}
-
-function Modal({ children, close }: Props) {
-  const nodeRef = useRef(null);
+  onCancel: () => void;
+}) {
+  let context = useContext(ModalContext);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        close();
+        context.dispatch({ type: 'POP' });
+        onCancel();
       }
     }
     document.addEventListener('keydown', handleKeyDown);
@@ -22,17 +23,7 @@ function Modal({ children, close }: Props) {
     };
   }, []);
 
-  return (
-    <CSSTransition
-      nodeRef={nodeRef}
-      timeout={300}
-      classNames="modal"
-      mountOnEnter
-      unmountOnExit
-    >
-      <div className="modal">{children}</div>
-    </CSSTransition>
-  );
+  return <div className="modal">{children}</div>;
 }
 
 export { Modal };

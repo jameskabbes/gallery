@@ -3,12 +3,12 @@ import { paths, operations, components } from '../openapi_schema';
 import { StudioLink } from '../components/Studio/Link';
 import { CreateStudio } from '../components/Studio/CreateStudio';
 import { DataContext } from '../contexts/Data';
-import { ConfirmationModalContext } from '../contexts/ConfirmationModal';
 import { StudioCard } from '../components/Studio/Card';
 
 import { ExtractResponseTypes } from '../types';
 import { useBackendApiCall } from '../utils/Api';
 import { deleteStudioFunc } from '../components/Studio/deleteStudioFunc';
+import { ModalContext } from '../contexts/Modal';
 
 const API_PATH = '/pages/studios/';
 const API_METHOD = 'get';
@@ -28,7 +28,7 @@ function Studios(): JSX.Element {
   });
 
   const Data = useContext(DataContext);
-  const ConfirmationModal = useContext(ConfirmationModalContext);
+  const modalContext = useContext(ModalContext);
 
   // update the studios in the DataContext with the API result
   useEffect(() => {
@@ -69,7 +69,7 @@ function Studios(): JSX.Element {
                       deleteStudioFunc(
                         studio,
                         Data.studios.dispatch,
-                        ConfirmationModal.showModal
+                        modalContext
                       )
                     }
                   >

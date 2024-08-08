@@ -13,47 +13,6 @@ interface DarkModeContext {
   toggle: () => void;
 }
 
-interface LoginContext {
-  state: boolean;
-  toggle: () => void;
-}
-
-interface ConfirmationModalContextState {
-  isActive: boolean;
-  isConfirmed: boolean | null;
-  title: string | null;
-  message: string | null;
-  confirmText: string;
-  cancelText: string;
-}
-
-type ConfirmationModalContextAction =
-  | { type: 'SET_IS_ACTIVE'; payload: boolean }
-  | { type: 'CONFIRM' }
-  | { type: 'CANCEL' }
-  | { type: 'RESET' }
-  | { type: 'SET_TITLE'; payload: string }
-  | { type: 'SET_MESSAGE'; payload: string }
-  | { type: 'SET_CONFIRM_TEXT'; payload: string }
-  | { type: 'SET_CANCEL_TEXT'; payload: string };
-
-interface ConfirmationModalContextShowModalProps {
-  title: string;
-  message: string;
-  confirmText?: string;
-  cancelText?: string;
-}
-
-type ConfirmationModalContextShowModalReturn = boolean | PromiseLike<boolean>;
-
-interface ConfirmationModalContext {
-  state: ConfirmationModalContextState;
-  dispatch: React.Dispatch<ConfirmationModalContextAction>;
-  showModal: (
-    props: ConfirmationModalContextShowModalProps
-  ) => ConfirmationModalContextShowModalReturn;
-}
-
 //
 type Studios = Map<
   components['schemas']['StudioID'],
@@ -78,15 +37,25 @@ interface DataContext {
   studios: Reducer<StudiosReducerState, StudiosReducerAction>;
 }
 
+type Modal = React.ReactNode;
+interface ModalReducerState {
+  stack: Modal[];
+}
+
+type ModalReducerAction = { type: 'PUSH'; payload: Modal } | { type: 'POP' };
+
+interface ModalContext {
+  state: ModalReducerState;
+  dispatch: React.Dispatch<ModalReducerAction>;
+}
+
 export {
   ExtractResponseTypes,
   DarkModeContext,
-  LoginContext,
-  ConfirmationModalContextState,
-  ConfirmationModalContextAction,
-  ConfirmationModalContext,
-  ConfirmationModalContextShowModalReturn,
-  ConfirmationModalContextShowModalProps,
+  Modal,
+  ModalContext,
+  ModalReducerState,
+  ModalReducerAction,
   StudiosReducerState,
   StudiosReducerAction,
   DataContext,

@@ -1,25 +1,48 @@
 import React, { useContext, useRef } from 'react';
-import { ConfirmationModalContext } from '../contexts/ConfirmationModal';
-
+import { ModalContext } from '../contexts/Modal';
 import { Modal } from './Modal';
 
-function ConfirmationModal(): JSX.Element {
-  let context = useContext(ConfirmationModalContext);
+interface Props {
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  confirmText?: string;
+  cancelText?: string;
+}
+
+function ConfirmationModal({
+  title,
+  message,
+  onConfirm,
+  onCancel,
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
+}: Props): JSX.Element {
+  let context = useContext(ModalContext);
 
   return (
-    <Modal close={() => context.dispatch({ type: 'CANCEL' })}>
-      <div className="modal flex justify-center items-center">
-        <div className="p-4 card">
-          <h4>{context.state.title}</h4>
-          <p>{context.state.message}</p>
-          <div className="flex flex-row justify-center space-x-2">
-            <button onClick={() => context.dispatch({ type: 'CANCEL' })}>
-              {context.state.cancelText}
-            </button>
-            <button onClick={() => context.dispatch({ type: 'CONFIRM' })}>
-              {context.state.confirmText}
-            </button>
-          </div>
+    <Modal onCancel={onCancel}>
+      <div className="p-4 card">
+        <h4>{title}</h4>
+        <p>{message}</p>
+        <div className="flex flex-row justify-center space-x-2">
+          <button
+            onClick={() => {
+              onCancel();
+              context.dispatch({ type: 'POP' });
+            }}
+          >
+            {cancelText}
+          </button>
+          <button
+            onClick={() => {
+              onConfirm();
+              context.dispatch({ type: 'POP' });
+            }}
+          >
+            {confirmText}
+          </button>
         </div>
       </div>
     </Modal>
