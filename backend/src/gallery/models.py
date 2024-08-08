@@ -38,3 +38,5 @@ class StudioUpdate(StudioBase):
 
 class StudioPublic(StudioBase):
     id: custom_types.StudioID
+
+# User

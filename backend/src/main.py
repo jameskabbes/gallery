@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Query, status, Response
-from fastapi.security import OAuth2AuthorizationCodeBearer
+from fastapi import FastAPI, HTTPException, Query, status, Response, Depends
+from fastapi.security import OAuth2AuthorizationCodeBearer, OAuth2PasswordRequestForm
 from gallery import get_client, custom_types, models
 import datetime
 from sqlmodel import Session, SQLModel, select
@@ -120,8 +120,6 @@ async def get_pages_studio(studio_id: custom_types.StudioID) -> PagesStudioRespo
     return d
 
 
-# auth
-
 class Credential(SQLModel):
     credential: str
 
@@ -147,3 +145,15 @@ async def auth_google(credential: Credential):
         # Invalid token
         raise HTTPException(
             status_code=400, detail="Authentication failed") from e
+
+
+class FormData(typing.TypedDict):
+    username: str
+    password: str
+
+
+@app.post('/token/')
+async def login_for_access_token(form_data: FormData):
+    print(form_data)
+
+    return Response(status_code=200)

@@ -25,7 +25,7 @@ function Modals() {
     <CSSTransition
       nodeRef={nodeRef}
       in={currentModal !== undefined}
-      timeout={300}
+      timeout={200}
       classNames="modal"
       unmountOnExit
     >

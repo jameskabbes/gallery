@@ -13,6 +13,7 @@ function Header(): JSX.Element {
         <div className="flex flex-row items-center space-x-2">
           <DarkModeToggle />
           <button
+            className="button-primary"
             onClick={() =>
               modalsContext.dispatch({ type: 'PUSH', payload: <Login /> })
             }

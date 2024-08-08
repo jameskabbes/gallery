@@ -47,7 +47,6 @@ function CreateStudio({ alwaysActive = false }: Props): JSX.Element {
       <h3 className="text-center">Create Studio</h3>
       <label htmlFor="studioName">Name: </label>
       <input
-        className="rounded-lg p-2"
         type="text"
         id="studioName"
         value={studio.name}
@@ -55,7 +54,12 @@ function CreateStudio({ alwaysActive = false }: Props): JSX.Element {
       />
       <br></br>
       <div className="flex flex-row space-x-2 justify-center mt-2">
-        <button onClick={() => setStudio(getBlankStudio())}>Reset</button>
+        <button
+          className="button-secondary"
+          onClick={() => setStudio(getBlankStudio())}
+        >
+          Reset
+        </button>
         <button
           className={validCreate ? 'button-valid' : 'button-invalid'}
           onClick={validCreate ? handleCreate : () => null}

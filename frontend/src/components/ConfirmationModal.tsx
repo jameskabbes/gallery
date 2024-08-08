@@ -26,6 +26,7 @@ function ConfirmationModal({
       <p>{message}</p>
       <div className="flex flex-row justify-center space-x-2">
         <button
+          className="button-secondary"
           onClick={() => {
             onCancel();
             modalContext.dispatch({ type: 'POP' });
@@ -34,6 +35,7 @@ function ConfirmationModal({
           {cancelText}
         </button>
         <button
+          className="button-primary"
           onClick={() => {
             onConfirm();
             modalContext.dispatch({ type: 'POP' });

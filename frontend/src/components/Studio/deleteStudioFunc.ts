@@ -23,7 +23,6 @@ async function deleteStudioFunc(
   studiosDispatch: React.Dispatch<StudiosReducerAction>,
   modalContext: ModalsContextType
 ) {
-  function onCancel() {}
   async function onConfirm() {
     let toastId = toast.loading('Deleting studio');
     studiosDispatch({ type: 'DELETE', payload: studio.id });
@@ -55,10 +54,11 @@ async function deleteStudioFunc(
   modalContext.dispatch({
     type: 'PUSH',
     payload: React.createElement(ConfirmationModal, {
+      key: 'delete-studio',
       title: 'Delete Studio',
       message: 'Are you sure you want to delete this studio?',
       onConfirm: onConfirm,
-      onCancel: onCancel,
+      onCancel: () => {},
     }),
   });
 }

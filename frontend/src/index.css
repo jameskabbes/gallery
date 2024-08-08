@@ -98,15 +98,30 @@ p {
   height: 1em;
 }
 
-button {
-  @apply rounded-lg px-2 py-1 text-color-invert font-semibold bg-color-invert;
+.button-base {
+  @apply rounded-xl px-2 py-1;
 }
 
+.button-primary {
+  @apply button-base bg-color-invert text-color-invert border-2;
+}
+.button-secondary {
+  @apply button-base bg-color text-color border-2;
+}
 .button-valid {
+  @apply button-primary;
 }
 
 .button-invalid {
-  @apply bg-color-darker;
+  @apply button-primary opacity-50;
+}
+
+button {
+  @apply button-base;
+}
+
+input {
+  @apply bg-color-lighter rounded-lg p-1 border-custom_light-darker border-2;
 }
 
 .bw-icon {
