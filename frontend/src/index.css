@@ -62,8 +62,21 @@ p {
   @apply text-custom_light-lighter dark:text-custom_dark-darker;
 }
 
+.border-color {
+  @apply border-custom_light dark:border-custom_dark;
+}
+.border-color-invert {
+  @apply border-custom_dark dark:border-custom_light;
+}
+.border-color-lighter {
+  @apply border-custom_light-lighter dark:border-custom_dark-lighter;
+}
+.border-color-darker {
+  @apply border-custom_light-darker dark:border-custom_dark-darker;
+}
+
 .bg-color {
-  @apply bg-custom_light dark:bg-custom_dark border-custom_light-darker dark:border-custom_dark-darker;
+  @apply bg-custom_light dark:bg-custom_dark border-color-darker;
 }
 .bg-color-invert {
   @apply bg-custom_dark dark:bg-custom_light  border-custom_dark-darker dark:border-custom_light-darker;
@@ -120,8 +133,16 @@ button {
   @apply button-base;
 }
 
-input {
-  @apply bg-color-lighter rounded-lg p-1 border-custom_light-darker border-2;
+.text-input {
+}
+
+.text-input input {
+  @apply border-b-2 border-color;
+  transition: border-color 0.3s;
+}
+
+.text-input input:focus {
+  @apply border-color-darker;
 }
 
 .bw-icon {
@@ -146,6 +167,25 @@ input {
 
 .toast-body {
   @apply text-color;
+}
+
+.slider-container {
+  @apply flex items-center relative rounded-full bg-color-darker;
+}
+
+.slider-container input[type='radio'] {
+  display: none;
+}
+
+.slider-container label {
+  @apply flex flex-1 justify-center cursor-pointer rounded-full p-2;
+  z-index: 1;
+  transition: 0.2s;
+}
+
+.slider-container input[type='radio']:checked + label {
+  @apply text-color-invert;
+  background-color: #007bff;
 }
 
 /*
