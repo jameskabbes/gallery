@@ -13,7 +13,10 @@ interface DarkModeContext {
   toggle: () => void;
 }
 
-//
+interface DeviceContext {
+  isMobile: boolean;
+}
+
 type Studios = Map<
   components['schemas']['StudioID'],
   components['schemas']['StudioPublic']
@@ -52,6 +55,7 @@ interface ModalsContext {
 export {
   ExtractResponseTypes,
   DarkModeContext,
+  DeviceContext,
   Modal,
   ModalsContext,
   ModalsReducerState,

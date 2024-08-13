@@ -2,14 +2,17 @@ import React from 'react';
 import { DarkModeContextProvider } from './DarkMode';
 import { DataContextProvider } from './Data';
 import { ModalsContextProvider } from './Modals';
+import { DeviceContextProvider } from './Device';
 
 const ApplicationContextProvider = ({ children }) => {
   return (
-    <DataContextProvider>
-      <ModalsContextProvider>
-        <DarkModeContextProvider>{children}</DarkModeContextProvider>
-      </ModalsContextProvider>
-    </DataContextProvider>
+    <DeviceContextProvider>
+      <DataContextProvider>
+        <ModalsContextProvider>
+          <DarkModeContextProvider>{children}</DarkModeContextProvider>
+        </ModalsContextProvider>
+      </DataContextProvider>
+    </DeviceContextProvider>
   );
 };
 

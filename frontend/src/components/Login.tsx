@@ -10,10 +10,7 @@ import { toastTemplate } from './Toast';
 
 import { Modal } from './Modal';
 
-type Modes = 'login' | 'register';
-
 function Login() {
-  const [mode, setMode] = useState<Modes>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [validEmail, setValidEmail] = useState(false);
@@ -67,69 +64,44 @@ function Login() {
       <div key="login">
         {/* modes */}
         <form onSubmit={handleLogin} className="flex flex-col space-y-2">
-          <div className="slider-container my-2">
+          <h4 className="text-center">Login</h4>
+          <div className="text-input flex flex-row items-center space-x-2">
             <input
-              type="radio"
-              id="signIn"
-              name="mode"
-              value="login"
-              checked={mode === 'login'}
-              onChange={() => setMode('login')}
-            />
-            <label htmlFor="signIn">Sign In</label>
-
-            <input
-              type="radio"
-              id="register"
-              name="mode"
-              value="register"
-              checked={mode === 'register'}
-              onChange={() => setMode('register')}
-            />
-            <label htmlFor="register">Register</label>
-          </div>
-          <div className="text-input flex flex-row items-center">
-            <input
-              className="bg-color-lighter focus:outline-none"
+              className="bg-inherit focus:outline-none"
               type="email"
               id="email"
               value={email}
               placeholder="email"
               onChange={(e) => setEmail(e.target.value)}
               required
+              formNoValidate
             />
 
             <span>
               <CheckOrX value={validEmail} />
             </span>
           </div>
-          <div className="text-input flex flex-row items-center focus:border-4">
+          <div className="text-input flex flex-row items-center space-x-2">
             <input
-              className="bg-color-lighter focus:outline-none"
+              className="bg-inherit focus:outline-none"
               type="password"
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="password"
               required
+              formNoValidate
             />
             <span>
               <CheckOrX value={validPassword} />
             </span>
           </div>
-          <input
-            className={`focus:outline-none ${
-              valid ? 'button-primary' : 'button-secondary'
-            }`}
+          <button
+            className={`${valid ? 'button-valid' : 'button-invalid'}`}
             type="submit"
-            value={
-              mode === 'login'
-                ? 'Sign In'
-                : mode === 'register'
-                ? 'Register'
-                : 'Sign In'
-            }
-          />
+          >
+            Login
+          </button>
         </form>
       </div>
     </Modal>

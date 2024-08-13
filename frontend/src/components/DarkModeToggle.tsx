@@ -10,21 +10,19 @@ function DarkModeToggle() {
   const { state, toggle } = useContext(DarkModeContext);
 
   return (
-    <h6 className="mb-0">
-      <div onClick={toggle} className="flex flex-row space-x-1 cursor-pointer">
-        {state ? (
-          <>
-            <MdOutlineDarkMode />
-            <BsToggleOn />
-          </>
-        ) : (
-          <>
-            <HiOutlineSun />
-            <BsToggleOff />
-          </>
-        )}
-      </div>
-    </h6>
+    <button className="flex flex-row space-x-1" onClick={toggle}>
+      {state ? (
+        <>
+          <MdOutlineDarkMode />
+          <BsToggleOn />
+        </>
+      ) : (
+        <>
+          <HiOutlineSun />
+          <BsToggleOff />
+        </>
+      )}
+    </button>
   );
 }
 
