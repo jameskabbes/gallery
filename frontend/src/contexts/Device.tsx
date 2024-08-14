@@ -11,7 +11,7 @@ function DeviceContextProvider({ children }: Props) {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const mobileMediaQuery = window.matchMedia('(max-width: 768px)');
+    const mobileMediaQuery = window.matchMedia('(max-width: 767px)');
     setIsMobile(mobileMediaQuery.matches);
 
     const handleDeviceChange = (e: MediaQueryListEvent) => {

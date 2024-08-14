@@ -5,6 +5,8 @@ from gallery import get_client, custom_types, models
 import datetime
 from sqlmodel import Session, SQLModel, select
 import typing
+import httpx
+
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
@@ -27,8 +29,10 @@ async def lifespan(app: FastAPI):
     yield
     print('closingdown')
 
+
 app = FastAPI(lifespan=lifespan)
 c = get_client()
+c.create_tables()
 
 
 @app.get('/')
@@ -120,40 +124,59 @@ async def get_pages_studio(studio_id: custom_types.StudioID) -> PagesStudioRespo
     return d
 
 
-class Credential(SQLModel):
-    credential: str
+# user
 
-
-@app.post('/auth/google/')
-async def auth_google(credential: Credential):
-    try:
-        # Specify the CLIENT_ID of the app that accesses the backend
-        CLIENT_ID = '1855778612-f8jc05eb675d4226q50kqea1vp354ra0.apps.googleusercontent.com'
-
-        # Verify the token
-        id_info = id_token.verify_oauth2_token(
-            credential.credential, requests.Request(), CLIENT_ID)
-
-        # ID token is valid. Get the user's Google Account ID from the decoded token.
-        user_id = id_info['sub']
-
-        print(id_info)
-
-        # You can now use the user information (e.g., create a session, store in database)
-        return {"message": "Authentication successful", "user": id_info}
-    except ValueError as e:
-        # Invalid token
-        raise HTTPException(
-            status_code=400, detail="Authentication failed") from e
-
-
-class FormData(typing.TypedDict):
-    username: str
+class LoginResponse(typing.TypedDict):
+    email: str
     password: str
 
 
-@app.post('/token/')
-async def login_for_access_token(form_data: FormData):
-    print(form_data)
+@app.post('/login/')
+async def login(login_data: LoginResponse):
+    email = login_data['email']
+    password = login_data['password']
+    # hashed_password
 
-    return Response(status_code=200)
+    with Session(c.db_engine) as session:
+        user = session.exec(select(models.User).where(
+            models.User.email == email)).first()
+        if not user:
+            raise HTTPException(status_code=404, detail='User not found')
+        if user.password != password:
+            raise HTTPException(status_code=401, detail='Invalid password')
+        return user
+
+
+class TokenRequest(SQLModel):
+    token: str
+
+
+@app.post("/auth/google/")
+async def google_auth(token_request: TokenRequest):
+    token = token_request.token
+
+    print('token', token)
+
+    # Verify the token with Google
+    async with httpx.AsyncClient() as client:
+        response = await client.get(f"https://oauth2.googleapis.com/tokeninfo?id_token={token}")
+        if response.status_code != 200:
+            raise HTTPException(status_code=401, detail="Invalid Google token")
+
+        user_info = response.json()
+        print(user_info)
+
+        return user_info
+        # email = user_info.get("email")
+        # name = user_info.get("name")
+        # picture = user_info.get("picture")
+
+        # # Create a JWT token for the user
+        # user_token = jwt.encode(
+        #     {"email": email, "name": name, "picture": picture}, SECRET_KEY, algorithm="HS256")
+
+        # return {"token": user_token}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

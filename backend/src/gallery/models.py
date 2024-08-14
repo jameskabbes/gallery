@@ -11,6 +11,11 @@ class Singular[IDType]:
     def _id(self) -> IDType:
         return getattr(self, self._ID_COL)
 
+    @classmethod
+    def generate_id(cls):
+        return str(uuid.uuid4())
+
+
 # Studio
 
 
@@ -22,10 +27,6 @@ class Studio(StudioBase, Singular, table=True):
     __tablename__ = 'studio'
     id: custom_types.StudioID.__value__ = Field(
         primary_key=True, index=True)
-
-    @classmethod
-    def generate_id(cls):
-        return str(uuid.uuid4())
 
 
 class StudioCreate(StudioBase):
@@ -40,3 +41,10 @@ class StudioPublic(StudioBase):
     id: custom_types.StudioID
 
 # User
+
+
+class UserBase(SQLModel):
+    __tablename__ = 'user'
+    id: custom_types.UserID.__value__ = Field(
+        primary_key=True, index=True)
+    email: str = Field(index=True)

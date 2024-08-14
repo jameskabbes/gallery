@@ -1,12 +1,57 @@
-import React from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { IoPersonCircleOutline } from 'react-icons/io5';
 import { IoMenuSharp } from 'react-icons/io5';
+import { ModalsContext } from '../contexts/Modals';
+import { Login } from './Login';
 
 function AccountIcon() {
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const modalsContext = useContext(ModalsContext);
+
+  const toggleMenu = () => {
+    setIsMenuVisible(!isMenuVisible);
+  };
+
+  const handleClickOutside = (event: MouseEvent) => {
+    if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      setIsMenuVisible(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   return (
-    <div className="flex flex-row rounded-full border-2 p-2">
-      <IoMenuSharp />
-      <IoPersonCircleOutline />
+    <div className="relative" ref={menuRef}>
+      <button
+        className="flex flex-row rounded-full border-2 p-2"
+        onClick={toggleMenu}
+      >
+        <IoMenuSharp />
+        <IoPersonCircleOutline />
+      </button>
+      {isMenuVisible && (
+        <div className="absolute right-0 mt-2 w-48 bg-inherit border-2 rounded-xl shadow-2xl">
+          <ul className="flex flex-col">
+            <p>
+              <button
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                onClick={() => {
+                  setIsMenuVisible(false);
+                  modalsContext.dispatch({ type: 'PUSH', payload: <Login /> });
+                }}
+              >
+                <span>Log In</span>
+              </button>
+            </p>
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

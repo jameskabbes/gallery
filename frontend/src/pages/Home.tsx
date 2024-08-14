@@ -1,14 +1,19 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useContext } from 'react';
+import { DeviceContext } from '../contexts/Device';
 
 function Home() {
+  let deviceContext = useContext(DeviceContext);
+
   return (
     <div>
+      <p>{deviceContext.isMobile}</p>
       <h1>h1</h1>
       <h2>h2</h2>
       <h3>h3</h3>
       <h4>h4</h4>
       <h5>h5</h5>
       <h6>h6</h6>
+      <p>{deviceContext.isMobile ? 'mobile' : 'not mobile'}</p>
 
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-primary-lighter h-64"></div>

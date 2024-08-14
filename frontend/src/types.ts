@@ -17,6 +17,11 @@ interface DeviceContext {
   isMobile: boolean;
 }
 
+interface AuthContext {
+  token: string | null;
+  user: string | null;
+}
+
 type Studios = Map<
   components['schemas']['StudioID'],
   components['schemas']['StudioPublic']
@@ -55,6 +60,7 @@ interface ModalsContext {
 export {
   ExtractResponseTypes,
   DarkModeContext,
+  AuthContext,
   DeviceContext,
   Modal,
   ModalsContext,

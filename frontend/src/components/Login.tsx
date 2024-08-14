@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 import { toastTemplate } from './Toast';
 
 import { Modal } from './Modal';
+import { GoogleLogin } from '@react-oauth/google';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -103,6 +104,7 @@ function Login() {
             Login
           </button>
         </form>
+        <GoogleLogin onSuccess={() => {}}></GoogleLogin>
       </div>
     </Modal>
   );

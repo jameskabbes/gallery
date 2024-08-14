@@ -104,14 +104,11 @@ button {
 /* Input */
 
 .text-input {
-}
-
-.text-input input {
-  @apply border-b-2 border-light-darker dark:border-dark-darker;
+  @apply bg-inherit focus:outline-none border-b-2 border-light-darker dark:border-dark-darker;
   transition: border-color 0.3s;
 }
 
-.text-input input:focus {
+.text-input:focus {
   @apply border-secondary;
 }
 

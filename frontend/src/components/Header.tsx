@@ -23,17 +23,7 @@ function Header(): JSX.Element {
             <DarkModeToggle />
           </h6>
 
-          <button
-            className="button-primary"
-            onClick={() =>
-              modalsContext.dispatch({ type: 'PUSH', payload: <Login /> })
-            }
-          >
-            <p>Sign In</p>
-          </button>
-          <button>
-            <AccountIcon />
-          </button>
+          <AccountIcon />
         </div>
       </div>
       <hr />
