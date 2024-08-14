@@ -1,11 +1,12 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Query, status, Response, Depends
 from fastapi.security import OAuth2AuthorizationCodeBearer, OAuth2PasswordRequestForm
-from gallery import get_client, custom_types, models
+from gallery import get_client, custom_types, models, utils
 import datetime
 from sqlmodel import Session, SQLModel, select
 import typing
 import httpx
+import jwt
 
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -40,7 +41,7 @@ async def read_root():
     return {"home": datetime.datetime.now()}
 
 
-@app.get('/studios/{studio_id}/',  responses={404: {"description": 'Studio not found', 'model': NotFoundResponse}})
+@app.get('/studios/{studio_id}/',  responses={status.HTTP_404_NOT_FOUND: {"description": 'Studio not found', 'model': NotFoundResponse}})
 async def get_studio(studio_id: custom_types.StudioID) -> models.StudioPublic:
     with Session(c.db_engine) as session:
         studio = session.get(models.Studio, studio_id)
@@ -63,13 +64,14 @@ async def post_studio(studio: models.StudioCreate) -> models.StudioPublic:
         return db_studio
 
 
-@app.patch('/studios/{studio_id}/')
+@app.patch('/studios/{studio_id}/', responses={status.HTTP_404_NOT_FOUND: {"description": 'Studio not found', 'model': NotFoundResponse}})
 async def patch_studio(studio_id: custom_types.StudioID, studio: models.StudioUpdate) -> models.StudioPublic:
 
     with Session(c.db_engine) as session:
         db_studio = session.get(models.Studio, studio_id)
         if not db_studio:
-            raise HTTPException(status_code=404, detail='Studio not found')
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail='Studio not found')
         db_studio.sqlmodel_update(studio.model_dump(exclude_unset=True))
         session.add(db_studio)
         session.commit()
@@ -126,33 +128,41 @@ async def get_pages_studio(studio_id: custom_types.StudioID) -> PagesStudioRespo
 
 # user
 
-class LoginResponse(typing.TypedDict):
+class LoginRequest(typing.TypedDict):
     email: str
     password: str
 
 
-@app.post('/login/')
-async def login(login_data: LoginResponse):
+class Token(typing.TypedDict):
+    access_token: str
+    token_type: str
+
+
+@app.post('/token/', responses={status.HTTP_401_UNAUTHORIZED: {"description": 'Invalid email or password'}})
+async def token(login_data: LoginRequest) -> Token:
     email = login_data['email']
     password = login_data['password']
-    # hashed_password
 
     with Session(c.db_engine) as session:
         user = session.exec(select(models.User).where(
             models.User.email == email)).first()
-        if not user:
-            raise HTTPException(status_code=404, detail='User not found')
-        if user.password != password:
-            raise HTTPException(status_code=401, detail='Invalid password')
-        return user
+
+        if not user or not utils.verify_password(password, user.hashed_password):
+            raise HTTPException(
+                status.HTTP_401_UNAUTHORIZED, detail='Invalid email or password')
+
+        payload = {
+            "sub": user.email,
+            "exp": datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)
+        }
+
+        access_token = jwt.encode(payload, '1234', algorithm='HS256')
+        token: Token = {"access_token": access_token, "token_type": "bearer"}
+        return token
 
 
-class TokenRequest(SQLModel):
-    token: str
-
-
-@app.post("/auth/google/")
-async def google_auth(token_request: TokenRequest):
+@ app.post("/auth/google/")
+async def google_auth(token_request):
     token = token_request.token
 
     print('token', token)

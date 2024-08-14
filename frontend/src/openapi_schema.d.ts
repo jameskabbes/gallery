@@ -31,6 +31,14 @@ export interface paths {
     /** Get Pages Studio */
     get: operations["get_pages_studio_pages_studios__studio_id___get"];
   };
+  "/token/": {
+    /** Token */
+    post: operations["token_token__post"];
+  };
+  "/auth/google/": {
+    /** Google Auth */
+    post: operations["google_auth_auth_google__post"];
+  };
 }
 
 export type webhooks = Record<string, never>;
@@ -41,6 +49,13 @@ export interface components {
     HTTPValidationError: {
       /** Detail */
       detail?: components["schemas"]["ValidationError"][];
+    };
+    /** LoginRequest */
+    LoginRequest: {
+      /** Email */
+      email: string;
+      /** Password */
+      password: string;
     };
     /** NotFoundResponse */
     NotFoundResponse: {
@@ -72,6 +87,18 @@ export interface components {
     StudioUpdate: {
       /** Name */
       name?: string | null;
+    };
+    /** Token */
+    Token: {
+      /** Access Token */
+      access_token: string;
+      /** Token Type */
+      token_type: string;
+    };
+    /** TokenRequest */
+    TokenRequest: {
+      /** Token */
+      token: string;
     };
     /** ValidationError */
     ValidationError: {
@@ -180,6 +207,12 @@ export interface operations {
           "application/json": components["schemas"]["StudioPublic"];
         };
       };
+      /** @description Studio not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
       /** @description Validation Error */
       422: {
         content: {
@@ -262,6 +295,54 @@ export interface operations {
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Token */
+  token_token__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LoginRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["Token"];
+        };
+      };
+      /** @description Invalid email or password */
+      401: {
+        content: never;
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Google Auth */
+  google_auth_auth_google__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TokenRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */

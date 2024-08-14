@@ -44,7 +44,21 @@ class StudioPublic(StudioBase):
 
 
 class UserBase(SQLModel):
+    email: str = Field(index=True)
+
+
+class User(UserBase, Singular, table=True):
     __tablename__ = 'user'
     id: custom_types.UserID.__value__ = Field(
         primary_key=True, index=True)
-    email: str = Field(index=True)
+    hashed_password: str
+
+
+class UserCreate(UserBase):
+    password: str
+
+
+class UserUpdate(UserBase):
+    id: custom_types.UserID.__value__
+    email: str | None = None
+    password: str | None = None

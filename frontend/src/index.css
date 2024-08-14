@@ -78,6 +78,13 @@ p {
   height: 1.25em;
 }
 
+.error-message {
+  @apply text-red-500;
+}
+
+#login {
+}
+
 /* Button */
 
 button {
@@ -116,7 +123,7 @@ button {
 }
 
 .card {
-  @apply rounded-xl shadow-lg component p-2 m-1;
+  @apply rounded-2xl shadow-lg component p-2 m-1;
 }
 
 .toast-container {
@@ -134,6 +141,25 @@ button {
   @apply fixed bottom-0 left-0 w-full transition-transform transform translate-y-full;
 }
 
+.loader {
+  @apply border-light dark:border-dark border-t-secondary dark:border-t-secondary;
+  border-width: 0.15em;
+  height: 1em;
+  width: 1em;
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s ease-in-out infinite;
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
 /* 
 .slider-container {
   @apply flex items-center relative rounded-full bg-color-darker;

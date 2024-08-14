@@ -1,4 +1,7 @@
 
+import bcrypt
+
+
 def deep_merge_dicts(primary_dict: dict, secondary_dict: dict) -> dict:
     """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
     updating only top-level keys, dict_merge recurses down into dicts nested
@@ -14,3 +17,13 @@ def deep_merge_dicts(primary_dict: dict, secondary_dict: dict) -> dict:
         else:
             primary_dict[k] = secondary_dict[k]
     return primary_dict
+
+
+def hash_password(password: str) -> str:
+    salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashed_password.decode('utf-8')
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
