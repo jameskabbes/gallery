@@ -5,3 +5,4 @@ sqlalchemy
 uvicorn
 google-auth
 requests
+passlib[bcrypt]
