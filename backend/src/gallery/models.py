@@ -38,12 +38,13 @@ class StudioUpdate(StudioBase):
 
 
 class StudioPublic(StudioBase):
-    id: custom_types.StudioID
+    id: custom_types.StudioID.__value__
 
 # User
 
 
 class UserBase(SQLModel):
+    username: str = Field(index=True)
     email: str = Field(index=True)
 
 
@@ -51,14 +52,20 @@ class User(UserBase, Singular, table=True):
     __tablename__ = 'user'
     id: custom_types.UserID.__value__ = Field(
         primary_key=True, index=True)
-    hashed_password: str
+    hashed_password: str | None
 
 
 class UserCreate(UserBase):
+    username: str
+    email: str
     password: str
 
 
 class UserUpdate(UserBase):
-    id: custom_types.UserID.__value__
+    username: str | None = None
     email: str | None = None
     password: str | None = None
+
+
+class UserPublic(UserBase):
+    id: custom_types.UserID.__value__

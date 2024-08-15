@@ -33,7 +33,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 c = get_client()
-c.create_tables()
 
 
 @app.get('/')
