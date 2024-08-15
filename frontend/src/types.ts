@@ -23,7 +23,7 @@ interface AuthContext {
 }
 
 type Studios = Map<
-  components['schemas']['StudioID'],
+  components['schemas']['StudioPublic']['id'],
   components['schemas']['StudioPublic']
 >;
 
@@ -34,7 +34,7 @@ type StudiosReducerAction =
       type: 'ADD';
       payload: components['schemas']['StudioPublic'];
     }
-  | { type: 'DELETE'; payload: components['schemas']['StudioID'] };
+  | { type: 'DELETE'; payload: components['schemas']['StudioPublic']['id'] };
 
 interface Reducer<State, Dispatch> {
   state: State;

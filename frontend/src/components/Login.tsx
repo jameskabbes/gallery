@@ -4,7 +4,10 @@ import { callApiBase, callBackendApi } from '../utils/Api';
 import validator from 'validator';
 import { paths, operations, components } from '../openapi_schema';
 import { ExtractResponseTypes } from '../types';
-import { CheckOrX } from './Form/CheckOrX';
+import { Status as InputStatus, CheckOrX } from './Form/CheckOrX';
+
+import { isEmailValid } from './User/isEmailValid';
+import { isPasswordValid } from './User/isPasswordValid';
 
 import { toast } from 'react-toastify';
 import { toastTemplate } from './Toast';
@@ -19,68 +22,68 @@ type ResponseTypesByStatus = ExtractResponseTypes<
   paths[typeof API_PATH][typeof API_METHOD]['responses']
 >;
 
+interface InputFields {
+  value: string;
+  status: InputStatus;
+  error: string | null;
+}
+
+const defaultInputFields: InputFields = {
+  value: '',
+  status: 'invalid',
+  error: null,
+};
+
 function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [validEmail, setValidEmail] = useState(false);
-  const [validPassword, setValidPassword] = useState(false);
+  const [email, setEmail] = useState<InputFields>({ ...defaultInputFields });
+  const [password, setPassword] = useState<InputFields>({
+    ...defaultInputFields,
+  });
   const [valid, setValid] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [showError, setShowError] = useState(false);
-  const modalsContext = useContext(ModalsContext);
 
   useEffect(() => {
-    setValidEmail(validator.isEmail(email));
-  }, [email]);
+    const { valid, message } = isEmailValid(email.value);
+    setEmail((prevState) => ({
+      ...prevState,
+      status: valid ? 'valid' : 'invalid',
+      error: message,
+    }));
+  }, [email.value]);
   useEffect(() => {
-    setValidPassword(password.length > 0);
-  }, [password]);
+    const { valid, message } = isPasswordValid(password.value);
+    setPassword((prevState) => ({
+      ...prevState,
+      status: password.value.length > 0 ? 'valid' : 'invalid',
+    }));
+  }, [password.value]);
   useEffect(() => {
-    setValid(validEmail && validPassword);
-  }, [validEmail, validPassword]);
-
-  async function sleep(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
+    setValid(email.status === 'valid' && password.status === 'valid');
+  }, [email.status, password.status]);
 
   async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
+    const API_ENDPOINT = '/token/';
+    const API_METHOD = 'post';
 
+    type ResponseTypesByStatus = ExtractResponseTypes<
+      paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
+    >;
+
+    e.preventDefault();
     // Simple validation
     if (valid) {
-      setLoading(true);
-      setShowError(false);
-
-      await sleep(2000);
-
       const { data, response } = await callBackendApi<
-        components['schemas']['Token'],
-        components['schemas']['LoginRequest']
+        ResponseTypesByStatus[keyof ResponseTypesByStatus],
+        paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
       >({
-        endpoint: API_PATH,
+        endpoint: API_ENDPOINT,
         method: API_METHOD,
         data: {
-          email: email,
-          password: password,
+          email: email.value,
+          password: password.value,
         },
       });
-      setLoading(false);
-
-      if (response.status === 200) {
-        const responseData = data as ResponseTypesByStatus['200'];
-
-        // set the jwt token in local storage
-        localStorage.setItem('token', responseData.access_token);
-
-        modalsContext.dispatch({ type: 'POP' });
-      } else if (response.status === 401) {
-        setErrorMessage('Invalid username or password.');
-        setShowError(true);
-        setTimeout(() => {
-          setShowError(false);
-        }, 5000); // Hide error message after 5 seconds
-      }
+      console.log(data);
+      console.log(response);
     }
   }
 
@@ -90,47 +93,50 @@ function Login() {
         {/* modes */}
         <form onSubmit={handleLogin} className="flex flex-col space-y-2">
           <h4 className="text-center">Login</h4>
-          <div className="flex flex-row h-10 items-center justify-center">
-            {loading ? (
-              <h2 className="loader"></h2>
-            ) : showError ? (
-              <div className="error-message">
-                <p>{errorMessage}</p>
-              </div>
-            ) : null}
-          </div>
-          <div className="text-input flex flex-row items-center space-x-2">
+          <div className="flex flex-row items-center space-x-2">
             <input
-              className="bg-inherit focus:outline-none"
+              className="text-input"
               type="email"
               id="email"
-              value={email}
+              value={email.value}
               placeholder="email"
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                let newEmail: InputFields['value'] = e.target.value;
+                setEmail((prevState) => ({
+                  ...prevState,
+                  value: newEmail,
+                }));
+              }}
               required
               formNoValidate
             />
 
-            <span>
-              <CheckOrX value={validEmail} />
+            <span title={email.error || ''}>
+              <CheckOrX status={email.status} />
             </span>
           </div>
-          <div className="text-input flex flex-row items-center space-x-2">
+          <div className="flex flex-row items-center space-x-2">
             <input
-              className="bg-inherit focus:outline-none"
+              className="text-input"
               type="password"
               id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={password.value}
               placeholder="password"
+              onChange={(e) => {
+                let newPassword: InputFields['value'] = e.target.value;
+                setPassword((prevState) => ({
+                  ...prevState,
+                  value: newPassword,
+                }));
+              }}
               required
               formNoValidate
             />
-            <span>
-              <CheckOrX value={validPassword} />
+
+            <span title={password.error || ''}>
+              <CheckOrX status={password.status} />
             </span>
           </div>
-
           <button
             className={`${valid ? 'button-valid' : 'button-invalid'}`}
             type="submit"

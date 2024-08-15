@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useContext } from 'react';
 import { IoPersonCircleOutline } from 'react-icons/io5';
 import { IoMenuSharp } from 'react-icons/io5';
 import { ModalsContext } from '../contexts/Modals';
+import { SignUp } from './SignUp';
 import { Login } from './Login';
 
 function AccountIcon() {
@@ -47,6 +48,15 @@ function AccountIcon() {
                 }}
               >
                 <span>Log In</span>
+              </button>
+              <button
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                onClick={() => {
+                  setIsMenuVisible(false);
+                  modalsContext.dispatch({ type: 'PUSH', payload: <SignUp /> });
+                }}
+              >
+                <span>Sign Up</span>
               </button>
             </p>
           </ul>

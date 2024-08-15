@@ -23,13 +23,13 @@ export interface paths {
     /** Post Studio */
     post: operations["post_studio_studios__post"];
   };
-  "/pages/studios/": {
-    /** Get Pages Studios */
-    get: operations["get_pages_studios_pages_studios__get"];
+  "/users/{user_id}/": {
+    /** Get User */
+    get: operations["get_user_users__user_id___get"];
   };
-  "/pages/studios/{studio_id}/": {
-    /** Get Pages Studio */
-    get: operations["get_pages_studio_pages_studios__studio_id___get"];
+  "/users/": {
+    /** Post User */
+    post: operations["post_user_users__post"];
   };
   "/token/": {
     /** Token */
@@ -39,16 +39,42 @@ export interface paths {
     /** Google Auth */
     post: operations["google_auth_auth_google__post"];
   };
+  "/users/available/username/{username}/": {
+    /** User Username Available */
+    get: operations["user_username_available_users_available_username__username___get"];
+  };
+  "/users/available/email/{email}/": {
+    /** User Username Exists */
+    get: operations["user_username_exists_users_available_email__email___get"];
+  };
+  "/pages/studios/": {
+    /** Get Pages Studios */
+    get: operations["get_pages_studios_pages_studios__get"];
+  };
+  "/pages/studios/{studio_id}/": {
+    /** Get Pages Studio */
+    get: operations["get_pages_studio_pages_studios__studio_id___get"];
+  };
 }
 
 export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
+    /** DetailOnlyResponse */
+    DetailOnlyResponse: {
+      /** Detail */
+      detail: string;
+    };
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
       detail?: components["schemas"]["ValidationError"][];
+    };
+    /** ItemAvailableResponse */
+    ItemAvailableResponse: {
+      /** Available */
+      available: boolean;
     };
     /** LoginRequest */
     LoginRequest: {
@@ -76,12 +102,12 @@ export interface components {
       /** Name */
       name: string;
     };
-    StudioID: string;
     /** StudioPublic */
     StudioPublic: {
       /** Name */
       name: string;
-      id: components["schemas"]["StudioID"];
+      /** Id */
+      id: string;
     };
     /** StudioUpdate */
     StudioUpdate: {
@@ -95,10 +121,21 @@ export interface components {
       /** Token Type */
       token_type: string;
     };
-    /** TokenRequest */
-    TokenRequest: {
-      /** Token */
-      token: string;
+    /** UserCreate */
+    UserCreate: {
+      /** Username */
+      username: string;
+      /** Email */
+      email: string;
+      /** Password */
+      password: string;
+    };
+    /** UserPublic */
+    UserPublic: {
+      /** Username */
+      username: string;
+      /** Id */
+      id: string;
     };
     /** ValidationError */
     ValidationError: {
@@ -138,7 +175,7 @@ export interface operations {
   get_studio_studios__studio_id___get: {
     parameters: {
       path: {
-        studio_id: components["schemas"]["StudioID"];
+        studio_id: string;
       };
     };
     responses: {
@@ -166,7 +203,7 @@ export interface operations {
   delete_studio_studios__studio_id___delete: {
     parameters: {
       path: {
-        studio_id: components["schemas"]["StudioID"];
+        studio_id: string;
       };
     };
     responses: {
@@ -192,7 +229,7 @@ export interface operations {
   patch_studio_studios__studio_id___patch: {
     parameters: {
       path: {
-        studio_id: components["schemas"]["StudioID"];
+        studio_id: string;
       };
     };
     requestBody: {
@@ -266,35 +303,52 @@ export interface operations {
       };
     };
   };
-  /** Get Pages Studios */
-  get_pages_studios_pages_studios__get: {
+  /** Get User */
+  get_user_users__user_id___get: {
+    parameters: {
+      path: {
+        user_id: string;
+      };
+    };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["PagesStudiosResponse"];
+          "application/json": components["schemas"]["UserPublic"];
+        };
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
   };
-  /** Get Pages Studio */
-  get_pages_studio_pages_studios__studio_id___get: {
-    parameters: {
-      path: {
-        studio_id: components["schemas"]["StudioID"];
+  /** Post User */
+  post_user_users__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UserCreate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["PagesStudioResponse"];
+          "application/json": components["schemas"]["UserPublic"];
         };
       };
-      /** @description Studio not found */
-      404: {
+      /** @description User already exists */
+      409: {
         content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
+          "application/json": components["schemas"]["DetailOnlyResponse"];
         };
       };
       /** @description Validation Error */
@@ -333,9 +387,9 @@ export interface operations {
   };
   /** Google Auth */
   google_auth_auth_google__post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["TokenRequest"];
+    parameters: {
+      query: {
+        token_request: unknown;
       };
     };
     responses: {
@@ -343,6 +397,89 @@ export interface operations {
       200: {
         content: {
           "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** User Username Available */
+  user_username_available_users_available_username__username___get: {
+    parameters: {
+      path: {
+        username: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ItemAvailableResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** User Username Exists */
+  user_username_exists_users_available_email__email___get: {
+    parameters: {
+      path: {
+        email: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ItemAvailableResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get Pages Studios */
+  get_pages_studios_pages_studios__get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["PagesStudiosResponse"];
+        };
+      };
+    };
+  };
+  /** Get Pages Studio */
+  get_pages_studio_pages_studios__studio_id___get: {
+    parameters: {
+      path: {
+        studio_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["PagesStudioResponse"];
+        };
+      };
+      /** @description Studio not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
         };
       };
       /** @description Validation Error */

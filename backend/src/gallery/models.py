@@ -1,4 +1,3 @@
-from gallery import custom_types
 import typing
 import uuid
 from sqlmodel import SQLModel, Field, Column
@@ -18,14 +17,18 @@ class Singular[IDType]:
 
 # Studio
 
+class StudioTypes:
+    id = str
+    name = str
+
 
 class StudioBase(SQLModel):
-    name: str
+    name: StudioTypes.name
 
 
 class Studio(StudioBase, Singular, table=True):
     __tablename__ = 'studio'
-    id: custom_types.StudioID.__value__ = Field(
+    id: StudioTypes.id = Field(
         primary_key=True, index=True)
 
 
@@ -34,38 +37,46 @@ class StudioCreate(StudioBase):
 
 
 class StudioUpdate(StudioBase):
-    name: str | None = None
+    name: StudioTypes.name | None = None
 
 
 class StudioPublic(StudioBase):
-    id: custom_types.StudioID.__value__
+    id: StudioTypes.id
 
 # User
 
 
+class UserTypes:
+    id = str
+    username = str
+    email = str
+    password = str
+    hashed_password = str
+
+
 class UserBase(SQLModel):
     username: str = Field(index=True)
-    email: str = Field(index=True)
 
 
 class User(UserBase, Singular, table=True):
     __tablename__ = 'user'
-    id: custom_types.UserID.__value__ = Field(
+    id: UserTypes.id = Field(
         primary_key=True, index=True)
-    hashed_password: str | None
+    email: str = Field(index=True)
+    hashed_password: UserTypes.hashed_password | None
 
 
 class UserCreate(UserBase):
-    username: str
-    email: str
-    password: str
+    username: UserTypes.username
+    email: UserTypes.email
+    password: UserTypes.password
 
 
 class UserUpdate(UserBase):
-    username: str | None = None
-    email: str | None = None
-    password: str | None = None
+    username: UserTypes.username | None = None
+    email: UserTypes.email | None = None
+    password: UserTypes.password | None = None
 
 
 class UserPublic(UserBase):
-    id: custom_types.UserID.__value__
+    id: UserTypes.id
