@@ -2,9 +2,11 @@ import { paths, operations, components } from './openapi_schema';
 
 type ExtractResponseTypes<T> = {
   [K in keyof T]: T[K] extends {
-    content: { 'application/json': infer ContentType };
+    content: infer ContentTypes;
   }
-    ? ContentType
+    ? {
+        [ContentType in keyof ContentTypes]: ContentTypes[ContentType];
+      }[keyof ContentTypes]
     : never;
 };
 

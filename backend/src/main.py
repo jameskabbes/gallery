@@ -86,12 +86,12 @@ async def get_current_user(token: typing.Annotated[str, Depends(oauth2_scheme)])
 async def login_for_access_token(
     form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> models.Token:
-
     with Session(c.db_engine) as session:
         user = models.User.authenticate(
             session, form_data.username, form_data.password)
+
         if not user:
-            CREDENTIALS_EXCEPTION
+            raise CREDENTIALS_EXCEPTION
         access_token = create_access_token(
             data=user.export_for_token_payload(), expires_delta=datetime.timedelta(
                 minutes=ACCESS_TOKEN_EXPIRE_MINUTES)

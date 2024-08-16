@@ -21,6 +21,8 @@ interface CallApiProps<T> {
   endpoint: string;
   method: RequestInit['method'];
   data?: T;
+  'Content-Type'?: string;
+  body?: string;
 }
 
 interface CallApiReturn<T> {
@@ -36,10 +38,14 @@ async function callApi<TResponseData, TRequestData = any>(
   const init: RequestInit = {
     method: props.method,
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': props['Content-Type'] || 'application/json',
       Authorization: token ? `Bearer ${token}` : '',
     },
-    body: props.data ? JSON.stringify(props.data) : null,
+    body: props.body
+      ? props.body
+      : props.data
+      ? JSON.stringify(props.data)
+      : null,
   };
   const response = await callApiBase(props.endpoint, init);
 

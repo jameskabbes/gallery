@@ -6,9 +6,9 @@ import { ExtractResponseTypes } from '../types';
 import openapi_schema from '../../../openapi_schema.json';
 
 import { InputText, InputState, defaultInputState } from './Form/InputText';
-
 import { Modal } from './Modal';
 import { GoogleLogin } from '@react-oauth/google';
+import { loginUserFunc } from './User/loginUserFunc';
 
 const API_PATH = '/token/';
 const API_METHOD = 'post';
@@ -31,29 +31,12 @@ function Login() {
   }, [username.status, password.status]);
 
   async function handleLogin(e: React.FormEvent) {
-    const API_ENDPOINT = '/token/';
-    const API_METHOD = 'post';
-
-    type ResponseTypesByStatus = ExtractResponseTypes<
-      paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
-    >;
-
     e.preventDefault();
-    // Simple validation
     if (valid) {
-      const { data, response } = await callBackendApi<
-        ResponseTypesByStatus[keyof ResponseTypesByStatus],
-        paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
-      >({
-        endpoint: API_ENDPOINT,
-        method: API_METHOD,
-        data: {
-          username: username.value,
-          password: password.value,
-        },
+      loginUserFunc({
+        username: username.value,
+        password: password.value,
       });
-      console.log(data);
-      console.log(response);
     }
   }
 

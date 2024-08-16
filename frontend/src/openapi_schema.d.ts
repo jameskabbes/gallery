@@ -9,6 +9,34 @@ export interface paths {
     /** Read Root */
     get: operations["read_root__get"];
   };
+  "/token/": {
+    /** Login For Access Token */
+    post: operations["login_for_access_token_token__post"];
+  };
+  "/users/me": {
+    /** Read Users Me */
+    get: operations["read_users_me_users_me_get"];
+  };
+  "/users/{user_id}/": {
+    /** Get User By Id */
+    get: operations["get_user_by_id_users__user_id___get"];
+  };
+  "/users/username/{user_id}/": {
+    /** Get User By Username */
+    get: operations["get_user_by_username_users_username__user_id___get"];
+  };
+  "/users/": {
+    /** Post User */
+    post: operations["post_user_users__post"];
+  };
+  "/users/available/username/{username}/": {
+    /** User Username Available */
+    get: operations["user_username_available_users_available_username__username___get"];
+  };
+  "/users/available/email/{email}/": {
+    /** User Username Exists */
+    get: operations["user_username_exists_users_available_email__email___get"];
+  };
   "/studios/{studio_id}/": {
     /** Get Studio */
     get: operations["get_studio_studios__studio_id___get"];
@@ -23,30 +51,6 @@ export interface paths {
     /** Post Studio */
     post: operations["post_studio_studios__post"];
   };
-  "/users/{user_id}/": {
-    /** Get User */
-    get: operations["get_user_users__user_id___get"];
-  };
-  "/users/": {
-    /** Post User */
-    post: operations["post_user_users__post"];
-  };
-  "/token/": {
-    /** Token */
-    post: operations["token_token__post"];
-  };
-  "/auth/google/": {
-    /** Google Auth */
-    post: operations["google_auth_auth_google__post"];
-  };
-  "/users/available/username/{username}/": {
-    /** User Username Available */
-    get: operations["user_username_available_users_available_username__username___get"];
-  };
-  "/users/available/email/{email}/": {
-    /** User Username Exists */
-    get: operations["user_username_exists_users_available_email__email___get"];
-  };
   "/pages/studios/": {
     /** Get Pages Studios */
     get: operations["get_pages_studios_pages_studios__get"];
@@ -55,12 +59,34 @@ export interface paths {
     /** Get Pages Studio */
     get: operations["get_pages_studio_pages_studios__studio_id___get"];
   };
+  "/auth/google/": {
+    /** Google Auth */
+    post: operations["google_auth_auth_google__post"];
+  };
 }
 
 export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
+    /** Body_login_for_access_token_token__post */
+    Body_login_for_access_token_token__post: {
+      /** Grant Type */
+      grant_type?: string | null;
+      /** Username */
+      username: string;
+      /** Password */
+      password: string;
+      /**
+       * Scope
+       * @default
+       */
+      scope?: string;
+      /** Client Id */
+      client_id?: string | null;
+      /** Client Secret */
+      client_secret?: string | null;
+    };
     /** DetailOnlyResponse */
     DetailOnlyResponse: {
       /** Detail */
@@ -75,13 +101,6 @@ export interface components {
     ItemAvailableResponse: {
       /** Available */
       available: boolean;
-    };
-    /** LoginRequest */
-    LoginRequest: {
-      /** Email */
-      email: string;
-      /** Password */
-      password: string;
     };
     /** NotFoundResponse */
     NotFoundResponse: {
@@ -170,6 +189,167 @@ export interface operations {
       200: {
         content: {
           "application/json": unknown;
+        };
+      };
+    };
+  };
+  /** Login For Access Token */
+  login_for_access_token_token__post: {
+    requestBody: {
+      content: {
+        "application/x-www-form-urlencoded": components["schemas"]["Body_login_for_access_token_token__post"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["Token"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Read Users Me */
+  read_users_me_users_me_get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  /** Get User By Id */
+  get_user_by_id_users__user_id___get: {
+    parameters: {
+      path: {
+        user_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["UserPublic"];
+        };
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get User By Username */
+  get_user_by_username_users_username__user_id___get: {
+    parameters: {
+      query: {
+        username: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["UserPublic"];
+        };
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Post User */
+  post_user_users__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UserCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["UserPublic"];
+        };
+      };
+      /** @description User already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** User Username Available */
+  user_username_available_users_available_username__username___get: {
+    parameters: {
+      path: {
+        username: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ItemAvailableResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** User Username Exists */
+  user_username_exists_users_available_email__email___get: {
+    parameters: {
+      path: {
+        email: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ItemAvailableResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -306,154 +486,6 @@ export interface operations {
       };
     };
   };
-  /** Get User */
-  get_user_users__user_id___get: {
-    parameters: {
-      path: {
-        user_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["UserPublic"];
-        };
-      };
-      /** @description User not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Post User */
-  post_user_users__post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UserCreate"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["UserPublic"];
-        };
-      };
-      /** @description User already exists */
-      409: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Token */
-  token_token__post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["LoginRequest"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["Token"];
-        };
-      };
-      /** @description Invalid email or password */
-      401: {
-        content: never;
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Google Auth */
-  google_auth_auth_google__post: {
-    parameters: {
-      query: {
-        token_request: unknown;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** User Username Available */
-  user_username_available_users_available_username__username___get: {
-    parameters: {
-      path: {
-        username: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["ItemAvailableResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** User Username Exists */
-  user_username_exists_users_available_email__email___get: {
-    parameters: {
-      path: {
-        email: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["ItemAvailableResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
   /** Get Pages Studios */
   get_pages_studios_pages_studios__get: {
     responses: {
@@ -483,6 +515,28 @@ export interface operations {
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Google Auth */
+  google_auth_auth_google__post: {
+    parameters: {
+      query: {
+        token_request: unknown;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */
