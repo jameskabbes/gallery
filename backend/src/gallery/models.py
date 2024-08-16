@@ -1,6 +1,8 @@
 import typing
 import uuid
-from sqlmodel import SQLModel, Field, Column
+from sqlmodel import SQLModel, Field, Column, Session, select
+from pydantic import BaseModel, EmailStr, constr, StringConstraints
+from gallery import utils
 
 
 class Singular[IDType]:
@@ -13,6 +15,81 @@ class Singular[IDType]:
     @classmethod
     def generate_id(cls):
         return str(uuid.uuid4())
+
+# Token
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    username: str | None = None
+
+
+# User
+
+
+class UserTypes:
+    id = str
+    username = typing.Annotated[str, StringConstraints(
+        min_length=3, max_length=20)]
+    email = typing.Annotated[EmailStr, StringConstraints(
+        min_length=1, max_length=254)]
+    password = typing.Annotated[str, StringConstraints(
+        min_length=1, max_length=64)]
+    hashed_password = str
+
+
+class UserBase(SQLModel):
+    username: UserTypes.username = Field(index=True)
+
+
+class AuthenticateResponse(typing.TypedDict):
+    valid: bool
+    user: typing.Optional[typing.Self]
+
+
+class User(UserBase, Singular, table=True):
+    __tablename__ = 'user'
+    id: UserTypes.id = Field(
+        primary_key=True, index=True)
+    email: str = Field(index=True)
+    hashed_password: UserTypes.hashed_password | None
+
+    @classmethod
+    def authenticate(cls, session: Session, username: str, password: str) -> typing.Self | None:
+        user = session.exec(select(cls).where(
+            cls.username == username)).first()
+        if not user:
+            return None
+        if not utils.verify_password(password, user.hashed_password):
+            return None
+        return user
+
+    def export_for_token_payload(self) -> dict:
+        return {'sub': self.id}
+
+    @classmethod
+    def import_from_token_payload(self, token_payload: dict) -> UserTypes.id:
+        return token_payload.get('sub')
+
+
+class UserCreate(BaseModel):
+    username: UserTypes.username
+    email: UserTypes.email
+    password: UserTypes.password
+
+
+class UserUpdate(UserBase):
+    username: UserTypes.username | None = None
+    email: UserTypes.email | None = None
+    password: UserTypes.password | None = None
+
+
+class UserPublic(UserBase):
+    id: UserTypes.id
 
 
 # Studio
@@ -42,41 +119,3 @@ class StudioUpdate(StudioBase):
 
 class StudioPublic(StudioBase):
     id: StudioTypes.id
-
-# User
-
-
-class UserTypes:
-    id = str
-    username = str
-    email = str
-    password = str
-    hashed_password = str
-
-
-class UserBase(SQLModel):
-    username: str = Field(index=True)
-
-
-class User(UserBase, Singular, table=True):
-    __tablename__ = 'user'
-    id: UserTypes.id = Field(
-        primary_key=True, index=True)
-    email: str = Field(index=True)
-    hashed_password: UserTypes.hashed_password | None
-
-
-class UserCreate(UserBase):
-    username: UserTypes.username
-    email: UserTypes.email
-    password: UserTypes.password
-
-
-class UserUpdate(UserBase):
-    username: UserTypes.username | None = None
-    email: UserTypes.email | None = None
-    password: UserTypes.password | None = None
-
-
-class UserPublic(UserBase):
-    id: UserTypes.id

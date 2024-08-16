@@ -1,15 +1,10 @@
 import validator from 'validator';
+import openapi_schema from '../../../../openapi_schema.json';
+import { ValidityCheckReturn } from '../Form/InputText';
 
-interface Return {
-  valid: boolean;
-  message?: string;
-}
-
-function isEmailValid(email: string): Return {
+function isEmailValid(email: string): ValidityCheckReturn {
   if (!validator.isEmail(email)) {
     return { valid: false, message: 'Invalid email' };
-  } else if (email.length > 100) {
-    return { valid: false, message: 'Email is too long' };
   } else {
     return { valid: true };
   }

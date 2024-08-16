@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import config from '../../../config.json';
+import siteConfig from '../../siteConfig.json';
 
 //utility func to make API calls
 async function callApiBase<T>(
@@ -30,10 +31,13 @@ interface CallApiReturn<T> {
 async function callApi<TResponseData, TRequestData = any>(
   props: CallApiProps<TRequestData>
 ): Promise<CallApiReturn<TResponseData>> {
+  const token = localStorage.getItem(siteConfig['access_token_key']);
+
   const init: RequestInit = {
     method: props.method,
     headers: {
       'Content-Type': 'application/json',
+      Authorization: token ? `Bearer ${token}` : '',
     },
     body: props.data ? JSON.stringify(props.data) : null,
   };

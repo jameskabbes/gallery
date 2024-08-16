@@ -1,5 +1,8 @@
 {
   "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noUncheckedIndexedAccess": true,
     "jsx": "react",
     "lib": ["dom", "ESNext"],
     "allowSyntheticDefaultImports": true,

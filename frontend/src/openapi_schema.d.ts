@@ -125,7 +125,10 @@ export interface components {
     UserCreate: {
       /** Username */
       username: string;
-      /** Email */
+      /**
+       * Email
+       * Format: email
+       */
       email: string;
       /** Password */
       password: string;

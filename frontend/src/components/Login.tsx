@@ -1,16 +1,11 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { ModalsContext } from '../contexts/Modals';
 import { callApiBase, callBackendApi } from '../utils/Api';
-import validator from 'validator';
 import { paths, operations, components } from '../openapi_schema';
 import { ExtractResponseTypes } from '../types';
-import { Status as InputStatus, CheckOrX } from './Form/CheckOrX';
+import openapi_schema from '../../../openapi_schema.json';
 
-import { isEmailValid } from './User/isEmailValid';
-import { isPasswordValid } from './User/isPasswordValid';
-
-import { toast } from 'react-toastify';
-import { toastTemplate } from './Toast';
+import { InputText, InputState, defaultInputState } from './Form/InputText';
 
 import { Modal } from './Modal';
 import { GoogleLogin } from '@react-oauth/google';
@@ -22,43 +17,18 @@ type ResponseTypesByStatus = ExtractResponseTypes<
   paths[typeof API_PATH][typeof API_METHOD]['responses']
 >;
 
-interface InputFields {
-  value: string;
-  status: InputStatus;
-  error: string | null;
-}
-
-const defaultInputFields: InputFields = {
-  value: '',
-  status: 'invalid',
-  error: null,
-};
-
 function Login() {
-  const [email, setEmail] = useState<InputFields>({ ...defaultInputFields });
-  const [password, setPassword] = useState<InputFields>({
-    ...defaultInputFields,
+  const [username, setUsername] = useState<InputState>({
+    ...defaultInputState,
+  });
+  const [password, setPassword] = useState<InputState>({
+    ...defaultInputState,
   });
   const [valid, setValid] = useState(false);
 
   useEffect(() => {
-    const { valid, message } = isEmailValid(email.value);
-    setEmail((prevState) => ({
-      ...prevState,
-      status: valid ? 'valid' : 'invalid',
-      error: message,
-    }));
-  }, [email.value]);
-  useEffect(() => {
-    const { valid, message } = isPasswordValid(password.value);
-    setPassword((prevState) => ({
-      ...prevState,
-      status: password.value.length > 0 ? 'valid' : 'invalid',
-    }));
-  }, [password.value]);
-  useEffect(() => {
-    setValid(email.status === 'valid' && password.status === 'valid');
-  }, [email.status, password.status]);
+    setValid(username.status === 'valid' && password.status === 'valid');
+  }, [username.status, password.status]);
 
   async function handleLogin(e: React.FormEvent) {
     const API_ENDPOINT = '/token/';
@@ -78,7 +48,7 @@ function Login() {
         endpoint: API_ENDPOINT,
         method: API_METHOD,
         data: {
-          email: email.value,
+          username: username.value,
           password: password.value,
         },
       });
@@ -93,53 +63,36 @@ function Login() {
         {/* modes */}
         <form onSubmit={handleLogin} className="flex flex-col space-y-2">
           <h4 className="text-center">Login</h4>
-          <div className="flex flex-row items-center space-x-2">
-            <input
-              className="text-input"
-              type="email"
-              id="email"
-              value={email.value}
-              placeholder="email"
-              onChange={(e) => {
-                let newEmail: InputFields['value'] = e.target.value;
-                setEmail((prevState) => ({
-                  ...prevState,
-                  value: newEmail,
-                }));
-              }}
-              required
-              formNoValidate
-            />
-
-            <span title={email.error || ''}>
-              <CheckOrX status={email.status} />
-            </span>
-          </div>
-          <div className="flex flex-row items-center space-x-2">
-            <input
-              className="text-input"
-              type="password"
-              id="password"
-              value={password.value}
-              placeholder="password"
-              onChange={(e) => {
-                let newPassword: InputFields['value'] = e.target.value;
-                setPassword((prevState) => ({
-                  ...prevState,
-                  value: newPassword,
-                }));
-              }}
-              required
-              formNoValidate
-            />
-
-            <span title={password.error || ''}>
-              <CheckOrX status={password.status} />
-            </span>
-          </div>
+          <InputText
+            state={username}
+            setState={setUsername}
+            id="username"
+            minLength={1}
+            maxLength={
+              openapi_schema.components.schemas.UserCreate.properties.username
+                .maxLength
+            }
+            type="username"
+            placeholder="username"
+            checkAvailability={false}
+          />
+          <InputText
+            state={password}
+            setState={setPassword}
+            id="password"
+            minLength={1}
+            maxLength={
+              openapi_schema.components.schemas.UserCreate.properties.password
+                .maxLength
+            }
+            type="password"
+            placeholder="password"
+            checkAvailability={false}
+          />
           <button
             className={`${valid ? 'button-valid' : 'button-invalid'}`}
             type="submit"
+            disabled={!valid}
           >
             <p className="flex flex-row justify-center items-center">Login</p>
           </button>

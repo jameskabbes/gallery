@@ -1,12 +1,6 @@
-interface Return {
-  valid: boolean;
-  message?: string;
-}
+import { ValidityCheckReturn } from '../Form/InputText';
 
-function isPasswordValid(password: string): Return {
-  if (password.length < 1) {
-    return { valid: false, message: 'Password is too short' };
-  }
+function isPasswordValid(password: string): ValidityCheckReturn {
   return { valid: true };
 }
 
