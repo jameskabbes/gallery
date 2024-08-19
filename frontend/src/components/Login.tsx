@@ -25,6 +25,7 @@ function Login() {
     ...defaultInputState,
   });
   const [valid, setValid] = useState(false);
+  let modalsContext = useContext(ModalsContext);
 
   useEffect(() => {
     setValid(username.status === 'valid' && password.status === 'valid');
@@ -33,10 +34,13 @@ function Login() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     if (valid) {
-      loginUserFunc({
+      let newUser = await loginUserFunc({
         username: username.value,
         password: password.value,
       });
+      if (newUser) {
+        modalsContext.dispatch({ type: 'POP' });
+      }
     }
   }
 

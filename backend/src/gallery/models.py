@@ -62,6 +62,7 @@ class User(UserBase, Singular, table=True):
     def authenticate(cls, session: Session, username: str, password: str) -> typing.Self | None:
         user = session.exec(select(cls).where(
             cls.username == username)).first()
+
         if not user:
             return None
         if not utils.verify_password(password, user.hashed_password):

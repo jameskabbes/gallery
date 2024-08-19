@@ -22,9 +22,6 @@ async function createUserFunc(
 
   let toastId = toast.loading('Creating user');
 
-  // wait for 2 seconds
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-
   const { data, response } = await callBackendApi<
     AllResponseTypes[keyof AllResponseTypes],
     components['schemas']['UserCreate']

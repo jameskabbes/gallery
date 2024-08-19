@@ -21,17 +21,14 @@ async function loginUserFunc(
 
   let toastId = toast.loading('Logging in');
 
-  // wait for 2 seconds
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-
   const { data, response } = await callBackendApi<
     ResponseTypesByStatus[keyof ResponseTypesByStatus],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/x-www-form-urlencoded']
   >({
     endpoint: API_ENDPOINT,
     method: API_METHOD,
-    body: 'password&username=admin&password=password',
-    'Content-Type': 'application/x-www-form-urlencoded',
+    body: new URLSearchParams(formData).toString(),
+    overwriteHeaders: { 'Content-Type': 'application/x-www-form-urlencoded' },
   });
 
   if (response.status === 200) {

@@ -90,6 +90,8 @@ async def login_for_access_token(
         user = models.User.authenticate(
             session, form_data.username, form_data.password)
 
+        print(user)
+
         if not user:
             raise CREDENTIALS_EXCEPTION
         access_token = create_access_token(

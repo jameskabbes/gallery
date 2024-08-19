@@ -21,7 +21,7 @@ interface CallApiProps<T> {
   endpoint: string;
   method: RequestInit['method'];
   data?: T;
-  'Content-Type'?: string;
+  overwriteHeaders?: HeadersInit;
   body?: string;
 }
 
@@ -38,8 +38,9 @@ async function callApi<TResponseData, TRequestData = any>(
   const init: RequestInit = {
     method: props.method,
     headers: {
-      'Content-Type': props['Content-Type'] || 'application/json',
+      'Content-Type': 'application/json',
       Authorization: token ? `Bearer ${token}` : '',
+      ...props.overwriteHeaders,
     },
     body: props.body
       ? props.body
