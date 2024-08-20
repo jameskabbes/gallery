@@ -243,32 +243,7 @@ async def get_studios(offset: int = Query(default=0, ge=0), limit: int = Query(d
             select(models.Studio).offset(offset).limit(limit)).all()
         return studios
 
-
-# Pages
-
-
-class PagesStudiosResponse(typing.TypedDict):
-    studios: list[models.StudioPublic]
-
-
-@app.get('/pages/studios/')
-async def get_pages_studios() -> PagesStudiosResponse:
-    d: PagesStudiosResponse = {
-        'studios': await get_studios(offset=0, limit=100)
-    }
-    return d
-
-
-class PagesStudioResponse(typing.TypedDict):
-    studio: models.StudioPublic
-
-
-@app.get('/pages/studios/{studio_id}/', responses={404: {"description": 'Studio not found', 'model': NotFoundResponse}})
-async def get_pages_studio(studio_id: models.StudioTypes.id) -> PagesStudioResponse:
-    d: PagesStudioResponse = {
-        'studio': await get_studio(studio_id)
-    }
-    return d
+#
 
 
 @ app.post("/auth/google/")
@@ -297,6 +272,37 @@ async def google_auth(token_request):
 
         # return {"token": user_token}
 
+
+# Pages
+
+
+class PagesStudiosResponse(typing.TypedDict):
+    studios: list[models.StudioPublic]
+
+
+@app.get('/pages/studios/')
+async def get_pages_studios() -> PagesStudiosResponse:
+    d: PagesStudiosResponse = {
+        'studios': await get_studios(offset=0, limit=100)
+    }
+    return d
+
+
+class PagesStudioResponse(typing.TypedDict):
+    studio: models.StudioPublic
+
+
+@app.get('/pages/studios/{studio_id}/', responses={404: {"description": 'Studio not found', 'model': NotFoundResponse}})
+async def get_pages_studio(studio_id: models.StudioTypes.id) -> PagesStudioResponse:
+    d: PagesStudioResponse = {
+        'studio': await get_studio(studio_id)
+    }
+    return d
+
+
+@app.get('/pages/profile/', responses={status.HTTP_401_UNAUTHORIZED: {"description": 'Unauthorized', 'model': DetailOnlyResponse}})
+async def get_pages_profile(current_user: models.User = Depends(get_current_user)) -> models.User:
+    return current_user
 
 if __name__ == "__main__":
     import uvicorn

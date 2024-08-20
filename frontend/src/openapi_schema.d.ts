@@ -51,6 +51,10 @@ export interface paths {
     /** Post Studio */
     post: operations["post_studio_studios__post"];
   };
+  "/auth/google/": {
+    /** Google Auth */
+    post: operations["google_auth_auth_google__post"];
+  };
   "/pages/studios/": {
     /** Get Pages Studios */
     get: operations["get_pages_studios_pages_studios__get"];
@@ -59,9 +63,9 @@ export interface paths {
     /** Get Pages Studio */
     get: operations["get_pages_studio_pages_studios__studio_id___get"];
   };
-  "/auth/google/": {
-    /** Google Auth */
-    post: operations["google_auth_auth_google__post"];
+  "/pages/profile/": {
+    /** Get Pages Profile */
+    get: operations["get_pages_profile_pages_profile__get"];
   };
 }
 
@@ -139,6 +143,17 @@ export interface components {
       access_token: string;
       /** Token Type */
       token_type: string;
+    };
+    /** User */
+    User: {
+      /** Username */
+      username: string;
+      /** Id */
+      id: string;
+      /** Email */
+      email: string;
+      /** Hashed Password */
+      hashed_password: string | null;
     };
     /** UserCreate */
     UserCreate: {
@@ -486,6 +501,28 @@ export interface operations {
       };
     };
   };
+  /** Google Auth */
+  google_auth_auth_google__post: {
+    parameters: {
+      query: {
+        token_request: unknown;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   /** Get Pages Studios */
   get_pages_studios_pages_studios__get: {
     responses: {
@@ -525,24 +562,13 @@ export interface operations {
       };
     };
   };
-  /** Google Auth */
-  google_auth_auth_google__post: {
-    parameters: {
-      query: {
-        token_request: unknown;
-      };
-    };
+  /** Get Pages Profile */
+  get_pages_profile_pages_profile__get: {
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
+          "application/json": components["schemas"]["User"];
         };
       };
     };

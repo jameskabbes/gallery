@@ -20,8 +20,7 @@ interface DeviceContext {
 }
 
 interface AuthContext {
-  token: string | null;
-  user: string | null;
+  user: components['schemas']['UserPublic'] | null;
 }
 
 type Studios = Map<
