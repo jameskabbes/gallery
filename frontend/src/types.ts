@@ -19,10 +19,6 @@ interface DeviceContext {
   isMobile: boolean;
 }
 
-interface AuthContext {
-  user: components['schemas']['UserPublic'] | null;
-}
-
 type Studios = Map<
   components['schemas']['StudioPublic']['id'],
   components['schemas']['StudioPublic']
@@ -46,6 +42,26 @@ interface DataContext {
   studios: Reducer<StudiosReducerState, StudiosReducerAction>;
 }
 
+interface AuthContextState {
+  user: components['schemas']['UserPublic'] | null;
+  token: string | null;
+}
+
+type AuthContextAction =
+  | {
+      type: 'LOGIN';
+      payload: {
+        user: components['schemas']['UserPublic'];
+        token: string;
+      };
+    }
+  | { type: 'LOGOUT' };
+
+interface AuthContext {
+  state: AuthContextState;
+  dispatch: React.Dispatch<AuthContextAction>;
+}
+
 type Modal = React.ReactNode;
 interface ModalsReducerState {
   stack: Modal[];
@@ -61,6 +77,8 @@ interface ModalsContext {
 export {
   ExtractResponseTypes,
   DarkModeContext,
+  AuthContextAction,
+  AuthContextState,
   AuthContext,
   DeviceContext,
   Modal,

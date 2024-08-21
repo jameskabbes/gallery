@@ -58,6 +58,15 @@ function AccountIcon() {
               >
                 <span>Sign Up</span>
               </button>
+              <button
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                onClick={() => {
+                  setIsMenuVisible(false);
+                  modalsContext.dispatch({ type: 'PUSH', payload: <SignUp /> });
+                }}
+              >
+                <span>Sign Out</span>
+              </button>
             </p>
           </ul>
         </div>

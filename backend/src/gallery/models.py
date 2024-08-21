@@ -42,21 +42,18 @@ class UserTypes:
     hashed_password = str
 
 
-class UserBase(SQLModel):
+class UserBase(BaseModel):
     username: UserTypes.username = Field(index=True)
 
 
-class AuthenticateResponse(typing.TypedDict):
-    valid: bool
-    user: typing.Optional[typing.Self]
-
-
-class User(UserBase, Singular, table=True):
+class User(SQLModel, UserBase, Singular, table=True):
     __tablename__ = 'user'
     id: UserTypes.id = Field(
         primary_key=True, index=True)
     email: str = Field(index=True)
     hashed_password: UserTypes.hashed_password | None
+
+    _payload_claim: typing.ClassVar[str] = 'sub'
 
     @classmethod
     def authenticate(cls, session: Session, username: str, password: str) -> typing.Self | None:
@@ -70,11 +67,11 @@ class User(UserBase, Singular, table=True):
         return user
 
     def export_for_token_payload(self) -> dict:
-        return {'sub': self.id}
+        return {self._payload_claim: self.id}
 
     @classmethod
-    def import_from_token_payload(self, token_payload: dict) -> UserTypes.id:
-        return token_payload.get('sub')
+    def import_from_token_payload(self, token_payload: dict) -> UserTypes.id | None:
+        return token_payload.get(self._payload_claim)
 
 
 class UserCreate(BaseModel):

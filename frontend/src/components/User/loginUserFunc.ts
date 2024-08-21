@@ -33,8 +33,6 @@ async function loginUserFunc(
 
   if (response.status === 200) {
     const apiData = data as ResponseTypesByStatus['200'];
-    console.log(data);
-    console.log(response);
     localStorage.setItem(siteConfig['access_token_key'], apiData.access_token);
     toast.update(toastId, {
       ...toastTemplate,

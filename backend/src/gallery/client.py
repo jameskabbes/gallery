@@ -3,6 +3,7 @@ import pathlib
 from gallery import config, utils
 from sqlalchemy import create_engine, Engine
 from sqlmodel import SQLModel
+import datetime
 
 type uvicorn_port_type = int
 
@@ -22,9 +23,20 @@ class DbConfig(typing.TypedDict):
     path: PathConfig
 
 
+class AuthenticationConfig(typing.TypedDict):
+    default_expiry_timedelta: datetime.timedelta
+
+
+class JWTConfig(typing.TypedDict):
+    secret_key_path: PathConfig
+    algorithm: str
+
+
 class Config(typing.TypedDict):
     uvicorn: UvicornConfig
     db: DbConfig
+    authentication: AuthenticationConfig
+    jwt: JWTConfig
 
 
 DefaultConfig: Config = {
@@ -36,6 +48,16 @@ DefaultConfig: Config = {
             'parent_dir': config.DATA_DIR,
             'filename': 'gallery.db',
         }
+    },
+    'authentication': {
+        'default_expiry_timedelta': datetime.timedelta(days=7),
+    },
+    'jwt': {
+        'secret_key_path': {
+            'parent_dir': config.DATA_DIR,
+            'filename': 'jwt_secret_key.txt'
+        },
+        'algorithm': 'HS256'
     }
 }
 
@@ -56,6 +78,9 @@ class Client:
 
     uvicorn_port: uvicorn_port_type
     db_engine: Engine
+    authentication: AuthenticationConfig
+    jwt_secret_key: str
+    jwt_algorithm: str
 
     def __init__(self, config: Config = {}):
 
@@ -67,6 +92,15 @@ class Client:
         # db
         db_engine_path = get_path_from_config(merged_config['db']['path'])
         self.db_engine = create_engine(f'sqlite:///{db_engine_path}')
+
+        # authentication
+        self.authentication = merged_config['authentication']
+
+        # jwt
+        jwt_secret_key_path = get_path_from_config(
+            merged_config['jwt']['secret_key_path'])
+        self.jwt_secret_key = jwt_secret_key_path.read_text()
+        self.jwt_algorithm = merged_config['jwt']['algorithm']
 
     def create_tables(self):
         SQLModel.metadata.create_all(self.db_engine)
