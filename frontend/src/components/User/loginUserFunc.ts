@@ -4,6 +4,7 @@ import { ExtractResponseTypes } from '../../types';
 import { callBackendApi } from '../../utils/Api';
 import { toast } from 'react-toastify';
 import { toastTemplate } from '../Toast';
+import { AuthContextAction } from '../../types';
 
 import siteConfig from '../../../siteConfig.json';
 
@@ -15,7 +16,8 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 >;
 
 async function loginUserFunc(
-  formData: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/x-www-form-urlencoded']
+  formData: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/x-www-form-urlencoded'],
+  authContextDispatch: React.Dispatch<AuthContextAction>
 ): Promise<ResponseTypesByStatus['200'] | null> {
   // Simple validation
 
@@ -33,7 +35,7 @@ async function loginUserFunc(
 
   if (response.status === 200) {
     const apiData = data as ResponseTypesByStatus['200'];
-    localStorage.setItem(siteConfig['access_token_key'], apiData.access_token);
+    authContextDispatch({ type: 'LOGIN', payload: apiData });
     toast.update(toastId, {
       ...toastTemplate,
       render: 'Logged in',

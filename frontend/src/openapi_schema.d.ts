@@ -13,17 +13,17 @@ export interface paths {
     /** Login For Access Token */
     post: operations["login_for_access_token_token__post"];
   };
-  "/users/me": {
-    /** Read Users Me */
-    get: operations["read_users_me_users_me_get"];
-  };
-  "/users/{user_id}/": {
+  "/users/{user_id}": {
     /** Get User By Id */
-    get: operations["get_user_by_id_users__user_id___get"];
+    get: operations["get_user_by_id_users__user_id__get"];
+    /** Delete User */
+    delete: operations["delete_user_users__user_id__delete"];
+    /** Patch User */
+    patch: operations["patch_user_users__user_id__patch"];
   };
-  "/users/username/{user_id}/": {
+  "/users/username/{username}": {
     /** Get User By Username */
-    get: operations["get_user_by_username_users_username__user_id___get"];
+    get: operations["get_user_by_username_users_username__username__get"];
   };
   "/users/": {
     /** Post User */
@@ -37,35 +37,13 @@ export interface paths {
     /** User Username Exists */
     get: operations["user_username_exists_users_available_email__email___get"];
   };
-  "/studios/{studio_id}/": {
-    /** Get Studio */
-    get: operations["get_studio_studios__studio_id___get"];
-    /** Delete Studio */
-    delete: operations["delete_studio_studios__studio_id___delete"];
-    /** Patch Studio */
-    patch: operations["patch_studio_studios__studio_id___patch"];
-  };
-  "/studios/": {
-    /** Get Studios */
-    get: operations["get_studios_studios__get"];
-    /** Post Studio */
-    post: operations["post_studio_studios__post"];
-  };
-  "/auth/google/": {
-    /** Google Auth */
-    post: operations["google_auth_auth_google__post"];
-  };
-  "/pages/studios/": {
-    /** Get Pages Studios */
-    get: operations["get_pages_studios_pages_studios__get"];
-  };
-  "/pages/studios/{studio_id}/": {
-    /** Get Pages Studio */
-    get: operations["get_pages_studio_pages_studios__studio_id___get"];
-  };
   "/pages/profile/": {
     /** Get Pages Profile */
     get: operations["get_pages_profile_pages_profile__get"];
+  };
+  "/pages/home/": {
+    /** Get Pages Home */
+    get: operations["get_pages_home_pages_home__get"];
   };
 }
 
@@ -111,31 +89,9 @@ export interface components {
       /** Detail */
       detail: string;
     };
-    /** PagesStudioResponse */
-    PagesStudioResponse: {
-      studio: components["schemas"]["StudioPublic"];
-    };
-    /** PagesStudiosResponse */
-    PagesStudiosResponse: {
-      /** Studios */
-      studios: components["schemas"]["StudioPublic"][];
-    };
-    /** StudioCreate */
-    StudioCreate: {
-      /** Name */
-      name: string;
-    };
-    /** StudioPublic */
-    StudioPublic: {
-      /** Name */
-      name: string;
-      /** Id */
-      id: string;
-    };
-    /** StudioUpdate */
-    StudioUpdate: {
-      /** Name */
-      name?: string | null;
+    /** PagesProfileResponse */
+    PagesProfileResponse: {
+      user?: components["schemas"]["UserPublic"] | null;
     };
     /** Token */
     Token: {
@@ -144,16 +100,10 @@ export interface components {
       /** Token Type */
       token_type: string;
     };
-    /** User */
-    User: {
-      /** Username */
-      username: string;
-      /** Id */
-      id: string;
-      /** Email */
-      email: string;
-      /** Hashed Password */
-      hashed_password: string | null;
+    /** TokenReturn */
+    TokenReturn: {
+      token: components["schemas"]["Token"];
+      user: components["schemas"]["UserPublic"];
     };
     /** UserCreate */
     UserCreate: {
@@ -169,10 +119,19 @@ export interface components {
     };
     /** UserPublic */
     UserPublic: {
-      /** Username */
-      username: string;
       /** Id */
       id: string;
+      /** Username */
+      username: string;
+    };
+    /** UserUpdate */
+    UserUpdate: {
+      /** Username */
+      username?: string | null;
+      /** Email */
+      email?: string | null;
+      /** Password */
+      password?: string | null;
     };
     /** ValidationError */
     ValidationError: {
@@ -219,7 +178,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["Token"];
+          "application/json": components["schemas"]["TokenReturn"];
         };
       };
       /** @description Validation Error */
@@ -230,19 +189,8 @@ export interface operations {
       };
     };
   };
-  /** Read Users Me */
-  read_users_me_users_me_get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": unknown;
-        };
-      };
-    };
-  };
   /** Get User By Id */
-  get_user_by_id_users__user_id___get: {
+  get_user_by_id_users__user_id__get: {
     parameters: {
       path: {
         user_id: string;
@@ -269,10 +217,69 @@ export interface operations {
       };
     };
   };
-  /** Get User By Username */
-  get_user_by_username_users_username__user_id___get: {
+  /** Delete User */
+  delete_user_users__user_id__delete: {
     parameters: {
-      query: {
+      path: {
+        user_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      204: {
+        content: never;
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Patch User */
+  patch_user_users__user_id__patch: {
+    parameters: {
+      path: {
+        user_id: string;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UserUpdate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["UserPublic"];
+        };
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get User By Username */
+  get_user_by_username_users_username__username__get: {
+    parameters: {
+      path: {
         username: string;
       };
     };
@@ -369,106 +376,24 @@ export interface operations {
       };
     };
   };
-  /** Get Studio */
-  get_studio_studios__studio_id___get: {
-    parameters: {
-      path: {
-        studio_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["StudioPublic"];
-        };
-      };
-      /** @description Studio not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Delete Studio */
-  delete_studio_studios__studio_id___delete: {
-    parameters: {
-      path: {
-        studio_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      204: {
-        content: never;
-      };
-      /** @description Studio not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Patch Studio */
-  patch_studio_studios__studio_id___patch: {
-    parameters: {
-      path: {
-        studio_id: string;
-      };
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["StudioUpdate"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["StudioPublic"];
-        };
-      };
-      /** @description Studio not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Get Studios */
-  get_studios_studios__get: {
+  /** Get Pages Profile */
+  get_pages_profile_pages_profile__get: {
     parameters: {
       query?: {
-        offset?: number;
-        limit?: number;
+        expiry_timedelta?: string;
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["StudioPublic"][];
+          "application/json": components["schemas"]["PagesProfileResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
         };
       };
       /** @description Validation Error */
@@ -479,33 +404,11 @@ export interface operations {
       };
     };
   };
-  /** Post Studio */
-  post_studio_studios__post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["StudioCreate"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["StudioPublic"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Google Auth */
-  google_auth_auth_google__post: {
+  /** Get Pages Home */
+  get_pages_home_pages_home__get: {
     parameters: {
-      query: {
-        token_request: unknown;
+      query?: {
+        expiry_timedelta?: string;
       };
     };
     responses: {
@@ -519,56 +422,6 @@ export interface operations {
       422: {
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Get Pages Studios */
-  get_pages_studios_pages_studios__get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["PagesStudiosResponse"];
-        };
-      };
-    };
-  };
-  /** Get Pages Studio */
-  get_pages_studio_pages_studios__studio_id___get: {
-    parameters: {
-      path: {
-        studio_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["PagesStudioResponse"];
-        };
-      };
-      /** @description Studio not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Get Pages Profile */
-  get_pages_profile_pages_profile__get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["User"];
         };
       };
     };

@@ -50,12 +50,10 @@ interface AuthContextState {
 type AuthContextAction =
   | {
       type: 'LOGIN';
-      payload: {
-        user: components['schemas']['UserPublic'];
-        token: string;
-      };
+      payload: paths['/token/']['post']['responses']['200']['content']['application/json'];
     }
   | { type: 'LOGOUT' };
+  | { type: 'UPDATE'; payload: components['schemas']['UserPublic'] };
 
 interface AuthContext {
   state: AuthContextState;

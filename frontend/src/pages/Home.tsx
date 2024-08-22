@@ -14,10 +14,6 @@ function Home() {
       <h5>h5</h5>
       <h6>h6</h6>
       <p>{deviceContext.isMobile ? 'mobile' : 'not mobile'}</p>
-      {localStorage.getItem('access_token')
-        ? localStorage.getItem('access_token')
-        : 'no token'}
-
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-primary-lighter h-64"></div>
         <div className="bg-primary h-64"></div>

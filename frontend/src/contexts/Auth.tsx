@@ -14,9 +14,13 @@ function authReducer(
   switch (action.type) {
     case 'LOGIN':
       console.log('LOGIN', action.payload);
+      localStorage.setItem(
+        siteConfig['access_token_key'],
+        action.payload.token.access_token
+      );
       return {
         ...state,
-        token: action.payload.token,
+        token: action.payload.token.access_token,
         user: action.payload.user,
       };
     case 'LOGOUT':

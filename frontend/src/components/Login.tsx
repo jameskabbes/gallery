@@ -1,5 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { ModalsContext } from '../contexts/Modals';
+import { AuthContext } from '../contexts/Auth';
 import { callApiBase, callBackendApi } from '../utils/Api';
 import { paths, operations, components } from '../openapi_schema';
 import { ExtractResponseTypes } from '../types';
@@ -25,7 +26,8 @@ function Login() {
     ...defaultInputState,
   });
   const [valid, setValid] = useState(false);
-  let modalsContext = useContext(ModalsContext);
+  const modalsContext = useContext(ModalsContext);
+  const authContext = useContext(AuthContext);
 
   useEffect(() => {
     setValid(username.status === 'valid' && password.status === 'valid');
@@ -34,10 +36,13 @@ function Login() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     if (valid) {
-      let newUser = await loginUserFunc({
-        username: username.value,
-        password: password.value,
-      });
+      let newUser = await loginUserFunc(
+        {
+          username: username.value,
+          password: password.value,
+        },
+        authContext.dispatch
+      );
       if (newUser) {
         modalsContext.dispatch({ type: 'POP' });
       }

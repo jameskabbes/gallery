@@ -10,6 +10,7 @@ import jwt
 from jwt.exceptions import InvalidTokenError, MissingRequiredClaimError, DecodeError
 from pydantic import BaseModel
 import datetime
+from functools import wraps
 
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -25,6 +26,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 c = get_client()
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
 
 CREDENTIALS_EXCEPTION = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -33,16 +36,12 @@ CREDENTIALS_EXCEPTION = HTTPException(
 )
 
 
-class DetailOnlyResponse(typing.TypedDict):
+class DetailOnlyResponse(BaseModel):
     detail: str
 
 
 class NotFoundResponse(DetailOnlyResponse):
     pass
-
-
-class SuccessfulDeleteResponse(DetailOnlyResponse):
-    ok: bool
 
 
 @app.get('/')
@@ -52,10 +51,6 @@ async def read_root():
 
 # user
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-
-# note, consider adding 'exp' as well as 'iat' to the token payload
 
 def create_access_token(data: typing.Annotated[dict, 'The data to encode'], expiry_datetime: typing.Annotated[typing.Optional[datetime.timedelta], 'The datetime the token expires'] = None) -> str:
 
@@ -69,29 +64,40 @@ def create_access_token(data: typing.Annotated[dict, 'The data to encode'], expi
     return jwt.encode(to_encode, c.jwt_secret_key, algorithm=c.jwt_algorithm)
 
 
+type GetSessionReturn = typing.Generator[Session, None, None]
+
+
+def get_session() -> GetSessionReturn:
+    with Session(c.db_engine) as session:
+        yield session
+
+
 class TokenExpiredError(InvalidTokenError):
     def __str__(self) -> str:
         return 'Token has expired'
 
 
-class GetCurrentUserReturn(typing.TypedDict):
-    user: typing.Optional[models.User]
-    exception: typing.Optional[Exception]
+class GetAuthVerboseReturn(BaseModel):
+    user: models.UserPublic | None = None
+    exception: Exception | None = None
+
+    class Config:
+        arbitrary_types_allowed: typing.ClassVar[bool] = True
 
 
-async def get_current_user(token: typing.Annotated[str, Depends(oauth2_scheme)], expiry_timedelta: typing.Annotated[datetime.timedelta, 'The timedelta from token creation in which the token is still valid'] = c.authentication['default_expiry_timedelta']
-                           ) -> GetCurrentUserReturn:
+async def get_auth_verbose(token: typing.Annotated[str, Depends(oauth2_scheme)], expiry_timedelta: typing.Annotated[datetime.timedelta, 'The timedelta from token creation in which the token is still valid'] = c.authentication['default_expiry_timedelta']
+                           ) -> GetAuthVerboseReturn:
 
     # check if token is proper format
     try:
         payload = jwt.decode(token, c.jwt_secret_key,
                              algorithms=[c.jwt_algorithm])
     except:
-        return {'exception': DecodeError('Invalid token')}
+        return GetAuthVerboseReturn(exception=DecodeError('Invalid token'))
 
     # iat must be present
     if 'iat' not in payload:
-        return {'exception': MissingRequiredClaimError('iat not present')}
+        return GetAuthVerboseReturn(exception=MissingRequiredClaimError('iat not present'))
 
     dt_now = datetime.datetime.now(datetime.UTC)
 
@@ -100,32 +106,59 @@ async def get_current_user(token: typing.Annotated[str, Depends(oauth2_scheme)],
             payload.get('exp'), datetime.UTC)
 
         if dt_now > dt_exp:
-            return {'exception': TokenExpiredError}
+            return GetAuthVerboseReturn(exception=TokenExpiredError)
 
     else:
         dt_iat = datetime.datetime.fromtimestamp(
             payload.get('iat'), datetime.UTC)
 
         if dt_now > (dt_iat + expiry_timedelta):
-            return {'exception': TokenExpiredError}
+            return GetAuthVerboseReturn(exception=TokenExpiredError)
 
     # check if token has user id
     user_id = models.User.import_from_token_payload(payload)
     if not user_id:
-        return {'exception': MissingRequiredClaimError(models.User._payload_claim + ' not present')}
+        return GetAuthVerboseReturn(exception=MissingRequiredClaimError(models.User._payload_claim + ' not present'))
 
     # check if user exists
     with Session(c.db_engine) as session:
         user = session.get(models.User, user_id)
         if not user:
-            return {'exception': HTTPException(status.HTTP_404_NOT_FOUND, detail='User not found')}
-        return {'user': user}
+            return GetAuthVerboseReturn(exception=HTTPException(status.HTTP_404_NOT_FOUND, detail='User not found'))
+        return GetAuthVerboseReturn(user=user)
+
+
+class GetAuthReturn(BaseModel):
+    user: typing.Optional[models.UserPublic]
+
+
+async def get_auth(token: typing.Annotated[str, Depends(oauth2_scheme)], expiry_timedelta: typing.Annotated[datetime.timedelta, 'The timedelta from token creation in which the token is still valid'] = c.authentication['default_expiry_timedelta']
+                   ) -> GetAuthReturn:
+    auth_verbose = await get_auth_verbose(token, expiry_timedelta)
+    return GetAuthReturn(user=auth_verbose.user)
+
+
+class GetSessionAndAuthReturn(BaseModel):
+    session: GetSessionReturn
+    auth: GetAuthReturn
+
+    class Config:
+        arbitrary_types_allowed: typing.ClassVar[bool] = True
+
+
+def get_session_and_auth(session: Session = Depends(get_session), user: GetAuthReturn = Depends(get_auth)) -> GetSessionAndAuthReturn:
+    return GetSessionAndAuthReturn(session=session, user=user)
+
+
+class TokenReturn(BaseModel):
+    token: models.Token
+    user: models.UserPublic
 
 
 @ app.post("/token/")
 async def login_for_access_token(
     form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()],
-) -> models.Token:
+) -> TokenReturn:
     with Session(c.db_engine) as session:
         user = models.User.authenticate(
             session, form_data.username, form_data.password)
@@ -133,77 +166,109 @@ async def login_for_access_token(
             raise CREDENTIALS_EXCEPTION
         access_token = create_access_token(
             data=user.export_for_token_payload())
-        return models.Token(access_token=access_token, token_type="bearer")
+
+        token = models.Token(access_token=access_token, token_type="bearer")
+        return {
+            'user': user,
+            'token': token
+        }
 
 
-@ app.get("/users/me")
-async def read_users_me(
-    current_user: typing.Annotated[models.User, Depends(get_current_user)],
-):
-    return current_user
+# template
 
+@app.get('/users/{user_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+async def get_user_by_id(user_id: models.UserTypes.id, session: Session = Depends(get_session)) -> models.UserPublic:
+    user = models.User.get_by_id(session, user_id)
 
-@ app.get('/users/{user_id}/',  responses={status.HTTP_404_NOT_FOUND: {"description": 'User not found', 'model': NotFoundResponse}})
-async def get_user_by_id(user_id: models.UserTypes.id) -> models.UserPublic:
-    with Session(c.db_engine) as session:
-        user = session.get(models.User, user_id)
-        if not user:
-            raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                detail='User not found')
+    if not user:
+        raise HTTPException(status.HTTP_404_NOT_FOUND,
+                            detail=models.User.not_found_message())
+    else:
         return user
 
 
-@ app.get('/users/username/{user_id}/',  responses={status.HTTP_404_NOT_FOUND: {"description": 'User not found', 'model': NotFoundResponse}})
-async def get_user_by_username(username: models.UserTypes.username) -> models.UserPublic:
-    with Session(c.db_engine) as session:
-        user = session.exec(select(models.User).where(
-            models.User.username == username)).first()
-        if not user:
-            raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                detail='User not found')
+@app.get('/users/username/{username}', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+async def get_user_by_username(username: models.UserTypes.username, session: Session = Depends(get_session)) -> models.UserPublic:
+    user = models.User.get_by_key_value(session, 'username', username)
+    if not user:
+        raise HTTPException(status.HTTP_404_NOT_FOUND,
+                            detail=models.User.not_found_message())
+    else:
         return user
 
 
 @ app.post('/users/', responses={status.HTTP_409_CONFLICT: {"description": 'User already exists', 'model': DetailOnlyResponse}})
-async def post_user(user: models.UserCreate) -> models.UserPublic:
+async def post_user(user_create: models.UserCreate, session: Session = Depends(get_session)) -> models.UserPrivate:
 
-    with Session(c.db_engine) as session:
+    existing_username = models.User.get_by_key_value(
+        session, 'username', user_create.username)
+    existing_email = models.User.get_by_key_value(
+        session, 'email', user_create.email)
 
-        existing_username = session.exec(select(models.User).where(
-            models.User.username == user.username)).first()
-        existing_email = session.exec(select(models.User).where(
-            models.User.email == user.email)).first()
+    if existing_username or existing_email:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail='User already exists')
 
-        if existing_username or existing_email:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail='User already exists')
+    user = user_create.create()
+    user.add_to_db(session)
 
-        db_user = models.User(
-            id=models.User.generate_id(),  **user.model_dump(), hashed_password=utils.hash_password(user.password))
-        session.add(db_user)
-        session.commit()
-        session.refresh(db_user)
-
-        return db_user
+    return user
 
 
-class ItemAvailableResponse(typing.TypedDict):
+@app.patch('/users/{user_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+async def patch_user(user_id: models.UserTypes.id, user_update: models.UserUpdate, session: Session = Depends(get_session)) -> models.UserPublic:
+
+    user = models.User.get_by_id(session, user_id)
+
+    # if they changed their username, check if it's available
+    if user.username != user_update.username:
+        if models.User.key_value_exists(session, 'username', user_update.username):
+            raise HTTPException(status.HTTP_409_CONFLICT,
+                                detail='Username already exists')
+
+    # if they changed their email, check if it's available
+    if user.email != user_update.email:
+        if models.User.key_value_exists(session, 'email', user_update.email):
+            raise HTTPException(status.HTTP_409_CONFLICT,
+                                detail='Email already exists')
+
+    user.sqlmodel_update(
+        email=user_update.email, username=user_update.username, hashed_password=utils.hash_password(user_update.password))
+
+    session.add(user)
+    session.commit()
+    return user
+
+
+@app.delete('/users/{user_id}', status_code=204, responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+async def delete_user(user_id: models.UserTypes.id, session: Session = Depends(get_session)):
+
+    user = models.User.get_by_id(session, user_id)
+
+    if not user:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, detail=models.User.not_found_message())
+
+    session.delete(user)
+    session.commit()
+    return Response(status_code=204)
+
+
+class ItemAvailableResponse(BaseModel):
     available: bool
 
 
 @ app.get('/users/available/username/{username}/')
-async def user_username_available(username: models.UserTypes.username) -> ItemAvailableResponse:
+async def user_username_available(username: models.UserTypes.username, session: Session = Depends(get_session)) -> ItemAvailableResponse:
 
     if len(username) < 1:
-        return {'available': False}
+        return ItemAvailableResponse(available=False)
 
     with Session(c.db_engine) as session:
-        user = session.exec(select(models.User).where(
-            models.User.username == username)).first()
-        if user:
-            return {'available': False}
+        if models.User.key_value_exists(session, 'username', username):
+            return ItemAvailableResponse(available=False)
         else:
-            return {'available': True}
+            return ItemAvailableResponse(available=True)
 
 
 @ app.get('/users/available/email/{email}/')
@@ -217,142 +282,41 @@ async def user_username_exists(email: models.UserTypes.email) -> ItemAvailableRe
         else:
             return {"available": True}
 
-# Studio
-
-
-@ app.get('/studios/{studio_id}/',  responses={status.HTTP_404_NOT_FOUND: {"description": 'Studio not found', 'model': NotFoundResponse}})
-async def get_studio(studio_id: models.StudioTypes.id) -> models.StudioPublic:
-    with Session(c.db_engine) as session:
-        studio = session.get(models.Studio, studio_id)
-        if not studio:
-            raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                detail='Studio not found')
-        return studio
-
-
-@ app.post('/studios/')
-async def post_studio(studio: models.StudioCreate) -> models.StudioPublic:
-
-    with Session(c.db_engine) as session:
-        db_studio = models.Studio(
-            id=models.Studio.generate_id(), **studio.model_dump())
-
-        session.add(db_studio)
-        session.commit()
-        session.refresh(db_studio)
-        return db_studio
-
-
-@ app.patch('/studios/{studio_id}/', responses={status.HTTP_404_NOT_FOUND: {"description": 'Studio not found', 'model': NotFoundResponse}})
-async def patch_studio(studio_id: models.StudioTypes.id, studio: models.StudioUpdate) -> models.StudioPublic:
-
-    with Session(c.db_engine) as session:
-        db_studio = session.get(models.Studio, studio_id)
-        if not db_studio:
-            raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                detail='Studio not found')
-        db_studio.sqlmodel_update(studio.model_dump(exclude_unset=True))
-        session.add(db_studio)
-        session.commit()
-        session.refresh(db_studio)
-        return db_studio
-
-
-@ app.delete('/studios/{studio_id}/', status_code=204, responses={404: {"description": 'Studio not found', 'model': NotFoundResponse}})
-async def delete_studio(studio_id: models.StudioTypes.id):
-    with Session(c.db_engine) as session:
-        studio = session.get(models.Studio, studio_id)
-        if not studio:
-            raise HTTPException(status_code=404, detail='Studio not found')
-        session.delete(studio)
-        session.commit()
-        return Response(status_code=204)
-
-
-@ app.get('/studios/')
-async def get_studios(offset: int = Query(default=0, ge=0), limit: int = Query(default=100, ge=0, le=100)) -> list[models.StudioPublic]:
-    print(offset, limit)
-
-    with Session(c.db_engine) as session:
-        studios = session.exec(
-            select(models.Studio).offset(offset).limit(limit)).all()
-        return studios
-
-#
-
-
-@ app.post("/auth/google/")
-async def google_auth(token_request):
-    token = token_request.token
-
-    print('token', token)
-
-    # Verify the token with Google
-    async with httpx.AsyncClient() as client:
-        response = await client.get(f"https://oauth2.googleapis.com/tokeninfo?id_token={token}")
-        if response.status_code != 200:
-            raise HTTPException(status_code=401, detail="Invalid Google token")
-
-        user_info = response.json()
-        print(user_info)
-
-        return user_info
-        # email = user_info.get("email")
-        # name = user_info.get("name")
-        # picture = user_info.get("picture")
-
-        # # Create a JWT token for the user
-        # user_token = jwt.encode(
-        #     {"email": email, "name": name, "picture": picture}, SECRET_KEY, algorithm="HS256")
-
-        # return {"token": user_token}
-
-
 # Pages
 
 
-class PagesStudiosResponse(typing.TypedDict):
-    studios: list[models.StudioPublic]
+class PagesBaseResponse(BaseModel):
+    auth: GetAuthReturn
 
 
-@ app.get('/pages/studios/')
-async def get_pages_studios() -> PagesStudiosResponse:
-    d: PagesStudiosResponse = {
-        'studios': await get_studios(offset=0, limit=100)
-    }
-    return d
+class PagesProfileResponse(PagesBaseResponse):
+    user: models.UserPrivate
 
 
-class PagesStudioResponse(typing.TypedDict):
-    studio: models.StudioPublic
+@ app.get('/pages/profile/', responses={status.HTTP_401_UNAUTHORIZED: {"description": 'Unauthorized', 'model': DetailOnlyResponse}, status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+async def get_pages_profile(session_and_auth: GetSessionAndAuthReturn = Depends(get_session_and_auth)) -> PagesProfileResponse:
 
+    session = session_and_auth.session
+    auth = session_and_auth.auth
 
-@ app.get('/pages/studios/{studio_id}/', responses={404: {"description": 'Studio not found', 'model': NotFoundResponse}})
-async def get_pages_studio(studio_id: models.StudioTypes.id) -> PagesStudioResponse:
-    d: PagesStudioResponse = {
-        'studio': await get_studio(studio_id)
-    }
-    return d
-
-
-@ app.get('/pages/profile/', responses={status.HTTP_401_UNAUTHORIZED: {"description": 'Unauthorized', 'model': DetailOnlyResponse}})
-async def get_pages_profile(current_user_return: GetCurrentUserReturn = Depends(get_current_user)) -> models.User:
-
-    if 'exception' in current_user_return:
+    if 'exception' in auth:
         raise CREDENTIALS_EXCEPTION
-    else:
-        return current_user_return['user']
+
+    user = models.User.get_by_id(session, auth.user.id)
+    if user is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND,
+                            detail=models.User.not_found_message())
+
+    return PagesProfileResponse(auth=auth, user=user)
+
+
+class PagesHomeResponse(PagesBaseResponse):
+    pass
 
 
 @ app.get('/pages/home/')
-async def get_pages_home(current_user: typing.Optional[models.User] = Depends(get_current_user)):
-
-    print(current_user)
-
-    if current_user is None:
-        return {'user': None}
-    else:
-        return {"user": current_user}
+async def get_pages_home(session_and_auth: GetSessionAndAuthReturn = Depends(get_session_and_auth)) -> PagesHomeResponse:
+    return PagesHomeResponse(auth=session_and_auth.auth)
 
 
 if __name__ == "__main__":

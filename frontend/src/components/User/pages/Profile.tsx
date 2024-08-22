@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { paths, operations, components } from '../../../openapi_schema';
 import { ExtractResponseTypes } from '../../../types';
 import { useBackendApiCall } from '../../../utils/Api';
+import { AuthContext } from '../../../contexts/Auth';
 
 const API_PATH = '/pages/profile/';
 const API_METHOD = 'get';
@@ -11,6 +12,7 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 >;
 
 function Profile() {
+  const authContext = useContext(AuthContext);
   const {
     data: apiData,
     loading,
@@ -29,8 +31,8 @@ function Profile() {
 
     return (
       <>
-        <h1>{data.email}</h1>
-        <h1>{data.username}</h1>
+        <h1>{data.user.id}</h1>
+        <h1>{data.user.username}</h1>
       </>
     );
   } else if (response.status == 401) {
@@ -38,8 +40,6 @@ function Profile() {
 
     // Redirect to login page
   }
-
-  return <p>Profile</p>;
 }
 
 export { Profile };
