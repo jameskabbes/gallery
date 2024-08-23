@@ -109,21 +109,6 @@ async def get_auth(token_return: GetTokenReturn, expiry_timedelta: typing.Annota
         return GetAuthReturn(user=models.UserPublic.model_validate(user))
 
 
-@ app.post("/token/")
-async def login_for_access_token(
-    form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()],
-) -> models.Token:
-    with Session(c.db_engine) as session:
-        user = models.User.authenticate(
-            session, form_data.username, form_data.password)
-        if not user:
-            raise auth.CREDENTIALS_EXCEPTION
-
-        access_token = create_access_token(
-            data=user.export_for_token_payload())
-        return models.Token(access_token=access_token, token_type="bearer")
-
-
 # USERS
 
 @app.get('/users/{user_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
@@ -239,14 +224,40 @@ async def user_username_exists(email: models.UserTypes.email) -> ItemAvailableRe
         else:
             return {"available": True}
 
-# Pages
+
+assert c.root_config['auth_key'] == 'auth'
 
 
-class PagesBaseResponse(BaseModel):
+class AuthResponse(BaseModel):
     auth: GetAuthReturn
 
 
-class PagesProfileResponse(PagesBaseResponse):
+class TokenResponse(AuthResponse):
+    token: models.Token
+
+
+@ app.post("/token/")
+async def login_for_access_token(
+    form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()],
+) -> TokenResponse:
+    with Session(c.db_engine) as session:
+        user = models.User.authenticate(
+            session, form_data.username, form_data.password)
+        if not user:
+            raise auth.CREDENTIALS_EXCEPTION
+
+        access_token = create_access_token(
+            data=user.export_for_token_payload())
+
+        return TokenResponse(
+            auth=GetAuthReturn(user=models.UserPublic.model_validate(user)),
+            token=models.Token(access_token=access_token, token_type="bearer")
+        )
+
+# Pages
+
+
+class PagesProfileResponse(AuthResponse):
     user: models.UserPrivate
 
 
@@ -264,20 +275,23 @@ async def get_pages_profile(token_return: typing.Annotated[GetTokenReturn, Depen
                                 detail=models.User.not_found_message())
 
         # convert user to models.UserPrivate
-        return PagesProfileResponse(auth=auth_return, user=models.UserPrivate.model_validate(user))
+        return PagesProfileResponse(
+            auth=auth_return,
+            user=models.UserPrivate.model_validate(user)
+        )
 
 
-class PagesHomeResponse(PagesBaseResponse):
+class PagesHomeResponse(AuthResponse):
     pass
 
 
 @ app.get('/pages/home/')
 async def get_pages_home(token_return: typing.Annotated[GetTokenReturn, Depends(get_token)]) -> PagesHomeResponse:
 
-    print(token_return)
-
-    auth = await get_auth(token_return)
-    return PagesHomeResponse(auth=auth)
+    auth_return = await get_auth(token_return)
+    return PagesHomeResponse(
+        auth=auth_return
+    )
 
 
 if __name__ == "__main__":

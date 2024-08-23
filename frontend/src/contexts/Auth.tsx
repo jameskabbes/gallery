@@ -7,37 +7,73 @@ import {
 
 import siteConfig from '../../siteConfig.json';
 
+function removeToken() {
+  localStorage.removeItem(siteConfig['access_token_key']);
+}
+
 function authReducer(
   state: AuthContextState,
   action: AuthContextAction
 ): AuthContextState {
   switch (action.type) {
-    case 'LOGIN':
-      console.log('LOGIN', action.payload);
+    case 'SET_TOKEN':
       localStorage.setItem(
         siteConfig['access_token_key'],
-        action.payload.token.access_token
+        action.payload.access_token
       );
-      return {
+      var newState = { ...state, token: action.payload.access_token };
+      console.log('newState', newState);
+      return newState;
+
+    case 'LOGIN':
+      var newState = {
         ...state,
-        token: action.payload.token.access_token,
-        user: action.payload.user,
+        auth: action.payload,
+        isActive: true,
       };
+      console.log('newState', newState);
+      return newState;
     case 'LOGOUT':
-      localStorage.removeItem(siteConfig['access_token_key']);
+      removeToken();
       return {
-        ...state,
+        isActive: false,
+        auth: null,
         token: null,
-        user: null,
       };
+    case 'UPDATE':
+      let exception = action.payload.exception;
+      if (exception) {
+        if (
+          exception === 'credentials' ||
+          exception === 'invalid_token' ||
+          exception === 'token_expired' ||
+          exception === 'user_not_found' ||
+          exception === 'missing_required_claims'
+        ) {
+          removeToken();
+          return {
+            auth: null,
+            token: null,
+            isActive: false,
+          };
+        }
+      } else {
+        return {
+          ...state,
+          auth: action.payload,
+          isActive: true,
+        };
+      }
+
     default:
       return state;
   }
 }
 
 const authReducerDefaultState: AuthContextState = {
-  user: null,
+  auth: null,
   token: null,
+  isActive: false,
 };
 
 const AuthContext = createContext<AuthContextType>({

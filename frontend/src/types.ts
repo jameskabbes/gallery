@@ -1,4 +1,5 @@
 import { paths, operations, components } from './openapi_schema';
+import config from '../../config.json';
 
 type ExtractResponseTypes<T> = {
   [K in keyof T]: T[K] extends {
@@ -43,17 +44,25 @@ interface DataContext {
 }
 
 interface AuthContextState {
-  user: components['schemas']['UserPublic'] | null;
-  token: string | null;
+  isActive: boolean;
+  auth: components['schemas']['GetAuthReturn'];
+  token: components['schemas']['Token']['access_token'] | null;
 }
 
 type AuthContextAction =
   | {
-      type: 'LOGIN';
-      payload: paths['/token/']['post']['responses']['200']['content']['application/json'];
+      type: 'SET_TOKEN';
+      payload: components['schemas']['Token'];
     }
-  | { type: 'LOGOUT' };
-  | { type: 'UPDATE'; payload: components['schemas']['UserPublic'] };
+  | {
+      type: 'LOGIN';
+      payload: AuthContextState['auth'];
+    }
+  | { type: 'LOGOUT' }
+  | {
+      type: 'UPDATE';
+      payload: AuthContextState['auth'];
+    };
 
 interface AuthContext {
   state: AuthContextState;

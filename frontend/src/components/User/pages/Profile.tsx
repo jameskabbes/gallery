@@ -33,6 +33,7 @@ function Profile() {
       <>
         <h1>{data.user.id}</h1>
         <h1>{data.user.username}</h1>
+        <h1>{data.user.email}</h1>
       </>
     );
   } else if (response.status == 401) {

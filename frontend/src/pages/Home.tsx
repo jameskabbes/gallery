@@ -1,8 +1,30 @@
 import React, { useEffect, useContext } from 'react';
 import { DeviceContext } from '../contexts/Device';
+import { paths, operations, components } from '../openapi_schema';
+import { ExtractResponseTypes } from '../types';
+import { useBackendApiCall } from '../utils/Api';
+
+const API_PATH = '/pages/home/';
+const API_METHOD = 'get';
+
+type ResponseTypesByStatus = ExtractResponseTypes<
+  paths[typeof API_PATH][typeof API_METHOD]['responses']
+>;
 
 function Home() {
   let deviceContext = useContext(DeviceContext);
+
+  const {
+    data: apiData,
+    loading,
+    response,
+  } = useBackendApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>(
+    {
+      endpoint: API_PATH,
+      method: API_METHOD,
+    },
+    true
+  );
 
   return (
     <div>

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import config from '../../../config.json';
 import siteConfig from '../../siteConfig.json';
+import { AuthContext } from '../contexts/Auth';
 
 //utility func to make API calls
 async function callApiBase<T>(
@@ -86,7 +87,8 @@ interface UseApiCallReturn<T> {
 }
 
 function useApiCall<TResponseData, TRequestData = any>(
-  props: CallApiProps<TRequestData>
+  props: CallApiProps<TRequestData>,
+  setAuth: boolean = true
 ): UseApiCallReturn<TResponseData> {
   const [data, setData] =
     useState<UseApiCallReturn<TResponseData>['data']>(null);
@@ -94,6 +96,8 @@ function useApiCall<TResponseData, TRequestData = any>(
     useState<UseApiCallReturn<TResponseData>['loading']>(true);
   const [response, setResponse] =
     useState<UseApiCallReturn<TResponseData>['response']>(null);
+
+  const authContext = useContext(AuthContext);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -103,6 +107,12 @@ function useApiCall<TResponseData, TRequestData = any>(
       );
       setResponse(response);
       setData(data);
+      if (setAuth) {
+        authContext.dispatch({
+          type: 'UPDATE',
+          payload: data[config.auth_key],
+        });
+      }
       setLoading(false);
     };
 
@@ -113,12 +123,16 @@ function useApiCall<TResponseData, TRequestData = any>(
 }
 
 function useBackendApiCall<TResponseData, TRequestData = any>(
-  props: CallApiProps<TRequestData>
+  props: CallApiProps<TRequestData>,
+  setAuth: boolean = false
 ): UseApiCallReturn<TResponseData> {
-  return useApiCall<TResponseData, TRequestData>({
-    ...props,
-    endpoint: convertBackendSlugToEndpoint(props.endpoint),
-  });
+  return useApiCall<TResponseData, TRequestData>(
+    {
+      ...props,
+      endpoint: convertBackendSlugToEndpoint(props.endpoint),
+    },
+    setAuth
+  );
 }
 
 export { callApiBase, callApi, callBackendApi, useApiCall, useBackendApiCall };

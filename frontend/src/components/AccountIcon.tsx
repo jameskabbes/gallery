@@ -30,6 +30,11 @@ function AccountIcon() {
     };
   }, []);
 
+  useEffect(() => {
+    console.log('auth context state');
+    console.log(authContext.state);
+  }, [authContext.state]);
+
   return (
     <div className="relative" ref={menuRef}>
       <button
@@ -42,9 +47,13 @@ function AccountIcon() {
       {isMenuVisible && (
         <div className="absolute right-0 mt-2 w-48 bg-inherit border-2 rounded-xl shadow-2xl">
           <ul className="flex flex-col">
-            {authContext.state.user ? (
+            {authContext.state.isActive ? (
               <>
-                <p>{authContext.state.user.username}</p>
+                <Link to="/profile">
+                  <li>
+                    <p>{authContext.state.auth.user.username}</p>
+                  </li>
+                </Link>
                 <button
                   className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                   onClick={() => {
@@ -83,12 +92,7 @@ function AccountIcon() {
                 </button>
               </>
             )}
-            <Link to="/profile">
-              <li>Profile</li>
-            </Link>
           </ul>
-
-          <p></p>
         </div>
       )}
     </div>

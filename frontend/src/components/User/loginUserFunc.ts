@@ -19,9 +19,14 @@ async function loginUserFunc(
   formData: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/x-www-form-urlencoded'],
   authContextDispatch: React.Dispatch<AuthContextAction>
 ): Promise<ResponseTypesByStatus['200'] | null> {
-  // Simple validation
-
   let toastId = toast.loading('Logging in');
+
+  async function setToken(data: ResponseTypesByStatus['200']) {
+    authContextDispatch({ type: 'SET_TOKEN', payload: data.token });
+  }
+  async function login(data: ResponseTypesByStatus['200']) {
+    authContextDispatch({ type: 'LOGIN', payload: data.auth });
+  }
 
   const { data, response } = await callBackendApi<
     ResponseTypesByStatus[keyof ResponseTypesByStatus],
@@ -35,7 +40,10 @@ async function loginUserFunc(
 
   if (response.status === 200) {
     const apiData = data as ResponseTypesByStatus['200'];
-    authContextDispatch({ type: 'LOGIN', payload: apiData });
+
+    await setToken(apiData);
+    await login(apiData);
+
     toast.update(toastId, {
       ...toastTemplate,
       render: 'Logged in',

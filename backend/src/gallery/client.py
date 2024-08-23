@@ -4,6 +4,7 @@ from gallery import config, utils
 from sqlalchemy import create_engine, Engine
 from sqlmodel import SQLModel
 import datetime
+import json
 
 type uvicorn_port_type = int
 
@@ -50,7 +51,7 @@ DefaultConfig: Config = {
         }
     },
     'authentication': {
-        'default_expiry_timedelta': datetime.timedelta(days=7),
+        'default_expiry_timedelta': datetime.timedelta(minutes=5),
     },
     'jwt': {
         'secret_key_path': {
@@ -81,6 +82,7 @@ class Client:
     authentication: AuthenticationConfig
     jwt_secret_key: str
     jwt_algorithm: str
+    root_config: dict
 
     def __init__(self, config: Config = {}):
 
@@ -101,6 +103,10 @@ class Client:
             merged_config['jwt']['secret_key_path'])
         self.jwt_secret_key = jwt_secret_key_path.read_text()
         self.jwt_algorithm = merged_config['jwt']['algorithm']
+
+        # root config
+        self.root_config = json.loads(
+            pathlib.Path('../../config.json').read_text())
 
     def create_tables(self):
         SQLModel.metadata.create_all(self.db_engine)

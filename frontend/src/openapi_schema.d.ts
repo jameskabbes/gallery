@@ -5,10 +5,6 @@
 
 
 export interface paths {
-  "/token/": {
-    /** Login For Access Token */
-    post: operations["login_for_access_token_token__post"];
-  };
   "/users/{user_id}": {
     /** Get User By Id */
     get: operations["get_user_by_id_users__user_id__get"];
@@ -32,6 +28,10 @@ export interface paths {
   "/users/available/email/{email}/": {
     /** User Username Exists */
     get: operations["user_username_exists_users_available_email__email___get"];
+  };
+  "/token/": {
+    /** Login For Access Token */
+    post: operations["login_for_access_token_token__post"];
   };
   "/pages/profile/": {
     /** Get Pages Profile */
@@ -108,6 +108,11 @@ export interface components {
       /** Token Type */
       token_type: string;
     };
+    /** TokenResponse */
+    TokenResponse: {
+      auth: components["schemas"]["GetAuthReturn"];
+      token: components["schemas"]["Token"];
+    };
     /** UserCreate */
     UserCreate: {
       /** Username */
@@ -171,28 +176,6 @@ export type external = Record<string, never>;
 
 export interface operations {
 
-  /** Login For Access Token */
-  login_for_access_token_token__post: {
-    requestBody: {
-      content: {
-        "application/x-www-form-urlencoded": components["schemas"]["Body_login_for_access_token_token__post"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["Token"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
   /** Get User By Id */
   get_user_by_id_users__user_id__get: {
     parameters: {
@@ -370,6 +353,28 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["ItemAvailableResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Login For Access Token */
+  login_for_access_token_token__post: {
+    requestBody: {
+      content: {
+        "application/x-www-form-urlencoded": components["schemas"]["Body_login_for_access_token_token__post"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["TokenResponse"];
         };
       };
       /** @description Validation Error */
