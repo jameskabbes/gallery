@@ -13,9 +13,9 @@ interface ValidityCheckReturn {
   message?: string;
 }
 
-interface Props {
+interface Props<T> {
   state: InputState;
-  setState: React.Dispatch<React.SetStateAction<InputState>>;
+  setState: (state: InputState) => void;
   id: string;
   minLength: number;
   maxLength: number;
@@ -31,7 +31,7 @@ interface Props {
   required?: boolean;
 }
 
-function InputText({
+function InputText<T>({
   state,
   setState,
   id,
@@ -44,7 +44,7 @@ function InputText({
   isAvailable = async (value: InputState['value']) => true,
   isValid = (value: InputState['value']) => ({ valid: true }),
   required = true,
-}: Props) {
+}: Props<T>) {
   const debounceTimeout = useRef(null);
 
   useEffect(() => {
@@ -53,57 +53,63 @@ function InputText({
 
   async function checkAvailabilityApi() {
     let available = await isAvailable(state.value);
-    setState((prevState) => ({
-      ...prevState,
+    setState({
+      ...state,
       status: available ? 'valid' : 'invalid',
       error: available ? null : `Not available`,
-    }));
+    });
+
+    setState({
+      ...state,
+      status: available ? 'valid' : 'invalid',
+      error: available ? null : `Not available`,
+    });
   }
 
   function verifyPipeline() {
     // too short
     if (state.value.length < minLength) {
-      setState((prevState) => ({
-        ...prevState,
+      setState({
+        ...state,
         status: 'invalid',
         error: `Must be at least ${minLength} characters`,
-      }));
+      });
       return;
     }
     // too long
     if (state.value.length > maxLength) {
-      setState((prevState) => ({
-        ...prevState,
+      setState({
+        ...state,
         status: 'invalid',
         error: `Must be at most ${maxLength} characters`,
-      }));
+      });
       return;
     }
     // otherwise invalid
     const { valid, message } = isValid(state.value);
     if (!valid) {
-      setState((prevState) => ({
-        ...prevState,
+      setState({
+        ...state,
         status: 'invalid',
         error: message,
-      }));
+      });
       return;
     }
     // check availability?
     if (!checkAvailability) {
-      setState((prevState) => ({
-        ...prevState,
+      setState({
+        ...state,
         status: 'valid',
         error: null,
-      }));
+      });
       return;
     }
 
-    setState((prevState) => ({
-      ...prevState,
+    setState({
+      ...state,
       status: 'loading',
       error: null,
-    }));
+    });
 
     if (debounceTimeout.current) {
       clearTimeout(debounceTimeout.current);
@@ -124,10 +130,10 @@ function InputText({
         placeholder={placeholder}
         onChange={(e) => {
           let newValue: InputState['value'] = e.target.value;
-          setState((prevState) => ({
-            ...prevState,
+          setState({
+            ...state,
             value: newValue,
-          }));
+          });
         }}
         required={required}
         minLength={minLength}

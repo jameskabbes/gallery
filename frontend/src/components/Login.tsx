@@ -48,9 +48,9 @@ function Login() {
           <h4 className="text-center">Login</h4>
           <InputText
             state={loginContext.state.username}
-            setState={(state: InputState) =>
-              loginContext.dispatch({ type: 'SET_USERNAME', payload: state })
-            }
+            setState={(state: InputState) => {
+              loginContext.dispatch({ type: 'SET_USERNAME', payload: state });
+            }}
             id="username"
             minLength={1}
             maxLength={

@@ -21,11 +21,6 @@ function AccountIcon() {
 
   useClickOutside(menuRef, () => setIsMenuVisible(false));
 
-  useEffect(() => {
-    console.log('auth context state');
-    console.log(authContext.state);
-  }, [authContext.state]);
-
   return (
     <div className="relative" ref={menuRef}>
       <button

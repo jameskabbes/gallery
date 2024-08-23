@@ -17,7 +17,7 @@ function App(): JSX.Element {
     <ApplicationContextProvider>
       <div className="App">
         <Login />
-        <SignUp />
+        {/* <SignUp /> */}
         <Modals />
         <Toast />
         <BrowserRouter>

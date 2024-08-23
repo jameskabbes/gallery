@@ -6,6 +6,13 @@ import {
   defaultInputState,
 } from '../types';
 
+const loginReducerDefaultState: LoginContextState = {
+  isActive: false,
+  username: { ...defaultInputState },
+  password: { ...defaultInputState },
+  valid: false,
+};
+
 function loginReducer(state: LoginContextState, action: LoginContextAction) {
   switch (action.type) {
     case 'SET_VALID':
@@ -16,20 +23,15 @@ function loginReducer(state: LoginContextState, action: LoginContextAction) {
       return { ...state, password: action.payload };
     case 'SET_ACTIVE':
       return { ...state, isActive: action.payload };
+    case 'RESET':
+      return { ...loginReducerDefaultState };
     default:
       return state;
   }
 }
 
-const loginReducerDefaultState: LoginContextState = {
-  isActive: false,
-  username: defaultInputState,
-  password: defaultInputState,
-  valid: false,
-};
-
 const LoginContext = createContext<LoginContextType>({
-  state: null,
+  state: loginReducerDefaultState,
   dispatch: () => {},
 });
 

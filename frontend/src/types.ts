@@ -53,7 +53,8 @@ type LoginContextAction =
   | {
       type: 'SET_ACTIVE';
       payload: LoginContextState['isActive'];
-    };
+    }
+  | { type: 'RESET' };
 
 interface LoginContext {
   state: LoginContextState;

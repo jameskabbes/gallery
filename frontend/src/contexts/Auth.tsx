@@ -22,7 +22,6 @@ function authReducer(
         action.payload.access_token
       );
       var newState = { ...state, token: action.payload.access_token };
-      console.log('newState', newState);
       return newState;
 
     case 'LOGIN':
@@ -31,7 +30,6 @@ function authReducer(
         auth: action.payload,
         isActive: true,
       };
-      console.log('newState', newState);
       return newState;
     case 'LOGOUT':
       removeToken();
