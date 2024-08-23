@@ -1,10 +1,9 @@
 import React from 'react';
 import { IoClose } from 'react-icons/io5';
 import { IoCheckmark } from 'react-icons/io5';
+import { InputStatus } from '../../types';
 
-type Status = 'valid' | 'invalid' | 'loading';
-
-function CheckOrX({ status }: { status: Status }) {
+function CheckOrX({ status }: { status: InputStatus }) {
   switch (status) {
     case 'valid':
       return <IoCheckmark className="text-green-500" />;
@@ -15,4 +14,4 @@ function CheckOrX({ status }: { status: Status }) {
   }
 }
 
-export { Status, CheckOrX };
+export { CheckOrX };

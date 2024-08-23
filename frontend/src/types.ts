@@ -11,28 +11,58 @@ type ExtractResponseTypes<T> = {
     : never;
 };
 
+type InputStatus = 'valid' | 'invalid' | 'loading';
+
+interface InputState {
+  value: string;
+  status: InputStatus;
+  error: string | null;
+}
+
+const defaultInputState: InputState = {
+  value: '',
+  status: 'valid',
+  error: null,
+};
+
 interface DarkModeContext {
   state: boolean;
   toggle: () => void;
 }
 
+interface LoginContextState {
+  isActive: boolean;
+  username: InputState;
+  password: InputState;
+  valid: boolean;
+}
+
+type LoginContextAction =
+  | {
+      type: 'SET_VALID';
+      payload: LoginContextState['valid'];
+    }
+  | {
+      type: 'SET_USERNAME';
+      payload: InputState;
+    }
+  | {
+      type: 'SET_PASSWORD';
+      payload: InputState;
+    }
+  | {
+      type: 'SET_ACTIVE';
+      payload: LoginContextState['isActive'];
+    };
+
+interface LoginContext {
+  state: LoginContextState;
+  dispatch: React.Dispatch<LoginContextAction>;
+}
+
 interface DeviceContext {
   isMobile: boolean;
 }
-
-type Studios = Map<
-  components['schemas']['StudioPublic']['id'],
-  components['schemas']['StudioPublic']
->;
-
-type StudiosReducerState = Studios;
-type StudiosReducerAction =
-  | { type: 'SET'; payload: Studios }
-  | {
-      type: 'ADD';
-      payload: components['schemas']['StudioPublic'];
-    }
-  | { type: 'DELETE'; payload: components['schemas']['StudioPublic']['id'] };
 
 interface Reducer<State, Dispatch> {
   state: State;
@@ -40,7 +70,7 @@ interface Reducer<State, Dispatch> {
 }
 
 interface DataContext {
-  studios: Reducer<StudiosReducerState, StudiosReducerAction>;
+  studios: null;
 }
 
 interface AuthContextState {
@@ -84,6 +114,12 @@ interface ModalsContext {
 export {
   ExtractResponseTypes,
   DarkModeContext,
+  defaultInputState,
+  InputState,
+  InputStatus,
+  LoginContextState,
+  LoginContextAction,
+  LoginContext,
   AuthContextAction,
   AuthContextState,
   AuthContext,
@@ -92,8 +128,5 @@ export {
   ModalsContext,
   ModalsReducerState,
   ModalsReducerAction,
-  StudiosReducerState,
-  StudiosReducerAction,
   DataContext,
-  Studios,
 };

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, createContext } from 'react';
-import { DarkModeContext as DarkModelContextType } from '../types';
+import { DarkModeContext as DarkModeContextType } from '../types';
 
-const DarkModeContext = createContext<DarkModelContextType>({
+const DarkModeContext = createContext<DarkModeContextType>({
   state: false,
   toggle: () => {},
 });

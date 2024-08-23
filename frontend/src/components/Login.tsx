@@ -1,45 +1,36 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { ModalsContext } from '../contexts/Modals';
 import { AuthContext } from '../contexts/Auth';
-import { callApiBase, callBackendApi } from '../utils/Api';
-import { paths, operations, components } from '../openapi_schema';
-import { ExtractResponseTypes } from '../types';
 import openapi_schema from '../../../openapi_schema.json';
 
-import { InputText, InputState, defaultInputState } from './Form/InputText';
+import { InputState } from '../types';
+import { InputText } from './Form/InputText';
 import { Modal } from './Modal';
 import { GoogleLogin } from '@react-oauth/google';
 import { loginUserFunc } from './User/loginUserFunc';
-
-const API_PATH = '/token/';
-const API_METHOD = 'post';
-
-type ResponseTypesByStatus = ExtractResponseTypes<
-  paths[typeof API_PATH][typeof API_METHOD]['responses']
->;
+import { LoginContext } from '../contexts/Login';
 
 function Login() {
-  const [username, setUsername] = useState<InputState>({
-    ...defaultInputState,
-  });
-  const [password, setPassword] = useState<InputState>({
-    ...defaultInputState,
-  });
-  const [valid, setValid] = useState(false);
+  const loginContext = useContext(LoginContext);
   const modalsContext = useContext(ModalsContext);
   const authContext = useContext(AuthContext);
 
   useEffect(() => {
-    setValid(username.status === 'valid' && password.status === 'valid');
-  }, [username.status, password.status]);
+    loginContext.dispatch({
+      type: 'SET_VALID',
+      payload:
+        loginContext.state.username.status === 'valid' &&
+        loginContext.state.password.status === 'valid',
+    });
+  }, [loginContext.state.username.status, loginContext.state.password.status]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    if (valid) {
+    if (loginContext.state.valid) {
       let newUser = await loginUserFunc(
         {
-          username: username.value,
-          password: password.value,
+          username: loginContext.state.username.value,
+          password: loginContext.state.password.value,
         },
         authContext.dispatch
       );
@@ -56,8 +47,10 @@ function Login() {
         <form onSubmit={handleLogin} className="flex flex-col space-y-2">
           <h4 className="text-center">Login</h4>
           <InputText
-            state={username}
-            setState={setUsername}
+            state={loginContext.state.username}
+            setState={(state: InputState) =>
+              loginContext.dispatch({ type: 'SET_USERNAME', payload: state })
+            }
             id="username"
             minLength={1}
             maxLength={
@@ -69,8 +62,10 @@ function Login() {
             checkAvailability={false}
           />
           <InputText
-            state={password}
-            setState={setPassword}
+            state={loginContext.state.password}
+            setState={(state: InputState) =>
+              loginContext.dispatch({ type: 'SET_PASSWORD', payload: state })
+            }
             id="password"
             minLength={1}
             maxLength={
@@ -82,9 +77,11 @@ function Login() {
             checkAvailability={false}
           />
           <button
-            className={`${valid ? 'button-valid' : 'button-invalid'}`}
+            className={`${
+              loginContext.state.valid ? 'button-valid' : 'button-invalid'
+            }`}
             type="submit"
-            disabled={!valid}
+            disabled={!loginContext.state.valid}
           >
             <p className="flex flex-row justify-center items-center">Login</p>
           </button>

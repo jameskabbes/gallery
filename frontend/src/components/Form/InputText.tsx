@@ -1,11 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { CheckOrX, Status } from './CheckOrX';
-
-interface InputState {
-  value: string;
-  status: Status;
-  error: string | null;
-}
+import { CheckOrX } from './CheckOrX';
+import { InputState, InputStatus } from '../../types';
 
 const defaultInputState: InputState = {
   value: '',
@@ -147,4 +142,4 @@ function InputText({
   );
 }
 
-export { InputState, defaultInputState, ValidityCheckReturn, InputText };
+export { defaultInputState, ValidityCheckReturn, InputText };
