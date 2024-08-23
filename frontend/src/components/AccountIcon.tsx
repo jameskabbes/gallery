@@ -7,6 +7,8 @@ import { SignUp } from './SignUp';
 import { Login } from './Login';
 import { Link } from 'react-router-dom';
 
+import { useClickOutside } from '../utils/useClickOutside';
+
 function AccountIcon() {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -17,18 +19,7 @@ function AccountIcon() {
     setIsMenuVisible(!isMenuVisible);
   };
 
-  const handleClickOutside = (event: MouseEvent) => {
-    if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-      setIsMenuVisible(false);
-    }
-  };
-
-  useEffect(() => {
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+  useClickOutside(menuRef, () => setIsMenuVisible(false));
 
   useEffect(() => {
     console.log('auth context state');

@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useContext } from 'react';
 import { CSSTransition } from 'react-transition-group';
 import { ModalsContext } from '../contexts/Modals';
+import { useEscapeKey } from '../utils/useEscapeKey';
 import './Modal.css';
+import { useClickOutside } from '../utils/useClickOutside';
 
 function Modals() {
   const modalsContext = useContext(ModalsContext);
@@ -9,17 +11,9 @@ function Modals() {
     modalsContext.state.stack[modalsContext.state.stack.length - 1];
   const nodeRef = useRef(null);
 
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        modalsContext.dispatch({ type: 'POP' });
-      }
-    }
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, []);
+  useEscapeKey(() => {
+    modalsContext.dispatch({ type: 'POP' });
+  });
 
   return (
     <CSSTransition

@@ -46,7 +46,7 @@ async function loginUserFunc(
 
     toast.update(toastId, {
       ...toastTemplate,
-      render: 'Logged in',
+      render: `Welcome ${apiData.auth.user.username}`,
       type: 'success',
     });
     return apiData;
@@ -54,7 +54,7 @@ async function loginUserFunc(
     console.error('Error logging in:', response.status, data);
     toast.update(toastId, {
       ...toastTemplate,
-      render: 'Could not log in',
+      render: `Could not log in`,
       type: 'error',
     });
     return null;

@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useRef } from 'react';
 import { paths, operations, components } from '../../../openapi_schema';
 import { ExtractResponseTypes } from '../../../types';
 import { useBackendApiCall } from '../../../utils/Api';
@@ -13,14 +13,19 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 
 function Profile() {
   const authContext = useContext(AuthContext);
+  const hasReloaded = useRef(false); // Add a ref to track the reload
+
   const {
     data: apiData,
     loading,
     response,
-  } = useBackendApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>({
-    endpoint: API_PATH,
-    method: API_METHOD,
-  });
+  } = useBackendApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>(
+    {
+      endpoint: API_PATH,
+      method: API_METHOD,
+    },
+    true
+  );
 
   if (loading || response.status == 200) {
     const data = apiData as ResponseTypesByStatus['200'];
@@ -36,10 +41,10 @@ function Profile() {
         <h1>{data.user.email}</h1>
       </>
     );
-  } else if (response.status == 401) {
-    <p>Login to continue</p>;
+  } else {
+    authContext.dispatch({ type: 'LOGOUT' });
 
-    // Redirect to login page
+    return <p>Login to continue</p>;
   }
 }
 

@@ -31,7 +31,7 @@ interface CallApiReturn<T> {
   response: Response | null;
 }
 
-async function callApi<TResponseData, TRequestData = any>(
+async function callApi<TResponseData extends object, TRequestData = any>(
   props: CallApiProps<TRequestData>
 ): Promise<CallApiReturn<TResponseData>> {
   const token = localStorage.getItem(siteConfig['access_token_key']);
@@ -64,7 +64,7 @@ function convertBackendSlugToEndpoint(slug: string): string {
   return `/${config.api_endpoint_base}${slug}`;
 }
 
-async function callBackendApi<TResponeData, TRequestData = any>(
+async function callBackendApi<TResponeData extends object, TRequestData = any>(
   props: CallApiProps<TRequestData>
 ): Promise<CallApiReturn<TResponeData>> {
   return await callApi<TResponeData, TRequestData>({
@@ -86,7 +86,7 @@ interface UseApiCallReturn<T> {
   >;
 }
 
-function useApiCall<TResponseData, TRequestData = any>(
+function useApiCall<TResponseData extends object, TRequestData = any>(
   props: CallApiProps<TRequestData>,
   setAuth: boolean = true
 ): UseApiCallReturn<TResponseData> {
@@ -107,7 +107,7 @@ function useApiCall<TResponseData, TRequestData = any>(
       );
       setResponse(response);
       setData(data);
-      if (setAuth) {
+      if (setAuth && data && config.auth_key in data) {
         authContext.dispatch({
           type: 'UPDATE',
           payload: data[config.auth_key],
@@ -122,7 +122,7 @@ function useApiCall<TResponseData, TRequestData = any>(
   return { data, setData, loading, setLoading, response, setResponse };
 }
 
-function useBackendApiCall<TResponseData, TRequestData = any>(
+function useBackendApiCall<TResponseData extends object, TRequestData = any>(
   props: CallApiProps<TRequestData>,
   setAuth: boolean = false
 ): UseApiCallReturn<TResponseData> {

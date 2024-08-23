@@ -9,11 +9,15 @@ import { ApplicationContextProvider } from './contexts/Application';
 import { Toast } from './components/Toast';
 import { Modals } from './components/Modals';
 import { Profile } from './components/User/pages/Profile';
+import { Login } from './components/Login';
+import { SignUp } from './components/SignUp';
 
 function App(): JSX.Element {
   return (
     <ApplicationContextProvider>
       <div className="App">
+        <Login />
+        <SignUp />
         <Modals />
         <Toast />
         <BrowserRouter>

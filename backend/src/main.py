@@ -258,7 +258,7 @@ async def login_for_access_token(
 
 
 class PagesProfileResponse(AuthResponse):
-    user: models.UserPrivate
+    user: models.UserPrivate | None = None
 
 
 @ app.get('/pages/profile/')
