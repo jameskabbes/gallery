@@ -126,14 +126,20 @@ class UserPublic(BaseModel):
     id: UserTypes.id
     username: UserTypes.username
 
+    class Config:
+        from_attributes = True
+
 
 class UserPrivate(BaseModel):
     id: UserTypes.id
     username: UserTypes.username
     email: UserTypes.email
 
+    class Config:
+        from_attributes = True
 
 # Studio
+
 
 class StudioTypes:
     id = str

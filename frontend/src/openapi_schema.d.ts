@@ -5,10 +5,6 @@
 
 
 export interface paths {
-  "/": {
-    /** Read Root */
-    get: operations["read_root__get"];
-  };
   "/token/": {
     /** Login For Access Token */
     post: operations["login_for_access_token_token__post"];
@@ -74,6 +70,13 @@ export interface components {
       /** Detail */
       detail: string;
     };
+    /** @enum {string} */
+    EXCEPTION: "invalid_token" | "token_expired" | "missing_required_claims" | "user_not_found" | "user_not_permitted" | "credentials";
+    /** GetAuthReturn */
+    GetAuthReturn: {
+      user?: components["schemas"]["UserPublic"] | null;
+      exception?: components["schemas"]["EXCEPTION"] | null;
+    };
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
@@ -89,9 +92,14 @@ export interface components {
       /** Detail */
       detail: string;
     };
+    /** PagesHomeResponse */
+    PagesHomeResponse: {
+      auth: components["schemas"]["GetAuthReturn"];
+    };
     /** PagesProfileResponse */
     PagesProfileResponse: {
-      user?: components["schemas"]["UserPublic"] | null;
+      auth: components["schemas"]["GetAuthReturn"];
+      user: components["schemas"]["UserPrivate"];
     };
     /** Token */
     Token: {
@@ -99,11 +107,6 @@ export interface components {
       access_token: string;
       /** Token Type */
       token_type: string;
-    };
-    /** TokenReturn */
-    TokenReturn: {
-      token: components["schemas"]["Token"];
-      user: components["schemas"]["UserPublic"];
     };
     /** UserCreate */
     UserCreate: {
@@ -116,6 +119,18 @@ export interface components {
       email: string;
       /** Password */
       password: string;
+    };
+    /** UserPrivate */
+    UserPrivate: {
+      /** Id */
+      id: string;
+      /** Username */
+      username: string;
+      /**
+       * Email
+       * Format: email
+       */
+      email: string;
     };
     /** UserPublic */
     UserPublic: {
@@ -156,17 +171,6 @@ export type external = Record<string, never>;
 
 export interface operations {
 
-  /** Read Root */
-  read_root__get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": unknown;
-        };
-      };
-    };
-  };
   /** Login For Access Token */
   login_for_access_token_token__post: {
     requestBody: {
@@ -178,7 +182,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["TokenReturn"];
+          "application/json": components["schemas"]["Token"];
         };
       };
       /** @description Validation Error */
@@ -315,7 +319,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["UserPublic"];
+          "application/json": components["schemas"]["UserPrivate"];
         };
       };
       /** @description User already exists */
@@ -378,11 +382,6 @@ export interface operations {
   };
   /** Get Pages Profile */
   get_pages_profile_pages_profile__get: {
-    parameters: {
-      query?: {
-        expiry_timedelta?: string;
-      };
-    };
     responses: {
       /** @description Successful Response */
       200: {
@@ -390,38 +389,15 @@ export interface operations {
           "application/json": components["schemas"]["PagesProfileResponse"];
         };
       };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
     };
   };
   /** Get Pages Home */
   get_pages_home_pages_home__get: {
-    parameters: {
-      query?: {
-        expiry_timedelta?: string;
-      };
-    };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
+          "application/json": components["schemas"]["PagesHomeResponse"];
         };
       };
     };

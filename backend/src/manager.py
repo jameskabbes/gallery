@@ -1,6 +1,6 @@
 import asyncio
 from gallery import get_client, models, utils
-from sqlmodel import Field, Session, SQLModel
+from sqlmodel import Field, Session, SQLModel, select
 import main
 import time
 import datetime
@@ -9,11 +9,12 @@ c = get_client()
 
 
 async def go():
-    a = await main.get_current_user(
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3YWFhYWE4YS0wMWQ5LTQ4OWEtOGFmZC01NTU5MDA2ZjNkYzQiLCJpYXQiOjE3MjQyNTUxNzguNzg4ODk3fQ.hN1cjM3zWiGWinmIKYDmJC319KMqkBCmOPASB5oyad0"
-    )
+    with Session(c.db_engine) as session:
+        user = models.User.get_by_key_value(session, 'username', 'admin')
+        print(user)
 
-    print(a)
+        user_private = models.UserPrivate.model_validate(user)
+        print(user_private)
 
 
 if __name__ == '__main__':
