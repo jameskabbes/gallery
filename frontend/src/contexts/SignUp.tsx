@@ -1,19 +1,21 @@
 import React, { useEffect, useState, useReducer, createContext } from 'react';
 import {
-  LogInContext as LogInContextType,
-  LogInContextState,
-  LogInContextAction,
+  SignUpContext as SignUpContextType,
+  SignUpContextState,
+  SignUpContextAction,
   defaultInputState,
 } from '../types';
 
-const logInReducerDefaultState: LogInContextState = {
+const signUpReducerDefaultState: SignUpContextState = {
   isActive: false,
   username: { ...defaultInputState },
+  email: { ...defaultInputState },
   password: { ...defaultInputState },
+  confirmPassword: { ...defaultInputState },
   valid: false,
 };
 
-function logInReducer(state: LogInContextState, action: LogInContextAction) {
+function signUpReducer(state: SignUpContextState, action: SignUpContextAction) {
   switch (action.type) {
     case 'SET_VALID':
       return { ...state, valid: action.payload };
@@ -24,14 +26,14 @@ function logInReducer(state: LogInContextState, action: LogInContextAction) {
     case 'SET_ACTIVE':
       return { ...state, isActive: action.payload };
     case 'RESET':
-      return { ...logInReducerDefaultState };
+      return { ...signUpReducerDefaultState };
     default:
       return state;
   }
 }
 
-const LogInContext = createContext<LogInContextType>({
-  state: logInReducerDefaultState,
+const SignUpContext = createContext<SignUpContextType>({
+  state: signUpReducerDefaultState,
   dispatch: () => {},
 });
 
@@ -39,14 +41,17 @@ interface Props {
   children: React.ReactNode;
 }
 
-function LogInContextProvider({ children }: Props) {
-  const [state, dispatch] = useReducer(logInReducer, logInReducerDefaultState);
+function SignUpContextProvider({ children }: Props) {
+  const [state, dispatch] = useReducer(
+    signUpReducer,
+    signUpReducerDefaultState
+  );
 
   return (
-    <LogInContext.Provider value={{ state, dispatch }}>
+    <SignUpContext.Provider value={{ state, dispatch }}>
       {children}
-    </LogInContext.Provider>
+    </SignUpContext.Provider>
   );
 }
 
-export { LogInContext, LogInContextProvider };
+export { SignUpContext, SignUpContextProvider };

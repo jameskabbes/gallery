@@ -8,10 +8,10 @@ import { InputText } from './Form/InputText';
 import { Modal } from './Modal';
 import { GoogleLogin } from '@react-oauth/google';
 import { loginUserFunc } from './User/loginUserFunc';
-import { LoginContext } from '../contexts/Login';
+import { LogInContext } from '../contexts/LogIn';
 
-function Login() {
-  const loginContext = useContext(LoginContext);
+function LogIn() {
+  const loginContext = useContext(LogInContext);
   const modalsContext = useContext(ModalsContext);
   const authContext = useContext(AuthContext);
 
@@ -92,4 +92,4 @@ function Login() {
   );
 }
 
-export { Login };
+export { LogIn };

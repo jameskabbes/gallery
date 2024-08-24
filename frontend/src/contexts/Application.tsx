@@ -4,7 +4,8 @@ import { DataContextProvider } from './Data';
 import { ModalsContextProvider } from './Modals';
 import { DeviceContextProvider } from './Device';
 import { AuthContextProvider } from './Auth';
-import { LoginContextProvider } from './Login';
+import { LogInContextProvider } from './LogIn';
+import { SignUpContextProvider } from './SignUp';
 
 const ApplicationContextProvider = ({ children }) => {
   return (
@@ -13,7 +14,9 @@ const ApplicationContextProvider = ({ children }) => {
         <DataContextProvider>
           <ModalsContextProvider>
             <DarkModeContextProvider>
-              <LoginContextProvider>{children}</LoginContextProvider>
+              <SignUpContextProvider>
+                <LogInContextProvider>{children}</LogInContextProvider>
+              </SignUpContextProvider>
             </DarkModeContextProvider>
           </ModalsContextProvider>
         </DataContextProvider>

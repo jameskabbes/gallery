@@ -4,7 +4,7 @@ import { IoMenuSharp } from 'react-icons/io5';
 import { ModalsContext } from '../contexts/Modals';
 import { AuthContext } from '../contexts/Auth';
 import { SignUp } from './SignUp';
-import { Login } from './Login';
+import { LogIn } from './LogIn';
 import { Link } from 'react-router-dom';
 
 import { useClickOutside } from '../utils/useClickOutside';
@@ -58,7 +58,7 @@ function AccountIcon() {
                     setIsMenuVisible(false);
                     modalsContext.dispatch({
                       type: 'PUSH',
-                      payload: <Login />,
+                      payload: <LogIn />,
                     });
                   }}
                 >

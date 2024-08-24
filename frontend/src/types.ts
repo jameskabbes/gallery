@@ -30,17 +30,17 @@ interface DarkModeContext {
   toggle: () => void;
 }
 
-interface LoginContextState {
+interface LogInContextState {
   isActive: boolean;
   username: InputState;
   password: InputState;
   valid: boolean;
 }
 
-type LoginContextAction =
+type LogInContextAction =
   | {
       type: 'SET_VALID';
-      payload: LoginContextState['valid'];
+      payload: LogInContextState['valid'];
     }
   | {
       type: 'SET_USERNAME';
@@ -52,13 +52,46 @@ type LoginContextAction =
     }
   | {
       type: 'SET_ACTIVE';
-      payload: LoginContextState['isActive'];
+      payload: LogInContextState['isActive'];
     }
   | { type: 'RESET' };
 
-interface LoginContext {
-  state: LoginContextState;
-  dispatch: React.Dispatch<LoginContextAction>;
+interface LogInContext {
+  state: LogInContextState;
+  dispatch: React.Dispatch<LogInContextAction>;
+}
+
+interface SignUpContextState {
+  isActive: boolean;
+  username: InputState;
+  email: InputState;
+  password: InputState;
+  confirmPassword: InputState;
+  valid: boolean;
+}
+
+type SignUpContextAction =
+  | {
+      type: 'SET_VALID';
+      payload: LogInContextState['valid'];
+    }
+  | {
+      type: 'SET_USERNAME';
+      payload: InputState;
+    }
+  | {
+      type: 'SET_PASSWORD';
+      payload: InputState;
+    }
+  | {
+      type: 'SET_ACTIVE';
+      payload: LogInContextState['isActive'];
+    }
+  | { type: 'RESET' };
+
+interface SignUpContext {
+  state: SignUpContextState;
+  dispatch: React.Dispatch<SignUpContextAction>;
 }
 
 interface DeviceContext {
@@ -118,9 +151,12 @@ export {
   defaultInputState,
   InputState,
   InputStatus,
-  LoginContextState,
-  LoginContextAction,
-  LoginContext,
+  SignUpContextState,
+  SignUpContextAction,
+  SignUpContext,
+  LogInContextState,
+  LogInContextAction,
+  LogInContext,
   AuthContextAction,
   AuthContextState,
   AuthContext,
