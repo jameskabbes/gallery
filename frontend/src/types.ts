@@ -37,7 +37,7 @@ interface LogInContextState {
   valid: boolean;
 }
 
-type LogInContextAction =
+type LogInReducerAction =
   | {
       type: 'SET_VALID';
       payload: LogInContextState['valid'];
@@ -58,7 +58,7 @@ type LogInContextAction =
 
 interface LogInContext {
   state: LogInContextState;
-  dispatch: React.Dispatch<LogInContextAction>;
+  dispatch: React.Dispatch<LogInReducerAction>;
 }
 
 interface SignUpContextState {
@@ -70,7 +70,7 @@ interface SignUpContextState {
   valid: boolean;
 }
 
-type SignUpContextAction =
+type SignUpReducerAction =
   | {
       type: 'SET_VALID';
       payload: LogInContextState['valid'];
@@ -80,7 +80,15 @@ type SignUpContextAction =
       payload: InputState;
     }
   | {
+      type: 'SET_EMAIL';
+      payload: InputState;
+    }
+  | {
       type: 'SET_PASSWORD';
+      payload: InputState;
+    }
+  | {
+      type: 'SET_CONFIRM_PASSWORD';
       payload: InputState;
     }
   | {
@@ -91,7 +99,7 @@ type SignUpContextAction =
 
 interface SignUpContext {
   state: SignUpContextState;
-  dispatch: React.Dispatch<SignUpContextAction>;
+  dispatch: React.Dispatch<SignUpReducerAction>;
 }
 
 interface DeviceContext {
@@ -113,7 +121,7 @@ interface AuthContextState {
   token: components['schemas']['Token']['access_token'] | null;
 }
 
-type AuthContextAction =
+type AuthReducerAction =
   | {
       type: 'SET_TOKEN';
       payload: components['schemas']['Token'];
@@ -130,7 +138,7 @@ type AuthContextAction =
 
 interface AuthContext {
   state: AuthContextState;
-  dispatch: React.Dispatch<AuthContextAction>;
+  dispatch: React.Dispatch<AuthReducerAction>;
 }
 
 type Modal = React.ReactNode;
@@ -145,6 +153,12 @@ interface ModalsContext {
   dispatch: React.Dispatch<ModalsReducerAction>;
 }
 
+type GlobalModalsType = 'logIn' | 'signUp';
+
+interface GlobalModalsContext {
+  toggleModal: (modal: GlobalModalsType) => void;
+}
+
 export {
   ExtractResponseTypes,
   DarkModeContext,
@@ -152,12 +166,12 @@ export {
   InputState,
   InputStatus,
   SignUpContextState,
-  SignUpContextAction,
+  SignUpReducerAction,
   SignUpContext,
   LogInContextState,
-  LogInContextAction,
+  LogInReducerAction,
   LogInContext,
-  AuthContextAction,
+  AuthReducerAction,
   AuthContextState,
   AuthContext,
   DeviceContext,
@@ -165,5 +179,7 @@ export {
   ModalsContext,
   ModalsReducerState,
   ModalsReducerAction,
+  GlobalModalsType,
+  GlobalModalsContext,
   DataContext,
 };

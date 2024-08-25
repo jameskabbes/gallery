@@ -2,7 +2,7 @@ import React, { useEffect, useState, useReducer, createContext } from 'react';
 import {
   LogInContext as LogInContextType,
   LogInContextState,
-  LogInContextAction,
+  LogInReducerAction,
   defaultInputState,
 } from '../types';
 
@@ -13,7 +13,7 @@ const logInReducerDefaultState: LogInContextState = {
   valid: false,
 };
 
-function logInReducer(state: LogInContextState, action: LogInContextAction) {
+function logInReducer(state: LogInContextState, action: LogInReducerAction) {
   switch (action.type) {
     case 'SET_VALID':
       return { ...state, valid: action.payload };

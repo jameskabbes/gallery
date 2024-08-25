@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { IoPersonCircleOutline } from 'react-icons/io5';
 import { IoMenuSharp } from 'react-icons/io5';
-import { ModalsContext } from '../contexts/Modals';
 import { AuthContext } from '../contexts/Auth';
 import { SignUp } from './SignUp';
 import { LogIn } from './LogIn';
 import { Link } from 'react-router-dom';
 
 import { useClickOutside } from '../utils/useClickOutside';
+import { GlobalModalsContext } from '../contexts/GlobalModals';
 
 function AccountIcon() {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const modalsContext = useContext(ModalsContext);
   const authContext = useContext(AuthContext);
+  const globalModalsContext = useContext(GlobalModalsContext);
 
   const toggleMenu = () => {
     setIsMenuVisible(!isMenuVisible);
@@ -56,10 +56,7 @@ function AccountIcon() {
                   className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                   onClick={() => {
                     setIsMenuVisible(false);
-                    modalsContext.dispatch({
-                      type: 'PUSH',
-                      payload: <LogIn />,
-                    });
+                    globalModalsContext.toggleModal('logIn');
                   }}
                 >
                   <span>Log In</span>
@@ -68,10 +65,7 @@ function AccountIcon() {
                   className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                   onClick={() => {
                     setIsMenuVisible(false);
-                    modalsContext.dispatch({
-                      type: 'PUSH',
-                      payload: <SignUp />,
-                    });
+                    globalModalsContext.toggleModal('signUp');
                   }}
                 >
                   <span>Sign Up</span>

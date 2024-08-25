@@ -3,8 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Home } from './pages/Home';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
-import { Studios } from './components/Studio/pages/Studios';
-import { Studio } from './components/Studio/pages/Studio';
 import { ApplicationContextProvider } from './contexts/Application';
 import { Toast } from './components/Toast';
 import { Modals } from './components/Modals';

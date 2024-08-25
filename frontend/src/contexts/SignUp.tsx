@@ -2,7 +2,7 @@ import React, { useEffect, useState, useReducer, createContext } from 'react';
 import {
   SignUpContext as SignUpContextType,
   SignUpContextState,
-  SignUpContextAction,
+  SignUpReducerAction,
   defaultInputState,
 } from '../types';
 
@@ -15,14 +15,18 @@ const signUpReducerDefaultState: SignUpContextState = {
   valid: false,
 };
 
-function signUpReducer(state: SignUpContextState, action: SignUpContextAction) {
+function signUpReducer(state: SignUpContextState, action: SignUpReducerAction) {
   switch (action.type) {
     case 'SET_VALID':
       return { ...state, valid: action.payload };
     case 'SET_USERNAME':
       return { ...state, username: action.payload };
+    case 'SET_EMAIL':
+      return { ...state, email: action.payload };
     case 'SET_PASSWORD':
       return { ...state, password: action.payload };
+    case 'SET_CONFIRM_PASSWORD':
+      return { ...state, confirmPassword: action.payload };
     case 'SET_ACTIVE':
       return { ...state, isActive: action.payload };
     case 'RESET':
