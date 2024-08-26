@@ -3,7 +3,7 @@ import { IoPersonCircleOutline } from 'react-icons/io5';
 import { IoMenuSharp } from 'react-icons/io5';
 import { AuthContext } from '../contexts/Auth';
 import { SignUp } from './SignUp';
-import { LogIn } from './LogIn';
+import { LogIn } from './LogIn_';
 import { Link } from 'react-router-dom';
 
 import { useClickOutside } from '../utils/useClickOutside';

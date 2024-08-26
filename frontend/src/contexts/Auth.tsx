@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useReducer, createContext } from 'react';
 import {
-  AuthContextAction,
+  AuthReducerAction,
   AuthContextState,
   AuthContext as AuthContextType,
 } from '../types';
@@ -13,7 +13,7 @@ function removeToken() {
 
 function authReducer(
   state: AuthContextState,
-  action: AuthContextAction
+  action: AuthReducerAction
 ): AuthContextState {
   switch (action.type) {
     case 'SET_TOKEN':

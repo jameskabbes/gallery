@@ -7,7 +7,7 @@ import { ApplicationContextProvider } from './contexts/Application';
 import { Toast } from './components/Toast';
 import { Modals } from './components/Modals';
 import { Profile } from './components/User/pages/Profile';
-import { LogIn } from './components/LogIn';
+import { LogIn } from './components/LogIn_';
 import { SignUp } from './components/SignUp';
 
 function App(): JSX.Element {
