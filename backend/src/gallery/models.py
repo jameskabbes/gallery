@@ -53,7 +53,7 @@ class SingularCreate(ABC):
 
 class Token(BaseModel):
     access_token: str
-    token_type: str
+    token_type: str = 'bearer'
 
 
 class TokenData(BaseModel):
@@ -74,15 +74,24 @@ class UserTypes:
     hashed_password = str
 
 
-class User(SQLModel, Singular, table=True):
+class UserBase:
+    _payload_claim: typing.ClassVar[str] = 'sub'
+
+    def export_for_token_payload(self) -> dict:
+        return {self._payload_claim: self.id}
+
+    @classmethod
+    def import_from_token_payload(self, token_payload: dict) -> UserTypes.id | None:
+        return token_payload.get(self._payload_claim)
+
+
+class User(SQLModel, Singular, UserBase, table=True):
     __tablename__ = 'user'
     id: UserTypes.id = Field(
         primary_key=True, index=True)
     username: UserTypes.username = Field(index=True)
     email: UserTypes.email = Field(index=True)
     hashed_password: UserTypes.hashed_password | None
-
-    _payload_claim: typing.ClassVar[str] = 'sub'
 
     @classmethod
     def authenticate(cls, session: Session, username: str, password: str) -> typing.Self | None:
@@ -95,15 +104,8 @@ class User(SQLModel, Singular, table=True):
             return None
         return user
 
-    def export_for_token_payload(self) -> dict:
-        return {self._payload_claim: self.id}
 
-    @classmethod
-    def import_from_token_payload(self, token_payload: dict) -> UserTypes.id | None:
-        return token_payload.get(self._payload_claim)
-
-
-class UserCreate(BaseModel, SingularCreate):
+class UserCreate(BaseModel, SingularCreate, UserBase):
     username: UserTypes.username
     email: UserTypes.email
     password: UserTypes.password
@@ -116,13 +118,13 @@ class UserCreate(BaseModel, SingularCreate):
             hashed_password=utils.hash_password(self.password))
 
 
-class UserUpdate(BaseModel, SingularCreate):
+class UserUpdate(BaseModel, UserBase):
     username: UserTypes.username | None = None
     email: UserTypes.email | None = None
     password: UserTypes.password | None = None
 
 
-class UserPublic(BaseModel):
+class UserPublic(BaseModel, UserBase):
     id: UserTypes.id
     username: UserTypes.username
 
@@ -130,7 +132,7 @@ class UserPublic(BaseModel):
         from_attributes = True
 
 
-class UserPrivate(BaseModel):
+class UserPrivate(BaseModel, UserBase):
     id: UserTypes.id
     username: UserTypes.username
     email: UserTypes.email

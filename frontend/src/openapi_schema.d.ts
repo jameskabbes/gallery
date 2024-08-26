@@ -8,10 +8,6 @@ export interface paths {
   "/users/{user_id}": {
     /** Get User By Id */
     get: operations["get_user_by_id_users__user_id__get"];
-    /** Delete User */
-    delete: operations["delete_user_users__user_id__delete"];
-    /** Patch User */
-    patch: operations["patch_user_users__user_id__patch"];
   };
   "/users/username/{username}": {
     /** Get User By Username */
@@ -20,6 +16,12 @@ export interface paths {
   "/users/": {
     /** Post User */
     post: operations["post_user_users__post"];
+  };
+  "/users/{user_id}/": {
+    /** Delete User */
+    delete: operations["delete_user_users__user_id___delete"];
+    /** Patch User */
+    patch: operations["patch_user_users__user_id___patch"];
   };
   "/users/available/username/{username}/": {
     /** User Username Available */
@@ -32,6 +34,14 @@ export interface paths {
   "/token/": {
     /** Login For Access Token */
     post: operations["login_for_access_token_token__post"];
+  };
+  "/token_with_user/": {
+    /** Login For Access Token With User */
+    post: operations["login_for_access_token_with_user_token_with_user__post"];
+  };
+  "/signup/": {
+    /** Signup */
+    post: operations["signup_signup__post"];
   };
   "/pages/profile/": {
     /** Get Pages Profile */
@@ -49,6 +59,24 @@ export interface components {
   schemas: {
     /** Body_login_for_access_token_token__post */
     Body_login_for_access_token_token__post: {
+      /** Grant Type */
+      grant_type?: string | null;
+      /** Username */
+      username: string;
+      /** Password */
+      password: string;
+      /**
+       * Scope
+       * @default
+       */
+      scope?: string;
+      /** Client Id */
+      client_id?: string | null;
+      /** Client Secret */
+      client_secret?: string | null;
+    };
+    /** Body_login_for_access_token_with_user_token_with_user__post */
+    Body_login_for_access_token_with_user_token_with_user__post: {
       /** Grant Type */
       grant_type?: string | null;
       /** Username */
@@ -99,17 +127,25 @@ export interface components {
     /** PagesProfileResponse */
     PagesProfileResponse: {
       auth: components["schemas"]["GetAuthReturn"];
+      user?: components["schemas"]["UserPrivate"] | null;
+    };
+    /** SignupResponse */
+    SignupResponse: {
+      auth: components["schemas"]["GetAuthReturn"];
       user: components["schemas"]["UserPrivate"];
     };
     /** Token */
     Token: {
       /** Access Token */
       access_token: string;
-      /** Token Type */
-      token_type: string;
+      /**
+       * Token Type
+       * @default bearer
+       */
+      token_type?: string;
     };
-    /** TokenResponse */
-    TokenResponse: {
+    /** TokenWithUserResponse */
+    TokenWithUserResponse: {
       auth: components["schemas"]["GetAuthReturn"];
       token: components["schemas"]["Token"];
     };
@@ -204,65 +240,6 @@ export interface operations {
       };
     };
   };
-  /** Delete User */
-  delete_user_users__user_id__delete: {
-    parameters: {
-      path: {
-        user_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      204: {
-        content: never;
-      };
-      /** @description User not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Patch User */
-  patch_user_users__user_id__patch: {
-    parameters: {
-      path: {
-        user_id: string;
-      };
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UserUpdate"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["UserPublic"];
-        };
-      };
-      /** @description User not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
   /** Get User By Username */
   get_user_by_username_users_username__username__get: {
     parameters: {
@@ -309,6 +286,65 @@ export interface operations {
       409: {
         content: {
           "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Delete User */
+  delete_user_users__user_id___delete: {
+    parameters: {
+      path: {
+        user_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      204: {
+        content: never;
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Patch User */
+  patch_user_users__user_id___patch: {
+    parameters: {
+      path: {
+        user_id: string;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UserUpdate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["UserPublic"];
+        };
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
         };
       };
       /** @description Validation Error */
@@ -374,7 +410,57 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["TokenResponse"];
+          "application/json": components["schemas"]["Token"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Login For Access Token With User */
+  login_for_access_token_with_user_token_with_user__post: {
+    requestBody: {
+      content: {
+        "application/x-www-form-urlencoded": components["schemas"]["Body_login_for_access_token_with_user_token_with_user__post"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["TokenWithUserResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Signup */
+  signup_signup__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UserCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["SignupResponse"];
+        };
+      };
+      /** @description User already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
         };
       };
       /** @description Validation Error */

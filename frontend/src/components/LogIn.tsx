@@ -5,7 +5,7 @@ import openapi_schema from '../../../openapi_schema.json';
 import { InputState } from '../types';
 import { InputText } from './Form/InputText';
 import { Modal } from './Modal';
-import { loginUserFunc } from './User/loginUserFunc';
+import { getTokenFunc } from './User/logunUserFunc';
 import { LogInContext } from '../contexts/LogIn';
 
 function LogIn() {
@@ -24,16 +24,13 @@ function LogIn() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     if (logInContext.state.valid) {
-      let newUser = await loginUserFunc(
+      let token = await getTokenFunc(
         {
           username: logInContext.state.username.value,
           password: logInContext.state.password.value,
         },
         authContext.dispatch
       );
-      if (newUser) {
-        logInContext.dispatch({ type: 'SET_ACTIVE', payload: false });
-      }
     }
   }
 

@@ -47,10 +47,6 @@ function InputText<T>({
 }: Props<T>) {
   const debounceTimeout = useRef(null);
 
-  useEffect(() => {
-    verifyPipeline();
-  }, [state.value]);
-
   async function checkAvailabilityApi() {
     let available = await isAvailable(state.value);
     setState({
@@ -58,17 +54,13 @@ function InputText<T>({
       status: available ? 'valid' : 'invalid',
       error: available ? null : `Not available`,
     });
-
-    setState({
-      ...state,
-      status: available ? 'valid' : 'invalid',
-      error: available ? null : `Not available`,
-    });
   }
 
-  function verifyPipeline() {
-    // too short
+  useEffect(() => {
     if (state.value.length < minLength) {
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current);
+      }
       setState({
         ...state,
         status: 'invalid',
@@ -78,6 +70,9 @@ function InputText<T>({
     }
     // too long
     if (state.value.length > maxLength) {
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current);
+      }
       setState({
         ...state,
         status: 'invalid',
@@ -88,6 +83,9 @@ function InputText<T>({
     // otherwise invalid
     const { valid, message } = isValid(state.value);
     if (!valid) {
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current);
+      }
       setState({
         ...state,
         status: 'invalid',
@@ -95,7 +93,7 @@ function InputText<T>({
       });
       return;
     }
-    // check availability?
+
     if (!checkAvailability) {
       setState({
         ...state,
@@ -104,7 +102,6 @@ function InputText<T>({
       });
       return;
     }
-
     setState({
       ...state,
       status: 'loading',
@@ -114,11 +111,10 @@ function InputText<T>({
     if (debounceTimeout.current) {
       clearTimeout(debounceTimeout.current);
     }
-
     debounceTimeout.current = setTimeout(() => {
       checkAvailabilityApi();
-    }, 200);
-  }
+    }, 300);
+  }, [state.value]);
 
   return (
     <div className="flex flex-row items-center space-x-2">

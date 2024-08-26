@@ -4,11 +4,38 @@ import siteConfig from '../../siteConfig.json';
 import { AuthContext } from '../contexts/Auth';
 
 //utility func to make API calls
+
+function generateCurlCommand(
+  resource: RequestInfo | URL,
+  options?: RequestInit
+): string {
+  const method = options?.method || 'GET';
+  const url = typeof resource === 'string' ? resource : resource.toString();
+  const headers = options?.headers || {};
+  const body = options?.body || '';
+
+  let curlCommand = `curl -X '${method}' \\\n  '${url}' \\\n`;
+
+  for (const [key, value] of Object.entries(headers)) {
+    curlCommand += `  -H '${key}: ${value}' \\\n`;
+  }
+
+  if (body) {
+    curlCommand += `  -d '${body}' \\\n`;
+  }
+
+  return curlCommand.trim();
+}
+
 async function callApiBase<T>(
   resource: RequestInfo | URL,
   options?: RequestInit
 ): Promise<Response> {
   console.log(options.method, resource);
+  console.log(generateCurlCommand(resource, options));
+
+  console.log(resource);
+  console.log(options);
 
   try {
     return await fetch(resource, options);
@@ -35,7 +62,6 @@ async function callApi<TResponseData extends object, TRequestData = any>(
   props: CallApiProps<TRequestData>
 ): Promise<CallApiReturn<TResponseData>> {
   const token = localStorage.getItem(siteConfig['access_token_key']);
-
   const init: RequestInit = {
     method: props.method,
     headers: {
@@ -57,6 +83,8 @@ async function callApi<TResponseData extends object, TRequestData = any>(
   } catch (error) {
     data = null;
   }
+  console.log('data');
+  console.log(data);
   return { data, response };
 }
 

@@ -37,11 +37,16 @@ function SignUp() {
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    let newUser = await createUserFunc({
-      email: signUpContext.state.email.value,
-      password: signUpContext.state.password.value,
-      username: signUpContext.state.username.value,
-    });
+    if (signUpContext.state.valid) {
+      let newUser = await createUserFunc({
+        email: signUpContext.state.email.value,
+        password: signUpContext.state.password.value,
+        username: signUpContext.state.username.value,
+      });
+      if (newUser) {
+        signUpContext.dispatch({ type: 'SET_ACTIVE', payload: false });
+      }
+    }
   }
 
   return (

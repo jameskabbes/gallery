@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Query, status, Response, Depends
-from fastapi.security import OAuth2AuthorizationCodeBearer, OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from gallery import get_client, models, utils, config, auth
 import datetime
 from sqlmodel import Session, SQLModel, select
@@ -11,6 +11,7 @@ from jwt.exceptions import InvalidTokenError, MissingRequiredClaimError, DecodeE
 from pydantic import BaseModel
 import datetime
 from functools import wraps
+import logging
 
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -23,10 +24,12 @@ async def lifespan(app: FastAPI):
     print('closingdown')
 
 
+logging.basicConfig(level=logging.DEBUG)
+
 app = FastAPI(lifespan=lifespan)
 c = get_client()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token/", auto_error=False)
 
 
 class DetailOnlyResponse(BaseModel):
@@ -154,33 +157,54 @@ async def post_user(user_create: models.UserCreate) -> models.UserPrivate:
         return user
 
 
-@app.patch('/users/{user_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
-async def patch_user(user_id: models.UserTypes.id, user_update: models.UserUpdate) -> models.UserPublic:
+@app.patch('/users/{user_id}/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+async def patch_user(user_id: models.UserTypes.id, user_update: models.UserUpdate, token_return: typing.Annotated[GetTokenReturn, Depends(get_token)]) -> models.UserPublic:
+
+    auth_return = await get_auth(token_return)
+    if auth_return.exception:
+        raise auth.EXCEPTION_MAPPING[auth_return.exception]
 
     with Session(c.db_engine) as session:
+
         user = models.User.get_by_id(session, user_id)
+        if not user:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail=models.User.not_found_message())
+
+        if user.id != auth_return.user.id:
+            raise HTTPException(status.HTTP_403_FORBIDDEN,
+                                detail='User does not have permission to update this user')
 
         # if they changed their username, check if it's available
-        if user.username != user_update.username:
-            if models.User.key_value_exists(session, 'username', user_update.username):
-                raise HTTPException(status.HTTP_409_CONFLICT,
-                                    detail='Username already exists')
+        if user_update.username != None:
+            if user.username != user_update.username:
+                if models.User.key_value_exists(session, 'username', user_update.username):
+                    raise HTTPException(status.HTTP_409_CONFLICT,
+                                        detail='Username already exists')
 
         # if they changed their email, check if it's available
-        if user.email != user_update.email:
-            if models.User.key_value_exists(session, 'email', user_update.email):
-                raise HTTPException(status.HTTP_409_CONFLICT,
-                                    detail='Email already exists')
+        if user_update.email != None:
+            if user.email != user_update.email:
+                if models.User.key_value_exists(session, 'email', user_update.email):
+                    raise HTTPException(status.HTTP_409_CONFLICT,
+                                        detail='Email already exists')
 
-        user.sqlmodel_update(
-            email=user_update.email, username=user_update.username, hashed_password=utils.hash_password(user_update.password))
+        update_fields = {}
+        if user_update.email != None:
+            update_fields['email'] = user_update.email
+        if user_update.username != None:
+            update_fields['username'] = user_update.username
+        if user_update.password != None:
+            update_fields['hashed_password'] = utils.hash_password(
+                user_update.password)
 
+        user.sqlmodel_update(update_fields)
         session.add(user)
         session.commit()
-        return user
+        return models.UserPublic.model_validate(user)
 
 
-@app.delete('/users/{user_id}', status_code=204, responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+@app.delete('/users/{user_id}/', status_code=204, responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
 async def delete_user(user_id: models.UserTypes.id):
 
     with Session(c.db_engine) as session:
@@ -228,18 +252,10 @@ async def user_username_exists(email: models.UserTypes.email) -> ItemAvailableRe
 assert c.root_config['auth_key'] == 'auth'
 
 
-class AuthResponse(BaseModel):
-    auth: GetAuthReturn
-
-
-class TokenResponse(AuthResponse):
-    token: models.Token
-
-
-@ app.post("/token/")
+@app.post("/token/")
 async def login_for_access_token(
     form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()],
-) -> TokenResponse:
+) -> models.Token:
     with Session(c.db_engine) as session:
         user = models.User.authenticate(
             session, form_data.username, form_data.password)
@@ -249,12 +265,48 @@ async def login_for_access_token(
         access_token = create_access_token(
             data=user.export_for_token_payload())
 
-        return TokenResponse(
+        return models.Token(access_token=access_token)
+
+
+class AuthResponse(BaseModel):
+    auth: GetAuthReturn
+
+
+class TokenWithUserResponse(AuthResponse):
+    token: models.Token
+
+
+@app.post('/token_with_user/')
+async def login_for_access_token_with_user(form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()]) -> TokenWithUserResponse:
+
+    with Session(c.db_engine) as session:
+        user = models.User.authenticate(
+            session, form_data.username, form_data.password)
+        if not user:
+            raise auth.CREDENTIALS_EXCEPTION
+
+        access_token = create_access_token(
+            data=user.export_for_token_payload())
+
+        return TokenWithUserResponse(
             auth=GetAuthReturn(user=models.UserPublic.model_validate(user)),
-            token=models.Token(access_token=access_token, token_type="bearer")
+            token=models.Token(access_token=access_token)
         )
 
-# Pages
+
+class SignupResponse(AuthResponse):
+    user: models.UserPrivate
+
+
+@app.post('/signup/', responses={status.HTTP_409_CONFLICT: {"description": 'User already exists', 'model': DetailOnlyResponse}})
+async def signup(user_create: models.UserCreate) -> SignupResponse:
+    user = await post_user(user_create)
+    access_token = create_access_token(data=user.export_for_token_payload())
+
+    return SignupResponse(
+        auth=GetAuthReturn(user=models.UserPublic.model_validate(user)),
+        user=user,
+    )
 
 
 class PagesProfileResponse(AuthResponse):

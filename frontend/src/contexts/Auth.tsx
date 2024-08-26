@@ -16,6 +16,15 @@ function authReducer(
   action: AuthReducerAction
 ): AuthContextState {
   switch (action.type) {
+    case 'SET_AUTH_USER':
+      if (state.auth) {
+        return {
+          ...state,
+          auth: { ...state.auth, user: action.payload },
+        };
+      } else {
+        return state;
+      }
     case 'SET_TOKEN':
       localStorage.setItem(
         siteConfig['access_token_key'],

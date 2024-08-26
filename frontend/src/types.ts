@@ -123,6 +123,10 @@ interface AuthContextState {
 
 type AuthReducerAction =
   | {
+      type: 'SET_AUTH_USER';
+      payload: AuthContextState['auth']['user'];
+    }
+  | {
       type: 'SET_TOKEN';
       payload: components['schemas']['Token'];
     }

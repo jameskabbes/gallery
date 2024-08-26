@@ -3,6 +3,9 @@ import { paths, operations, components } from '../../../openapi_schema';
 import { ExtractResponseTypes } from '../../../types';
 import { useBackendApiCall } from '../../../utils/Api';
 import { AuthContext } from '../../../contexts/Auth';
+import { InputText } from '../../Form/InputText';
+import { UpdatePassword } from '../UpdatePassword';
+import { UpdateUser } from '../UpdateUser';
 
 const API_PATH = '/pages/profile/';
 const API_METHOD = 'get';
@@ -12,9 +15,6 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 >;
 
 function Profile() {
-  const authContext = useContext(AuthContext);
-  const hasReloaded = useRef(false); // Add a ref to track the reload
-
   const {
     data: apiData,
     loading,
@@ -35,15 +35,15 @@ function Profile() {
     }
 
     return (
-      <>
-        <h1>{data.user.id}</h1>
+      <div>
         <h1>{data.user.username}</h1>
-        <h1>{data.user.email}</h1>
-      </>
+        <div className="w-80">
+          <UpdateUser user={data.user} />
+          <UpdatePassword userId={data.user.id} />
+        </div>
+      </div>
     );
   } else {
-    authContext.dispatch({ type: 'LOGOUT' });
-
     return <p>Login to continue</p>;
   }
 }
