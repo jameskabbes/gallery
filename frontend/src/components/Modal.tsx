@@ -1,36 +1,44 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { IoClose } from 'react-icons/io5';
-
 import { useEscapeKey } from '../utils/useEscapeKey';
 import { useClickOutside } from '../utils/useClickOutside';
+import { CSSTransition } from 'react-transition-group';
 
 interface Props {
   children: React.ReactNode;
+  show: boolean;
   includeExit?: boolean;
   onExit?: () => void;
 }
 
-function Modal({ children, includeExit = true, onExit = () => {} }: Props) {
-  let ref = useRef(null);
+function Modal({
+  children,
+  show,
+  includeExit = true,
+  onExit = () => {},
+}: Props) {
+  const ref = useRef(null);
 
   useEscapeKey(onExit);
   useClickOutside(ref, onExit);
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content" ref={ref}>
-        {includeExit && (
-          <div className="flex flex-row justify-end">
-            <button>
-              <p>
-                <IoClose onClick={onExit} className="cursor-pointer" />
-              </p>
-            </button>
-          </div>
-        )}
-        {children}
+    <CSSTransition in={show} timeout={200} classNames="modal" unmountOnExit>
+      <div className="modal-overlay">
+        <div className="modal-content" ref={ref}>
+          {includeExit && (
+            <div className="flex flex-row justify-end">
+              <button>
+                <p>
+                  <IoClose onClick={onExit} className="cursor-pointer" />
+                </p>
+              </button>
+            </div>
+          )}
+          {children}
+        </div>
       </div>
-    </div>
+    </CSSTransition>
   );
 }
 

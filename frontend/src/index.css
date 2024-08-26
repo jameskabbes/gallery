@@ -83,6 +83,11 @@ p {
 }
 
 #login {
+  @apply w-60;
+}
+
+#signup {
+  @apply w-60;
 }
 
 /* Button */
@@ -111,7 +116,7 @@ button {
 /* Input */
 
 .text-input {
-  @apply bg-inherit focus:outline-none border-b-2 border-light-darker dark:border-dark-darker;
+  @apply w-full bg-inherit focus:outline-none border-b-2 border-light-darker dark:border-dark-darker;
   transition: border-color 0.3s;
 }
 
@@ -137,12 +142,37 @@ button {
   align-items: center;
   justify-content: center;
   z-index: 1000; /* Ensure it is above other content */
-  animation: slideUp 0.25s ease-out;
 }
 
 /* Modal content */
 .modal-content {
   @apply card bg-color;
+}
+
+/* Initial state */
+.modal-enter {
+  opacity: 0;
+  transform: translateY(100%);
+}
+
+/* Entering state */
+.modal-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 200ms, transform 200ms;
+}
+
+/* Exiting state */
+.modal-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Exiting state */
+.modal-exit-active {
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity 200ms, transform 200ms;
 }
 
 .toast-container {

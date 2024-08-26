@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useContext } from 'react';
 import { CSSTransition } from 'react-transition-group';
 import { ModalsContext } from '../contexts/Modals';
 import { useEscapeKey } from '../utils/useEscapeKey';
-import './Modal.css';
 import { useClickOutside } from '../utils/useClickOutside';
 
 function Modals() {

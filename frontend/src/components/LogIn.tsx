@@ -31,73 +31,76 @@ function LogIn() {
         },
         authContext.dispatch
       );
+      if (newUser) {
+        logInContext.dispatch({ type: 'SET_ACTIVE', payload: false });
+      }
     }
   }
 
   return (
-    <>
-      {logInContext.state.isActive && (
-        <Modal
-          onExit={() =>
-            logInContext.dispatch({ type: 'SET_ACTIVE', payload: false })
-          }
-        >
-          <div id="login">
-            <form onSubmit={handleLogin} className="flex flex-col space-y-2">
-              <h4 className="text-center">Login</h4>
-              <InputText
-                state={logInContext.state.username}
-                setState={(state: InputState) => {
-                  logInContext.dispatch({
-                    type: 'SET_USERNAME',
-                    payload: state,
-                  });
-                }}
-                id="username"
-                minLength={1}
-                maxLength={
-                  openapi_schema.components.schemas.UserCreate.properties
-                    .username.maxLength
-                }
-                type="username"
-                placeholder="username"
-                checkAvailability={false}
-              />
-              <InputText
-                state={logInContext.state.password}
-                setState={(state: InputState) =>
-                  logInContext.dispatch({
-                    type: 'SET_PASSWORD',
-                    payload: state,
-                  })
-                }
-                id="password"
-                minLength={1}
-                maxLength={
-                  openapi_schema.components.schemas.UserCreate.properties
-                    .password.maxLength
-                }
-                type="password"
-                placeholder="password"
-                checkAvailability={false}
-              />
-              <button
-                className={`${
-                  logInContext.state.valid ? 'button-valid' : 'button-invalid'
-                }`}
-                type="submit"
-                disabled={!logInContext.state.valid}
-              >
-                <p className="flex flex-row justify-center items-center">
-                  Login
-                </p>
-              </button>
-            </form>
-            {/* <GoogleLogin onSuccess={() => {}}></GoogleLogin> */}
-          </div>
-        </Modal>
-      )}
-    </>
+    <Modal
+      onExit={() =>
+        logInContext.dispatch({ type: 'SET_ACTIVE', payload: false })
+      }
+      show={logInContext.state.isActive}
+    >
+      <div id="login" className="">
+        <form onSubmit={handleLogin} className="flex flex-col space-y-2">
+          <h2 className="text-center">Login</h2>
+          <h4>
+            <InputText
+              state={logInContext.state.username}
+              setState={(state: InputState) => {
+                logInContext.dispatch({
+                  type: 'SET_USERNAME',
+                  payload: state,
+                });
+              }}
+              id="username"
+              minLength={1}
+              maxLength={
+                openapi_schema.components.schemas.UserCreate.properties.username
+                  .maxLength
+              }
+              type="username"
+              placeholder="username"
+              checkAvailability={false}
+            />
+          </h4>
+          <h4>
+            <InputText
+              state={logInContext.state.password}
+              setState={(state: InputState) =>
+                logInContext.dispatch({
+                  type: 'SET_PASSWORD',
+                  payload: state,
+                })
+              }
+              id="password"
+              minLength={1}
+              maxLength={
+                openapi_schema.components.schemas.UserCreate.properties.password
+                  .maxLength
+              }
+              type="password"
+              placeholder="password"
+              checkAvailability={false}
+            />
+          </h4>
+          <div className="mt-8"></div>
+          <button
+            className={`${
+              logInContext.state.valid ? 'button-valid' : 'button-invalid'
+            }`}
+            type="submit"
+            disabled={!logInContext.state.valid}
+          >
+            <p className="flex flex-row justify-center items-center">Login</p>
+          </button>
+        </form>
+        {/* <GoogleLogin onSuccess={() => {}}></GoogleLogin> */}
+      </div>
+    </Modal>
   );
 }
 
