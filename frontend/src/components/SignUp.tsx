@@ -47,9 +47,15 @@ function SignUp() {
   return (
     <>
       {signUpContext.state.isActive && (
-        <Modal>
-          <div id="login">
-            {/* modes */}
+        <Modal
+          onExit={() =>
+            signUpContext.dispatch({
+              type: 'SET_ACTIVE',
+              payload: false,
+            })
+          }
+        >
+          <div>
             <form onSubmit={handleLogin} className="flex flex-col space-y-2">
               <h4 className="text-center">Sign Up</h4>
               <InputText

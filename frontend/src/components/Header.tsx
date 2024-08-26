@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { DarkModeToggle } from './DarkModeToggle';
 import { ModalsContext } from '../contexts/Modals';
-import { Login } from './LogIn_';
+import { Login } from './LogIn';
 import { IoAperture } from 'react-icons/io5';
 
 import { AccountIcon } from './AccountIcon';

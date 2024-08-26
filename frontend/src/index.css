@@ -137,7 +137,7 @@ button {
   align-items: center;
   justify-content: center;
   z-index: 1000; /* Ensure it is above other content */
-  animation: slideUp 0.5s ease-out;
+  animation: slideUp 0.25s ease-out;
 }
 
 /* Modal content */

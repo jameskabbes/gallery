@@ -5,7 +5,7 @@ import { ModalsContextProvider } from './Modals';
 import { DeviceContextProvider } from './Device';
 import { AuthContextProvider } from './Auth';
 import { GlobalModalsContextProvider } from './GlobalModals';
-import { LogInContextProvider } from './LogIn_';
+import { LogInContextProvider } from './LogIn';
 import { SignUpContextProvider } from './SignUp';
 
 const ApplicationContextProvider = ({ children }) => {

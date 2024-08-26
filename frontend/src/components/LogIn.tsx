@@ -6,7 +6,7 @@ import { InputState } from '../types';
 import { InputText } from './Form/InputText';
 import { Modal } from './Modal';
 import { loginUserFunc } from './User/loginUserFunc';
-import { LogInContext } from '../contexts/LogIn_';
+import { LogInContext } from '../contexts/LogIn';
 
 function LogIn() {
   const logInContext = useContext(LogInContext);

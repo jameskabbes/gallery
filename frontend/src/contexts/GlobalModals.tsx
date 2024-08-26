@@ -3,7 +3,7 @@ import {
   GlobalModalsContext as GlobalModalsContextType,
   GlobalModalsType,
 } from '../types';
-import { LogInContext, LogInContextProvider } from './LogIn_';
+import { LogInContext, LogInContextProvider } from './LogIn';
 import { SignUpContext, SignUpContextProvider } from './SignUp';
 
 const GlobalModalsContext = React.createContext<GlobalModalsContextType>({
