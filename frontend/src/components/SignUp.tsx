@@ -12,7 +12,7 @@ import { isEmailAvailable } from './User/isEmailAvailable';
 import { isEmailValid } from './User/isEmailValid';
 import { isPasswordValid } from './User/isPasswordValid';
 import { InputText } from './Form/InputText';
-import { createUserFunc } from './User/createUserFunc';
+import { createUserFunc } from './User/signUpUserFunc';
 import { InputState } from '../types';
 
 function SignUp() {
