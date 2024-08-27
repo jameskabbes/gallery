@@ -12,7 +12,7 @@ import { isEmailAvailable } from './User/isEmailAvailable';
 import { isEmailValid } from './User/isEmailValid';
 import { isPasswordValid } from './User/isPasswordValid';
 import { InputText } from './Form/InputText';
-import { createUserFunc } from './User/signUpUserFunc';
+import { signUpUserFunc } from './User/signUpUserFunc';
 import { InputState } from '../types';
 
 function SignUp() {
@@ -38,11 +38,14 @@ function SignUp() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     if (signUpContext.state.valid) {
-      let newUser = await createUserFunc({
-        email: signUpContext.state.email.value,
-        password: signUpContext.state.password.value,
-        username: signUpContext.state.username.value,
-      });
+      let newUser = await signUpUserFunc(
+        {
+          email: signUpContext.state.email.value,
+          password: signUpContext.state.password.value,
+          username: signUpContext.state.username.value,
+        },
+        authContext.dispatch
+      );
       if (newUser) {
         signUpContext.dispatch({ type: 'SET_ACTIVE', payload: false });
       }

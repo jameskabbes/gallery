@@ -4,26 +4,30 @@ import { ExtractResponseTypes } from '../../types';
 import { callBackendApi } from '../../utils/Api';
 import { toast } from 'react-toastify';
 import { toastTemplate } from '../Toast';
+import { AuthReducerAction } from '../../types';
 
-const API_ENDPOINT = '/users/';
+const API_ENDPOINT = '/signup/';
 const API_METHOD = 'post';
 
-type AllResponseTypes = ExtractResponseTypes<
+type ResponseTypesByStatus = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
 async function signUpUserFunc(
-  userCreate: components['schemas']['UserCreate']
-): Promise<AllResponseTypes['200'] | null> {
-  let userPublic: components['schemas']['UserPublic'] = {
-    id: '__loading__',
-    username: userCreate.username,
-  };
-
+  userCreate: components['schemas']['UserCreate'],
+  authContextDispatch: React.Dispatch<AuthReducerAction>
+): Promise<ResponseTypesByStatus['200'] | null> {
   let toastId = toast.loading('Creating user');
 
+  async function setToken(data: ResponseTypesByStatus['200']) {
+    authContextDispatch({ type: 'SET_TOKEN', payload: data.token });
+  }
+  async function login(data: ResponseTypesByStatus['200']) {
+    authContextDispatch({ type: 'LOGIN', payload: data.auth });
+  }
+
   const { data, response } = await callBackendApi<
-    AllResponseTypes[keyof AllResponseTypes],
+    ResponseTypesByStatus[keyof ResponseTypesByStatus],
     components['schemas']['UserCreate']
   >({
     endpoint: API_ENDPOINT,
@@ -32,12 +36,17 @@ async function signUpUserFunc(
   });
 
   if (response.status === 200) {
-    const apiData = data as AllResponseTypes['200'];
+    const apiData = data as ResponseTypesByStatus['200'];
+
+    await setToken(apiData);
+    await login(apiData);
+
     toast.update(toastId, {
       ...toastTemplate,
-      render: 'User created',
+      render: 'Created new user: ' + apiData.auth.user.username,
       type: 'success',
     });
+
     return apiData;
   } else {
     console.error('Error creating user:', response.status, data);

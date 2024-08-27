@@ -4,7 +4,7 @@ import { ExtractResponseTypes } from '../../types';
 import { callBackendApi } from '../../utils/Api';
 import { toast } from 'react-toastify';
 import { toastTemplate } from '../Toast';
-import { AuthContextAction } from '../../types';
+import { AuthReducerAction } from '../../types';
 
 import siteConfig from '../../../siteConfig.json';
 
@@ -17,7 +17,7 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 
 async function logInUserFunc(
   formData: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/x-www-form-urlencoded'],
-  authContextDispatch: React.Dispatch<AuthContextAction>
+  authContextDispatch: React.Dispatch<AuthReducerAction>
 ): Promise<ResponseTypesByStatus['200'] | null> {
   let toastId = toast.loading('Logging in');
 
