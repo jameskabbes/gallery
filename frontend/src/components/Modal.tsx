@@ -1,8 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { IoClose } from 'react-icons/io5';
-import { useEscapeKey } from '../utils/useEscapeKey';
 import { useClickOutside } from '../utils/useClickOutside';
 import { CSSTransition } from 'react-transition-group';
+import { useEscapeKey } from '../contexts/EscapeKey';
 
 interface Props {
   children: React.ReactNode;

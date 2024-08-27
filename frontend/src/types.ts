@@ -163,6 +163,11 @@ interface GlobalModalsContext {
   toggleModal: (modal: GlobalModalsType) => void;
 }
 
+interface EscapeKeyContext {
+  addCallback: (callback: () => void) => void;
+  removeCallback: (callback: () => void) => void;
+}
+
 export {
   ExtractResponseTypes,
   DarkModeContext,
@@ -186,4 +191,5 @@ export {
   GlobalModalsType,
   GlobalModalsContext,
   DataContext,
+  EscapeKeyContext,
 };
