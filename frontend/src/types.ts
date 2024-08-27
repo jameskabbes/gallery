@@ -1,6 +1,33 @@
 import { paths, operations, components } from './openapi_schema';
 import config from '../../config.json';
 
+interface CallApiProps<T> {
+  endpoint: string;
+  method: RequestInit['method'];
+  data?: T;
+  overwriteHeaders?: HeadersInit;
+  body?: string;
+  backend?: boolean;
+}
+
+interface CallApiReturn<T> {
+  data: T | null;
+  response: Response | null;
+}
+
+interface UseApiCallReturn<T> {
+  data: T | null;
+  setData: React.Dispatch<React.SetStateAction<UseApiCallReturn<T>['data']>>;
+  loading: boolean;
+  setLoading: React.Dispatch<
+    React.SetStateAction<UseApiCallReturn<T>['loading']>
+  >;
+  response: Response | null;
+  setResponse: React.Dispatch<
+    React.SetStateAction<UseApiCallReturn<T>['response']>
+  >;
+}
+
 type ExtractResponseTypes<T> = {
   [K in keyof T]: T[K] extends {
     content: infer ContentTypes;
@@ -121,24 +148,33 @@ interface AuthContextState {
   token: components['schemas']['Token']['access_token'] | null;
 }
 
-type AuthReducerAction =
-  | {
-      type: 'SET_AUTH_USER';
-      payload: AuthContextState['auth']['user'];
-    }
-  | {
-      type: 'SET_TOKEN';
-      payload: components['schemas']['Token'];
-    }
-  | {
-      type: 'LOGIN';
-      payload: AuthContextState['auth'];
-    }
-  | { type: 'LOGOUT' }
-  | {
-      type: 'UPDATE';
-      payload: AuthContextState['auth'];
-    };
+interface AuthReducerActionTypes {
+  SET_AUTH_USER: {
+    type: 'SET_AUTH_USER';
+    payload: AuthContextState['auth']['user'];
+  };
+  SET_TOKEN: {
+    type: 'SET_TOKEN';
+    payload: components['schemas']['Token'];
+  };
+  LOGIN: {
+    type: 'LOGIN';
+    payload: AuthContextState['auth'];
+  };
+  LOGOUT: {
+    type: 'LOGOUT';
+  };
+  UPDATE: {
+    type: 'UPDATE';
+    payload: AuthContextState['auth'];
+  };
+  UPDATE_FROM_API_RESPONSE: {
+    type: 'UPDATE_FROM_API_RESPONSE';
+    payload: any;
+  };
+}
+
+type AuthReducerAction = AuthReducerActionTypes[keyof AuthReducerActionTypes];
 
 interface AuthContext {
   state: AuthContextState;
@@ -170,6 +206,9 @@ interface EscapeKeyContext {
 
 export {
   ExtractResponseTypes,
+  CallApiProps,
+  CallApiReturn,
+  UseApiCallReturn,
   DarkModeContext,
   defaultInputState,
   InputState,
@@ -180,6 +219,7 @@ export {
   LogInContextState,
   LogInReducerAction,
   LogInContext,
+  AuthReducerActionTypes,
   AuthReducerAction,
   AuthContextState,
   AuthContext,

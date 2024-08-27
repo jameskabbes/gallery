@@ -30,7 +30,7 @@ USER_NOT_PERMITTED_EXCEPTION = HTTPException(
 
 CREDENTIALS_EXCEPTION = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
-    detail="Could not validate credentials",
+    detail="Incorrect username or password",
     headers={"WWW-Authenticate": "Bearer"})
 
 type EXCEPTION = typing.Literal['invalid_token', 'token_expired',

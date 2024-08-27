@@ -287,7 +287,7 @@ class LoginResponse(AuthResponse):
     token: models.Token
 
 
-@app.post('/login/')
+@app.post('/login/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Could not validate credentials', 'model': DetailOnlyResponse}})
 async def login(form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()]) -> LoginResponse:
 
     with Session(c.db_engine) as session:

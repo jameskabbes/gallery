@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import config from '../../../config.json';
 import siteConfig from '../../siteConfig.json';
 import { AuthContext } from '../contexts/Auth';
+import { CallApiProps, CallApiReturn, UseApiCallReturn } from '../types';
 
 //utility func to make API calls
 
@@ -20,20 +21,6 @@ async function callApiBase<T>(
     console.error('API Call failed:', error);
     throw error;
   }
-}
-
-interface CallApiProps<T> {
-  endpoint: string;
-  method: RequestInit['method'];
-  data?: T;
-  overwriteHeaders?: HeadersInit;
-  body?: string;
-  backend?: boolean;
-}
-
-interface CallApiReturn<T> {
-  data: T | null;
-  response: Response | null;
 }
 
 async function callApi<TResponseData extends object, TRequestData = any>({
@@ -65,19 +52,6 @@ async function callApi<TResponseData extends object, TRequestData = any>({
   return { data: responseData, response };
 }
 
-interface UseApiCallReturn<T> {
-  data: T | null;
-  setData: React.Dispatch<React.SetStateAction<UseApiCallReturn<T>['data']>>;
-  loading: boolean;
-  setLoading: React.Dispatch<
-    React.SetStateAction<UseApiCallReturn<T>['loading']>
-  >;
-  response: Response | null;
-  setResponse: React.Dispatch<
-    React.SetStateAction<UseApiCallReturn<T>['response']>
-  >;
-}
-
 function useApiCall<TResponseData extends object, TRequestData = any>(
   props: CallApiProps<TRequestData>,
   updateAuth: boolean = true,
@@ -100,10 +74,10 @@ function useApiCall<TResponseData extends object, TRequestData = any>(
       );
       setResponse(response);
       setData(data);
-      if (updateAuth && data && config.auth_key in data) {
+      if (updateAuth) {
         authContext.dispatch({
-          type: 'UPDATE',
-          payload: data[config.auth_key],
+          type: 'UPDATE_FROM_API_RESPONSE',
+          payload: data,
         });
       }
       setLoading(false);

@@ -436,6 +436,12 @@ export interface operations {
           "application/json": components["schemas"]["LoginResponse"];
         };
       };
+      /** @description Could not validate credentials */
+      401: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
       /** @description Validation Error */
       422: {
         content: {

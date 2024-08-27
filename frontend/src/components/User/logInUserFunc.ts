@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
-import { ExtractResponseTypes } from '../../types';
+import { CallApiReturn, ExtractResponseTypes } from '../../types';
 import { callApi } from '../../utils/Api';
 import { toast } from 'react-toastify';
 import { toastTemplate } from '../Toast';
@@ -16,7 +16,7 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 async function logInUserFunc(
   formData: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/x-www-form-urlencoded'],
   authContextDispatch: React.Dispatch<AuthReducerAction>
-): Promise<ResponseTypesByStatus['200'] | null> {
+): Promise<CallApiReturn<ResponseTypesByStatus[keyof ResponseTypesByStatus]>> {
   let toastId = toast.loading('Logging in');
 
   async function setToken(data: ResponseTypesByStatus['200']) {
@@ -36,10 +36,8 @@ async function logInUserFunc(
     overwriteHeaders: { 'Content-Type': 'application/x-www-form-urlencoded' },
   });
 
-  if (response.status === 200) {
+  if (response.status == 200) {
     const apiData = data as ResponseTypesByStatus['200'];
-
-    console.log(apiData);
 
     await setToken(apiData);
     await login(apiData);
@@ -49,16 +47,21 @@ async function logInUserFunc(
       render: `Welcome ${apiData.auth.user.username}`,
       type: 'success',
     });
-    return apiData;
+  } else if (response.status == 401) {
+    const apiData = data as ResponseTypesByStatus['401'];
+    toast.update(toastId, {
+      ...toastTemplate,
+      render: apiData.detail,
+      type: 'error',
+    });
   } else {
-    console.error('Error logging in:', response.status, data);
     toast.update(toastId, {
       ...toastTemplate,
       render: `Could not log in`,
       type: 'error',
     });
-    return null;
   }
+  return { data, response };
 }
 
 export { logInUserFunc };

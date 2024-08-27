@@ -107,7 +107,7 @@ function UpdatePassword({ userId }: Props) {
         disabled={!valid}
       >
         <p className="flex flex-row justify-center items-center">
-          Change Password
+          Update Password
         </p>
       </button>
     </form>
