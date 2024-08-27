@@ -1,13 +1,10 @@
 import React, { useContext } from 'react';
 import { DarkModeToggle } from './DarkModeToggle';
-import { ModalsContext } from '../contexts/Modals';
 import { IoAperture } from 'react-icons/io5';
 import { AccountIcon } from './AccountIcon';
 import { Link } from 'react-router-dom';
 
 function Header(): JSX.Element {
-  let modalsContext = useContext(ModalsContext);
-
   return (
     <header className="sticky top-0 bg-light dark:bg-dark bg-opacity-50">
       <div className="max-w-screen-2xl mx-auto flex flex-row justify-between items-center px-2 py-2">
