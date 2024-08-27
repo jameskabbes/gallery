@@ -1,6 +1,9 @@
-from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Query, status, Response, Depends
+from fastapi import FastAPI, HTTPException, Query, status, Response, Depends, Request
+from fastapi.exception_handlers import http_exception_handler
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from contextlib import asynccontextmanager
 from gallery import get_client, models, utils, config, auth
 import datetime
 from sqlmodel import Session, SQLModel, select
@@ -110,6 +113,14 @@ async def get_auth(token_return: GetTokenReturn, expiry_timedelta: typing.Annota
         if not user:
             return GetAuthReturn(exception='user_not_found')
         return GetAuthReturn(user=models.UserPublic.model_validate(user))
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=400,
+        content={"detail": exc.errors()},
+    )
 
 
 # USERS

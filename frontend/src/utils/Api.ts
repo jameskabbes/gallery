@@ -46,7 +46,7 @@ async function callApi<TResponseData extends object, TRequestData = any>({
 }: CallApiProps<TRequestData>): Promise<CallApiReturn<TResponseData>> {
   const token = localStorage.getItem(siteConfig['access_token_key']);
   const init: RequestInit = {
-    method: method,
+    method: method.toUpperCase(),
     headers: {
       'Content-Type': 'application/json',
       Authorization: token ? `Bearer ${token}` : '',
@@ -54,7 +54,7 @@ async function callApi<TResponseData extends object, TRequestData = any>({
     },
     body: body ? body : data ? JSON.stringify(data) : null,
   };
-  const response = await callApiBase(endpoint, init);
+  const response = await callApiBase(endpoint, init, backend);
   let responseData: CallApiReturn<TResponseData>['data'] = null;
 
   try {

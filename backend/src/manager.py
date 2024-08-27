@@ -4,7 +4,7 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 # Adjust the import as necessary
-from main import login_for_access_token
+from main import login
 
 # Mock the OAuth2PasswordRequestForm
 
@@ -26,7 +26,7 @@ def mock_depends(dependency):
 
 async def main():
     form_data = mock_depends(OAuth2PasswordRequestForm)
-    token_response = await login_for_access_token(form_data)
+    token_response = await login(form_data)
     print(token_response)
 
 if __name__ == "__main__":

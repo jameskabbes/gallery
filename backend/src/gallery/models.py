@@ -119,9 +119,9 @@ class UserCreate(BaseModel, SingularCreate, UserBase):
 
 
 class UserUpdate(BaseModel, UserBase):
-    username: UserTypes.username | None = None
-    email: UserTypes.email | None = None
-    password: UserTypes.password | None = None
+    username: typing.Optional[UserTypes.username] = None
+    email: typing.Optional[UserTypes.email] = None
+    password: typing.Optional[UserTypes.password] = None
 
 
 class UserPublic(BaseModel, UserBase):

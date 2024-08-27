@@ -20,8 +20,6 @@ async function patchUserFunc(
 ): Promise<ResponseTypesByStatus['200'] | null> {
   let toastId = toast.loading('Updating user');
 
-  console.log('calling api');
-
   const { data, response } = await callApi<
     ResponseTypesByStatus[keyof ResponseTypesByStatus],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
@@ -30,9 +28,6 @@ async function patchUserFunc(
     method: API_METHOD,
     data: formData,
   });
-  console.log('api called');
-  console.log(data);
-  console.log(response);
 
   if (response.status === 200) {
     const apiData = data as ResponseTypesByStatus['200'];

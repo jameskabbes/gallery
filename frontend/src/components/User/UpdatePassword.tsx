@@ -39,6 +39,8 @@ function UpdatePassword({ userId }: Props) {
         authContext.dispatch
       );
       console.log(resp);
+      setPassword({ ...defaultInputState });
+      setConfirmPassword({ ...defaultInputState });
     }
   }
 
