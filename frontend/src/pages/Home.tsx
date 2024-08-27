@@ -2,7 +2,7 @@ import React, { useEffect, useContext, useState } from 'react';
 import { DeviceContext } from '../contexts/Device';
 import { paths, operations, components } from '../openapi_schema';
 import { ExtractResponseTypes } from '../types';
-import { useBackendApiCall } from '../utils/Api';
+import { useApiCall } from '../utils/Api';
 
 const API_PATH = '/pages/home/';
 const API_METHOD = 'get';
@@ -18,7 +18,7 @@ function Home() {
     data: apiData,
     loading,
     response,
-  } = useBackendApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>(
+  } = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>(
     {
       endpoint: API_PATH,
       method: API_METHOD,

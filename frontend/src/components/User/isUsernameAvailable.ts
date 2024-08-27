@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { callApiBase, callBackendApi } from '../../utils/Api';
+import { callApi } from '../../utils/Api';
 import { paths, operations, components } from '../../openapi_schema';
 import { ExtractResponseTypes } from '../../types';
 
@@ -13,7 +13,7 @@ type AllResponseTypes = ExtractResponseTypes<
 async function isUsernameAvailable(
   username: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['username']
 ): Promise<AllResponseTypes['200']['available']> {
-  const { data, response } = await callBackendApi<
+  const { data, response } = await callApi<
     AllResponseTypes[keyof AllResponseTypes],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['username']
   >({

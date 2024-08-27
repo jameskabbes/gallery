@@ -24,13 +24,16 @@ function LogIn() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     if (logInContext.state.valid) {
-      let token = await logInUserFunc(
+      let resp = await logInUserFunc(
         {
           username: logInContext.state.username.value,
           password: logInContext.state.password.value,
         },
         authContext.dispatch
       );
+      if (resp) {
+        logInContext.dispatch({ type: 'SET_ACTIVE', payload: false });
+      }
     }
   }
 

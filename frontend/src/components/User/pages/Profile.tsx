@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useRef } from 'react';
 import { paths, operations, components } from '../../../openapi_schema';
 import { ExtractResponseTypes } from '../../../types';
-import { useBackendApiCall } from '../../../utils/Api';
+import { useApiCall } from '../../../utils/Api';
 import { AuthContext } from '../../../contexts/Auth';
 import { InputText } from '../../Form/InputText';
 import { UpdatePassword } from '../UpdatePassword';
@@ -15,16 +15,19 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 >;
 
 function Profile() {
+  const authContext = useContext(AuthContext);
+
   const {
     data: apiData,
     loading,
     response,
-  } = useBackendApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>(
+  } = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>(
     {
       endpoint: API_PATH,
       method: API_METHOD,
     },
-    true
+    true,
+    [authContext.state.isActive]
   );
 
   if (loading || response.status == 200) {

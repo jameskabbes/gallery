@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
 import { ExtractResponseTypes } from '../../types';
-import { callBackendApi } from '../../utils/Api';
+import { callApi } from '../../utils/Api';
 import { toast } from 'react-toastify';
 import { toastTemplate } from '../Toast';
 import { AuthReducerAction } from '../../types';
@@ -22,7 +22,7 @@ async function patchUserFunc(
 
   console.log('calling api');
 
-  const { data, response } = await callBackendApi<
+  const { data, response } = await callApi<
     ResponseTypesByStatus[keyof ResponseTypesByStatus],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >({

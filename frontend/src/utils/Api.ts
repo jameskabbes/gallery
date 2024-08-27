@@ -5,38 +5,15 @@ import { AuthContext } from '../contexts/Auth';
 
 //utility func to make API calls
 
-function generateCurlCommand(
-  resource: RequestInfo | URL,
-  options?: RequestInit
-): string {
-  const method = options?.method || 'GET';
-  const url = typeof resource === 'string' ? resource : resource.toString();
-  const headers = options?.headers || {};
-  const body = options?.body || '';
-
-  let curlCommand = `curl -X '${method}' \\\n  '${url}' \\\n`;
-
-  for (const [key, value] of Object.entries(headers)) {
-    curlCommand += `  -H '${key}: ${value}' \\\n`;
-  }
-
-  if (body) {
-    curlCommand += `  -d '${body}' \\\n`;
-  }
-
-  return curlCommand.trim();
-}
-
 async function callApiBase<T>(
   resource: RequestInfo | URL,
-  options?: RequestInit
+  options?: RequestInit,
+  backend: boolean = true
 ): Promise<Response> {
+  if (backend) {
+    resource = `/${config.api_endpoint_base}${resource}`;
+  }
   console.log(options.method, resource);
-  console.log(generateCurlCommand(resource, options));
-
-  console.log(resource);
-  console.log(options);
-
   try {
     return await fetch(resource, options);
   } catch (error) {
@@ -51,6 +28,7 @@ interface CallApiProps<T> {
   data?: T;
   overwriteHeaders?: HeadersInit;
   body?: string;
+  backend?: boolean;
 }
 
 interface CallApiReturn<T> {
@@ -58,47 +36,33 @@ interface CallApiReturn<T> {
   response: Response | null;
 }
 
-async function callApi<TResponseData extends object, TRequestData = any>(
-  props: CallApiProps<TRequestData>
-): Promise<CallApiReturn<TResponseData>> {
+async function callApi<TResponseData extends object, TRequestData = any>({
+  endpoint,
+  method,
+  data,
+  overwriteHeaders = {},
+  body,
+  backend = true,
+}: CallApiProps<TRequestData>): Promise<CallApiReturn<TResponseData>> {
   const token = localStorage.getItem(siteConfig['access_token_key']);
   const init: RequestInit = {
-    method: props.method,
+    method: method,
     headers: {
       'Content-Type': 'application/json',
       Authorization: token ? `Bearer ${token}` : '',
-      ...props.overwriteHeaders,
+      ...overwriteHeaders,
     },
-    body: props.body
-      ? props.body
-      : props.data
-      ? JSON.stringify(props.data)
-      : null,
+    body: body ? body : data ? JSON.stringify(data) : null,
   };
-  const response = await callApiBase(props.endpoint, init);
+  const response = await callApiBase(endpoint, init);
+  let responseData: CallApiReturn<TResponseData>['data'] = null;
 
-  let data: CallApiReturn<TResponseData>['data'] = null;
   try {
-    data = await response.json();
+    responseData = await response.json();
   } catch (error) {
-    data = null;
+    responseData = null;
   }
-  console.log('data');
-  console.log(data);
-  return { data, response };
-}
-
-function convertBackendSlugToEndpoint(slug: string): string {
-  return `/${config.api_endpoint_base}${slug}`;
-}
-
-async function callBackendApi<TResponeData extends object, TRequestData = any>(
-  props: CallApiProps<TRequestData>
-): Promise<CallApiReturn<TResponeData>> {
-  return await callApi<TResponeData, TRequestData>({
-    ...props,
-    endpoint: convertBackendSlugToEndpoint(props.endpoint),
-  });
+  return { data: responseData, response };
 }
 
 interface UseApiCallReturn<T> {
@@ -116,7 +80,8 @@ interface UseApiCallReturn<T> {
 
 function useApiCall<TResponseData extends object, TRequestData = any>(
   props: CallApiProps<TRequestData>,
-  setAuth: boolean = true
+  updateAuth: boolean = true,
+  dependencies: any[] = []
 ): UseApiCallReturn<TResponseData> {
   const [data, setData] =
     useState<UseApiCallReturn<TResponseData>['data']>(null);
@@ -135,7 +100,7 @@ function useApiCall<TResponseData extends object, TRequestData = any>(
       );
       setResponse(response);
       setData(data);
-      if (setAuth && data && config.auth_key in data) {
+      if (updateAuth && data && config.auth_key in data) {
         authContext.dispatch({
           type: 'UPDATE',
           payload: data[config.auth_key],
@@ -145,22 +110,9 @@ function useApiCall<TResponseData extends object, TRequestData = any>(
     };
 
     fetchData();
-  }, [props.endpoint]);
+  }, dependencies);
 
   return { data, setData, loading, setLoading, response, setResponse };
 }
 
-function useBackendApiCall<TResponseData extends object, TRequestData = any>(
-  props: CallApiProps<TRequestData>,
-  setAuth: boolean = false
-): UseApiCallReturn<TResponseData> {
-  return useApiCall<TResponseData, TRequestData>(
-    {
-      ...props,
-      endpoint: convertBackendSlugToEndpoint(props.endpoint),
-    },
-    setAuth
-  );
-}
-
-export { callApiBase, callApi, callBackendApi, useApiCall, useBackendApiCall };
+export { callApiBase, callApi, useApiCall };
