@@ -5,7 +5,7 @@ import openapi_schema from '../../../openapi_schema.json';
 import { InputState } from '../types';
 import { InputText } from './Form/InputText';
 import { Modal } from './Modal';
-import { getTokenFunc } from './User/logunUserFunc';
+import { logInUserFunc } from './User/logInUserFunc_';
 import { LogInContext } from '../contexts/LogIn';
 
 function LogIn() {
@@ -24,7 +24,7 @@ function LogIn() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     if (logInContext.state.valid) {
-      let token = await getTokenFunc(
+      let token = await logInUserFunc(
         {
           username: logInContext.state.username.value,
           password: logInContext.state.password.value,

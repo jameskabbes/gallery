@@ -8,14 +8,14 @@ import { AuthContextAction } from '../../types';
 
 import siteConfig from '../../../siteConfig.json';
 
-const API_ENDPOINT = '/token/';
+const API_ENDPOINT = '/login/';
 const API_METHOD = 'post';
 
 type ResponseTypesByStatus = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
-async function loginUserFunc(
+async function logInUserFunc(
   formData: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/x-www-form-urlencoded'],
   authContextDispatch: React.Dispatch<AuthContextAction>
 ): Promise<ResponseTypesByStatus['200'] | null> {
@@ -61,4 +61,4 @@ async function loginUserFunc(
   }
 }
 
-export { loginUserFunc };
+export { logInUserFunc };

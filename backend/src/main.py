@@ -253,7 +253,7 @@ assert c.root_config['auth_key'] == 'auth'
 
 
 @app.post("/token/")
-async def login_for_access_token(
+async def post_token(
     form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> models.Token:
     with Session(c.db_engine) as session:
@@ -272,12 +272,12 @@ class AuthResponse(BaseModel):
     auth: GetAuthReturn
 
 
-class TokenWithUserResponse(AuthResponse):
+class LoginResponse(AuthResponse):
     token: models.Token
 
 
-@app.post('/token_with_user/')
-async def login_for_access_token_with_user(form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()]) -> TokenWithUserResponse:
+@app.post('/login/')
+async def login(form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()]) -> LoginResponse:
 
     with Session(c.db_engine) as session:
         user = models.User.authenticate(
@@ -288,7 +288,7 @@ async def login_for_access_token_with_user(form_data: typing.Annotated[OAuth2Pas
         access_token = create_access_token(
             data=user.export_for_token_payload())
 
-        return TokenWithUserResponse(
+        return LoginResponse(
             auth=GetAuthReturn(user=models.UserPublic.model_validate(user)),
             token=models.Token(access_token=access_token)
         )
@@ -296,6 +296,7 @@ async def login_for_access_token_with_user(form_data: typing.Annotated[OAuth2Pas
 
 class SignupResponse(AuthResponse):
     user: models.UserPrivate
+    token: models.Token
 
 
 @app.post('/signup/', responses={status.HTTP_409_CONFLICT: {"description": 'User already exists', 'model': DetailOnlyResponse}})
@@ -306,6 +307,7 @@ async def signup(user_create: models.UserCreate) -> SignupResponse:
     return SignupResponse(
         auth=GetAuthReturn(user=models.UserPublic.model_validate(user)),
         user=user,
+        token=models.Token(access_token=access_token)
     )
 
 

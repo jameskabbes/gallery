@@ -32,12 +32,12 @@ export interface paths {
     get: operations["user_username_exists_users_available_email__email___get"];
   };
   "/token/": {
-    /** Login For Access Token */
-    post: operations["login_for_access_token_token__post"];
+    /** Post Token */
+    post: operations["post_token_token__post"];
   };
-  "/token_with_user/": {
-    /** Login For Access Token With User */
-    post: operations["login_for_access_token_with_user_token_with_user__post"];
+  "/login/": {
+    /** Login */
+    post: operations["login_login__post"];
   };
   "/signup/": {
     /** Signup */
@@ -57,8 +57,8 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
-    /** Body_login_for_access_token_token__post */
-    Body_login_for_access_token_token__post: {
+    /** Body_login_login__post */
+    Body_login_login__post: {
       /** Grant Type */
       grant_type?: string | null;
       /** Username */
@@ -75,8 +75,8 @@ export interface components {
       /** Client Secret */
       client_secret?: string | null;
     };
-    /** Body_login_for_access_token_with_user_token_with_user__post */
-    Body_login_for_access_token_with_user_token_with_user__post: {
+    /** Body_post_token_token__post */
+    Body_post_token_token__post: {
       /** Grant Type */
       grant_type?: string | null;
       /** Username */
@@ -115,6 +115,11 @@ export interface components {
       /** Available */
       available: boolean;
     };
+    /** LoginResponse */
+    LoginResponse: {
+      auth: components["schemas"]["GetAuthReturn"];
+      token: components["schemas"]["Token"];
+    };
     /** NotFoundResponse */
     NotFoundResponse: {
       /** Detail */
@@ -133,6 +138,7 @@ export interface components {
     SignupResponse: {
       auth: components["schemas"]["GetAuthReturn"];
       user: components["schemas"]["UserPrivate"];
+      token: components["schemas"]["Token"];
     };
     /** Token */
     Token: {
@@ -143,11 +149,6 @@ export interface components {
        * @default bearer
        */
       token_type?: string;
-    };
-    /** TokenWithUserResponse */
-    TokenWithUserResponse: {
-      auth: components["schemas"]["GetAuthReturn"];
-      token: components["schemas"]["Token"];
     };
     /** UserCreate */
     UserCreate: {
@@ -399,11 +400,11 @@ export interface operations {
       };
     };
   };
-  /** Login For Access Token */
-  login_for_access_token_token__post: {
+  /** Post Token */
+  post_token_token__post: {
     requestBody: {
       content: {
-        "application/x-www-form-urlencoded": components["schemas"]["Body_login_for_access_token_token__post"];
+        "application/x-www-form-urlencoded": components["schemas"]["Body_post_token_token__post"];
       };
     };
     responses: {
@@ -421,18 +422,18 @@ export interface operations {
       };
     };
   };
-  /** Login For Access Token With User */
-  login_for_access_token_with_user_token_with_user__post: {
+  /** Login */
+  login_login__post: {
     requestBody: {
       content: {
-        "application/x-www-form-urlencoded": components["schemas"]["Body_login_for_access_token_with_user_token_with_user__post"];
+        "application/x-www-form-urlencoded": components["schemas"]["Body_login_login__post"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["TokenWithUserResponse"];
+          "application/json": components["schemas"]["LoginResponse"];
         };
       };
       /** @description Validation Error */

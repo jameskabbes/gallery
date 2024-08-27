@@ -12,7 +12,7 @@ type AllResponseTypes = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
-async function createUserFunc(
+async function signUpUserFunc(
   userCreate: components['schemas']['UserCreate']
 ): Promise<AllResponseTypes['200'] | null> {
   let userPublic: components['schemas']['UserPublic'] = {
@@ -50,4 +50,4 @@ async function createUserFunc(
   }
 }
 
-export { createUserFunc };
+export { signUpUserFunc };
