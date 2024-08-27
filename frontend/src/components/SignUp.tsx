@@ -183,7 +183,9 @@ function SignUp() {
             type="submit"
             disabled={!signUpContext.state.valid}
           >
-            <p className="flex flex-row justify-center items-center">Sign Up</p>
+            <h6 className="flex flex-row justify-center items-center mb-0">
+              Sign Up
+            </h6>
           </button>
         </form>
         {/* <GoogleLogin onSuccess={() => {}}></GoogleLogin> */}
