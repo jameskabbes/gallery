@@ -83,11 +83,11 @@ p {
 }
 
 #login {
-  @apply w-60;
+  @apply w-full max-w-[240px];
 }
 
 #signup {
-  @apply w-60;
+  @apply w-full max-w-[240px];
 }
 
 /* Button */

@@ -7,10 +7,12 @@ import { InputText } from './Form/InputText';
 import { Modal } from './Modal';
 import { logInUserFunc } from './User/logInUserFunc';
 import { LogInContext } from '../contexts/LogIn';
+import { GlobalModalsContext } from '../contexts/GlobalModals';
 
 function LogIn() {
   const logInContext = useContext(LogInContext);
   const authContext = useContext(AuthContext);
+  const globalModalsContext = useContext(GlobalModalsContext);
 
   useEffect(() => {
     logInContext.dispatch({
@@ -44,7 +46,7 @@ function LogIn() {
       }
       show={logInContext.state.isActive}
     >
-      <div id="login" className="">
+      <div id="login">
         <form onSubmit={handleLogin} className="flex flex-col space-y-2">
           <h2 className="text-center">Login</h2>
           <h4>
@@ -95,10 +97,22 @@ function LogIn() {
             type="submit"
             disabled={!logInContext.state.valid}
           >
-            <p className="flex flex-row justify-center items-center">Login</p>
+            <h6 className="flex flex-row justify-center items-center mb-0">
+              Login
+            </h6>
           </button>
         </form>
         {/* <GoogleLogin onSuccess={() => {}}></GoogleLogin> */}
+        <div className="flex flex-row justify-center mt-2">
+          <h6
+            className="cursor-pointer underline mb-0"
+            onClick={() => {
+              globalModalsContext.toggleModal('signUp');
+            }}
+          >
+            Sign Up
+          </h6>
+        </div>
       </div>
     </Modal>
   );

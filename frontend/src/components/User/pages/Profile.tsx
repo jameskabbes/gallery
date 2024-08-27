@@ -6,6 +6,7 @@ import { AuthContext } from '../../../contexts/Auth';
 import { InputText } from '../../Form/InputText';
 import { UpdatePassword } from '../UpdatePassword';
 import { UpdateUser } from '../UpdateUser';
+import { GlobalModalsContext } from '../../../contexts/GlobalModals';
 
 const API_PATH = '/pages/profile/';
 const API_METHOD = 'get';
@@ -16,6 +17,7 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 
 function Profile() {
   const authContext = useContext(AuthContext);
+  const globalModalsContext = useContext(GlobalModalsContext);
 
   const {
     data: apiData,
@@ -47,7 +49,16 @@ function Profile() {
       </div>
     );
   } else {
-    return <p>Login to continue</p>;
+    return (
+      <div className="flex-grow flex flex-col items-center justify-center">
+        <button
+          className="button-valid"
+          onClick={() => globalModalsContext.toggleModal('logIn')}
+        >
+          <p>Login to continue</p>
+        </button>
+      </div>
+    );
   }
 }
 

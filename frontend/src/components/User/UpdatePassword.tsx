@@ -5,6 +5,8 @@ import openapi_schema from '../../../../openapi_schema.json';
 import { AuthContext } from '../../contexts/Auth';
 import { patchUserFunc } from './patchUserFunc';
 import { components } from '../../openapi_schema';
+import { toast } from 'react-toastify';
+import { toastTemplate } from '../Toast';
 
 interface Props {
   userId: components['schemas']['UserPublic']['id'];
@@ -31,6 +33,7 @@ function UpdatePassword({ userId }: Props) {
   async function handleUpdatePassword(e: React.FormEvent) {
     e.preventDefault();
     if (valid && authContext.state.isActive) {
+      let toastId = toast.loading('Updating password');
       let resp = await patchUserFunc(
         userId,
         {
@@ -38,7 +41,20 @@ function UpdatePassword({ userId }: Props) {
         },
         authContext.dispatch
       );
-      console.log(resp);
+      if (resp) {
+        toast.update(toastId, {
+          ...toastTemplate,
+          render: `Updated password`,
+          type: 'success',
+        });
+      } else {
+        toast.update(toastId, {
+          ...toastTemplate,
+          render: `Could not update password`,
+          type: 'error',
+        });
+      }
+
       setPassword({ ...defaultInputState });
       setConfirmPassword({ ...defaultInputState });
     }

@@ -4,6 +4,7 @@ import openapi_schema from '../../../openapi_schema.json';
 
 import { SignUpContext } from '../contexts/SignUp';
 import { AuthContext } from '../contexts/Auth';
+import { GlobalModalsContext } from '../contexts/GlobalModals';
 
 import { Modal } from './Modal';
 import { isUsernameAvailable } from './User/isUsernameAvailable';
@@ -18,6 +19,7 @@ import { InputState } from '../types';
 function SignUp() {
   const signUpContext = useContext(SignUpContext);
   const authContext = useContext(AuthContext);
+  const globalModalsContext = useContext(GlobalModalsContext);
 
   useEffect(() => {
     signUpContext.dispatch({
@@ -185,6 +187,16 @@ function SignUp() {
           </button>
         </form>
         {/* <GoogleLogin onSuccess={() => {}}></GoogleLogin> */}
+        <div className="flex flex-row justify-center mt-2">
+          <h6
+            className="cursor-pointer underline mb-0"
+            onClick={() => {
+              globalModalsContext.toggleModal('logIn');
+            }}
+          >
+            Log In
+          </h6>
+        </div>
       </div>
     </Modal>
   );

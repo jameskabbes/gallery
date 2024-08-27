@@ -9,6 +9,8 @@ import { isUsernameAvailable } from './isUsernameAvailable';
 import { isUsernameValid } from './isUsernameValid';
 import { isEmailAvailable } from './isEmailAvailable';
 import { isEmailValid } from './isEmailValid';
+import { toast } from 'react-toastify';
+import { toastTemplate } from '../Toast';
 
 interface Props {
   user: components['schemas']['UserPrivate'];
@@ -48,6 +50,7 @@ function UpdateUser({ user }: Props) {
   async function handleUpdateUser(e: React.FormEvent) {
     e.preventDefault();
     if (valid && authContext.state.isActive) {
+      let toastId = toast.loading('Updating user');
       let resp = await patchUserFunc(
         user.id,
         {
@@ -56,7 +59,19 @@ function UpdateUser({ user }: Props) {
         },
         authContext.dispatch
       );
-      console.log(resp);
+      if (resp) {
+        toast.update(toastId, {
+          ...toastTemplate,
+          render: `Updated user`,
+          type: 'success',
+        });
+      } else {
+        toast.update(toastId, {
+          ...toastTemplate,
+          render: `Could not update user`,
+          type: 'error',
+        });
+      }
     }
   }
 
