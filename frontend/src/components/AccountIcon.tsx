@@ -2,8 +2,6 @@ import React, { useState, useEffect, useRef, useContext } from 'react';
 import { IoPersonCircleOutline } from 'react-icons/io5';
 import { IoMenuSharp } from 'react-icons/io5';
 import { AuthContext } from '../contexts/Auth';
-import { SignUp } from './SignUp';
-import { LogIn } from './LogIn';
 import { Link } from 'react-router-dom';
 
 import { useClickOutside } from '../utils/useClickOutside';

@@ -69,7 +69,7 @@ function update(
   payload: AuthReducerActionTypes['UPDATE']['payload']
 ): AuthContextState {
   let exception = payload.exception;
-  if (exception in cancellableExceptions) {
+  if (cancellableExceptions.has(exception)) {
     return logout();
   } else {
     return login(state, payload);
