@@ -96,40 +96,44 @@ function UpdateUser({ user }: Props) {
 
   return (
     <form onSubmit={handleUpdateUser} className="flex flex-col space-y-2">
-      <InputText
-        state={username}
-        setState={setUsername}
-        id="username"
-        type="text"
-        minLength={
-          openapi_schema.components.schemas.UserUpdate.properties.username
-            .anyOf[0].minLength
-        }
-        maxLength={
-          openapi_schema.components.schemas.UserUpdate.properties.username
-            .anyOf[0].maxLength
-        }
-        checkAvailability={true}
-        isAvailable={isUsernameAvailableConditional}
-        isValid={isUsernameValid}
-      />
-      <InputText
-        state={email}
-        setState={setEmail}
-        id="email"
-        type="email"
-        minLength={
-          openapi_schema.components.schemas.UserUpdate.properties.email.anyOf[0]
-            .minLength
-        }
-        maxLength={
-          openapi_schema.components.schemas.UserUpdate.properties.email.anyOf[0]
-            .maxLength
-        }
-        checkAvailability={true}
-        isAvailable={isEmailAvailableConditional}
-        isValid={isEmailValid}
-      />
+      <div className="grid grid-cols-[auto,1fr] gap-x-2 gap-y-1">
+        <label htmlFor="username">username</label>
+        <InputText
+          state={username}
+          setState={setUsername}
+          id="username"
+          type="text"
+          minLength={
+            openapi_schema.components.schemas.UserUpdate.properties.username
+              .anyOf[0].minLength
+          }
+          maxLength={
+            openapi_schema.components.schemas.UserUpdate.properties.username
+              .anyOf[0].maxLength
+          }
+          checkAvailability={true}
+          isAvailable={isUsernameAvailableConditional}
+          isValid={isUsernameValid}
+        />
+        <label htmlFor="email">email</label>
+        <InputText
+          state={email}
+          setState={setEmail}
+          id="email"
+          type="email"
+          minLength={
+            openapi_schema.components.schemas.UserUpdate.properties.email
+              .anyOf[0].minLength
+          }
+          maxLength={
+            openapi_schema.components.schemas.UserUpdate.properties.email
+              .anyOf[0].maxLength
+          }
+          checkAvailability={true}
+          isAvailable={isEmailAvailableConditional}
+          isValid={isEmailValid}
+        />
+      </div>
       <div className="flex flex-row space-x-2">
         <button
           className={`${modified ? 'button-valid' : 'button-invalid'} flex-1`}
