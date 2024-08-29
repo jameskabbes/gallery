@@ -54,6 +54,10 @@ p {
   @apply bg-light-darker dark:bg-dark-darker;
 }
 
+.bg-color-invert {
+  @apply bg-dark dark:bg-light;
+}
+
 .App {
   @apply text-color font-sans bg-color flex flex-col min-h-screen;
 }
@@ -100,16 +104,16 @@ button {
   @apply rounded-xl p-2;
 }
 
-.button-valid {
-  @apply button-base bg-primary text-white;
+.button-primary {
+  @apply button-base bg-primary text-white focus:outline-primary-darker;
 }
 
-.button-valid:focus {
-  outline-color: theme('colors.primary.darker');
+.button-secondary {
+  @apply button-base bg-color-invert text-color-invert focus:outline-dark-darker dark:focus:outline-light-darker;
 }
 
 .button-invalid {
-  @apply button-valid opacity-50;
+  @apply opacity-50;
   pointer-events: none;
 }
 

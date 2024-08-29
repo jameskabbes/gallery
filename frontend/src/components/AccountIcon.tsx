@@ -22,9 +22,12 @@ function AccountIcon() {
   return (
     <div className="relative" ref={menuRef}>
       <button
-        className="flex flex-row rounded-full border-2 p-2"
+        className="flex flex-row rounded-full border-2 p-2 items-center space-x-1"
         onClick={toggleMenu}
       >
+        {authContext.state.isActive && (
+          <p className="mb-0">{authContext.state.auth.user.username}</p>
+        )}
         <IoMenuSharp />
         <IoPersonCircleOutline />
       </button>

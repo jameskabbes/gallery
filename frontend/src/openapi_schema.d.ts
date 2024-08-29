@@ -342,10 +342,28 @@ export interface operations {
           "application/json": components["schemas"]["UserPublic"];
         };
       };
+      /** @description Invalid token */
+      401: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description User does not have permission to update this user */
+      403: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
       /** @description User not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Username or email already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
         };
       };
       /** @description Validation Error */

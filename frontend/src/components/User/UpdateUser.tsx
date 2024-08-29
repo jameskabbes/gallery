@@ -17,6 +17,11 @@ interface Props {
 }
 
 function UpdateUser({ user }: Props) {
+  const [startingUsername, setStartingUsername] = useState<string>(
+    user.username
+  );
+  const [startingEmail, setStartingEmail] = useState<string>(user.email);
+
   const [username, setUsername] = useState<InputState>({
     ...defaultInputState,
     value: user.username,
@@ -39,19 +44,20 @@ function UpdateUser({ user }: Props) {
   }, [email.status, username.status, modified, authContext.state.isActive]);
 
   useEffect(() => {
-    setModified(email.value !== user.email || username.value !== user.username);
+    setModified(
+      email.value !== startingEmail || username.value !== startingUsername
+    );
   }, [email.value, username.value]);
 
   function reset() {
-    setUsername({ ...defaultInputState, value: user.username });
-    setEmail({ ...defaultInputState, value: user.email });
+    setUsername({ ...defaultInputState, value: startingUsername });
+    setEmail({ ...defaultInputState, value: startingEmail });
   }
 
   async function handleUpdateUser(e: React.FormEvent) {
     e.preventDefault();
     if (valid && authContext.state.isActive) {
-      let toastId = toast.loading('Updating user');
-      let resp = await patchUserFunc(
+      const { data, response } = await patchUserFunc(
         user.id,
         {
           username: username.value,
@@ -59,18 +65,9 @@ function UpdateUser({ user }: Props) {
         },
         authContext.dispatch
       );
-      if (resp) {
-        toast.update(toastId, {
-          ...toastTemplate,
-          render: `Updated user`,
-          type: 'success',
-        });
-      } else {
-        toast.update(toastId, {
-          ...toastTemplate,
-          render: `Could not update user`,
-          type: 'error',
-        });
+      if (response.status === 200) {
+        setStartingUsername(username.value);
+        setStartingEmail(email.value);
       }
     }
   }
@@ -136,7 +133,7 @@ function UpdateUser({ user }: Props) {
       </div>
       <div className="flex flex-row space-x-2">
         <button
-          className={`${modified ? 'button-valid' : 'button-invalid'} flex-1`}
+          className={`button-secondary ${!modified && 'button-invalid'} flex-1`}
           type="button"
           onClick={reset}
           disabled={!modified}
@@ -144,7 +141,7 @@ function UpdateUser({ user }: Props) {
           <p>Cancel</p>
         </button>
         <button
-          className={`${valid ? 'button-valid' : 'button-invalid'} flex-1`}
+          className={`button-primary ${!valid && 'button-invalid'} flex-1`}
           type="submit"
           disabled={!valid}
         >

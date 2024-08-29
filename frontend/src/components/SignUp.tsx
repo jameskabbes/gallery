@@ -177,8 +177,8 @@ function SignUp() {
           </h4>
           <div className="mt-8"></div>
           <button
-            className={`${
-              signUpContext.state.valid ? 'button-valid' : 'button-invalid'
+            className={`button-primary ${
+              !signUpContext.state.valid && 'button-invalid'
             }`}
             type="submit"
             disabled={!signUpContext.state.valid}

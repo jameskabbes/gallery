@@ -91,8 +91,8 @@ function LogIn() {
           </h4>
           <div className="mt-8"></div>
           <button
-            className={`${
-              logInContext.state.valid ? 'button-valid' : 'button-invalid'
+            className={`button-primary ${
+              !logInContext.state.valid && 'button-invalid'
             }`}
             type="submit"
             disabled={!logInContext.state.valid}

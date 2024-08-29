@@ -35,6 +35,11 @@ function Home() {
       <h4>h4</h4>
       <h5>h5</h5>
       <h6>h6</h6>
+      <button className="button-primary">hello there</button>
+      <button className="button-primary button-invalid">hello there</button>
+      <button className="button-secondary">hello there</button>
+      <button className="button-secondary button-invalid">hello there</button>
+
       <p>{deviceContext.isMobile ? 'mobile' : 'not mobile'}</p>
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-primary-lighter h-64"></div>

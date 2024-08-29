@@ -33,30 +33,18 @@ function UpdatePassword({ userId }: Props) {
   async function handleUpdatePassword(e: React.FormEvent) {
     e.preventDefault();
     if (valid && authContext.state.isActive) {
-      let toastId = toast.loading('Updating password');
-      let resp = await patchUserFunc(
+      let { data, response } = await patchUserFunc(
         userId,
         {
           password: password.value,
         },
         authContext.dispatch
       );
-      if (resp) {
-        toast.update(toastId, {
-          ...toastTemplate,
-          render: `Updated password`,
-          type: 'success',
-        });
-      } else {
-        toast.update(toastId, {
-          ...toastTemplate,
-          render: `Could not update password`,
-          type: 'error',
-        });
-      }
 
-      setPassword({ ...defaultInputState });
-      setConfirmPassword({ ...defaultInputState });
+      if (response.status === 200) {
+        setPassword({ ...defaultInputState });
+        setConfirmPassword({ ...defaultInputState });
+      }
     }
   }
 
@@ -102,7 +90,7 @@ function UpdatePassword({ userId }: Props) {
         }}
       />
       <button
-        className={`${valid ? 'button-valid' : 'button-invalid'}`}
+        className={`button-primary ${!valid && 'button-invalid'}`}
         type="submit"
         disabled={!valid}
       >

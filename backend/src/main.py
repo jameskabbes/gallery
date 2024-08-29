@@ -168,7 +168,12 @@ async def post_user(user_create: models.UserCreate) -> models.UserPrivate:
         return user
 
 
-@app.patch('/users/{user_id}/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+@app.patch('/users/{user_id}/', responses={
+    status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse},
+    status.HTTP_403_FORBIDDEN: {"description": 'User does not have permission to update this user', 'model': DetailOnlyResponse},
+    status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse},
+    status.HTTP_409_CONFLICT: {"description": 'Username or email already exists', 'model': DetailOnlyResponse},
+})
 async def patch_user(user_id: models.UserTypes.id, user_update: models.UserUpdate, token_return: typing.Annotated[GetTokenReturn, Depends(get_token)]) -> models.UserPublic:
 
     auth_return = await get_auth(token_return)
@@ -215,7 +220,7 @@ async def patch_user(user_id: models.UserTypes.id, user_update: models.UserUpdat
         return models.UserPublic.model_validate(user)
 
 
-@app.delete('/users/{user_id}/', status_code=204, responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+@ app.delete('/users/{user_id}/', status_code=204, responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
 async def delete_user(user_id: models.UserTypes.id):
 
     with Session(c.db_engine) as session:
@@ -263,7 +268,7 @@ async def user_username_exists(email: models.UserTypes.email) -> ItemAvailableRe
 assert c.root_config['auth_key'] == 'auth'
 
 
-@app.post("/token/")
+@ app.post("/token/")
 async def post_token(
     form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> models.Token:
@@ -287,7 +292,7 @@ class LoginResponse(AuthResponse):
     token: models.Token
 
 
-@app.post('/login/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Could not validate credentials', 'model': DetailOnlyResponse}})
+@ app.post('/login/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Could not validate credentials', 'model': DetailOnlyResponse}})
 async def login(form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()]) -> LoginResponse:
 
     with Session(c.db_engine) as session:
@@ -310,7 +315,7 @@ class SignupResponse(AuthResponse):
     token: models.Token
 
 
-@app.post('/signup/', responses={status.HTTP_409_CONFLICT: {"description": 'User already exists', 'model': DetailOnlyResponse}})
+@ app.post('/signup/', responses={status.HTTP_409_CONFLICT: {"description": 'User already exists', 'model': DetailOnlyResponse}})
 async def signup(user_create: models.UserCreate) -> SignupResponse:
     user = await post_user(user_create)
     access_token = create_access_token(data=user.export_for_token_payload())
