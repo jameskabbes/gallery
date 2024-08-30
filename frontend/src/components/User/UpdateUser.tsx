@@ -9,8 +9,6 @@ import { isUsernameAvailable } from './isUsernameAvailable';
 import { isUsernameValid } from './isUsernameValid';
 import { isEmailAvailable } from './isEmailAvailable';
 import { isEmailValid } from './isEmailValid';
-import { toast } from 'react-toastify';
-import { toastTemplate } from '../Toast';
 
 interface Props {
   user: components['schemas']['UserPrivate'];

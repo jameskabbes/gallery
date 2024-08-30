@@ -52,7 +52,7 @@ function Profile() {
     return (
       <div className="flex-grow flex flex-col items-center justify-center">
         <button
-          className="button-valid"
+          className="button-primary"
           onClick={() => globalModalsContext.toggleModal('logIn')}
         >
           <p>Login to continue</p>
