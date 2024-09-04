@@ -135,7 +135,7 @@ async def get_user_by_id(user_id: models.UserTypes.id) -> models.UserPublic:
             raise HTTPException(status.HTTP_404_NOT_FOUND,
                                 detail=models.User.not_found_message())
         else:
-            return user
+            return models.UserPublic.model_validate(user)
 
 
 @app.get('/users/username/{username}', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
@@ -147,7 +147,7 @@ async def get_user_by_username(username: models.UserTypes.username) -> models.Us
             raise HTTPException(status.HTTP_404_NOT_FOUND,
                                 detail=models.User.not_found_message())
         else:
-            return user
+            return models.UserPublic.model_validate(user)
 
 
 @ app.post('/users/', responses={status.HTTP_409_CONFLICT: {"description": 'User already exists', 'model': DetailOnlyResponse}})
@@ -165,7 +165,7 @@ async def post_user(user_create: models.UserCreate) -> models.UserPrivate:
 
         user = user_create.create()
         user.add_to_db(session)
-        return user
+        return models.UserPrivate.model_validate(user)
 
 
 @app.patch('/users/{user_id}/', responses={
@@ -215,8 +215,7 @@ async def patch_user(user_id: models.UserTypes.id, user_update: models.UserUpdat
                 user_update.password)
 
         user.sqlmodel_update(update_fields)
-        session.add(user)
-        session.commit()
+        user.add_to_db(session)
         return models.UserPublic.model_validate(user)
 
 
@@ -225,13 +224,14 @@ async def delete_user(user_id: models.UserTypes.id):
 
     with Session(c.db_engine) as session:
         user = models.User.get_by_id(session, user_id)
-
         if not user:
             raise HTTPException(
                 status.HTTP_404_NOT_FOUND, detail=models.User.not_found_message())
 
-        session.delete(user)
-        session.commit()
+        if not user.delete(session):
+            raise HTTPException(
+                status.HTTP_500_INTERNAL_SERVER_ERROR, detail='Could not delete user')
+
         return Response(status_code=204)
 
 

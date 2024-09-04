@@ -2,9 +2,10 @@ import asyncio
 import typing
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
+from sqlmodel import Session
+from gallery import models
 # Adjust the import as necessary
-from main import login
+from main import login, c, post_user
 
 # Mock the OAuth2PasswordRequestForm
 
@@ -25,9 +26,34 @@ def mock_depends(dependency):
 
 
 async def main():
-    form_data = mock_depends(OAuth2PasswordRequestForm)
-    token_response = await login(form_data)
-    print(token_response)
+    # c.create_tables()
+
+    # user = models.UserCreate(
+    #     username="admin", email="test@test.com", password="password")
+    # await post_user(user)
+
+    with Session(c.db_engine) as session:
+
+        # gallery = models.Gallery(
+        #     id='1', name='Test Gallery')
+        # gallery.add_to_db(session)
+
+        gallery = models.Gallery.get_by_id(session, '1')
+        print(gallery)
+
+        # perm = models.GalleryPermission(
+        #     gallery_id='1', user_id='2', permission_level=models.PermissionLevel.EDITOR)
+
+        # perm.add_to_db(session)
+
+        # print(models.GalleryPermission.get_by_id(session, ('1', '1')))
+
+        # gallery = models.Gallery.get_by_id(session, '1')
+        # print(gallery)
+
+        # form_data = mock_depends(OAuth2PasswordRequestForm)
+        # token_response = await login(form_data)
+        # print(token_response)
 
 if __name__ == "__main__":
     # Run the example

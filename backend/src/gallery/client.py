@@ -24,6 +24,10 @@ class DbConfig(typing.TypedDict):
     path: PathConfig
 
 
+class MediaRootConfig(typing.TypedDict):
+    path: PathConfig
+
+
 class AuthenticationConfig(typing.TypedDict):
     default_expiry_timedelta: datetime.timedelta
 
@@ -36,6 +40,7 @@ class JWTConfig(typing.TypedDict):
 class Config(typing.TypedDict):
     uvicorn: UvicornConfig
     db: DbConfig
+    media_root: MediaRootConfig
     authentication: AuthenticationConfig
     jwt: JWTConfig
 
@@ -50,6 +55,13 @@ DefaultConfig: Config = {
             'filename': 'gallery.db',
         }
     },
+    'media_root': {
+        'path': {
+            'parent_dir': config.DATA_DIR,
+            'filename': 'media_root'
+        }
+    },
+
     'authentication': {
         'default_expiry_timedelta': datetime.timedelta(minutes=5),
     },
@@ -79,6 +91,7 @@ class Client:
 
     uvicorn_port: uvicorn_port_type
     db_engine: Engine
+    media_root_path: pathlib.Path
     authentication: AuthenticationConfig
     jwt_secret_key: str
     jwt_algorithm: str
@@ -94,6 +107,10 @@ class Client:
         # db
         db_engine_path = get_path_from_config(merged_config['db']['path'])
         self.db_engine = create_engine(f'sqlite:///{db_engine_path}')
+
+        # media root
+        self.media_root_path = get_path_from_config(
+            merged_config['media_root']['path'])
 
         # authentication
         self.authentication = merged_config['authentication']
