@@ -1,9 +1,10 @@
 import typing
 import uuid
-from sqlmodel import SQLModel, Field, Column, Session, select, delete
+from sqlmodel import SQLModel, Field, Column, Session, select, delete, Relationship
 from pydantic import BaseModel, EmailStr, constr, StringConstraints
 from gallery import utils
 from abc import ABC, abstractmethod
+import datetime as datetime_module
 
 
 class Singular[IDType](ABC):
@@ -93,6 +94,8 @@ class User(SQLModel, Singular, UserBase, table=True):
     email: UserTypes.email = Field(index=True)
     hashed_password: UserTypes.hashed_password | None
 
+    collections: list['Collection'] = Relationship(back_populates='user')
+
     @classmethod
     def authenticate(cls, session: Session, username: str, password: str) -> typing.Self | None:
         user = session.exec(select(cls).where(
@@ -140,31 +143,53 @@ class UserPrivate(BaseModel, UserBase):
     class Config:
         from_attributes = True
 
-# Studio
+# Collection
 
 
-class StudioTypes:
+class CollectionTypes:
     id = str
-    name = str
+    name = typing.Annotated[str, StringConstraints(
+        min_length=1, max_length=256)]
+    user_id = UserTypes.id
+    parent_id = typing.Optional[str]  # CollectionTypes.id
+    description = typing.Optional[str]
+    datetime = typing.Optional[datetime_module.datetime]
 
 
-class StudioBase(SQLModel):
-    name: StudioTypes.name
-
-
-class Studio(StudioBase, Singular, table=True):
-    __tablename__ = 'studio'
-    id: StudioTypes.id = Field(
-        primary_key=True, index=True)
-
-
-class StudioCreate(StudioBase):
+class CollectionBase:
     pass
 
 
-class StudioUpdate(StudioBase):
-    name: StudioTypes.name | None = None
+class Collection(SQLModel, Singular, CollectionBase, table=True):
+    __tablename__ = 'collection'
+    id: CollectionTypes.id = Field(
+        primary_key=True, index=True)
+    name: CollectionTypes.name
+    user_id: CollectionTypes.user_id = Field(
+        index=True, foreign_key=User.__tablename__ + '.id')
+    parent_id: CollectionTypes.parent_id = Field(
+        default=None, foreign_key=__tablename__ + '.id')
+    description: CollectionTypes.description = Field(default=None)
+    datetime: CollectionTypes.datetime = Field(default=None)
+
+    user: User = Relationship(back_populates='collections')
 
 
-class StudioPublic(StudioBase):
-    id: StudioTypes.id
+class CollectionCreate(BaseModel, SingularCreate, CollectionBase):
+    pass
+
+
+class CollectionUpdate(BaseModel, CollectionBase):
+    pass
+
+
+class CollectionPublic(BaseModel, CollectionBase):
+
+    class Config:
+        from_attributes = True
+
+
+class CollectionPrivate(BaseModel, CollectionBase):
+
+    class Config:
+        from_attributes = True
