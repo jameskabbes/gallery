@@ -11,6 +11,7 @@ import typing
 import httpx
 import jwt
 from jwt.exceptions import InvalidTokenError, MissingRequiredClaimError, DecodeError
+from sqlalchemy import and_
 from pydantic import BaseModel
 import datetime
 from functools import wraps
@@ -41,6 +42,10 @@ class DetailOnlyResponse(BaseModel):
 
 class NotFoundResponse(DetailOnlyResponse):
     pass
+
+
+class ItemAvailableResponse(BaseModel):
+    available: bool
 
 
 def create_access_token(data: typing.Annotated[dict, 'The data to encode'], expiry_datetime: typing.Annotated[typing.Optional[datetime.timedelta], 'The datetime the token expires'] = None) -> str:
@@ -125,11 +130,35 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 # USERS
 
+@ app.get('/users/available/username/{username}/')
+async def user_username_available(username: models.UserTypes.username) -> ItemAvailableResponse:
+
+    with Session(c.db_engine) as session:
+        if len(username) < 1:
+            return ItemAvailableResponse(available=False)
+
+        with Session(c.db_engine) as session:
+            if session.exec(select(models.User).where(models.User.username == username)).first():
+                return ItemAvailableResponse(available=False)
+            else:
+                return ItemAvailableResponse(available=True)
+
+
+@ app.get('/users/available/email/{email}/')
+async def user_email_available(email: models.UserTypes.email) -> ItemAvailableResponse:
+
+    with Session(c.db_engine) as session:
+        if session.exec(select(models.User).where(models.User.email == email)).first():
+            return ItemAvailableResponse(available=False)
+        else:
+            return ItemAvailableResponse(available=True)
+
+
 @app.get('/users/{user_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
 async def get_user_by_id(user_id: models.UserTypes.id) -> models.UserPublic:
 
     with Session(c.db_engine) as session:
-        user = models.User.get_by_id(session, user_id)
+        user = models.User.get_one_by_id(session, user_id)
 
         if not user:
             raise HTTPException(status.HTTP_404_NOT_FOUND,
@@ -142,7 +171,8 @@ async def get_user_by_id(user_id: models.UserTypes.id) -> models.UserPublic:
 async def get_user_by_username(username: models.UserTypes.username) -> models.UserPublic:
 
     with Session(c.db_engine) as session:
-        user = models.User.get_by_key_value(session, 'username', username)
+        user = models.User.get_one_by_key_values(
+            session, {'username': username})
         if not user:
             raise HTTPException(status.HTTP_404_NOT_FOUND,
                                 detail=models.User.not_found_message())
@@ -154,12 +184,9 @@ async def get_user_by_username(username: models.UserTypes.username) -> models.Us
 async def post_user(user_create: models.UserCreate) -> models.UserPrivate:
 
     with Session(c.db_engine) as session:
-        existing_username = models.User.get_by_key_value(
-            session, 'username', user_create.username)
-        existing_email = models.User.get_by_key_value(
-            session, 'email', user_create.email)
 
-        if existing_username or existing_email:
+        # see if the username or email already exists
+        if not await models.User.is_available(session, models.UserAvailable.model_validate(user_create)):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail='User already exists')
 
@@ -182,7 +209,7 @@ async def patch_user(user_id: models.UserTypes.id, user_update: models.UserUpdat
 
     with Session(c.db_engine) as session:
 
-        user = models.User.get_by_id(session, user_id)
+        user = models.User.get_one_by_id(session, user_id)
         if not user:
             raise HTTPException(status.HTTP_404_NOT_FOUND,
                                 detail=models.User.not_found_message())
@@ -194,14 +221,16 @@ async def patch_user(user_id: models.UserTypes.id, user_update: models.UserUpdat
         # if they changed their username, check if it's available
         if user_update.username != None:
             if user.username != user_update.username:
-                if models.User.key_value_exists(session, 'username', user_update.username):
+                response = await user_username_available(user_update.username)
+                if response.available == False:
                     raise HTTPException(status.HTTP_409_CONFLICT,
                                         detail='Username already exists')
 
         # if they changed their email, check if it's available
         if user_update.email != None:
             if user.email != user_update.email:
-                if models.User.key_value_exists(session, 'email', user_update.email):
+                response = await user_email_available(user_update.email)
+                if response.available == False:
                     raise HTTPException(status.HTTP_409_CONFLICT,
                                         detail='Email already exists')
 
@@ -219,50 +248,139 @@ async def patch_user(user_id: models.UserTypes.id, user_update: models.UserUpdat
         return models.UserPublic.model_validate(user)
 
 
-@ app.delete('/users/{user_id}/', status_code=204, responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
-async def delete_user(user_id: models.UserTypes.id):
+@ app.delete('/users/{user_id}/', status_code=204, responses={
+    status.HTTP_403_FORBIDDEN: {"description": 'User does not have permission to delete this user', 'model': DetailOnlyResponse},
+    status.HTTP_404_NOT_FOUND: {
+        "description": models.User.not_found_message(), 'model': NotFoundResponse}
+}
+)
+async def delete_user(user_id: models.UserTypes.id, token_return: typing.Annotated[GetTokenReturn, Depends(get_token)]) -> Response:
+
+    auth_return = await get_auth(token_return, expiry_timedelta=datetime.timedelta(minutes=5))
+    if auth_return.exception:
+        raise auth.EXCEPTION_MAPPING[auth_return.exception]
 
     with Session(c.db_engine) as session:
-        user = models.User.get_by_id(session, user_id)
-        if not user:
-            raise HTTPException(
-                status.HTTP_404_NOT_FOUND, detail=models.User.not_found_message())
 
-        if not user.delete(session):
-            raise HTTPException(
-                status.HTTP_500_INTERNAL_SERVER_ERROR, detail='Could not delete user')
+        if user_id != auth_return.user.id:
+            raise HTTPException(status.HTTP_403_FORBIDDEN,
+                                detail='User does not have permission to delete this user')
 
-        return Response(status_code=204)
-
-
-class ItemAvailableResponse(BaseModel):
-    available: bool
-
-
-@ app.get('/users/available/username/{username}/')
-async def user_username_available(username: models.UserTypes.username) -> ItemAvailableResponse:
-
-    with Session(c.db_engine) as session:
-        if len(username) < 1:
-            return ItemAvailableResponse(available=False)
-
-        with Session(c.db_engine) as session:
-            if models.User.key_value_exists(session, 'username', username):
-                return ItemAvailableResponse(available=False)
-            else:
-                return ItemAvailableResponse(available=True)
-
-
-@ app.get('/users/available/email/{email}/')
-async def user_username_exists(email: models.UserTypes.email) -> ItemAvailableResponse:
-
-    with Session(c.db_engine) as session:
-        user = session.exec(select(models.User).where(
-            models.User.email == email)).first()
-        if user:
-            return {"available": False}
+        if models.User.delete_one_by_id(session, user_id) == 0:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail=models.User.not_found_message())
         else:
-            return {"available": True}
+            return Response(status_code=204)
+
+
+# Gallery
+
+async def get_gallery_available_params(
+    name: models.GalleryTypes.name,
+    parent_id: models.GalleryTypes.parent_id = None,
+    date: models.GalleryTypes.date = None
+) -> models.GalleryAvailable:
+    return models.GalleryAvailable(name=name, parent_id=parent_id, date=date)
+
+
+@ app.get('/galleries/available/')
+async def get_gallery_available(
+    token_return: typing.Annotated[GetTokenReturn, Depends(get_token)],
+    gallery_available: models.GalleryAvailable = Depends(
+        get_gallery_available_params)
+) -> ItemAvailableResponse:
+
+    auth_return = await get_auth(token_return)
+    if auth_return.exception:
+        raise auth.EXCEPTION_MAPPING[auth_return.exception]
+
+    with Session(c.db_engine) as session:
+        # Check if the gallery name, parent_id, and date all exist already
+        return ItemAvailableResponse(available=await models.Gallery.is_available(session, gallery_available))
+
+
+@app.get('/galleries/{gallery_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.Gallery.not_found_message(), 'model': NotFoundResponse}})
+async def get_gallery(gallery_id: models.GalleryTypes.id, token_return: typing.Annotated[GetTokenReturn, Depends(get_token)]) -> models.Gallery:
+
+    auth_return = await get_auth(token_return)
+    if auth_return.exception:
+        raise auth.EXCEPTION_MAPPING[auth_return.exception]
+
+    with Session(c.db_engine) as session:
+        gallery = models.Gallery.get_one_by_id(session, gallery_id)
+        if not gallery:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail=models.Gallery.not_found_message())
+
+        if gallery.visibility == models.VisibilityLevel.PRIVATE:
+            gallery_permission = models.GalleryPermission.get_one_by_id(
+                session, (gallery_id, auth_return.user.id))
+
+            if not gallery_permission:
+                raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                    detail=models.Gallery.not_found_message())
+
+        return gallery
+
+
+@ app.post('/galleries/', responses={status.HTTP_409_CONFLICT: {"description": 'Gallery already exists', 'model': DetailOnlyResponse}})
+async def post_gallery(gallery_create: models.GalleryCreate, token_return: typing.Annotated[GetTokenReturn, Depends(get_token)]) -> models.Gallery:
+
+    auth_return = await get_auth(token_return)
+    if auth_return.exception:
+        raise auth.EXCEPTION_MAPPING[auth_return.exception]
+
+    with Session(c.db_engine) as session:
+
+        if not await models.Gallery.is_available(session, models.GalleryAvailable.model_validate(gallery_create)):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail='Gallery already exists')
+
+        gallery = gallery_create.create()
+        gallery.add_to_db(session)
+
+        gallery_permission = models.GalleryPermission(
+            gallery_id=gallery.id, user_id=auth_return.user.id, permission_level=models.PermissionLevel.OWNER)
+        gallery_permission.add_to_db(session)
+
+        return models.Gallery.model_validate(gallery)
+
+
+@app.patch('/galleries/{gallery_id}/', responses={
+    status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse},
+    status.HTTP_403_FORBIDDEN: {"description": 'User does not have permission to update this gallery', 'model': DetailOnlyResponse},
+    status.HTTP_404_NOT_FOUND: {"description": models.Gallery.not_found_message(), 'model': NotFoundResponse},
+    status.HTTP_409_CONFLICT: {"description": 'Gallery already exists', 'model': DetailOnlyResponse}, }
+)
+async def patch_gallery(gallery_id: models.GalleryTypes.id, gallery_update: models.GalleryUpdate, token_return: typing.Annotated[GetTokenReturn, Depends(get_token)]) -> models.Gallery:
+
+    auth_return = await get_auth(token_return)
+    if auth_return.exception:
+        raise auth.EXCEPTION_MAPPING[auth_return.exception]
+
+    with Session(c.db_engine) as session:
+        gallery = models.Gallery.get_one_by_id(session, gallery_id)
+        if not gallery:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail=models.Gallery.not_found_message())
+
+        gallery_permission = models.GalleryPermission.get_one_by_id(
+            session, (gallery_id, auth_return.user.id))
+
+        if not gallery_permission and gallery.visibility == models.VisibilityLevel.PRIVATE:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail=models.Gallery.not_found_message())
+
+        if gallery_permission.permission_level < models.PermissionLevel.EDITOR:
+            raise HTTPException(status.HTTP_403_FORBIDDEN,
+                                detail='User does not have permission to update this gallery')
+
+        response = await get_gallery_available(token_return, name=gallery_update.name, parent_id=gallery_update.parent_id, date=gallery_update.date)
+        if response.available == False:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail='Gallery already exists')
+
+        gallery.sqlmodel_update(gallery_update)
 
 
 assert c.root_config['auth_key'] == 'auth'
@@ -339,7 +457,7 @@ async def get_pages_profile(token_return: typing.Annotated[GetTokenReturn, Depen
         raise auth.EXCEPTION_MAPPING[auth_return.exception]
 
     with Session(c.db_engine) as session:
-        user = models.User.get_by_id(session, auth_return.user.id)
+        user = models.User.get_one_by_id(session, auth_return.user.id)
         if user is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND,
                                 detail=models.User.not_found_message())

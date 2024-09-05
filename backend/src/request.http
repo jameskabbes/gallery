@@ -1,15 +1,6 @@
-PATCH http://localhost:3000/api/users/9c242e6b-ae6a-4c0f-bdc7-56dd05abc26c/
+GET http://localhost:8087/galleries/available/?name=Test&date=2024-09-05
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5YzI0MmU2Yi1hZTZhLTRjMGYtYmRjNy01NmRkMDVhYmMyNmMiLCJpYXQiOjE3MjQ3MjU3OTYuNzc5NTQ5fQ.gqhxYGJQY5_4IM_9WNB6COO0cw-aQ-7TtmNy_Gbv2oA
+Authorization: Bearer token
 
-{
-    "username": "admin"
-}
-
-###
-
-GET http://localhost:3000/api/users/9c242e6b-ae6a-4c0f-bdc7-56dd05abc26c/
-Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5YzI0MmU2Yi1hZTZhLTRjMGYtYmRjNy01NmRkMDVhYmMyNmMiLCJpYXQiOjE3MjQ3MjU0NjYuODI4MjN9.Ekk3zIj9m22NUfURz1QRElpbiStIqUzp_jLhhkaoyZQ
 
 

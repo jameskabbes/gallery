@@ -63,7 +63,7 @@ DefaultConfig: Config = {
     },
 
     'authentication': {
-        'default_expiry_timedelta': datetime.timedelta(minutes=5),
+        'default_expiry_timedelta': datetime.timedelta(days=7),
     },
     'jwt': {
         'secret_key_path': {

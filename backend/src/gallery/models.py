@@ -2,7 +2,7 @@ import typing
 import uuid
 from sqlmodel import SQLModel, Field, Column, Session, select, delete, Relationship
 from pydantic import BaseModel, EmailStr, constr, StringConstraints
-from sqlalchemy import PrimaryKeyConstraint, and_
+from sqlalchemy import PrimaryKeyConstraint, and_, or_
 from gallery import utils
 from abc import ABC, abstractmethod
 import datetime as datetime_module
@@ -20,9 +20,24 @@ class TokenData(BaseModel):
 
 
 class PermissionLevel(Enum):
-    OWNER = 'owner'
-    EDITOR = 'editor'
     VIEWER = 'viewer'
+    EDITOR = 'editor'
+    OWNER = 'owner'
+
+    def __lt__(self, other):
+        order = ['viewer', 'editor', 'owner']
+        if self.__class__ is other.__class__:
+            return order.index(self.value) < order.index(other.value)
+        return NotImplemented
+
+    def __le__(self, other):
+        return self < other or self == other
+
+    def __gt__(self, other):
+        return not self <= other
+
+    def __ge__(self, other):
+        return not self < other
 
 
 class VisibilityLevel(Enum):
@@ -36,12 +51,24 @@ class Table[IDType]:
 
     _ID_COLS: typing.ClassVar[list[str]] = ['id']
 
+    @property
+    def _id(self) -> IDType:
+        """Return the ID of the model"""
+
+        if len(self._ID_COLS) > 1:
+            return tuple(getattr(self, key) for key in self._ID_COLS)
+        else:
+            return getattr(self, self._ID_COLS[0])
+
     @classmethod
     def generate_id(cls):
+        """Generate a new ID for the model"""
+
         return str(uuid.uuid4())
 
     @classmethod
-    def get_by_id(cls, session: Session, id: IDType) -> typing.Self | None:
+    def get_one_by_id(cls, session: Session, id: IDType) -> typing.Self | None:
+        """Get a model by its ID"""
 
         if len(cls._ID_COLS) > 1:
             assert isinstance(id, (tuple, list))
@@ -51,8 +78,14 @@ class Table[IDType]:
             return cls._get_by_key_values(session, {cls._ID_COLS[0]: id}).one_or_none()
 
     @classmethod
-    def get_by_key_value(cls, session: Session, key: str, value: typing.Any) -> list[typing.Self]:
-        return cls._get_by_key_values(session, {key: value})
+    def get_one_by_key_values(cls, session: Session, key_values: dict[str, typing.Any]) -> typing.Self | None:
+        """Get a model by its key values"""
+        return cls._get_by_key_values(session, key_values).one_or_none()
+
+    @classmethod
+    def get_all_by_key_values(cls, session: Session, key_values: dict[str, typing.Any]) -> list[typing.Self]:
+        """Get all models by their key values"""
+        return cls._get_by_key_values(session, key_values).all()
 
     @classmethod
     def _get_by_key_values(cls, session: Session, key_values: dict[str, typing.Any]):
@@ -63,32 +96,40 @@ class Table[IDType]:
         query = select(cls).where(and_(*conditions))
         return session.exec(query)
 
-    @classmethod
-    def key_value_exists(cls, session: Session, key: str, value: typing.Any) -> bool:
-        return cls.get_by_key_value(session, key, value) is not None
-
     def add_to_db(self, session: Session):
+        """Add the model to the database"""
+
         session.add(self)
         session.commit()
         session.refresh(self)
 
     @classmethod
-    def delete_by_id(cls, session: Session, id: IDType) -> bool:
+    def delete_one_by_id(cls, session: Session, id: IDType) -> int:
+        """Delete a model by its ID"""
 
-        item = cls.get_by_id(session, id)
-        if not item:
-            return False
+        return cls.delete_many_by_ids(session, [id])
 
-        session.delete(item)
+    @classmethod
+    def delete_many_by_ids(cls, session: Session, ids: list[typing.Any]) -> int:
+        """Delete models by their IDs"""
+
+        if len(cls._ID_COLS) > 1:
+            conditions = [and_(*[getattr(cls, cls._ID_COLS[i]) == id[i]
+                               for i in range(len(cls._ID_COLS))]) for id in ids]
+        else:
+            conditions = [getattr(cls, cls._ID_COLS[0]) == id for id in ids]
+
+        query = delete(cls).where(or_(*conditions))
+        result = session.exec(query)
         session.commit()
-        return True
-
-    def delete(self, session: Session) -> bool:
-        return self.delete_by_id(session, getattr(self, self._ID_COL))
+        return result.rowcount
 
     @classmethod
     def not_found_message(cls) -> str:
         return f'{cls.__name__} not found'
+
+    def is_available(self, session: Session) -> bool:
+        return True
 
 
 class SingularCreate[TableType: Table](BaseModel):
@@ -126,44 +167,10 @@ class UserBase:
         return token_payload.get(self._payload_claim)
 
 
-class User(SQLModel, Table[UserTypes.id], UserBase, table=True):
-    __tablename__ = 'user'
-    id: UserTypes.id = Field(primary_key=True, index=True)
-    username: UserTypes.username = Field(index=True)
-    email: UserTypes.email = Field(index=True)
-    hashed_password: UserTypes.hashed_password | None
-
-    @classmethod
-    def authenticate(cls, session: Session, username: str, password: str) -> typing.Self | None:
-        user = session.exec(select(cls).where(
-            cls.username == username)).first()
-
-        if not user:
-            return None
-        if not utils.verify_password(password, user.hashed_password):
-            return None
-        return user
-
-
-class UserCreate(SingularCreate[User], UserBase):
-    username: UserTypes.username
-    email: UserTypes.email
-    password: UserTypes.password
-
-    _SINGULAR_MODEL: typing.ClassVar[typing.Type[User]] = User
-
-    def create(self) -> User:
-        return User(
-            id=self._SINGULAR_MODEL.generate_id(),
-            username=self.username,
-            email=self.email,
-            hashed_password=utils.hash_password(self.password))
-
-
 class UserUpdate(BaseModel, UserBase):
-    username: typing.Optional[UserTypes.username]
-    email: typing.Optional[UserTypes.email]
-    password: typing.Optional[UserTypes.password]
+    username: typing.Optional[UserTypes.username] = None
+    email: typing.Optional[UserTypes.email] = None
+    password: typing.Optional[UserTypes.password] = None
 
 
 class UserPublic(BaseModel, UserBase):
@@ -182,6 +189,52 @@ class UserPrivate(BaseModel, UserBase):
     class Config:
         from_attributes = True
 
+
+class UserAvailable(BaseModel, UserBase):
+    username: UserTypes.username
+    email: UserTypes.email
+
+    class Config:
+        from_attributes = True
+
+
+class User(SQLModel, Table[UserTypes.id], UserBase, table=True):
+    __tablename__ = 'user'
+    id: UserTypes.id = Field(primary_key=True, index=True)
+    username: UserTypes.username = Field(index=True)
+    email: UserTypes.email = Field(index=True)
+    hashed_password: UserTypes.hashed_password | None
+
+    @classmethod
+    def authenticate(cls, session: Session, username: str, password: str) -> typing.Self | None:
+        user = session.exec(select(cls).where(
+            cls.username == username)).first()
+
+        if not user:
+            return None
+        if not utils.verify_password(password, user.hashed_password):
+            return None
+        return user
+
+    async def is_available(self, session: Session, user_available: UserAvailable) -> bool:
+        return session.exec(select(User).where(User.username == user_available.username or User.email == user_available.email)).first() is None
+
+
+class UserCreate(SingularCreate[User], UserBase):
+    username: UserTypes.username
+    email: UserTypes.email
+    password: UserTypes.password
+
+    _SINGULAR_MODEL: typing.ClassVar[typing.Type[User]] = User
+
+    def create(self) -> User:
+        return User(
+            id=self._SINGULAR_MODEL.generate_id(),
+            username=self.username,
+            email=self.email,
+            hashed_password=utils.hash_password(self.password))
+
+
 # Collection
 
 
@@ -193,41 +246,28 @@ class GalleryTypes:
     parent_id = str  # GalleryTypes.id
     description = typing.Annotated[str, StringConstraints(
         min_length=1, max_length=20000)]
-    datetime = datetime_module.datetime
+    date = datetime_module.date
 
 
 class GalleryBase:
     pass
 
 
-class Gallery(SQLModel, Table[GalleryTypes.id], GalleryBase, table=True):
-    __tablename__ = 'gallery'
-    id: GalleryTypes.id = Field(
-        primary_key=True, index=True)
-    name: GalleryTypes.name
-    visibility: GalleryTypes.visibility = Field(VisibilityLevel.PUBLIC)
-    parent_id: GalleryTypes.parent_id | None = Field(
-        default=None, foreign_key=__tablename__ + '.id')
-    description: GalleryTypes.name = Field(default='')
-    datetime: GalleryTypes.datetime | None = Field(default=None)
-
-
-class GalleryCreate(SingularCreate[GalleryBase], GalleryBase):
-    name: GalleryTypes.name
-    visibility: GalleryTypes.visibility
-    parent_id: typing.Optional[GalleryTypes.parent_id]
-    description: typing.Optional[GalleryTypes.description]
-    datetime: typing.Optional[GalleryTypes.datetime]
-
-    _SINGULAR_MODEL: typing.ClassVar[typing.Type[Gallery]] = Gallery
-
-
 class GalleryUpdate(BaseModel, GalleryBase):
-    name: typing.Optional[GalleryTypes.name]
-    visibility: typing.Optional[GalleryTypes.visibility]
-    parent_id: typing.Optional[GalleryTypes.parent_id]
-    description: typing.Optional[GalleryTypes.description]
-    datetime: typing.Optional[GalleryTypes.datetime]
+    name: typing.Optional[GalleryTypes.name] = None
+    visibility: typing.Optional[GalleryTypes.visibility] = None
+    parent_id: typing.Optional[GalleryTypes.parent_id] = None
+    description: typing.Optional[GalleryTypes.description] = None
+    date: typing.Optional[GalleryTypes.date] = None
+
+
+class GalleryAvailable(BaseModel, GalleryBase):
+    name: GalleryTypes.name
+    parent_id: GalleryTypes.parent_id | None = None
+    date: GalleryTypes.date | None = None
+
+    class Config:
+        from_attributes = True
 
 
 class GalleryPublic(BaseModel, GalleryBase):
@@ -244,10 +284,38 @@ class GalleryPrivate(BaseModel, GalleryBase):
     name: GalleryTypes.name
     parent_id: GalleryTypes.parent_id | None
     description: GalleryTypes.description | None
-    datetime: GalleryTypes.datetime | None
+    datetime: GalleryTypes.date | None
 
     class Config:
         from_attributes = True
+
+
+class Gallery(SQLModel, Table[GalleryTypes.id], GalleryBase, table=True):
+    __tablename__ = 'gallery'
+    id: GalleryTypes.id = Field(
+        primary_key=True, index=True)
+    name: GalleryTypes.name
+    visibility: GalleryTypes.visibility = Field(VisibilityLevel.PUBLIC)
+    parent_id: GalleryTypes.parent_id | None = Field(
+        default=None, foreign_key=__tablename__ + '.id')
+    description: GalleryTypes.name = Field(default='')
+    date: GalleryTypes.date | None = Field(default=None)
+
+    @classmethod
+    async def is_available(cls, session: Session, gallery_available: GalleryAvailable) -> bool:
+        return session.exec(select(User).where(
+            Gallery.name == gallery_available.name and Gallery.parent_id == gallery_available.parent_id and Gallery.date == gallery_available.date
+        )).first() is None
+
+
+class GalleryCreate(SingularCreate[Gallery], GalleryBase):
+    name: GalleryTypes.name
+    visibility: typing.Optional[GalleryTypes.visibility] = VisibilityLevel.PUBLIC
+    parent_id: typing.Optional[GalleryTypes.parent_id] = None
+    description: typing.Optional[GalleryTypes.description] = None
+    date: typing.Optional[GalleryTypes.date] = None
+
+    _SINGULAR_MODEL: typing.ClassVar[typing.Type[Gallery]] = Gallery
 
 
 class GalleryPermission(SQLModel, Table[tuple[str, str]], table=True):
