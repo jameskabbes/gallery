@@ -58,6 +58,12 @@ async def main():
 
         # print(models.GalleryPermission.get_by_id(session, ('1', '2')))
 
+        # print(await models.Gallery.is_available(
+        #     session, models.GalleryAvailable(name='Test Gallery')))
+
+        # print(await models.User.is_available(
+        #     session, models.UserAvailable(username='admin2', email='a@a2.com')))
+
         # form_data = mock_depends(OAuth2PasswordRequestForm)
         # token_response = await login(form_data)
         # print(token_response)

@@ -128,7 +128,8 @@ class Table[IDType]:
     def not_found_message(cls) -> str:
         return f'{cls.__name__} not found'
 
-    def is_available(self, session: Session) -> bool:
+    @classmethod
+    async def is_available(cls, session: Session) -> bool:
         return True
 
 
@@ -216,8 +217,15 @@ class User(SQLModel, Table[UserTypes.id], UserBase, table=True):
             return None
         return user
 
-    async def is_available(self, session: Session, user_available: UserAvailable) -> bool:
-        return session.exec(select(User).where(User.username == user_available.username or User.email == user_available.email)).first() is None
+    @classmethod
+    async def is_available(cls, session: Session, user_available: UserAvailable) -> bool:
+        query = select(User).where(
+            or_(
+                User.username == user_available.username,
+                User.email == user_available.email
+            )
+        )
+        return session.exec(query).first() is None
 
 
 class UserCreate(SingularCreate[User], UserBase):
@@ -303,9 +311,15 @@ class Gallery(SQLModel, Table[GalleryTypes.id], GalleryBase, table=True):
 
     @classmethod
     async def is_available(cls, session: Session, gallery_available: GalleryAvailable) -> bool:
-        return session.exec(select(User).where(
-            Gallery.name == gallery_available.name and Gallery.parent_id == gallery_available.parent_id and Gallery.date == gallery_available.date
-        )).first() is None
+
+        query = select(Gallery).where(
+            and_(
+                Gallery.name == gallery_available.name,
+                Gallery.parent_id == gallery_available.parent_id,
+                Gallery.date == gallery_available.date
+            )
+        )
+        return session.exec(query).first() is None
 
 
 class GalleryCreate(SingularCreate[Gallery], GalleryBase):
