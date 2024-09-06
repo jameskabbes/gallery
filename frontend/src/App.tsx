@@ -9,6 +9,7 @@ import { Modals } from './components/Modals';
 import { Profile } from './components/User/pages/Profile';
 import { LogIn } from './components/LogIn';
 import { SignUp } from './components/SignUp';
+import { Gallery } from './components/Gallery/pages/Gallery';
 
 function App(): JSX.Element {
   return (
@@ -23,6 +24,7 @@ function App(): JSX.Element {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/galleries/:gallery_id" element={<Gallery />} />
             <Route path="/404" element={<p>404</p>} />
             <Route path="*" element={<Navigate to="/404" />} />
           </Routes>

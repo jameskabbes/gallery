@@ -4,7 +4,7 @@ import { paths, operations, components } from '../openapi_schema';
 import { ExtractResponseTypes } from '../types';
 import { useApiCall } from '../utils/Api';
 
-const API_PATH = '/pages/home/';
+const API_PATH = '/home/page/';
 const API_METHOD = 'get';
 
 type ResponseTypesByStatus = ExtractResponseTypes<

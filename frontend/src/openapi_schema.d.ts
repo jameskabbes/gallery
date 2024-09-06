@@ -5,6 +5,14 @@
 
 
 export interface paths {
+  "/users/available/username/{username}/": {
+    /** User Username Available */
+    get: operations["user_username_available_users_available_username__username___get"];
+  };
+  "/users/available/email/{email}/": {
+    /** User Email Available */
+    get: operations["user_email_available_users_available_email__email___get"];
+  };
   "/users/{user_id}": {
     /** Get User By Id */
     get: operations["get_user_by_id_users__user_id__get"];
@@ -23,13 +31,21 @@ export interface paths {
     /** Patch User */
     patch: operations["patch_user_users__user_id___patch"];
   };
-  "/users/available/username/{username}/": {
-    /** User Username Available */
-    get: operations["user_username_available_users_available_username__username___get"];
+  "/galleries/available/": {
+    /** Get Gallery Available */
+    get: operations["get_gallery_available_galleries_available__get"];
   };
-  "/users/available/email/{email}/": {
-    /** User Username Exists */
-    get: operations["user_username_exists_users_available_email__email___get"];
+  "/galleries/{gallery_id}/": {
+    /** Get Gallery */
+    get: operations["get_gallery_galleries__gallery_id___get"];
+    /** Delete Gallery */
+    delete: operations["delete_gallery_galleries__gallery_id___delete"];
+    /** Patch Gallery */
+    patch: operations["patch_gallery_galleries__gallery_id___patch"];
+  };
+  "/galleries/": {
+    /** Post Gallery */
+    post: operations["post_gallery_galleries__post"];
   };
   "/token/": {
     /** Post Token */
@@ -43,13 +59,17 @@ export interface paths {
     /** Signup */
     post: operations["signup_signup__post"];
   };
-  "/pages/profile/": {
+  "/profile/page/": {
     /** Get Pages Profile */
-    get: operations["get_pages_profile_pages_profile__get"];
+    get: operations["get_pages_profile_profile_page__get"];
   };
-  "/pages/home/": {
-    /** Get Pages Home */
-    get: operations["get_pages_home_pages_home__get"];
+  "/home/page/": {
+    /** Get Home Page */
+    get: operations["get_home_page_home_page__get"];
+  };
+  "/galleries/{gallery_id}/page/": {
+    /** Get Gallery Page */
+    get: operations["get_gallery_page_galleries__gallery_id__page__get"];
   };
 }
 
@@ -100,10 +120,79 @@ export interface components {
     };
     /** @enum {string} */
     EXCEPTION: "invalid_token" | "token_expired" | "missing_required_claims" | "user_not_found" | "user_not_permitted" | "credentials";
+    /** Gallery */
+    Gallery: {
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
+      /** @default public */
+      visibility?: components["schemas"]["VisibilityLevel"];
+      /** Parent Id */
+      parent_id?: string | null;
+      /**
+       * Description
+       * @default
+       */
+      description?: string;
+      /** Date */
+      date?: string | null;
+    };
+    /** GalleryCreate */
+    GalleryCreate: {
+      /** Name */
+      name: string;
+      /** @default public */
+      visibility?: components["schemas"]["VisibilityLevel"] | null;
+      /** Parent Id */
+      parent_id?: string | null;
+      /**
+       * Description
+       * @default
+       */
+      description?: string | null;
+      /** Date */
+      date?: string | null;
+    };
+    /** GalleryPermission */
+    GalleryPermission: {
+      /** Gallery Id */
+      gallery_id: string;
+      /** User Id */
+      user_id: string;
+      permission_level: components["schemas"]["PermissionLevel"];
+    };
+    /** GalleryUpdate */
+    GalleryUpdate: {
+      /** Name */
+      name?: string | null;
+      visibility?: components["schemas"]["VisibilityLevel"] | null;
+      /** Parent Id */
+      parent_id?: string | null;
+      /** Description */
+      description?: string | null;
+      /** Date */
+      date?: string | null;
+    };
     /** GetAuthReturn */
     GetAuthReturn: {
       user?: components["schemas"]["UserPublic"] | null;
       exception?: components["schemas"]["EXCEPTION"] | null;
+    };
+    /** GetGalleryPageResponse */
+    GetGalleryPageResponse: {
+      auth: components["schemas"]["GetAuthReturn"];
+      gallery: components["schemas"]["Gallery"];
+      gallery_permission?: components["schemas"]["GalleryPermission"] | null;
+    };
+    /** GetHomePageResponse */
+    GetHomePageResponse: {
+      auth: components["schemas"]["GetAuthReturn"];
+    };
+    /** GetProfilePageResponse */
+    GetProfilePageResponse: {
+      auth: components["schemas"]["GetAuthReturn"];
+      user?: components["schemas"]["UserPrivate"] | null;
     };
     /** HTTPValidationError */
     HTTPValidationError: {
@@ -125,15 +214,11 @@ export interface components {
       /** Detail */
       detail: string;
     };
-    /** PagesHomeResponse */
-    PagesHomeResponse: {
-      auth: components["schemas"]["GetAuthReturn"];
-    };
-    /** PagesProfileResponse */
-    PagesProfileResponse: {
-      auth: components["schemas"]["GetAuthReturn"];
-      user?: components["schemas"]["UserPrivate"] | null;
-    };
+    /**
+     * PermissionLevel
+     * @enum {string}
+     */
+    PermissionLevel: "viewer" | "editor" | "owner";
     /** SignupResponse */
     SignupResponse: {
       auth: components["schemas"]["GetAuthReturn"];
@@ -199,6 +284,11 @@ export interface components {
       /** Error Type */
       type: string;
     };
+    /**
+     * VisibilityLevel
+     * @enum {string}
+     */
+    VisibilityLevel: "public" | "private";
   };
   responses: never;
   parameters: never;
@@ -213,6 +303,50 @@ export type external = Record<string, never>;
 
 export interface operations {
 
+  /** User Username Available */
+  user_username_available_users_available_username__username___get: {
+    parameters: {
+      path: {
+        username: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ItemAvailableResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** User Email Available */
+  user_email_available_users_available_email__email___get: {
+    parameters: {
+      path: {
+        email: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ItemAvailableResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   /** Get User By Id */
   get_user_by_id_users__user_id__get: {
     parameters: {
@@ -309,6 +443,12 @@ export interface operations {
       204: {
         content: never;
       };
+      /** @description User does not have permission to delete this user */
+      403: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
       /** @description User not found */
       404: {
         content: {
@@ -374,11 +514,13 @@ export interface operations {
       };
     };
   };
-  /** User Username Available */
-  user_username_available_users_available_username__username___get: {
+  /** Get Gallery Available */
+  get_gallery_available_galleries_available__get: {
     parameters: {
-      path: {
-        username: string;
+      query: {
+        name: string;
+        parent_id?: string;
+        date?: string;
       };
     };
     responses: {
@@ -396,18 +538,135 @@ export interface operations {
       };
     };
   };
-  /** User Username Exists */
-  user_username_exists_users_available_email__email___get: {
+  /** Get Gallery */
+  get_gallery_galleries__gallery_id___get: {
     parameters: {
       path: {
-        email: string;
+        gallery_id: string;
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ItemAvailableResponse"];
+          "application/json": components["schemas"]["Gallery"];
+        };
+      };
+      /** @description Gallery not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Delete Gallery */
+  delete_gallery_galleries__gallery_id___delete: {
+    parameters: {
+      path: {
+        gallery_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      204: {
+        content: never;
+      };
+      /** @description User does not have permission to delete this gallery */
+      403: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Gallery not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Patch Gallery */
+  patch_gallery_galleries__gallery_id___patch: {
+    parameters: {
+      path: {
+        gallery_id: string;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GalleryUpdate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["Gallery"];
+        };
+      };
+      /** @description Invalid token */
+      401: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description User does not have permission to update this gallery */
+      403: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Gallery not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Gallery already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Post Gallery */
+  post_gallery_galleries__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GalleryCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["Gallery"];
+        };
+      };
+      /** @description Gallery already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
         };
       };
       /** @description Validation Error */
@@ -497,23 +756,45 @@ export interface operations {
     };
   };
   /** Get Pages Profile */
-  get_pages_profile_pages_profile__get: {
+  get_pages_profile_profile_page__get: {
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["PagesProfileResponse"];
+          "application/json": components["schemas"]["GetProfilePageResponse"];
         };
       };
     };
   };
-  /** Get Pages Home */
-  get_pages_home_pages_home__get: {
+  /** Get Home Page */
+  get_home_page_home_page__get: {
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["PagesHomeResponse"];
+          "application/json": components["schemas"]["GetHomePageResponse"];
+        };
+      };
+    };
+  };
+  /** Get Gallery Page */
+  get_gallery_page_galleries__gallery_id__page__get: {
+    parameters: {
+      path: {
+        gallery_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["GetGalleryPageResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };

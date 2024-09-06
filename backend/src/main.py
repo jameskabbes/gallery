@@ -299,7 +299,7 @@ async def get_gallery_available(
         return ItemAvailableResponse(available=await models.Gallery.is_available(session, gallery_available))
 
 
-@app.get('/galleries/{gallery_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.Gallery.not_found_message(), 'model': NotFoundResponse}})
+@app.get('/galleries/{gallery_id}/', responses={status.HTTP_404_NOT_FOUND: {"description": models.Gallery.not_found_message(), 'model': NotFoundResponse}})
 async def get_gallery(gallery_id: models.GalleryTypes.id, token_return: typing.Annotated[GetTokenReturn, Depends(get_token)]) -> models.Gallery:
 
     auth_return = await get_auth(token_return)
@@ -477,12 +477,12 @@ async def signup(user_create: models.UserCreate) -> SignupResponse:
     )
 
 
-class PagesProfileResponse(AuthResponse):
+class GetProfilePageResponse(AuthResponse):
     user: models.UserPrivate | None = None
 
 
-@ app.get('/pages/profile/')
-async def get_pages_profile(token_return: typing.Annotated[GetTokenReturn, Depends(get_token)]) -> PagesProfileResponse:
+@ app.get('/profile/page/')
+async def get_pages_profile(token_return: typing.Annotated[GetTokenReturn, Depends(get_token)]) -> GetProfilePageResponse:
 
     auth_return = await get_auth(token_return)
     if auth_return.exception:
@@ -495,23 +495,57 @@ async def get_pages_profile(token_return: typing.Annotated[GetTokenReturn, Depen
                                 detail=models.User.not_found_message())
 
         # convert user to models.UserPrivate
-        return PagesProfileResponse(
+        return GetProfilePageResponse(
             auth=auth_return,
             user=models.UserPrivate.model_validate(user)
         )
 
 
-class PagesHomeResponse(AuthResponse):
+class GetHomePageResponse(AuthResponse):
     pass
 
 
-@ app.get('/pages/home/')
-async def get_pages_home(token_return: typing.Annotated[GetTokenReturn, Depends(get_token)]) -> PagesHomeResponse:
+@ app.get('/home/page/')
+async def get_home_page(token_return: typing.Annotated[GetTokenReturn, Depends(get_token)]) -> GetHomePageResponse:
 
     auth_return = await get_auth(token_return)
-    return PagesHomeResponse(
+    return GetHomePageResponse(
         auth=auth_return
     )
+
+
+class GetGalleryPageResponse(AuthResponse):
+    gallery: models.Gallery
+    gallery_permission: models.GalleryPermission | None = None
+
+
+@app.get('/galleries/{gallery_id}/page/')
+async def get_gallery_page(gallery_id: models.GalleryTypes.id, token_return: typing.Annotated[GetTokenReturn, Depends(get_token)]) -> GetGalleryPageResponse:
+
+    auth_return = await get_auth(token_return)
+
+    with Session(c.db_engine) as session:
+        gallery = models.Gallery.get_one_by_id(session, gallery_id)
+        if not gallery:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail=models.Gallery.not_found_message())
+
+        gallery_permission = models.GalleryPermission.get_one_by_id(
+            session, (gallery_id, auth_return.user.id))
+
+        if gallery.visibility == models.VisibilityLevel.PRIVATE:
+            if auth_return.exception:
+                raise auth.EXCEPTION_MAPPING[auth_return.exception]
+
+            if not gallery_permission:
+                raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                    detail=models.Gallery.not_found_message())
+
+        return GetGalleryPageResponse(
+            auth=auth_return,
+            gallery=gallery,
+            gallery_permission=gallery_permission
+        )
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ import { UpdatePassword } from '../UpdatePassword';
 import { UpdateUser } from '../UpdateUser';
 import { GlobalModalsContext } from '../../../contexts/GlobalModals';
 
-const API_PATH = '/pages/profile/';
+const API_PATH = '/profile/page/';
 const API_METHOD = 'get';
 
 type ResponseTypesByStatus = ExtractResponseTypes<
