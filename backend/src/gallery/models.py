@@ -326,13 +326,13 @@ class GalleryCreate(SingularCreate[Gallery], GalleryBase):
     name: GalleryTypes.name
     visibility: typing.Optional[GalleryTypes.visibility] = VisibilityLevel.PUBLIC
     parent_id: typing.Optional[GalleryTypes.parent_id] = None
-    description: typing.Optional[GalleryTypes.description] = None
+    description: typing.Optional[GalleryTypes.description] = ''
     date: typing.Optional[GalleryTypes.date] = None
 
     _SINGULAR_MODEL: typing.ClassVar[typing.Type[Gallery]] = Gallery
 
 
-class GalleryPermission(SQLModel, Table[tuple[str, str]], table=True):
+class GalleryPermission(SQLModel, Table[typing.Annotated[tuple[str, str], '(gallery_id, user_id)']], table=True):
 
     __tablename__ = 'gallery_permission'
     __table_args__ = (

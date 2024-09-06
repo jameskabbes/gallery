@@ -383,6 +383,38 @@ async def patch_gallery(gallery_id: models.GalleryTypes.id, gallery_update: mode
         gallery.sqlmodel_update(gallery_update)
 
 
+@app.delete('/galleries/{gallery_id}/', status_code=204, responses={
+    status.HTTP_403_FORBIDDEN: {"description": 'User does not have permission to delete this gallery', 'model': DetailOnlyResponse},
+    status.HTTP_404_NOT_FOUND: {
+        "description": models.Gallery.not_found_message(), 'model': NotFoundResponse}
+}
+)
+async def delete_gallery(gallery_id: models.GalleryTypes.id, token_return: typing.Annotated[GetTokenReturn, Depends(get_token)]) -> Response:
+
+    auth_return = await get_auth(token_return)
+    if auth_return.exception:
+        raise auth.EXCEPTION_MAPPING[auth_return.exception]
+
+    with Session(c.db_engine) as session:
+
+        gallery_permission = models.GalleryPermission.get_one_by_id(
+            session, (gallery_id, auth_return.user.id))
+
+        if not gallery_permission:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail=models.Gallery.not_found_message())
+
+        if gallery_permission.permission_level < models.PermissionLevel.OWNER:
+            raise HTTPException(status.HTTP_403_FORBIDDEN,
+                                detail='User does not have permission to delete this gallery')
+
+        if models.Gallery.delete_one_by_id(session, gallery_id) == 0:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail=models.Gallery.not_found_message())
+
+        return Response(status_code=204)
+
+
 assert c.root_config['auth_key'] == 'auth'
 
 
