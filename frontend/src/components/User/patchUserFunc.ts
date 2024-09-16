@@ -20,6 +20,7 @@ async function patchUserFunc(
   let toastId = toastContext.makePending({
     message: 'Updating user...',
   });
+  await new Promise((resolve) => setTimeout(resolve, 2000));
 
   const { data, response } = await callApi<
     ResponseTypesByStatus[keyof ResponseTypesByStatus],

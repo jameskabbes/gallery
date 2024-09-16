@@ -12,12 +12,42 @@ function AccountIcon() {
   const menuRef = useRef<HTMLDivElement>(null);
   const authContext = useContext(AuthContext);
   const globalModalsContext = useContext(GlobalModalsContext);
+  useClickOutside(menuRef, () => setIsMenuVisible(false));
 
   const toggleMenu = () => {
     setIsMenuVisible(!isMenuVisible);
   };
 
-  useClickOutside(menuRef, () => setIsMenuVisible(false));
+  const menuItems = authContext.state.isActive
+    ? [
+        {
+          element: <Link to="/profile">Profile</Link>,
+          onClick: () => {},
+        },
+        {
+          element: <span>Log Out</span>,
+          onClick: () => {
+            setIsMenuVisible(false);
+            authContext.dispatch({ type: 'LOGOUT' });
+          },
+        },
+      ]
+    : [
+        {
+          element: <span>Log In</span>,
+          onClick: () => {
+            setIsMenuVisible(false);
+            globalModalsContext.toggleModal('logIn');
+          },
+        },
+        {
+          element: <span>Sign Up</span>,
+          onClick: () => {
+            setIsMenuVisible(false);
+            globalModalsContext.toggleModal('signUp');
+          },
+        },
+      ];
 
   return (
     <div className="relative" ref={menuRef}>
@@ -32,47 +62,22 @@ function AccountIcon() {
         <IoPersonCircleOutline />
       </button>
       {isMenuVisible && (
-        <div className="absolute right-0 mt-2 w-48 bg-inherit border-2 rounded-xl shadow-2xl">
+        <div
+          className="absolute right-0 mt-2 w-48 bg-inherit border-2 rounded-xl shadow-2xl"
+          ref={menuRef}
+        >
           <ul className="flex flex-col">
-            {authContext.state.isActive ? (
-              <>
-                <Link to="/profile">
-                  <li>
-                    <p>{authContext.state.auth.user.username}</p>
-                  </li>
-                </Link>
-                <button
+            <ul className="flex flex-col">
+              {menuItems.map((item, index) => (
+                <li
+                  key={index}
                   className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                  onClick={() => {
-                    setIsMenuVisible(false);
-                    authContext.dispatch({ type: 'LOGOUT' });
-                  }}
+                  onClick={item.onClick}
                 >
-                  <span>Log Out</span>
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                  onClick={() => {
-                    setIsMenuVisible(false);
-                    globalModalsContext.toggleModal('logIn');
-                  }}
-                >
-                  <span>Log In</span>
-                </button>
-                <button
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                  onClick={() => {
-                    setIsMenuVisible(false);
-                    globalModalsContext.toggleModal('signUp');
-                  }}
-                >
-                  <span>Sign Up</span>
-                </button>
-              </>
-            )}
+                  {item.element}
+                </li>
+              ))}
+            </ul>
           </ul>
         </div>
       )}

@@ -3,7 +3,6 @@ import { paths, operations, components } from '../../../openapi_schema';
 import { ExtractResponseTypes } from '../../../types';
 import { useApiCall } from '../../../utils/Api';
 import { AuthContext } from '../../../contexts/Auth';
-import { InputText } from '../../Form/InputText';
 import { UpdatePassword } from '../UpdatePassword';
 import { UpdateUser } from '../UpdateUser';
 import { GlobalModalsContext } from '../../../contexts/GlobalModals';
