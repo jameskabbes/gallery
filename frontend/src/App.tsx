@@ -4,7 +4,7 @@ import { Home } from './pages/Home';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { ApplicationContextProvider } from './contexts/Application';
-import { Toast } from './components/Toast';
+import { Toast } from './components/Toast/Toast';
 import { Modals } from './components/Modals';
 import { Profile } from './components/User/pages/Profile';
 import { LogIn } from './components/LogIn';

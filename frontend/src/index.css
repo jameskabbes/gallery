@@ -117,6 +117,9 @@ button {
   pointer-events: none;
 }
 
+.toast {
+  @apply card bg-color flex flex-row items-center space-x-1;
+}
 /* Input */
 
 .text-input {
@@ -177,19 +180,6 @@ button {
   opacity: 0;
   transform: translateY(100%);
   transition: opacity 200ms, transform 200ms;
-}
-
-.toast {
-  @apply card bg-color flex flex-row items-center space-x-1;
-}
-
-.toast-enter {
-  transform: translateX(0);
-}
-
-.toast-enter-active {
-  transform: translateX(100%);
-  transition: opacity 100ms, transform 100ms;
 }
 
 #mobile-footer {

@@ -6,7 +6,7 @@ import { AuthContext } from '../../contexts/Auth';
 import { patchUserFunc } from './patchUserFunc';
 import { components } from '../../openapi_schema';
 import { toast } from 'react-toastify';
-import { toastTemplate } from '../Toast';
+import { toastTemplate } from '../Toast/Toast';
 
 interface Props {
   userId: components['schemas']['UserPublic']['id'];

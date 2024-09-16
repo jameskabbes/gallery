@@ -9,7 +9,7 @@ import { StudiosReducerAction } from '../../types';
 import { ConfirmationModal } from '../ConfirmationModal';
 
 import { toast } from 'react-toastify';
-import { toastTemplate } from '../Toast';
+import { toastTemplate } from '../Toast/Toast';
 
 const API_PATH = '/studios/{studio_id}/';
 const API_METHOD = 'delete';

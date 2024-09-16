@@ -4,7 +4,7 @@ import { ExtractResponseTypes } from '../../types';
 import { callBackendApi } from '../../utils/Api';
 import { StudiosReducerAction } from '../../types';
 import { toast } from 'react-toastify';
-import { toastTemplate } from '../Toast';
+import { toastTemplate } from '../Toast/Toast';
 
 const API_PATH = '/studios/';
 const API_METHOD = 'post';

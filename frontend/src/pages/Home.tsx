@@ -30,9 +30,6 @@ function Home() {
 
   return (
     <div>
-      <h1 className="mb-0 leading-none">
-        <span className="loader"></span>
-      </h1>
       <h1>Test again</h1>
       <button
         className="button-primary"
