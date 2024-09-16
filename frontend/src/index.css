@@ -156,32 +156,6 @@ button {
   @apply card bg-color;
 }
 
-/* Initial state */
-.modal-enter {
-  opacity: 0;
-  transform: translateY(100%);
-}
-
-/* Entering state */
-.modal-enter-active {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 200ms, transform 200ms;
-}
-
-/* Exiting state */
-.modal-exit {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Exiting state */
-.modal-exit-active {
-  opacity: 0;
-  transform: translateY(100%);
-  transition: opacity 200ms, transform 200ms;
-}
-
 #mobile-footer {
   @apply fixed bottom-0 left-0 w-full transition-transform transform translate-y-full;
 }

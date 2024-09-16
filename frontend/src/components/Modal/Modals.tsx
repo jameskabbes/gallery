@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useContext } from 'react';
 import { CSSTransition } from 'react-transition-group';
-import { ModalsContext } from '../contexts/Modals';
-import { useEscapeKey } from '../contexts/EscapeKey';
-import { useClickOutside } from '../utils/useClickOutside';
+import { ModalsContext } from '../../contexts/Modals';
+import { useEscapeKey } from '../../contexts/EscapeKey';
 
 function Modals() {
   const modalsContext = useContext(ModalsContext);

@@ -7,7 +7,7 @@ import { AuthContext } from '../contexts/Auth';
 import { GlobalModalsContext } from '../contexts/GlobalModals';
 import { ToastContext } from '../contexts/Toast';
 
-import { Modal } from './Modal';
+import { Modal } from './Modal/Modal';
 import { isUsernameAvailable } from './User/isUsernameAvailable';
 import { isUsernameValid } from './User/isUsernameValid';
 import { isEmailAvailable } from './User/isEmailAvailable';

@@ -5,7 +5,7 @@ import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { ApplicationContextProvider } from './contexts/Application';
 import { Toast } from './components/Toast/Toast';
-import { Modals } from './components/Modals';
+import { Modals } from './components/Modal/Modals';
 import { Profile } from './components/User/pages/Profile';
 import { LogIn } from './components/LogIn';
 import { SignUp } from './components/SignUp';

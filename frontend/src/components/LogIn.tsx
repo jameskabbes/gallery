@@ -4,7 +4,7 @@ import openapi_schema from '../../../openapi_schema.json';
 
 import { InputState } from '../types';
 import { InputText } from './Form/InputText';
-import { Modal } from './Modal';
+import { Modal } from './Modal/Modal';
 import { logInUserFunc } from './User/logInUserFunc';
 import { LogInContext } from '../contexts/LogIn';
 import { GlobalModalsContext } from '../contexts/GlobalModals';

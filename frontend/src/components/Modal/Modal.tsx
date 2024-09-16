@@ -1,8 +1,15 @@
 import React, { useRef, useState } from 'react';
 import { IoClose } from 'react-icons/io5';
-import { useClickOutside } from '../utils/useClickOutside';
+import { useClickOutside } from '../../utils/useClickOutside';
 import { CSSTransition } from 'react-transition-group';
-import { useEscapeKey } from '../contexts/EscapeKey';
+import { useEscapeKey } from '../../contexts/EscapeKey';
+import './Modal.css';
+
+// change in modal.css when changing these values
+const timeouts = {
+  enter: 200,
+  exit: 200,
+};
 
 interface Props {
   children: React.ReactNode;
@@ -23,7 +30,12 @@ function Modal({
   useClickOutside(ref, onExit);
 
   return (
-    <CSSTransition in={show} timeout={200} classNames="modal" unmountOnExit>
+    <CSSTransition
+      in={show}
+      timeout={timeouts}
+      classNames="modal"
+      unmountOnExit
+    >
       <div className="modal-overlay">
         <div className="modal-content" ref={ref}>
           {includeExit && (
