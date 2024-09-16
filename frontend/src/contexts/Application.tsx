@@ -8,6 +8,7 @@ import { GlobalModalsContextProvider } from './GlobalModals';
 import { LogInContextProvider } from './LogIn';
 import { SignUpContextProvider } from './SignUp';
 import { EscapeKeyContextProvider } from './EscapeKey';
+import { ToastContextProvider } from './Toast';
 
 const ApplicationContextProvider = ({ children }) => {
   return (
@@ -20,7 +21,7 @@ const ApplicationContextProvider = ({ children }) => {
                 <LogInContextProvider>
                   <SignUpContextProvider>
                     <GlobalModalsContextProvider>
-                      {children}
+                      <ToastContextProvider>{children}</ToastContextProvider>
                     </GlobalModalsContextProvider>
                   </SignUpContextProvider>
                 </LogInContextProvider>

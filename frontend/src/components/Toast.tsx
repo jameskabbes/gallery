@@ -1,22 +1,62 @@
-import React from 'react';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import React, { useState, useEffect, useContext } from 'react';
+import { ToastContext } from '../contexts/Toast';
+import { DeviceContext } from '../contexts/Device';
 
-const toastTemplate = {
-  isLoading: false,
-  autoClose: 3000,
-  closeOnClick: true,
-};
+import { CSSTransition, TransitionGroup } from 'react-transition-group';
 
-function Toast(): JSX.Element {
+import { IoCheckmark } from 'react-icons/io5';
+import { IoAlert } from 'react-icons/io5';
+import { IoWarning } from 'react-icons/io5';
+import { Toast } from '../types';
+import tailwindConfig from '../../tailwind.config';
+
+const IconMapping: Map<Toast['type'], React.ReactNode> = new Map([
+  ['success', <IoCheckmark />],
+  ['info', <IoAlert />],
+  ['error', <IoWarning />],
+  ['pending', <span className="loader"></span>],
+]);
+
+const height = 60;
+
+function Toast() {
+  const toastContext = useContext(ToastContext);
+  const deviceContext = useContext(DeviceContext);
+
   return (
-    <ToastContainer
-      position="bottom-right"
-      pauseOnFocusLoss={false}
-      pauseOnHover={false}
-      hideProgressBar={true}
-    />
+    <div className="fixed bottom-4 right-4 flex flex-col space-y-2 w-80">
+      <TransitionGroup>
+        {Array.from(toastContext.state.toasts.keys()).map(
+          (toastId, index, array) => {
+            let toast = toastContext.state.toasts.get(toastId);
+            return (
+              <CSSTransition key={toastId} classNames="toast">
+                <div
+                  id={toastId}
+                  className="toast"
+                  style={{ height: `${height}px` }}
+                >
+                  <p
+                    className="rounded-full p-1 text-light leading-none"
+                    style={{
+                      backgroundColor:
+                        toast.type !== 'pending' &&
+                        tailwindConfig.theme.extend.colors[toast.type]['500'],
+                      animation:
+                        toast.type !== 'pending' && 'scaleUp 0.2s ease-in-out',
+                    }}
+                  >
+                    <span>{IconMapping.get(toast.type)}</span>
+                  </p>
+                  <p>{toast.message}</p>
+                </div>
+              </CSSTransition>
+            );
+          }
+        )}
+      </TransitionGroup>
+    </div>
   );
 }
 
-export { Toast, toastTemplate };
+export { Toast };

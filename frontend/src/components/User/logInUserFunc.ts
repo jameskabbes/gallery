@@ -1,9 +1,7 @@
 import React, { Component } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
-import { CallApiReturn, ExtractResponseTypes } from '../../types';
+import { CallApiReturn, ExtractResponseTypes, ToastContext } from '../../types';
 import { callApi } from '../../utils/Api';
-import { toast } from 'react-toastify';
-import { toastTemplate } from '../Toast';
 import { AuthReducerAction } from '../../types';
 
 const API_ENDPOINT = '/login/';
@@ -15,9 +13,12 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 
 async function logInUserFunc(
   formData: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/x-www-form-urlencoded'],
-  authContextDispatch: React.Dispatch<AuthReducerAction>
+  authContextDispatch: React.Dispatch<AuthReducerAction>,
+  toastContext: ToastContext
 ): Promise<CallApiReturn<ResponseTypesByStatus[keyof ResponseTypesByStatus]>> {
-  let toastId = toast.loading('Logging in');
+  let toastId = toastContext.makePending({
+    message: 'Logging in...',
+  });
 
   async function setToken(data: ResponseTypesByStatus['200']) {
     authContextDispatch({ type: 'SET_TOKEN', payload: data.token });
@@ -42,22 +43,19 @@ async function logInUserFunc(
     await setToken(apiData);
     await login(apiData);
 
-    toast.update(toastId, {
-      ...toastTemplate,
-      render: `Welcome ${apiData.auth.user.username}`,
+    toastContext.update(toastId, {
+      message: `Welcome ${apiData.auth.user.username}`,
       type: 'success',
     });
   } else if (response.status == 401) {
     const apiData = data as ResponseTypesByStatus['401'];
-    toast.update(toastId, {
-      ...toastTemplate,
-      render: apiData.detail,
+    toastContext.update(toastId, {
+      message: apiData.detail,
       type: 'error',
     });
   } else {
-    toast.update(toastId, {
-      ...toastTemplate,
-      render: `Could not log in`,
+    toastContext.update(toastId, {
+      message: 'Could not log in',
       type: 'error',
     });
   }

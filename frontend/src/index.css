@@ -179,15 +179,17 @@ button {
   transition: opacity 200ms, transform 200ms;
 }
 
-.toast-container {
+.toast {
+  @apply card bg-color flex flex-row items-center space-x-1;
 }
 
-.toast-card {
-  @apply card;
+.toast-enter {
+  transform: translateX(0);
 }
 
-.toast-body {
-  @apply text-color;
+.toast-enter-active {
+  transform: translateX(100%);
+  transition: opacity 100ms, transform 100ms;
 }
 
 #mobile-footer {
@@ -195,13 +197,14 @@ button {
 }
 
 .loader {
-  @apply border-light dark:border-dark border-t-secondary dark:border-t-secondary;
+  @apply border-light dark:border-dark border-t-primary dark:border-t-primary;
   border-width: 0.15em;
   height: 1em;
   width: 1em;
   border-radius: 50%;
   display: inline-block;
   box-sizing: border-box;
+  vertical-align: top;
   animation: rotation 1s ease-in-out infinite;
 }
 
@@ -221,6 +224,15 @@ button {
   to {
     transform: translateY(0);
     opacity: 1;
+  }
+}
+
+@keyframes scaleUp {
+  0% {
+    transform: scale(0);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 

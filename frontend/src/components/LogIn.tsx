@@ -8,11 +8,13 @@ import { Modal } from './Modal';
 import { logInUserFunc } from './User/logInUserFunc';
 import { LogInContext } from '../contexts/LogIn';
 import { GlobalModalsContext } from '../contexts/GlobalModals';
+import { ToastContext } from '../contexts/Toast';
 
 function LogIn() {
   const logInContext = useContext(LogInContext);
   const authContext = useContext(AuthContext);
   const globalModalsContext = useContext(GlobalModalsContext);
+  const toastContext = useContext(ToastContext);
 
   useEffect(() => {
     logInContext.dispatch({
@@ -31,7 +33,8 @@ function LogIn() {
           username: logInContext.state.username.value,
           password: logInContext.state.password.value,
         },
-        authContext.dispatch
+        authContext.dispatch,
+        toastContext
       );
       if (response.status == 200) {
         logInContext.dispatch({ type: 'SET_ACTIVE', payload: false });

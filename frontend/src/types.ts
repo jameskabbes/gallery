@@ -142,6 +142,54 @@ interface DataContext {
   studios: null;
 }
 
+type ToastId = string;
+
+interface Toast {
+  type: 'error' | 'info' | 'success' | 'pending';
+  message: string;
+}
+
+interface ToastNoType extends Omit<Toast, 'type'> {}
+
+interface ToastContextState {
+  toasts: Map<ToastId, Toast>;
+}
+
+interface ToastReducerActionTypes {
+  ADD: {
+    type: 'ADD';
+    payload: {
+      id: ToastId;
+      toast: Toast;
+    };
+  };
+  REMOVE: {
+    type: 'REMOVE';
+    payload: string;
+  };
+  UPDATE: {
+    type: 'UPDATE';
+    payload: {
+      id: ToastId;
+      toast: Partial<Toast>;
+    };
+  };
+  CLEAR: {
+    type: 'CLEAR';
+  };
+}
+
+type ToastReducerAction =
+  ToastReducerActionTypes[keyof ToastReducerActionTypes];
+
+interface ToastContext {
+  state: ToastContextState;
+  dispatch: React.Dispatch<ToastReducerAction>;
+  make: (toast: Toast) => ToastId;
+  makePending: (toast: ToastNoType) => ToastId;
+  update: (id: ToastId, toast: Partial<Toast>) => void;
+}
+
 interface AuthContextState {
   isActive: boolean;
   auth: components['schemas']['GetAuthReturn'];
@@ -219,6 +267,13 @@ export {
   LogInContextState,
   LogInReducerAction,
   LogInContext,
+  Toast,
+  ToastId,
+  ToastNoType,
+  ToastContextState,
+  ToastReducerActionTypes,
+  ToastReducerAction,
+  ToastContext,
   AuthReducerActionTypes,
   AuthReducerAction,
   AuthContextState,

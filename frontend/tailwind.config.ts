@@ -38,6 +38,10 @@ export default {
         accent: { ...customColors['paynes_gray'] },
         light: { ...customColors['white_smoke'] },
         dark: { ...customColors['gunmetal'] },
+        success: colors.green,
+        info: colors.blue,
+        error: colors.red,
+        warning: colors.yellow,
       },
       fontFamily: {
         sans: ['Roboto', 'system-ui', 'sans-serif'],

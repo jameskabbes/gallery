@@ -3,6 +3,7 @@ import { DeviceContext } from '../contexts/Device';
 import { paths, operations, components } from '../openapi_schema';
 import { ExtractResponseTypes } from '../types';
 import { useApiCall } from '../utils/Api';
+import { ToastContext } from '../contexts/Toast';
 
 const API_PATH = '/home/page/';
 const API_METHOD = 'get';
@@ -13,6 +14,7 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 
 function Home() {
   let deviceContext = useContext(DeviceContext);
+  let toastContext = useContext(ToastContext);
 
   const {
     data: apiData,
@@ -28,7 +30,29 @@ function Home() {
 
   return (
     <div>
-      <p>{deviceContext.isMobile}</p>
+      <h1 className="mb-0 leading-none">
+        <span className="loader"></span>
+      </h1>
+      <h1>Test again</h1>
+      <button
+        className="button-primary"
+        onClick={() => {
+          let toastId = toastContext.makePending({ message: 'making toast' });
+          const toastTypes = ['error', 'info', 'success'] as const;
+          const randomIndex = Math.floor(Math.random() * toastTypes.length);
+
+          setTimeout(() => {
+            toastContext.update(toastId, {
+              message: 'made toast',
+              type: toastTypes[randomIndex],
+              // choose random from options
+            });
+          }, 2000);
+        }}
+      >
+        Add Random Toast
+      </button>
+
       <h1>h1</h1>
       <h2>h2</h2>
       <h3>h3</h3>
