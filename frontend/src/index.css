@@ -124,11 +124,11 @@ button {
 
 .text-input {
   @apply w-full bg-inherit focus:outline-none border-b-2 border-light-darker dark:border-dark-darker;
-  transition: border-color 0.3s;
+  transition: border-color 0.2s;
 }
 
 .text-input:focus {
-  @apply border-secondary;
+  @apply border-primary;
 }
 
 .component {

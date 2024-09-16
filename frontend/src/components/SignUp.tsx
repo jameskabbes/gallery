@@ -5,6 +5,7 @@ import openapi_schema from '../../../openapi_schema.json';
 import { SignUpContext } from '../contexts/SignUp';
 import { AuthContext } from '../contexts/Auth';
 import { GlobalModalsContext } from '../contexts/GlobalModals';
+import { ToastContext } from '../contexts/Toast';
 
 import { Modal } from './Modal';
 import { isUsernameAvailable } from './User/isUsernameAvailable';
@@ -20,6 +21,7 @@ function SignUp() {
   const signUpContext = useContext(SignUpContext);
   const authContext = useContext(AuthContext);
   const globalModalsContext = useContext(GlobalModalsContext);
+  const toastContext = useContext(ToastContext);
 
   useEffect(() => {
     signUpContext.dispatch({
@@ -46,7 +48,8 @@ function SignUp() {
           password: signUpContext.state.password.value,
           username: signUpContext.state.username.value,
         },
-        authContext.dispatch
+        authContext.dispatch,
+        toastContext
       );
       if (resp) {
         signUpContext.dispatch({ type: 'SET_ACTIVE', payload: false });
