@@ -8,7 +8,6 @@ import {
 
 const signUpReducerDefaultState: SignUpContextState = {
   isActive: false,
-  username: { ...defaultInputState },
   email: { ...defaultInputState },
   password: { ...defaultInputState },
   confirmPassword: { ...defaultInputState },
@@ -19,8 +18,6 @@ function signUpReducer(state: SignUpContextState, action: SignUpReducerAction) {
   switch (action.type) {
     case 'SET_VALID':
       return { ...state, valid: action.payload };
-    case 'SET_USERNAME':
-      return { ...state, username: action.payload };
     case 'SET_EMAIL':
       return { ...state, email: action.payload };
     case 'SET_PASSWORD':

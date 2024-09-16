@@ -134,6 +134,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 async def user_username_available(username: models.UserTypes.username) -> ItemAvailableResponse:
 
     with Session(c.db_engine) as session:
+
         if len(username) < 1:
             return ItemAvailableResponse(available=False)
 
@@ -148,10 +149,10 @@ async def user_username_available(username: models.UserTypes.username) -> ItemAv
 async def user_email_available(email: models.UserTypes.email) -> ItemAvailableResponse:
 
     with Session(c.db_engine) as session:
-        if session.exec(select(models.User).where(models.User.email == email)).first():
-            return ItemAvailableResponse(available=False)
-        else:
+        if models.User.get_one_by_key_values(session, {'email': email}) == None:
             return ItemAvailableResponse(available=True)
+        else:
+            return ItemAvailableResponse(available=False)
 
 
 @app.get('/users/{user_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
@@ -185,8 +186,10 @@ async def post_user(user_create: models.UserCreate) -> models.UserPrivate:
 
     with Session(c.db_engine) as session:
 
-        # see if the username or email already exists
-        if not await models.User.is_available(session, models.UserAvailable.model_validate(user_create)):
+        # see if the email is available
+        resp = await user_email_available(user_create.email)
+
+        if not resp.available:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail='User already exists')
 
@@ -446,8 +449,12 @@ class LoginResponse(AuthResponse):
 async def login(form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()]) -> LoginResponse:
 
     with Session(c.db_engine) as session:
+
+        email = form_data.username
+        password = form_data.password
+
         user = models.User.authenticate(
-            session, form_data.username, form_data.password)
+            session, email, password)
         if not user:
             raise auth.CREDENTIALS_EXCEPTION
 

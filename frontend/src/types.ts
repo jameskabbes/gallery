@@ -59,7 +59,7 @@ interface DarkModeContext {
 
 interface LogInContextState {
   isActive: boolean;
-  username: InputState;
+  email: InputState;
   password: InputState;
   valid: boolean;
 }
@@ -70,7 +70,7 @@ type LogInReducerAction =
       payload: LogInContextState['valid'];
     }
   | {
-      type: 'SET_USERNAME';
+      type: 'SET_EMAIL';
       payload: InputState;
     }
   | {
@@ -90,7 +90,6 @@ interface LogInContext {
 
 interface SignUpContextState {
   isActive: boolean;
-  username: InputState;
   email: InputState;
   password: InputState;
   confirmPassword: InputState;
@@ -101,10 +100,6 @@ type SignUpReducerAction =
   | {
       type: 'SET_VALID';
       payload: LogInContextState['valid'];
-    }
-  | {
-      type: 'SET_USERNAME';
-      payload: InputState;
     }
   | {
       type: 'SET_EMAIL';

@@ -33,7 +33,7 @@ function Toast() {
   const deviceContext = useContext(DeviceContext);
 
   return (
-    <div className="fixed bottom-4 right-4 flex flex-col space-y-2 w-80">
+    <div id="toast-container">
       <TransitionGroup>
         {Array.from(toastContext.state.toasts.keys()).map(
           (toastId, index, array) => {

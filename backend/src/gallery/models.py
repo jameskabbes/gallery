@@ -148,12 +148,12 @@ class SingularCreate[TableType: Table](BaseModel):
 
 class UserTypes:
     id = str
-    username = typing.Annotated[str, StringConstraints(
-        min_length=3, max_length=20)]
     email = typing.Annotated[EmailStr, StringConstraints(
         min_length=1, max_length=254)]
     password = typing.Annotated[str, StringConstraints(
         min_length=1, max_length=64)]
+    username = typing.Annotated[str, StringConstraints(
+        min_length=3, max_length=20)]
     hashed_password = str
 
 
@@ -169,14 +169,14 @@ class UserBase:
 
 
 class UserUpdate(BaseModel, UserBase):
-    username: typing.Optional[UserTypes.username] = None
     email: typing.Optional[UserTypes.email] = None
     password: typing.Optional[UserTypes.password] = None
+    username: typing.Optional[UserTypes.username] = None
 
 
 class UserPublic(BaseModel, UserBase):
     id: UserTypes.id
-    username: UserTypes.username
+    username: UserTypes.username | None
 
     class Config:
         from_attributes = True
@@ -184,16 +184,8 @@ class UserPublic(BaseModel, UserBase):
 
 class UserPrivate(BaseModel, UserBase):
     id: UserTypes.id
-    username: UserTypes.username
     email: UserTypes.email
-
-    class Config:
-        from_attributes = True
-
-
-class UserAvailable(BaseModel, UserBase):
-    username: UserTypes.username
-    email: UserTypes.email
+    username: UserTypes.username | None
 
     class Config:
         from_attributes = True
@@ -201,35 +193,24 @@ class UserAvailable(BaseModel, UserBase):
 
 class User(SQLModel, Table[UserTypes.id], UserBase, table=True):
     __tablename__ = 'user'
-    id: UserTypes.id = Field(primary_key=True, index=True)
-    username: UserTypes.username = Field(index=True)
-    email: UserTypes.email = Field(index=True)
+    id: UserTypes.id = Field(primary_key=True, index=True, unique=True)
+    email: UserTypes.email = Field(index=True, unique=True)
+    username: UserTypes.username = Field(
+        index=True, unique=True, nullable=True, default=None)
     hashed_password: UserTypes.hashed_password | None
 
     @classmethod
-    def authenticate(cls, session: Session, username: str, password: str) -> typing.Self | None:
-        user = session.exec(select(cls).where(
-            cls.username == username)).first()
+    def authenticate(cls, session: Session, email: str, password: str) -> typing.Self | None:
 
+        user = cls.get_one_by_key_values(session, {'email': email})
         if not user:
             return None
         if not utils.verify_password(password, user.hashed_password):
             return None
         return user
 
-    @classmethod
-    async def is_available(cls, session: Session, user_available: UserAvailable) -> bool:
-        query = select(User).where(
-            or_(
-                User.username == user_available.username,
-                User.email == user_available.email
-            )
-        )
-        return session.exec(query).first() is None
-
 
 class UserCreate(SingularCreate[User], UserBase):
-    username: UserTypes.username
     email: UserTypes.email
     password: UserTypes.password
 
@@ -238,7 +219,6 @@ class UserCreate(SingularCreate[User], UserBase):
     def create(self) -> User:
         return User(
             id=self._SINGULAR_MODEL.generate_id(),
-            username=self.username,
             email=self.email,
             hashed_password=utils.hash_password(self.password))
 

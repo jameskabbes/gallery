@@ -31,6 +31,9 @@ function Home() {
   return (
     <div>
       <h1>Test again</h1>
+      {/* <h1 className='loader'></h1>
+      <h1 className='loader-secondary'></h1> */}
+
       <button
         className="button-primary"
         onClick={() => {

@@ -8,7 +8,7 @@ import {
 
 const logInReducerDefaultState: LogInContextState = {
   isActive: false,
-  username: { ...defaultInputState },
+  email: { ...defaultInputState },
   password: { ...defaultInputState },
   valid: false,
 };
@@ -17,8 +17,8 @@ function logInReducer(state: LogInContextState, action: LogInReducerAction) {
   switch (action.type) {
     case 'SET_VALID':
       return { ...state, valid: action.payload };
-    case 'SET_USERNAME':
-      return { ...state, username: action.payload };
+    case 'SET_EMAIL':
+      return { ...state, email: action.payload };
     case 'SET_PASSWORD':
       return { ...state, password: action.payload };
     case 'SET_ACTIVE':

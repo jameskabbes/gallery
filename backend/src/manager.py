@@ -26,7 +26,7 @@ def mock_depends(dependency):
 
 
 async def main():
-    # c.create_tables()
+    c.create_tables()
 
     # user = models.UserCreate(
     #     username="admin", email="test@test.com", password="password")
@@ -64,9 +64,9 @@ async def main():
         # print(await models.User.is_available(
         #     session, models.UserAvailable(username='admin2', email='a@a2.com')))
 
-        form_data = mock_depends(OAuth2PasswordRequestForm)
-        token_response = await login(form_data)
-        print(token_response)
+        # form_data = mock_depends(OAuth2PasswordRequestForm)
+        # token_response = await login(form_data)
+        # print(token_response)
 
 if __name__ == "__main__":
     # Run the example

@@ -38,7 +38,6 @@ function InputText<T>({
   id,
   minLength,
   maxLength,
-  label = null,
   type = 'text',
   placeholder = null,
   showValidity = true,
@@ -120,7 +119,6 @@ function InputText<T>({
 
   return (
     <div className="flex flex-row items-center space-x-2">
-      {label && <label htmlFor={id}>{label}</label>}
       <input
         className="text-input"
         type={type}

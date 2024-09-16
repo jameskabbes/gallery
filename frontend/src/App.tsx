@@ -15,10 +15,10 @@ function App(): JSX.Element {
   return (
     <ApplicationContextProvider>
       <div className="App">
+        <Toast />
         <LogIn />
         <SignUp />
         <Modals />
-        <Toast />
         <BrowserRouter>
           <Header />
           <Routes>

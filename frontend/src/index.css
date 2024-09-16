@@ -87,11 +87,11 @@ p {
 }
 
 #login {
-  @apply w-full max-w-[240px];
+  @apply w-full max-w-[300px];
 }
 
 #signup {
-  @apply w-full max-w-[240px];
+  @apply w-full max-w-[300px];
 }
 
 /* Button */
@@ -115,6 +115,10 @@ button {
 .button-invalid {
   @apply opacity-50;
   pointer-events: none;
+}
+
+#toast-container {
+  @apply fixed bottom-4 right-4 flex flex-col space-y-2 w-80;
 }
 
 .toast {
@@ -160,8 +164,7 @@ button {
   @apply fixed bottom-0 left-0 w-full transition-transform transform translate-y-full;
 }
 
-.loader {
-  @apply border-light dark:border-dark border-t-primary dark:border-t-primary;
+.loader-base {
   border-width: 0.15em;
   height: 1em;
   width: 1em;
@@ -170,6 +173,14 @@ button {
   box-sizing: border-box;
   vertical-align: top;
   animation: rotation 1s ease-in-out infinite;
+}
+
+.loader {
+  @apply loader-base border-light dark:border-dark border-t-primary dark:border-t-primary;
+}
+
+.loader-secondary {
+  @apply loader-base border-primary border-t-light dark:border-t-dark;
 }
 
 @keyframes rotation {

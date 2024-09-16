@@ -237,8 +237,6 @@ export interface components {
     };
     /** UserCreate */
     UserCreate: {
-      /** Username */
-      username: string;
       /**
        * Email
        * Format: email
@@ -251,29 +249,29 @@ export interface components {
     UserPrivate: {
       /** Id */
       id: string;
-      /** Username */
-      username: string;
       /**
        * Email
        * Format: email
        */
       email: string;
+      /** Username */
+      username: string | null;
     };
     /** UserPublic */
     UserPublic: {
       /** Id */
       id: string;
       /** Username */
-      username: string;
+      username: string | null;
     };
     /** UserUpdate */
     UserUpdate: {
-      /** Username */
-      username?: string | null;
       /** Email */
       email?: string | null;
       /** Password */
       password?: string | null;
+      /** Username */
+      username?: string | null;
     };
     /** ValidationError */
     ValidationError: {
