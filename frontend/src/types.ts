@@ -88,6 +88,32 @@ interface LogInContext {
   dispatch: React.Dispatch<LogInReducerAction>;
 }
 
+interface LogInWithEmailContextState {
+  isActive: boolean;
+  email: InputState;
+  valid: boolean;
+}
+
+type LogInWithEmailReducerAction =
+  | {
+      type: 'SET_VALID';
+      payload: LogInWithEmailContextState['valid'];
+    }
+  | {
+      type: 'SET_EMAIL';
+      payload: InputState;
+    }
+  | {
+      type: 'SET_ACTIVE';
+      payload: LogInWithEmailContextState['isActive'];
+    }
+  | { type: 'RESET' };
+
+interface LogInWithEmailContext {
+  state: LogInWithEmailContextState;
+  dispatch: React.Dispatch<LogInWithEmailReducerAction>;
+}
+
 interface SignUpContextState {
   isActive: boolean;
   email: InputState;
@@ -236,7 +262,7 @@ interface ModalsContext {
   dispatch: React.Dispatch<ModalsReducerAction>;
 }
 
-type GlobalModalsType = 'logIn' | 'signUp';
+type GlobalModalsType = 'logIn' | 'signUp' | 'logInWithEmail';
 
 interface GlobalModalsContext {
   toggleModal: (modal: GlobalModalsType) => void;
@@ -262,6 +288,9 @@ export {
   LogInContextState,
   LogInReducerAction,
   LogInContext,
+  LogInWithEmailContextState,
+  LogInWithEmailReducerAction,
+  LogInWithEmailContext,
   Toast,
   ToastId,
   ToastNoType,

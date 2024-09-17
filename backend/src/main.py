@@ -81,7 +81,7 @@ def get_token(token: typing.Annotated[str, Depends(oauth2_scheme)]) -> GetTokenR
 
 
 class GetAuthReturn(BaseModel):
-    user: models.UserPublic | None = None
+    user: models.UserPrivate | None = None
     exception: auth.EXCEPTION | None = None
 
 
@@ -117,7 +117,7 @@ async def get_auth(token_return: GetTokenReturn, expiry_timedelta: typing.Annota
         user = session.get(models.User, user_id)
         if not user:
             return GetAuthReturn(exception='user_not_found')
-        return GetAuthReturn(user=models.UserPublic.model_validate(user))
+        return GetAuthReturn(user=models.UserPrivate.model_validate(user))
 
 
 @app.exception_handler(RequestValidationError)
@@ -204,7 +204,7 @@ async def post_user(user_create: models.UserCreate) -> models.UserPrivate:
     status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse},
     status.HTTP_409_CONFLICT: {"description": 'Username or email already exists', 'model': DetailOnlyResponse},
 })
-async def patch_user(user_id: models.UserTypes.id, user_update: models.UserUpdate, token_return: typing.Annotated[GetTokenReturn, Depends(get_token)]) -> models.UserPublic:
+async def patch_user(user_id: models.UserTypes.id, user_update: models.UserUpdate, token_return: typing.Annotated[GetTokenReturn, Depends(get_token)]) -> models.UserPrivate:
 
     auth_return = await get_auth(token_return)
     if auth_return.exception:
@@ -248,7 +248,7 @@ async def patch_user(user_id: models.UserTypes.id, user_update: models.UserUpdat
 
         user.sqlmodel_update(update_fields)
         user.add_to_db(session)
-        return models.UserPublic.model_validate(user)
+        return models.UserPrivate.model_validate(user)
 
 
 @ app.delete('/users/{user_id}/', status_code=204, responses={
@@ -472,8 +472,8 @@ class SignupResponse(AuthResponse):
     token: models.Token
 
 
-@ app.post('/signup/', responses={status.HTTP_409_CONFLICT: {"description": 'User already exists', 'model': DetailOnlyResponse}})
-async def signup(user_create: models.UserCreate) -> SignupResponse:
+@ app.post('/sign-up/', responses={status.HTTP_409_CONFLICT: {"description": 'User already exists', 'model': DetailOnlyResponse}})
+async def sign_up(user_create: models.UserCreate) -> SignupResponse:
     user = await post_user(user_create)
     access_token = create_access_token(data=user.export_for_token_payload())
 
@@ -482,6 +482,22 @@ async def signup(user_create: models.UserCreate) -> SignupResponse:
         user=user,
         token=models.Token(access_token=access_token)
     )
+
+
+class LoginWithEmailRequest(BaseModel):
+    email: models.UserTypes.email
+
+
+@app.post('/login-with-email/')
+async def login_with_email(model: LoginWithEmailRequest) -> DetailOnlyResponse:
+    with Session(c.db_engine) as session:
+        user = models.User.get_one_by_key_values(
+            session, {'email': model.email})
+        if user:
+            print(user)
+        else:
+            print('no user')
+        return DetailOnlyResponse(detail='If an account with this email exists, a login link has been sent.')
 
 
 class GetProfilePageResponse(AuthResponse):

@@ -1,10 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useContext, useEffect } from 'react';
 import {
   GlobalModalsContext as GlobalModalsContextType,
   GlobalModalsType,
 } from '../types';
 import { LogInContext, LogInContextProvider } from './LogIn';
 import { SignUpContext, SignUpContextProvider } from './SignUp';
+import {
+  LogInWithEmailContext,
+  LogInWithEmailContextProvider,
+} from './LogInWithEmail';
 
 const GlobalModalsContext = React.createContext<GlobalModalsContextType>({
   toggleModal: () => {},
@@ -15,17 +19,23 @@ interface Props {
 }
 
 function GlobalModalsContextProvider({ children }: Props) {
-  const logInContext = React.useContext(LogInContext);
-  const signUpContext = React.useContext(SignUpContext);
+  const logInContext = useContext(LogInContext);
+  const signUpContext = useContext(SignUpContext);
+  const logInWithEmailContext = useContext(LogInWithEmailContext);
 
-  function toggleModal(modal: GlobalModalsType) {
-    if (modal === 'logIn') {
-      signUpContext.dispatch({ type: 'SET_ACTIVE', payload: false });
-      logInContext.dispatch({ type: 'SET_ACTIVE', payload: true });
-    } else if (modal === 'signUp') {
-      logInContext.dispatch({ type: 'SET_ACTIVE', payload: false });
-      signUpContext.dispatch({ type: 'SET_ACTIVE', payload: true });
+  const contextMap = new Map([
+    ['logIn', logInContext],
+    ['signUp', signUpContext],
+    ['logInWithEmail', logInWithEmailContext],
+  ]);
+
+  function toggleModal(targetModal: GlobalModalsType) {
+    for (const modal of contextMap.keys()) {
+      if (modal !== targetModal) {
+        contextMap.get(modal).dispatch({ type: 'SET_ACTIVE', payload: false });
+      }
     }
+    contextMap.get(targetModal).dispatch({ type: 'SET_ACTIVE', payload: true });
   }
 
   return (

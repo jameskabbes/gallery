@@ -7,6 +7,7 @@ import { AuthContextProvider } from './Auth';
 import { GlobalModalsContextProvider } from './GlobalModals';
 import { LogInContextProvider } from './LogIn';
 import { SignUpContextProvider } from './SignUp';
+import { LogInWithEmailContextProvider } from './LogInWithEmail';
 import { EscapeKeyContextProvider } from './EscapeKey';
 import { ToastContextProvider } from './Toast';
 
@@ -19,11 +20,13 @@ const ApplicationContextProvider = ({ children }) => {
             <ModalsContextProvider>
               <DarkModeContextProvider>
                 <LogInContextProvider>
-                  <SignUpContextProvider>
-                    <GlobalModalsContextProvider>
-                      <ToastContextProvider>{children}</ToastContextProvider>
-                    </GlobalModalsContextProvider>
-                  </SignUpContextProvider>
+                  <LogInWithEmailContextProvider>
+                    <SignUpContextProvider>
+                      <GlobalModalsContextProvider>
+                        <ToastContextProvider>{children}</ToastContextProvider>
+                      </GlobalModalsContextProvider>
+                    </SignUpContextProvider>
+                  </LogInWithEmailContextProvider>
                 </LogInContextProvider>
               </DarkModeContextProvider>
             </ModalsContextProvider>

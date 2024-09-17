@@ -5,8 +5,7 @@ import openapi_schema from '../../../../openapi_schema.json';
 import { AuthContext } from '../../contexts/Auth';
 import { patchUserFunc } from './patchUserFunc';
 import { components } from '../../openapi_schema';
-import { toast } from 'react-toastify';
-import { toastTemplate } from '../Toast/Toast';
+import { ToastContext } from '../../contexts/Toast';
 
 interface Props {
   userId: components['schemas']['UserPublic']['id'];
@@ -21,6 +20,7 @@ function UpdatePassword({ userId }: Props) {
   });
   const [valid, setValid] = useState<boolean>(false);
   const authContext = useContext(AuthContext);
+  const toastContext = useContext(ToastContext);
 
   useEffect(() => {
     setValid(
@@ -38,7 +38,8 @@ function UpdatePassword({ userId }: Props) {
         {
           password: password.value,
         },
-        authContext.dispatch
+        authContext.dispatch,
+        toastContext
       );
 
       if (response.status === 200) {

@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { paths, operations, components } from '../../../openapi_schema';
 import { ExtractResponseTypes } from '../../../types';
 import { useApiCall } from '../../../utils/Api';
@@ -6,6 +6,7 @@ import { AuthContext } from '../../../contexts/Auth';
 import { UpdatePassword } from '../UpdatePassword';
 import { UpdateUser } from '../UpdateUser';
 import { GlobalModalsContext } from '../../../contexts/GlobalModals';
+import { UpdateUsername } from '../UpdateUsername';
 
 const API_PATH = '/profile/page/';
 const API_METHOD = 'get';
@@ -17,6 +18,10 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 function Profile() {
   const authContext = useContext(AuthContext);
   const globalModalsContext = useContext(GlobalModalsContext);
+
+  const [user, setUser] = useState<components['schemas']['UserPrivate'] | null>(
+    null
+  );
 
   const {
     data: apiData,
@@ -42,8 +47,9 @@ function Profile() {
       <div>
         <h1>{data.user.username}</h1>
         <div className="w-80">
-          <UpdateUser user={data.user} />
-          <UpdatePassword userId={data.user.id} />
+          <UpdateUser user={apiData.user} />
+          <UpdatePassword userId={apiData.user.id} />
+          <UpdateUsername user={apiData.user} />
         </div>
       </div>
     );

@@ -55,9 +55,13 @@ export interface paths {
     /** Login */
     post: operations["login_login__post"];
   };
-  "/signup/": {
-    /** Signup */
-    post: operations["signup_signup__post"];
+  "/sign-up/": {
+    /** Sign Up */
+    post: operations["sign_up_sign_up__post"];
+  };
+  "/login-with-email/": {
+    /** Login With Email */
+    post: operations["login_with_email_login_with_email__post"];
   };
   "/profile/page/": {
     /** Get Pages Profile */
@@ -176,7 +180,7 @@ export interface components {
     };
     /** GetAuthReturn */
     GetAuthReturn: {
-      user?: components["schemas"]["UserPublic"] | null;
+      user?: components["schemas"]["UserPrivate"] | null;
       exception?: components["schemas"]["EXCEPTION"] | null;
     };
     /** GetGalleryPageResponse */
@@ -208,6 +212,14 @@ export interface components {
     LoginResponse: {
       auth: components["schemas"]["GetAuthReturn"];
       token: components["schemas"]["Token"];
+    };
+    /** LoginWithEmailRequest */
+    LoginWithEmailRequest: {
+      /**
+       * Email
+       * Format: email
+       */
+      email: string;
     };
     /** NotFoundResponse */
     NotFoundResponse: {
@@ -477,7 +489,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["UserPublic"];
+          "application/json": components["schemas"]["UserPrivate"];
         };
       };
       /** @description Invalid token */
@@ -725,8 +737,8 @@ export interface operations {
       };
     };
   };
-  /** Signup */
-  signup_signup__post: {
+  /** Sign Up */
+  sign_up_sign_up__post: {
     requestBody: {
       content: {
         "application/json": components["schemas"]["UserCreate"];
@@ -741,6 +753,28 @@ export interface operations {
       };
       /** @description User already exists */
       409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Login With Email */
+  login_with_email_login_with_email__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LoginWithEmailRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
         content: {
           "application/json": components["schemas"]["DetailOnlyResponse"];
         };

@@ -7,9 +7,10 @@ import { ApplicationContextProvider } from './contexts/Application';
 import { Toast } from './components/Toast/Toast';
 import { Modals } from './components/Modal/Modals';
 import { Profile } from './components/User/pages/Profile';
-import { LogIn } from './components/LogIn';
-import { SignUp } from './components/SignUp';
+import { LogIn } from './components/Auth/LogIn';
+import { SignUp } from './components/Auth/SignUp';
 import { Gallery } from './components/Gallery/pages/Gallery';
+import { LogInWithEmail } from './components/Auth/LogInWithEmail';
 
 function App(): JSX.Element {
   return (
@@ -18,6 +19,7 @@ function App(): JSX.Element {
         <Toast />
         <LogIn />
         <SignUp />
+        <LogInWithEmail />
         <Modals />
         <BrowserRouter>
           <Header />
