@@ -10,6 +10,7 @@ import { SignUpContextProvider } from './SignUp';
 import { LogInWithEmailContextProvider } from './LogInWithEmail';
 import { EscapeKeyContextProvider } from './EscapeKey';
 import { ToastContextProvider } from './Toast';
+import { LogInWithGoogleProvider } from './LogInWithGoogle';
 
 const ApplicationContextProvider = ({ children }) => {
   return (
@@ -19,15 +20,19 @@ const ApplicationContextProvider = ({ children }) => {
           <DataContextProvider>
             <ModalsContextProvider>
               <DarkModeContextProvider>
-                <LogInContextProvider>
-                  <LogInWithEmailContextProvider>
-                    <SignUpContextProvider>
-                      <GlobalModalsContextProvider>
-                        <ToastContextProvider>{children}</ToastContextProvider>
-                      </GlobalModalsContextProvider>
-                    </SignUpContextProvider>
-                  </LogInWithEmailContextProvider>
-                </LogInContextProvider>
+                <LogInWithGoogleProvider>
+                  <LogInContextProvider>
+                    <LogInWithEmailContextProvider>
+                      <SignUpContextProvider>
+                        <GlobalModalsContextProvider>
+                          <ToastContextProvider>
+                            {children}
+                          </ToastContextProvider>
+                        </GlobalModalsContextProvider>
+                      </SignUpContextProvider>
+                    </LogInWithEmailContextProvider>
+                  </LogInContextProvider>
+                </LogInWithGoogleProvider>
               </DarkModeContextProvider>
             </ModalsContextProvider>
           </DataContextProvider>

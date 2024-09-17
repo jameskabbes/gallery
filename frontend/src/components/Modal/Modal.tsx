@@ -15,6 +15,8 @@ interface Props {
   children: React.ReactNode;
   show: boolean;
   includeExit?: boolean;
+  overlayStyle?: React.CSSProperties;
+  contentStyle?: React.CSSProperties;
   onExit?: () => void;
 }
 
@@ -22,6 +24,8 @@ function Modal({
   children,
   show,
   includeExit = true,
+  overlayStyle = {},
+  contentStyle = {},
   onExit = () => {},
 }: Props) {
   const ref = useRef(null);
@@ -36,8 +40,8 @@ function Modal({
       classNames="modal"
       unmountOnExit
     >
-      <div className="modal-overlay">
-        <div className="modal-content" ref={ref}>
+      <div className="modal-overlay" style={overlayStyle}>
+        <div className="modal-content" ref={ref} style={contentStyle}>
           {includeExit && (
             <div className="flex flex-row justify-end">
               <button>

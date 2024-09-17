@@ -24,7 +24,6 @@ function LogInWithEmail() {
   const logInWithEmailContext = useContext(LogInWithEmailContext);
   const globalModalsContext = useContext(GlobalModalsContext);
   const [loading, setLoading] = useState<boolean>(false);
-  const [sent, setSent] = useState<boolean>(false);
 
   useEffect(() => {
     logInWithEmailContext.dispatch({
@@ -53,7 +52,7 @@ function LogInWithEmail() {
       console.log(response);
 
       if (response.status === 200) {
-        setSent(true);
+        logInWithEmailContext.dispatch({ type: 'SET_SCREEN', payload: 'sent' });
       }
     }
   }
@@ -67,19 +66,17 @@ function LogInWithEmail() {
         })
       }
       show={logInWithEmailContext.state.isActive}
+      contentStyle={{ maxWidth: '300px', width: '100%' }}
     >
-      <div id="login-with-email">
-        <div className="w-full">
-          {!sent ? (
-            <form onSubmit={handleSubmit}>
+      <div className="flex flex-col">
+        {logInWithEmailContext.state.screen === 'email' ? (
+          <div className="flex flex-col">
+            <form onSubmit={handleSubmit} className="flex flex-col">
               <h2 className="text-center">Send Email</h2>
-              <p className="text-center">
-                Enter the email address of an existing account, and we'll send
-                you a secure login link.
-              </p>
-
-              <div>
-                <label htmlFor="email">Email</label>
+              <div className="mt-2">
+                <label htmlFor="email">
+                  <p>Email</p>
+                </label>
                 <h4>
                   <InputText
                     state={logInWithEmailContext.state.email}
@@ -110,34 +107,43 @@ function LogInWithEmail() {
                 type="submit"
                 disabled={!logInWithEmailContext.state.valid}
               >
-                <div className="flex flex-row justify-center items-center p-1">
-                  <h6 className="mb-0 leading-none">
-                    {loading ? (
-                      <span className="loader-secondary"></span>
-                    ) : (
-                      'Send Email'
-                    )}
-                  </h6>
-                </div>
+                <h6 className="mb-0 leading-none p-2">
+                  {loading ? (
+                    <span className="loader-secondary"></span>
+                  ) : (
+                    'Send Email'
+                  )}
+                </h6>
               </button>
             </form>
-          ) : (
-            <>
-              <p>Check your inbox</p>
-              <button
-                className="button-primary"
-                onClick={() => {
-                  logInWithEmailContext.dispatch({
-                    type: 'SET_ACTIVE',
-                    payload: false,
-                  });
-                }}
-              >
-                Okay!
-              </button>
-            </>
-          )}
-        </div>
+            <h6
+              className="cursor-pointer underline text-center mt-2"
+              onClick={() => {
+                globalModalsContext.toggleModal('logIn');
+              }}
+            >
+              Back to Login
+            </h6>
+          </div>
+        ) : logInWithEmailContext.state.screen === 'sent' ? (
+          <div className="flex flex-col">
+            <h2 className="text-center">Sent!</h2>
+            <p className="text-center">
+              Check your inbox for a secure login link.
+            </p>
+            <button
+              className="button-primary mt-4"
+              onClick={() => {
+                logInWithEmailContext.dispatch({
+                  type: 'SET_ACTIVE',
+                  payload: false,
+                });
+              }}
+            >
+              Okay!
+            </button>
+          </div>
+        ) : null}
       </div>
     </Modal>
   );

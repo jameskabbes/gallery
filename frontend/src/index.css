@@ -47,7 +47,7 @@ p {
 }
 
 .bg-color {
-  @apply bg-light dark:bg-dark;
+  @apply bg-light dark:bg-dark border-light-darker dark:border-dark-darker;
 }
 
 .bg-color-darker {
@@ -93,10 +93,10 @@ p {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.7); /* Semi-transparent black */
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   z-index: 1000; /* Ensure it is above other content */
+  padding: 4px;
 }
 
 /* Modal content */
@@ -117,7 +117,7 @@ p {
 /* Button */
 
 button {
-  transition: 0.3s;
+  transition: 0.2s;
 }
 
 .button-base {
@@ -130,6 +130,10 @@ button {
 
 .button-secondary {
   @apply button-base bg-color-invert text-color-invert focus:outline-dark-darker dark:focus:outline-light-darker;
+}
+
+.button-tertiary {
+  @apply button-base border-dark-lighter dark:border-light-darker border-2 focus:outline-primary-darker;
 }
 
 .button-invalid {

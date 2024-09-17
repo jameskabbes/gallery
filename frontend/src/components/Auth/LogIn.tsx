@@ -12,6 +12,8 @@ import { ExtractResponseTypes } from '../../types';
 import { callApi } from '../../utils/Api';
 import { IoWarning } from 'react-icons/io5';
 import { isEmailValid } from '../User/isEmailValid';
+import { IoMail } from 'react-icons/io5';
+import { useLogInWithGoogle } from './LoginWithGoogle';
 
 const API_ENDPOINT = '/login/';
 const API_METHOD = 'post';
@@ -27,6 +29,7 @@ function LogIn() {
   const toastContext = useContext(ToastContext);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const { logInWithGoogle } = useLogInWithGoogle();
 
   useEffect(() => {
     setError(null);
@@ -182,7 +185,6 @@ function LogIn() {
                 </div>
               </button>
             </form>
-            {/* <GoogleLogin onSuccess={() => {}}></GoogleLogin> */}
             <div className="flex flex-row justify-center mt-2">
               <h6
                 className="cursor-pointer underline mb-0"
@@ -193,15 +195,37 @@ function LogIn() {
                 Sign Up
               </h6>
             </div>
-            <div className="flex flex-row justify-center mt-2">
-              <h6
-                className="cursor-pointer underline mb-0"
+
+            <div className="flex flex-row items-center space-x-2 my-2">
+              <hr className="flex-1 bg-color" />
+              <p>or</p>
+              <hr className="flex-1 bg-color" />
+            </div>
+
+            <div className="space-y-1">
+              <button
+                className="button-tertiary w-full relative"
                 onClick={() => {
                   globalModalsContext.toggleModal('logInWithEmail');
                 }}
               >
-                Login with email
-              </h6>
+                <p className="text-center mb-0 ">Login with email</p>
+                <IoMail className="absolute left-4 top-1/2 transform -translate-y-1/2" />
+              </button>
+              <button
+                className="button-tertiary w-full relative"
+                onClick={() => {
+                  logInWithGoogle();
+                }}
+              >
+                <p className="text-center mb-0 ">Login with Google</p>
+                <img
+                  src="/google_g_logo.svg"
+                  alt="google_logo"
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2"
+                  style={{ width: '1rem', height: '1rem' }}
+                />
+              </button>
             </div>
           </div>
         </div>

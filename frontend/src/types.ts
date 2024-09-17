@@ -71,11 +71,11 @@ type LogInReducerAction =
     }
   | {
       type: 'SET_EMAIL';
-      payload: InputState;
+      payload: LogInContextState['email'];
     }
   | {
       type: 'SET_PASSWORD';
-      payload: InputState;
+      payload: LogInContextState['password'];
     }
   | {
       type: 'SET_ACTIVE';
@@ -92,6 +92,7 @@ interface LogInWithEmailContextState {
   isActive: boolean;
   email: InputState;
   valid: boolean;
+  screen: 'email' | 'sent';
 }
 
 type LogInWithEmailReducerAction =
@@ -101,11 +102,15 @@ type LogInWithEmailReducerAction =
     }
   | {
       type: 'SET_EMAIL';
-      payload: InputState;
+      payload: LogInWithEmailContextState['email'];
     }
   | {
       type: 'SET_ACTIVE';
       payload: LogInWithEmailContextState['isActive'];
+    }
+  | {
+      type: 'SET_SCREEN';
+      payload: LogInWithEmailContextState['screen'];
     }
   | { type: 'RESET' };
 
@@ -125,23 +130,23 @@ interface SignUpContextState {
 type SignUpReducerAction =
   | {
       type: 'SET_VALID';
-      payload: LogInContextState['valid'];
+      payload: SignUpContextState['valid'];
     }
   | {
       type: 'SET_EMAIL';
-      payload: InputState;
+      payload: SignUpContextState['email'];
     }
   | {
       type: 'SET_PASSWORD';
-      payload: InputState;
+      payload: SignUpContextState['password'];
     }
   | {
       type: 'SET_CONFIRM_PASSWORD';
-      payload: InputState;
+      payload: SignUpContextState['confirmPassword'];
     }
   | {
       type: 'SET_ACTIVE';
-      payload: LogInContextState['isActive'];
+      payload: SignUpContextState['isActive'];
     }
   | { type: 'RESET' };
 

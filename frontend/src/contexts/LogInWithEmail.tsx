@@ -10,6 +10,7 @@ const logInWithEmailReducerDefaultState: LogInWithEmailContextState = {
   isActive: false,
   email: { ...defaultInputState },
   valid: false,
+  screen: 'email',
 };
 
 function logInWithEmailReducer(
@@ -22,7 +23,16 @@ function logInWithEmailReducer(
     case 'SET_EMAIL':
       return { ...state, email: action.payload };
     case 'SET_ACTIVE':
+      if (action.payload === true) {
+        return {
+          ...state,
+          isActive: action.payload,
+          screen: logInWithEmailReducerDefaultState.screen,
+        };
+      }
       return { ...state, isActive: action.payload };
+    case 'SET_SCREEN':
+      return { ...state, screen: action.payload };
     case 'RESET':
       return { ...logInWithEmailReducerDefaultState };
     default:
