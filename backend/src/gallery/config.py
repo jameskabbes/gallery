@@ -5,6 +5,7 @@ SRC_DIR = GALLERY_DIR.parent
 BACKEND_DIR = SRC_DIR.parent
 REPO_DIR = BACKEND_DIR.parent
 DATA_DIR = BACKEND_DIR / 'data'
+REPO_DATA_DIR = REPO_DIR / 'data'
 DB_PATH = Path(DATA_DIR, 'softball.db')
 
 PROJECT_CONFIG_PATH = REPO_DIR / 'config.json'

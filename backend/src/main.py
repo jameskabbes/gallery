@@ -51,7 +51,6 @@ class ItemAvailableResponse(BaseModel):
 def create_access_token(data: typing.Annotated[dict, 'The data to encode'], expiry_datetime: typing.Annotated[typing.Optional[datetime.timedelta], 'The datetime the token expires'] = None) -> str:
 
     dt_now: datetime.datetime = datetime.datetime.now(datetime.UTC)
-
     to_encode = data.copy()
     to_encode.update({"iat": dt_now.timestamp()})
     if expiry_datetime != None:
@@ -484,42 +483,45 @@ async def sign_up(user_create: models.UserCreate) -> SignupResponse:
     )
 
 
-@app.get("/auth/google/callback")
-async def auth_google_callback(request: Request):
-    code = request.query_params.get("code")
-    if not code:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Code not found")
+class GoogleAuthResponse(LoginResponse):
+    pass
 
-    token_data = {
-        "code": code,
-        "client_id": GOOGLE_CLIENT_ID,
-        "client_secret": GOOGLE_CLIENT_SECRET,
-        "redirect_uri": GOOGLE_REDIRECT_URI,
-        "grant_type": "authorization_code",
-    }
 
-    async with httpx.AsyncClient() as client:
-        token_response = await client.post("https://oauth2.googleapis.com/token", data=token_data)
-        token_response_data = token_response.json()
+class GoogleAuthRequest(BaseModel):
+    access_token: str
 
-    access_token = token_response_data.get("access_token")
-    if not access_token:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Access token not found")
 
-    user_info_response = await client.get(
-        "https://www.googleapis.com/oauth2/v1/userinfo",
-        headers={"Authorization": f"Bearer {access_token}"}
-    )
-    user_info = user_info_response.json()
+@app.post("/auth/google/", responses={status.HTTP_400_BAD_REQUEST: {"description": 'Invalid token'}})
+async def google_auth(request_token: GoogleAuthRequest) -> GoogleAuthResponse:
 
-    user = User(email=user_info["email"], name=user_info["name"])
+    access_token = request_token.access_token
+    print(access_token)
 
-    # Handle user authentication or registration here
-    # For example, create a new user in the database or return a JWT token
+    try:
+        idinfo = id_token.verify_oauth2_token(
+            access_token, requests.Request(), c.google_client['web']['client_id'])
 
-    return {"access_token": access_token, "user": user}
+        # Extract user details from the idinfo
+        email = idinfo['email']
+
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid token")
+
+    with Session(c.db_engine) as session:
+        user = models.User.get_one_by_key_values(session, {'email': email})
+
+        if not user:
+            user_create = models.UserCreate(email=email)
+            user = user_create.create()
+            user.add_to_db(session)
+
+        access_token = create_access_token(
+            data=user.export_for_token_payload())
+
+        return GoogleAuthResponse(
+            auth=GetAuthReturn(user=models.UserPublic.model_validate(user)),
+            token=models.Token(access_token=access_token)
+        )
 
 
 class LoginWithEmailRequest(BaseModel):

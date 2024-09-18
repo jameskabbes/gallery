@@ -59,6 +59,10 @@ export interface paths {
     /** Sign Up */
     post: operations["sign_up_sign_up__post"];
   };
+  "/auth/google/": {
+    /** Google Auth */
+    post: operations["google_auth_auth_google__post"];
+  };
   "/login-with-email/": {
     /** Login With Email */
     post: operations["login_with_email_login_with_email__post"];
@@ -197,6 +201,16 @@ export interface components {
     GetProfilePageResponse: {
       auth: components["schemas"]["GetAuthReturn"];
       user?: components["schemas"]["UserPrivate"] | null;
+    };
+    /** GoogleAuthRequest */
+    GoogleAuthRequest: {
+      /** Access Token */
+      access_token: string;
+    };
+    /** GoogleAuthResponse */
+    GoogleAuthResponse: {
+      auth: components["schemas"]["GetAuthReturn"];
+      token: components["schemas"]["Token"];
     };
     /** HTTPValidationError */
     HTTPValidationError: {
@@ -756,6 +770,32 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["DetailOnlyResponse"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Google Auth */
+  google_auth_auth_google__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GoogleAuthRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["GoogleAuthResponse"];
+        };
+      };
+      /** @description Invalid token */
+      400: {
+        content: never;
       };
       /** @description Validation Error */
       422: {

@@ -37,12 +37,17 @@ class JWTConfig(typing.TypedDict):
     algorithm: str
 
 
+class GoogleClientConfig(typing.TypedDict):
+    path: PathConfig
+
+
 class Config(typing.TypedDict):
     uvicorn: UvicornConfig
     db: DbConfig
     media_root: MediaRootConfig
     authentication: AuthenticationConfig
     jwt: JWTConfig
+    google_client: GoogleClientConfig
 
 
 DefaultConfig: Config = {
@@ -71,7 +76,12 @@ DefaultConfig: Config = {
             'filename': 'jwt_secret_key.txt'
         },
         'algorithm': 'HS256'
-    }
+    },
+    'google_client': {
+        'path': {
+            'parent_dir': config.REPO_DATA_DIR,
+            'filename': 'google_client_secret.json'
+        }}
 }
 
 
@@ -96,6 +106,7 @@ class Client:
     jwt_secret_key: str
     jwt_algorithm: str
     root_config: dict
+    google_client: dict
 
     def __init__(self, config: Config = {}):
 
@@ -120,6 +131,11 @@ class Client:
             merged_config['jwt']['secret_key_path'])
         self.jwt_secret_key = jwt_secret_key_path.read_text()
         self.jwt_algorithm = merged_config['jwt']['algorithm']
+
+        # google client
+        google_client_path = get_path_from_config(
+            merged_config['google_client']['path'])
+        self.google_client = json.loads(google_client_path.read_text())
 
         # root config
         self.root_config = json.loads(
