@@ -69,29 +69,29 @@ class VerifyTokenReturn(BaseModel):
     exception: EXCEPTION | None = None
 
 
-def _verify_token(token_payload: dict, expiry_timedelta: datetime.timedelta):
+# def _verify_token(token_payload: dict, expiry_timedelta: datetime.timedelta):
 
-    if 'iat' not in token_payload:
-        return VerifyTokenReturn(exception='missing_required_claims')
+#     if 'iat' not in token_payload:
+#         return VerifyTokenReturn(exception='missing_required_claims')
 
-    dt_iat = datetime.datetime.fromtimestamp(
-        token_payload.get('iat'), datetime.UTC)
+#     dt_iat = datetime.datetime.fromtimestamp(
+#         token_payload.get('iat'), datetime.UTC)
 
-    dt_now = datetime.datetime.now(datetime.UTC)
-    if dt_now > (dt_iat + expiry_timedelta):
-        return VerifyTokenReturn(exception='token_expired')
+#     dt_now = datetime.datetime.now(datetime.UTC)
+#     if dt_now > (dt_iat + expiry_timedelta):
+#         return VerifyTokenReturn(exception='token_expired')
 
-    # check if token has user id
-    user_id = models.User.import_from_token_payload(token_payload)
-    if not user_id:
-        return VerifyTokenReturn(exception='missing_required_claims')
+#     # check if token has user id
+#     user_id = models.User.import_from_token_payload(token_payload)
+#     if not user_id:
+#         return VerifyTokenReturn(exception='missing_required_claims')
 
-    # check if user exists
-    with Session(c.db_engine) as session:
-        user = session.get(models.User, user_id)
-        if not user:
-            return VerifyTokenReturn(exception='user_not_found')
-        return VerifyTokenReturn(user=models.UserPrivate.model_validate(user))
+#     # check if user exists
+#     with Session(c.db_engine) as session:
+#         user = session.get(models.User, user_id)
+#         if not user:
+#             return VerifyTokenReturn(exception='user_not_found')
+#         return VerifyTokenReturn(user=models.UserPrivate.model_validate(user))
 
 
 TOKEN_REQUIRED_CLAIMS: list[str] = ['iat', models.User._payload_claim]
