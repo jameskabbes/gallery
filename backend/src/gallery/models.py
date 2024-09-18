@@ -197,7 +197,7 @@ class User(SQLModel, Table[UserTypes.id], UserBase, table=True):
     email: UserTypes.email = Field(index=True, unique=True)
     username: UserTypes.username = Field(
         index=True, unique=True, nullable=True, default=None)
-    hashed_password: UserTypes.hashed_password | None
+    hashed_password: UserTypes.hashed_password | None = Field(default=None)
 
     @classmethod
     def authenticate(cls, session: Session, email: str, password: str) -> typing.Self | None:
@@ -212,16 +212,17 @@ class User(SQLModel, Table[UserTypes.id], UserBase, table=True):
 
 class UserCreate(SingularCreate[User], UserBase):
     email: UserTypes.email
-    password: UserTypes.password
+    password: UserTypes.password | None = None
 
     _SINGULAR_MODEL: typing.ClassVar[typing.Type[User]] = User
 
     def create(self) -> User:
-        return User(
-            id=self._SINGULAR_MODEL.generate_id(),
-            email=self.email,
-            hashed_password=utils.hash_password(self.password))
 
+        hashed_password = None
+        if self.password:
+            hashed_password = utils.hash_password(self.password)
+
+        return User(id=self._SINGULAR_MODEL.generate_id(), email=self.email, hashed_password=hashed_password)
 
 # Collection
 

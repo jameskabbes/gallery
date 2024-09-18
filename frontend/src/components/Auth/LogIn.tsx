@@ -13,7 +13,7 @@ import { callApi } from '../../utils/Api';
 import { IoWarning } from 'react-icons/io5';
 import { isEmailValid } from '../User/isEmailValid';
 import { IoMail } from 'react-icons/io5';
-import { useLogInWithGoogle } from './LoginWithGoogle';
+import { useLogInWithGoogle } from './LogInWithGoogle';
 
 const API_ENDPOINT = '/login/';
 const API_METHOD = 'post';

@@ -43,6 +43,12 @@ function login(
   state: AuthContextState,
   payload: AuthReducerActionTypes['LOGIN']['payload']
 ): AuthContextState {
+  console.log('logging in');
+  console.log({
+    ...state,
+    auth: payload,
+    isActive: true,
+  });
   return {
     ...state,
     auth: payload,

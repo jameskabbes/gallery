@@ -494,24 +494,25 @@ class GoogleAuthRequest(BaseModel):
 @app.post("/auth/google/", responses={status.HTTP_400_BAD_REQUEST: {"description": 'Invalid token'}})
 async def google_auth(request_token: GoogleAuthRequest) -> GoogleAuthResponse:
 
-    access_token = request_token.access_token
-    print(access_token)
+    # call https://www.googleapis.com/oauth2/v3/userinfo?access_token=
+    async with httpx.AsyncClient() as client:
+        response = await client.get('https://www.googleapis.com/oauth2/v3/userinfo?access_token={}'.format(request_token.access_token))
+        response.raise_for_status()
+        user_info = response.json()
 
-    try:
-        idinfo = id_token.verify_oauth2_token(
-            access_token, requests.Request(), c.google_client['web']['client_id'])
-
-        # Extract user details from the idinfo
-        email = idinfo['email']
-
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid token")
+    # fields: sub, name, given_name, family_name, picture, email, email_verified
+    email = user_info.get('email')
+    if not email:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            detail='Invalid token')
 
     with Session(c.db_engine) as session:
         user = models.User.get_one_by_key_values(session, {'email': email})
 
         if not user:
-            user_create = models.UserCreate(email=email)
+            user_create = models.UserCreate(
+                email=email,
+            )
             user = user_create.create()
             user.add_to_db(session)
 
@@ -519,7 +520,7 @@ async def google_auth(request_token: GoogleAuthRequest) -> GoogleAuthResponse:
             data=user.export_for_token_payload())
 
         return GoogleAuthResponse(
-            auth=GetAuthReturn(user=models.UserPublic.model_validate(user)),
+            auth=GetAuthReturn(user=models.UserPrivate.model_validate(user)),
             token=models.Token(access_token=access_token)
         )
 

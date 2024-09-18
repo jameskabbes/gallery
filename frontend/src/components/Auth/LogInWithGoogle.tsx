@@ -4,6 +4,7 @@ import { callApi } from '../../utils/Api';
 import { ExtractResponseTypes } from '../../types';
 import { paths, operations, components } from '../../openapi_schema';
 import { AuthContext } from '../../contexts/Auth';
+import { LogInContext } from '../../contexts/LogIn';
 
 const API_ENDPOINT = '/auth/google/';
 const API_METHOD = 'post';
@@ -17,9 +18,10 @@ type TRequestData =
 
 function useLogInWithGoogle() {
   const authContext = useContext(AuthContext);
+  const logInContext = useContext(LogInContext);
 
   async function call(request_data: TRequestData) {
-    const { data: apiData, response } = await callApi<
+    const { data, response } = await callApi<
       ResponseTypesByStatus[keyof ResponseTypesByStatus],
       TRequestData
     >({
@@ -29,13 +31,16 @@ function useLogInWithGoogle() {
     });
 
     if (response.status == 200) {
-      const data = apiData as ResponseTypesByStatus['200'];
-      authContext.dispatch({ type: 'UPDATE_FROM_API_RESPONSE', payload: data });
+      const apiData = data as ResponseTypesByStatus['200'];
+      authContext.dispatch({ type: 'SET_TOKEN', payload: apiData.token });
+      authContext.dispatch({ type: 'LOGIN', payload: apiData.auth });
+      logInContext.dispatch({ type: 'SET_ACTIVE', payload: false });
     }
   }
 
   const googleLogin = useGoogleLogin({
     onSuccess: (res) => {
+      console.log(res);
       call({
         access_token: res.access_token,
       });

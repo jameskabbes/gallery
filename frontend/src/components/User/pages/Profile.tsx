@@ -33,7 +33,7 @@ function Profile() {
       method: API_METHOD,
     },
     true,
-    [authContext.state.auth?.user?.username]
+    [authContext.state.isActive]
   );
 
   if (loading || response.status == 200) {

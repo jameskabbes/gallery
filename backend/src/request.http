@@ -1,6 +1,1 @@
-GET http://localhost:8087/galleries/available/?name=Test&date=2024-09-05
-Content-Type: application/json
-Authorization: Bearer token
-
-
 

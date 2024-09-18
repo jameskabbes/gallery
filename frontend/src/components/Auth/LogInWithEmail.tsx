@@ -100,6 +100,10 @@ function LogInWithEmail() {
                   />
                 </h4>
               </div>
+              <p>
+                If an account with this email exists, we will send a login link
+                to your email.
+              </p>
               <button
                 className={`button-primary ${
                   !logInWithEmailContext.state.valid && 'button-invalid'
