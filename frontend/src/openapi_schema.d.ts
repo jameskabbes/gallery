@@ -5,6 +5,34 @@
 
 
 export interface paths {
+  "/token/": {
+    /** Post Token */
+    post: operations["post_token_token__post"];
+  };
+  "/auth/": {
+    /** Auth Root */
+    get: operations["auth_root_auth__get"];
+  };
+  "/auth/login/password/": {
+    /** Login */
+    post: operations["login_auth_login_password__post"];
+  };
+  "/auth/login/google/": {
+    /** Login With Google */
+    post: operations["login_with_google_auth_login_google__post"];
+  };
+  "/auth/login/email-magic-link/": {
+    /** Login With Email Magic Link */
+    post: operations["login_with_email_magic_link_auth_login_email_magic_link__post"];
+  };
+  "/auth/verify-magic-link/{access_token}": {
+    /** Verify Magic Link */
+    get: operations["verify_magic_link_auth_verify_magic_link__access_token__get"];
+  };
+  "auth/signup/": {
+    /** Sign Up */
+    post: operations["sign_upauth_signup__post"];
+  };
   "/users/available/username/{username}/": {
     /** User Username Available */
     get: operations["user_username_available_users_available_username__username___get"];
@@ -13,13 +41,13 @@ export interface paths {
     /** User Email Available */
     get: operations["user_email_available_users_available_email__email___get"];
   };
-  "/users/{user_id}": {
-    /** Get User By Id */
-    get: operations["get_user_by_id_users__user_id__get"];
-  };
   "/users/username/{username}": {
     /** Get User By Username */
     get: operations["get_user_by_username_users_username__username__get"];
+  };
+  "/users/{user_id}": {
+    /** Get User By Id */
+    get: operations["get_user_by_id_users__user_id__get"];
   };
   "/users/": {
     /** Post User */
@@ -31,62 +59,16 @@ export interface paths {
     /** Patch User */
     patch: operations["patch_user_users__user_id___patch"];
   };
-  "/galleries/available/": {
-    /** Get Gallery Available */
-    get: operations["get_gallery_available_galleries_available__get"];
-  };
-  "/galleries/{gallery_id}/": {
-    /** Get Gallery */
-    get: operations["get_gallery_galleries__gallery_id___get"];
-    /** Delete Gallery */
-    delete: operations["delete_gallery_galleries__gallery_id___delete"];
-    /** Patch Gallery */
-    patch: operations["patch_gallery_galleries__gallery_id___patch"];
-  };
-  "/galleries/": {
-    /** Post Gallery */
-    post: operations["post_gallery_galleries__post"];
-  };
-  "/token/": {
-    /** Post Token */
-    post: operations["post_token_token__post"];
-  };
-  "/login/": {
-    /** Login */
-    post: operations["login_login__post"];
-  };
-  "/sign-up/": {
-    /** Sign Up */
-    post: operations["sign_up_sign_up__post"];
-  };
-  "/auth/google/": {
-    /** Google Auth */
-    post: operations["google_auth_auth_google__post"];
-  };
-  "/login-with-email/": {
-    /** Login With Email */
-    post: operations["login_with_email_login_with_email__post"];
-  };
-  "/profile/page/": {
-    /** Get Pages Profile */
-    get: operations["get_pages_profile_profile_page__get"];
-  };
-  "/home/page/": {
-    /** Get Home Page */
-    get: operations["get_home_page_home_page__get"];
-  };
-  "/galleries/{gallery_id}/page/": {
-    /** Get Gallery Page */
-    get: operations["get_gallery_page_galleries__gallery_id__page__get"];
-  };
 }
 
 export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
-    /** Body_login_login__post */
-    Body_login_login__post: {
+    /** @enum {string} */
+    BearerType: "token" | "api_key";
+    /** Body_login_auth_login_password__post */
+    Body_login_auth_login_password__post: {
       /** Grant Type */
       grant_type?: string | null;
       /** Username */
@@ -127,80 +109,24 @@ export interface components {
       detail: string;
     };
     /** @enum {string} */
-    EXCEPTION: "invalid_token" | "token_expired" | "missing_required_claims" | "user_not_found" | "user_not_permitted" | "credentials";
-    /** Gallery */
-    Gallery: {
-      /** Id */
-      id: string;
-      /** Name */
-      name: string;
-      /** @default public */
-      visibility?: components["schemas"]["VisibilityLevel"];
-      /** Parent Id */
-      parent_id?: string | null;
-      /**
-       * Description
-       * @default
-       */
-      description?: string;
-      /** Date */
-      date?: string | null;
-    };
-    /** GalleryCreate */
-    GalleryCreate: {
-      /** Name */
-      name: string;
-      /** @default public */
-      visibility?: components["schemas"]["VisibilityLevel"] | null;
-      /** Parent Id */
-      parent_id?: string | null;
-      /**
-       * Description
-       * @default
-       */
-      description?: string | null;
-      /** Date */
-      date?: string | null;
-    };
-    /** GalleryPermission */
-    GalleryPermission: {
-      /** Gallery Id */
-      gallery_id: string;
-      /** User Id */
-      user_id: string;
-      permission_level: components["schemas"]["PermissionLevel"];
-    };
-    /** GalleryUpdate */
-    GalleryUpdate: {
-      /** Name */
-      name?: string | null;
-      visibility?: components["schemas"]["VisibilityLevel"] | null;
-      /** Parent Id */
-      parent_id?: string | null;
-      /** Description */
-      description?: string | null;
-      /** Date */
-      date?: string | null;
-    };
-    /** GetAuthReturn */
-    GetAuthReturn: {
+    EXCEPTION: "invalid_bearer" | "invalid_token" | "invalid_api_key" | "invalid_bearer_type" | "missing_required_claims" | "bearer_expired" | "user_not_found" | "user_not_permitted" | "credentials" | "insufficient_scope";
+    /** GetAuthenticationNestedReturn */
+    GetAuthenticationNestedReturn: {
       user?: components["schemas"]["UserPrivate"] | null;
       exception?: components["schemas"]["EXCEPTION"] | null;
     };
-    /** GetGalleryPageResponse */
-    GetGalleryPageResponse: {
-      auth: components["schemas"]["GetAuthReturn"];
-      gallery: components["schemas"]["Gallery"];
-      gallery_permission?: components["schemas"]["GalleryPermission"] | null;
-    };
-    /** GetHomePageResponse */
-    GetHomePageResponse: {
-      auth: components["schemas"]["GetAuthReturn"];
-    };
-    /** GetProfilePageResponse */
-    GetProfilePageResponse: {
-      auth: components["schemas"]["GetAuthReturn"];
+    /** GetAuthorizationReturn */
+    GetAuthorizationReturn: {
+      /**
+       * Isauthorized
+       * @default false
+       */
+      isAuthorized?: boolean;
+      type?: components["schemas"]["BearerType"] | null;
+      exception?: components["schemas"]["EXCEPTION"] | null;
       user?: components["schemas"]["UserPrivate"] | null;
+      /** Scopes */
+      scopes?: string[] | null;
     };
     /** GoogleAuthRequest */
     GoogleAuthRequest: {
@@ -209,7 +135,7 @@ export interface components {
     };
     /** GoogleAuthResponse */
     GoogleAuthResponse: {
-      auth: components["schemas"]["GetAuthReturn"];
+      auth: components["schemas"]["GetAuthenticationNestedReturn"];
       token: components["schemas"]["Token"];
     };
     /** HTTPValidationError */
@@ -224,11 +150,11 @@ export interface components {
     };
     /** LoginResponse */
     LoginResponse: {
-      auth: components["schemas"]["GetAuthReturn"];
+      auth: components["schemas"]["GetAuthenticationNestedReturn"];
       token: components["schemas"]["Token"];
     };
-    /** LoginWithEmailRequest */
-    LoginWithEmailRequest: {
+    /** LoginWithEmailMagicLinkRequest */
+    LoginWithEmailMagicLinkRequest: {
       /**
        * Email
        * Format: email
@@ -240,15 +166,9 @@ export interface components {
       /** Detail */
       detail: string;
     };
-    /**
-     * PermissionLevel
-     * @enum {string}
-     */
-    PermissionLevel: "viewer" | "editor" | "owner";
     /** SignupResponse */
     SignupResponse: {
-      auth: components["schemas"]["GetAuthReturn"];
-      user: components["schemas"]["UserPrivate"];
+      auth: components["schemas"]["GetAuthenticationNestedReturn"];
       token: components["schemas"]["Token"];
     };
     /** Token */
@@ -269,7 +189,7 @@ export interface components {
        */
       email: string;
       /** Password */
-      password: string;
+      password?: string | null;
     };
     /** UserPrivate */
     UserPrivate: {
@@ -308,11 +228,6 @@ export interface components {
       /** Error Type */
       type: string;
     };
-    /**
-     * VisibilityLevel
-     * @enum {string}
-     */
-    VisibilityLevel: "public" | "private";
   };
   responses: never;
   parameters: never;
@@ -327,6 +242,171 @@ export type external = Record<string, never>;
 
 export interface operations {
 
+  /** Post Token */
+  post_token_token__post: {
+    requestBody: {
+      content: {
+        "application/x-www-form-urlencoded": components["schemas"]["Body_post_token_token__post"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["Token"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Auth Root */
+  auth_root_auth__get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["GetAuthorizationReturn"];
+        };
+      };
+    };
+  };
+  /** Login */
+  login_auth_login_password__post: {
+    requestBody: {
+      content: {
+        "application/x-www-form-urlencoded": components["schemas"]["Body_login_auth_login_password__post"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["LoginResponse"];
+        };
+      };
+      /** @description Could not validate credentials */
+      401: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Login With Google */
+  login_with_google_auth_login_google__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GoogleAuthRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["GoogleAuthResponse"];
+        };
+      };
+      /** @description Invalid token */
+      400: {
+        content: never;
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Login With Email Magic Link */
+  login_with_email_magic_link_auth_login_email_magic_link__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LoginWithEmailMagicLinkRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Verify Magic Link */
+  verify_magic_link_auth_verify_magic_link__access_token__get: {
+    parameters: {
+      path: {
+        access_token: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["LoginResponse"];
+        };
+      };
+      /** @description Invalid token */
+      401: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Sign Up */
+  sign_upauth_signup__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UserCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["SignupResponse"];
+        };
+      };
+      /** @description User already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   /** User Username Available */
   user_username_available_users_available_username__username___get: {
     parameters: {
@@ -371,11 +451,11 @@ export interface operations {
       };
     };
   };
-  /** Get User By Id */
-  get_user_by_id_users__user_id__get: {
+  /** Get User By Username */
+  get_user_by_username_users_username__username__get: {
     parameters: {
       path: {
-        user_id: string;
+        username: string;
       };
     };
     responses: {
@@ -399,11 +479,11 @@ export interface operations {
       };
     };
   };
-  /** Get User By Username */
-  get_user_by_username_users_username__username__get: {
+  /** Get User By Id */
+  get_user_by_id_users__user_id__get: {
     parameters: {
       path: {
-        username: string;
+        user_id: string;
       };
     };
     responses: {
@@ -528,339 +608,6 @@ export interface operations {
       409: {
         content: {
           "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Get Gallery Available */
-  get_gallery_available_galleries_available__get: {
-    parameters: {
-      query: {
-        name: string;
-        parent_id?: string;
-        date?: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["ItemAvailableResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Get Gallery */
-  get_gallery_galleries__gallery_id___get: {
-    parameters: {
-      path: {
-        gallery_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["Gallery"];
-        };
-      };
-      /** @description Gallery not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Delete Gallery */
-  delete_gallery_galleries__gallery_id___delete: {
-    parameters: {
-      path: {
-        gallery_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      204: {
-        content: never;
-      };
-      /** @description User does not have permission to delete this gallery */
-      403: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Gallery not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Patch Gallery */
-  patch_gallery_galleries__gallery_id___patch: {
-    parameters: {
-      path: {
-        gallery_id: string;
-      };
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["GalleryUpdate"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["Gallery"];
-        };
-      };
-      /** @description Invalid token */
-      401: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description User does not have permission to update this gallery */
-      403: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Gallery not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Gallery already exists */
-      409: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Post Gallery */
-  post_gallery_galleries__post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["GalleryCreate"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["Gallery"];
-        };
-      };
-      /** @description Gallery already exists */
-      409: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Post Token */
-  post_token_token__post: {
-    requestBody: {
-      content: {
-        "application/x-www-form-urlencoded": components["schemas"]["Body_post_token_token__post"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["Token"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Login */
-  login_login__post: {
-    requestBody: {
-      content: {
-        "application/x-www-form-urlencoded": components["schemas"]["Body_login_login__post"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["LoginResponse"];
-        };
-      };
-      /** @description Could not validate credentials */
-      401: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Sign Up */
-  sign_up_sign_up__post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UserCreate"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["SignupResponse"];
-        };
-      };
-      /** @description User already exists */
-      409: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Google Auth */
-  google_auth_auth_google__post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["GoogleAuthRequest"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["GoogleAuthResponse"];
-        };
-      };
-      /** @description Invalid token */
-      400: {
-        content: never;
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Login With Email */
-  login_with_email_login_with_email__post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["LoginWithEmailRequest"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Get Pages Profile */
-  get_pages_profile_profile_page__get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["GetProfilePageResponse"];
-        };
-      };
-    };
-  };
-  /** Get Home Page */
-  get_home_page_home_page__get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["GetHomePageResponse"];
-        };
-      };
-    };
-  };
-  /** Get Gallery Page */
-  get_gallery_page_galleries__gallery_id__page__get: {
-    parameters: {
-      path: {
-        gallery_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["GetGalleryPageResponse"];
         };
       };
       /** @description Validation Error */

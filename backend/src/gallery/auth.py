@@ -6,107 +6,124 @@ from gallery import models
 from pydantic import BaseModel
 
 
-class SCOPES:
-    USERS_READ = 'users.read'
-    USERS_WRITE = 'users.write'
+class Token(BaseModel):
+    access_token: str
+    token_type: str = 'bearer'
 
 
-type Token = str
+type TokenAuthSource = typing.Literal[
+    'password',
+    'google_oauth2',
+    'magic_link',
+    'verified_magic_link',
+    'sign_up'
+]
+TOKEN_AUTH_SOURCES: set[TokenAuthSource] = {
+    'password', 'google_oauth2', 'magic_link', 'verified_magic_link'}
+
 type APIKey = str
 type BearerString = Token | APIKey
 type BearerType = typing.Literal['token', 'api_key']
-
-INVALID_BEARER_EXCEPTION = HTTPException(
-    status_code=status.HTTP_400_BAD_REQUEST,
-    detail="Invalid bearer",
-    headers={"WWW-Authenticate": "Bearer"})
-
-MISSING_REQUIRED_CLAIMS_EXCEPTION = HTTPException(
-    status_code=status.HTTP_401_UNAUTHORIZED,
-    detail="Missing required claims",
-    headers={"WWW-Authenticate": "Bearer"})
-
-# Token
-INVALID_TOKEN_EXCEPTION = HTTPException(
-    status_code=status.HTTP_400_BAD_REQUEST,
-    detail="Invalid token",
-    headers={"WWW-Authenticate": "Bearer"})
+BEARER_TYPES: set[BearerType] = {'token', 'api_key'}
 
 
-TOKEN_EXPIRED_EXCEPTION = HTTPException(
-    status_code=status.HTTP_401_UNAUTHORIZED,
-    detail="Token expired",
-    headers={"WWW-Authenticate": "Bearer"})
+def _bearer_exception(status_code: int, detail: str) -> HTTPException:
+    return HTTPException(
+        status_code=status_code,
+        detail=detail,
+        headers={"WWW-Authenticate": "Bearer"})
 
-USER_NOT_FOUND_EXCEPTION = HTTPException(
-    status_code=status.HTTP_404_NOT_FOUND,
-    detail="User not found")
 
-USER_NOT_PERMITTED_EXCEPTION = HTTPException(
-    status_code=status.HTTP_403_FORBIDDEN,
-    detail="User does not have permissions",
-    headers={"WWW-Authenticate": "Bearer"})
+def invalid_exception(detail: str) -> HTTPException:
+    return _bearer_exception(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail=detail)
 
-CREDENTIALS_EXCEPTION = HTTPException(
-    status_code=status.HTTP_401_UNAUTHORIZED,
-    detail="Incorrect username or password",
-    headers={"WWW-Authenticate": "Bearer"})
 
-type EXCEPTION = typing.Literal['invalid_bearer', 'invalid_token', 'token_expired',
-                                'missing_required_claims', 'user_not_found', 'user_not_permitted', 'credentials']
+def invalid_bearer_exception() -> HTTPException:
+    return invalid_exception("Invalid bearer")
+
+
+def invalid_token_exception() -> HTTPException:
+    return invalid_exception("Invalid token")
+
+
+def invalid_api_key_exception() -> HTTPException:
+    return invalid_exception("Invalid API key")
+
+
+def invalid_bearer_type_exception(given_bearer_type: BearerType | None = None, permitted_bearer_types: set[BearerType] | None = None) -> HTTPException:
+
+    if given_bearer_type is not None and permitted_bearer_types is not None:
+        return _bearer_exception(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid bearer type. {given} not in {permitted}".format(
+                given=given_bearer_type, permitted=permitted_bearer_types
+            ))
+    else:
+        return _bearer_exception(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid bearer type")
+
+
+def missing_required_claims_exception() -> HTTPException:
+    return _bearer_exception(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Missing required claims")
+
+
+def bearer_expired_exception() -> HTTPException:
+    return _bearer_exception(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Bearer expired")
+
+
+def user_not_found_exception() -> HTTPException:
+    return _bearer_exception(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="User not found")
+
+
+def user_not_permitted_exception() -> HTTPException:
+    return _bearer_exception(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="User does not have required permissions")
+
+
+def credentials_exception() -> HTTPException:
+    return _bearer_exception(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Incorrect username or password")
+
+
+def insufficient_scope_exception() -> HTTPException:
+    return _bearer_exception(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="API Key has insufficient scope")
+
+
+type EXCEPTION = typing.Literal[
+    'invalid_bearer',
+    'invalid_token',
+    'invalid_api_key',
+    'invalid_bearer_type',
+    'missing_required_claims',
+    'bearer_expired',
+    'user_not_found',
+    'user_not_permitted',
+    'credentials',
+    'insufficient_scope'
+]
 
 EXCEPTION_MAPPING: dict[EXCEPTION, HTTPException] = {
-    'invalid_bearer': INVALID_BEARER_EXCEPTION,
-    'invalid_token': INVALID_TOKEN_EXCEPTION,
-    'token_expired': TOKEN_EXPIRED_EXCEPTION,
-    'missing_required_claims': MISSING_REQUIRED_CLAIMS_EXCEPTION,
-    'user_not_found': USER_NOT_FOUND_EXCEPTION,
-    'user_not_permitted': USER_NOT_PERMITTED_EXCEPTION,
-    'credentials': CREDENTIALS_EXCEPTION
+    'bearer_expired': bearer_expired_exception(),
+    'credentials': credentials_exception(),
+    'insufficient_scope': insufficient_scope_exception(),
+    'invalid_api_key': invalid_api_key_exception(),
+    'invalid_bearer': invalid_bearer_exception(),
+    'invalid_bearer_type': invalid_bearer_type_exception(),
+    'invalid_token': invalid_token_exception(),
+    'missing_required_claims': missing_required_claims_exception(),
+    'user_not_found': user_not_found_exception(),
+    'user_not_permitted': user_not_permitted_exception(),
 }
-
-
-class VerifyTokenReturn(BaseModel):
-    user: models.UserPrivate = None
-    exception: EXCEPTION | None = None
-
-
-# def _verify_token(token_payload: dict, expiry_timedelta: datetime.timedelta):
-
-#     if 'iat' not in token_payload:
-#         return VerifyTokenReturn(exception='missing_required_claims')
-
-#     dt_iat = datetime.datetime.fromtimestamp(
-#         token_payload.get('iat'), datetime.UTC)
-
-#     dt_now = datetime.datetime.now(datetime.UTC)
-#     if dt_now > (dt_iat + expiry_timedelta):
-#         return VerifyTokenReturn(exception='token_expired')
-
-#     # check if token has user id
-#     user_id = models.User.import_from_token_payload(token_payload)
-#     if not user_id:
-#         return VerifyTokenReturn(exception='missing_required_claims')
-
-#     # check if user exists
-#     with Session(c.db_engine) as session:
-#         user = session.get(models.User, user_id)
-#         if not user:
-#             return VerifyTokenReturn(exception='user_not_found')
-#         return VerifyTokenReturn(user=models.UserPrivate.model_validate(user))
-
-
-TOKEN_REQUIRED_CLAIMS: list[str] = ['iat', models.User._payload_claim]
-
-# api_key
-
-INVALID_API_KEY_EXCEPTION = HTTPException(
-    status_code=status.HTTP_401_UNAUTHORIZED,
-    detail="Invalid API key",
-    headers={"WWW-Authenticate": "Bearer"})
-
-
-INSUFFICIENT_SCOPE_EXCEPTION = HTTPException(
-    status_code=status.HTTP_403_FORBIDDEN,
-    detail="Insufficient scope for API key",
-    headers={"WWW-Authenticate": "Bearer"})

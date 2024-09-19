@@ -30,6 +30,7 @@ class MediaRootConfig(typing.TypedDict):
 
 class AuthenticationConfig(typing.TypedDict):
     default_expiry_timedelta: datetime.timedelta
+    magic_link_expiry_timedelta: datetime.timedelta
 
 
 class JWTConfig(typing.TypedDict):
@@ -69,6 +70,7 @@ DefaultConfig: Config = {
 
     'authentication': {
         'default_expiry_timedelta': datetime.timedelta(days=7),
+        'magic_link_expiry_timedelta': datetime.timedelta(minutes=10)
     },
     'jwt': {
         'secret_key_path': {
