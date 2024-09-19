@@ -19,7 +19,7 @@ import { InputText } from '../Form/InputText';
 import { InputState } from '../../types';
 import { IoWarning } from 'react-icons/io5';
 
-const API_ENDPOINT = '/sign-up/';
+const API_ENDPOINT = '/auth/signup/';
 const API_METHOD = 'post';
 
 type ResponseTypesByStatus = ExtractResponseTypes<
@@ -154,11 +154,11 @@ function SignUp() {
                     id="password"
                     minLength={
                       openapi_schema.components.schemas.UserCreate.properties
-                        .password.minLength
+                        .password.anyOf[0].minLength
                     }
                     maxLength={
                       openapi_schema.components.schemas.UserCreate.properties
-                        .password.maxLength
+                        .password.anyOf[0].maxLength
                     }
                     type="password"
                     checkAvailability={false}
@@ -182,11 +182,11 @@ function SignUp() {
                     id="confirmPassword"
                     minLength={
                       openapi_schema.components.schemas.UserCreate.properties
-                        .password.minLength
+                        .password.anyOf[0].minLength
                     }
                     maxLength={
                       openapi_schema.components.schemas.UserCreate.properties
-                        .password.maxLength
+                        .password.anyOf[0].maxLength
                     }
                     type="password"
                     checkAvailability={false}

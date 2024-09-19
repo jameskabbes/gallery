@@ -11,6 +11,9 @@ import { LogIn } from './components/Auth/LogIn';
 import { SignUp } from './components/Auth/SignUp';
 import { Gallery } from './components/Gallery/pages/Gallery';
 import { LogInWithEmail } from './components/Auth/LogInWithEmail';
+import { VerifyMagicLink } from './components/Auth/VerifyMagicLink';
+
+import config from '../../config.json';
 
 function App(): JSX.Element {
   return (
@@ -29,6 +32,10 @@ function App(): JSX.Element {
             <Route path="/galleries/:gallery_id" element={<Gallery />} />
             <Route path="/404" element={<p>404</p>} />
             <Route path="*" element={<Navigate to="/404" />} />
+            <Route
+              path={`${config.magic_link_frontend_url}`}
+              element={<VerifyMagicLink />}
+            />
           </Routes>
           <Footer />
         </BrowserRouter>

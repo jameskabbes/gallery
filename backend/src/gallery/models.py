@@ -223,10 +223,12 @@ class User(SQLModel, Table[UserTypes.id], UserBase, table=True):
     api_keys: list['APIKey'] = Relationship(back_populates='user')
 
     @classmethod
-    def authenticate(cls, session: Session, email: str, password: str) -> typing.Self | None:
+    def authenticate(cls, session: Session, email: UserTypes.email, password: UserTypes.password) -> typing.Self | None:
 
         user = cls.get_one_by_key_values(session, {'email': email})
         if not user:
+            return None
+        if user.hashed_password is None:
             return None
         if not utils.verify_password(password, user.hashed_password):
             return None

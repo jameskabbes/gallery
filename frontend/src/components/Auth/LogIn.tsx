@@ -15,7 +15,7 @@ import { isEmailValid } from '../User/isEmailValid';
 import { IoMail } from 'react-icons/io5';
 import { useLogInWithGoogle } from './LogInWithGoogle';
 
-const API_ENDPOINT = '/login/';
+const API_ENDPOINT = '/auth/login/password/';
 const API_METHOD = 'post';
 
 type ResponseTypesByStatus = ExtractResponseTypes<
@@ -142,10 +142,13 @@ function LogIn() {
                       })
                     }
                     id="password"
-                    minLength={1}
+                    minLength={
+                      openapi_schema.components.schemas.UserCreate.properties
+                        .password.anyOf[0].minLength
+                    }
                     maxLength={
                       openapi_schema.components.schemas.UserCreate.properties
-                        .password.maxLength
+                        .password.anyOf[0].maxLength
                     }
                     type="password"
                     checkAvailability={false}

@@ -218,7 +218,7 @@ interface ToastContext {
 
 interface AuthContextState {
   isActive: boolean;
-  auth: components['schemas']['GetAuthReturn'];
+  auth: components['schemas']['GetAuthenticationNestedReturn'];
   token: components['schemas']['Token']['access_token'] | null;
 }
 

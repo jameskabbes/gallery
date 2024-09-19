@@ -6,7 +6,7 @@ import { paths, operations, components } from '../../openapi_schema';
 import { AuthContext } from '../../contexts/Auth';
 import { LogInContext } from '../../contexts/LogIn';
 
-const API_ENDPOINT = '/auth/google/';
+const API_ENDPOINT = '/auth/login/google/';
 const API_METHOD = 'post';
 
 type ResponseTypesByStatus = ExtractResponseTypes<

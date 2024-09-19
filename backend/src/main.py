@@ -71,11 +71,16 @@ def get_authorization_from_bearer(
     permitted_token_auth_sources: set[auth.TokenAuthSource] = auth.TOKEN_AUTH_SOURCES
 ) -> GetAuthorizationReturn:
 
+    print('bearer', bearer)
+
     try:
         payload = jwt.decode(bearer, c.jwt_secret_key,
                              algorithms=[c.jwt_algorithm])
 
     except:
+        print('111111')
+        print('111111')
+        print('111111')
         if raise_exceptions:
             raise auth.invalid_bearer_exception()
         return GetAuthorizationReturn(exception='invalid_bearer')
@@ -255,8 +260,8 @@ def get_authentication(get_authorization_return: GetAuthorizationReturn) -> GetA
 
 
 @ app.get('/auth/')
-async def auth_root(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=False))]) -> GetAuthorizationReturn:
-    return authorization
+async def auth_root(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=False))]) -> GetAuthenticationReturn:
+    return get_authentication(authorization)
 
 
 class LoginResponse(GetAuthenticationReturn):
@@ -322,7 +327,8 @@ def send_magic_link_to_email(model: LoginWithEmailMagicLinkRequest):
             token = make_token(
                 user, 'magic_link', expiry_timedelta=c.authentication['magic_link_expiry_timedelta'])
             print('beep boop beep... sending email')
-            print(token)
+            print('http://localhost:3000' +
+                  c.root_config['magic_link_frontend_url'] + '?access_token=' + token.access_token)
 
     # still need to fill this function in!
 
@@ -333,12 +339,15 @@ async def login_with_email_magic_link(model: LoginWithEmailMagicLinkRequest, bac
     return DetailOnlyResponse(detail='If an account with this email exists, a login link has been sent.')
 
 
-@ app.get('/auth/verify-magic-link/{access_token}', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
-async def verify_magic_link(access_token: str) -> LoginResponse:
+class VerifyMagicLinkRequest(BaseModel):
+    access_token: str
 
-    token = auth.Token(access_token=access_token)
+
+@ app.post('/auth/verify-magic-link/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
+async def verify_magic_link(verify_magic_link_request: VerifyMagicLinkRequest) -> LoginResponse:
+
     authorization = get_authorization_from_bearer(
-        token, expiry_timedelta=c.authentication['magic_link_expiry_timedelta'], raise_exceptions=True, permitted_bearer_types={'token'}, permitted_token_auth_sources={'magic_link'})
+        verify_magic_link_request.access_token, expiry_timedelta=c.authentication['magic_link_expiry_timedelta'], raise_exceptions=True, permitted_bearer_types={'token'}, permitted_token_auth_sources={'magic_link'})
 
     return LoginResponse(
         auth=GetAuthenticationNestedReturn(
@@ -353,7 +362,7 @@ class SignupResponse(LoginResponse):
     pass
 
 
-@ app.post('auth/signup/', responses={status.HTTP_409_CONFLICT: {"description": 'User already exists', 'model': DetailOnlyResponse}})
+@ app.post('/auth/signup/', responses={status.HTTP_409_CONFLICT: {"description": 'User already exists', 'model': DetailOnlyResponse}})
 async def sign_up(user_create: models.UserCreate) -> SignupResponse:
 
     user = await post_user(user_create)
@@ -597,35 +606,46 @@ async def delete_user(
 #             raise HTTPException(status.HTTP_404_NOT_FOUND,
 #                                 detail=models.Gallery.not_found_message())
 #         return Response(status_code=204)
-# # Page
-# class GetProfilePageResponse(AuthResponse):
-#     user: models.UserPrivate | None = None
-# @ app.get('/profile/page/')
-# async def get_pages_profile(token_return: typing.Annotated[GetTokenReturn, Depends(get_token)]) -> GetProfilePageResponse:
-#     auth_return = await get_auth(token_return)
-#     if auth_return.exception:
-#         raise auth.EXCEPTION_MAPPING[auth_return.exception]
-#     with Session(c.db_engine) as session:
-#         user = models.User.get_one_by_id(session, auth_return.user.id)
-#         if user is None:
-#             raise HTTPException(status.HTTP_404_NOT_FOUND,
-#                                 detail=models.User.not_found_message())
-#         # convert user to models.UserPrivate
-#         return GetProfilePageResponse(
-#             auth=auth_return,
-#             user=models.UserPrivate.model_validate(user)
-#         )
-# class GetHomePageResponse(AuthResponse):
-#     pass
-# @ app.get('/home/page/')
-# async def get_home_page(token_return: typing.Annotated[GetTokenReturn, Depends(get_token)]) -> GetHomePageResponse:
-#     auth_return = await get_auth(token_return)
-#     return GetHomePageResponse(
-#         auth=auth_return
-#     )
+
+# Page
+class GetProfilePageResponse(GetAuthenticationReturn):
+    user: models.UserPrivate | None = None
+
+
+@ app.get('/profile/page/')
+async def get_pages_profile(authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization(raise_exceptions=True, permitted_bearer_types={'token'}))]) -> GetProfilePageResponse:
+
+    with Session(c.db_engine) as session:
+        user = models.User.get_one_by_id(session, authorization.user.id)
+        if user is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail=models.User.not_found_message())
+        # convert user to models.UserPrivate
+        return GetProfilePageResponse(
+            auth=get_authentication(authorization),
+            user=models.UserPrivate.model_validate(user)
+        )
+
+
+class GetHomePageResponse(GetAuthenticationReturn):
+    pass
+
+
+@ app.get('/home/page/')
+async def get_home_page(authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization())]) -> GetHomePageResponse:
+
+    return GetHomePageResponse(
+        auth=get_authentication(authorization)
+    )
+
+
 # class GetGalleryPageResponse(AuthResponse):
 #     gallery: models.Gallery
 #     gallery_permission: models.GalleryPermission | None = None
+
+
 # @app.get('/galleries/{gallery_id}/page/')
 # async def get_gallery_page(gallery_id: models.GalleryTypes.id, token_return: typing.Annotated[GetTokenReturn, Depends(get_token)]) -> GetGalleryPageResponse:
 #     auth_return = await get_auth(token_return)
@@ -647,6 +667,8 @@ async def delete_user(
 #             gallery=gallery,
 #             gallery_permission=gallery_permission
 #         )
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -13,7 +13,7 @@ import { isEmailValid } from '../User/isEmailValid';
 import { InputText } from '../Form/InputText';
 import { InputState } from '../../types';
 
-const API_ENDPOINT = '/login-with-email/';
+const API_ENDPOINT = '/auth/login/email-magic-link/';
 const API_METHOD = 'post';
 
 type ResponseTypesByStatus = ExtractResponseTypes<

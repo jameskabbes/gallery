@@ -25,13 +25,13 @@ export interface paths {
     /** Login With Email Magic Link */
     post: operations["login_with_email_magic_link_auth_login_email_magic_link__post"];
   };
-  "/auth/verify-magic-link/{access_token}": {
+  "/auth/verify-magic-link/": {
     /** Verify Magic Link */
-    get: operations["verify_magic_link_auth_verify_magic_link__access_token__get"];
+    post: operations["verify_magic_link_auth_verify_magic_link__post"];
   };
-  "auth/signup/": {
+  "/auth/signup/": {
     /** Sign Up */
-    post: operations["sign_upauth_signup__post"];
+    post: operations["sign_up_auth_signup__post"];
   };
   "/users/available/username/{username}/": {
     /** User Username Available */
@@ -59,14 +59,20 @@ export interface paths {
     /** Patch User */
     patch: operations["patch_user_users__user_id___patch"];
   };
+  "/profile/page/": {
+    /** Get Pages Profile */
+    get: operations["get_pages_profile_profile_page__get"];
+  };
+  "/home/page/": {
+    /** Get Home Page */
+    get: operations["get_home_page_home_page__get"];
+  };
 }
 
 export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
-    /** @enum {string} */
-    BearerType: "token" | "api_key";
     /** Body_login_auth_login_password__post */
     Body_login_auth_login_password__post: {
       /** Grant Type */
@@ -115,18 +121,18 @@ export interface components {
       user?: components["schemas"]["UserPrivate"] | null;
       exception?: components["schemas"]["EXCEPTION"] | null;
     };
-    /** GetAuthorizationReturn */
-    GetAuthorizationReturn: {
-      /**
-       * Isauthorized
-       * @default false
-       */
-      isAuthorized?: boolean;
-      type?: components["schemas"]["BearerType"] | null;
-      exception?: components["schemas"]["EXCEPTION"] | null;
+    /** GetAuthenticationReturn */
+    GetAuthenticationReturn: {
+      auth: components["schemas"]["GetAuthenticationNestedReturn"];
+    };
+    /** GetHomePageResponse */
+    GetHomePageResponse: {
+      auth: components["schemas"]["GetAuthenticationNestedReturn"];
+    };
+    /** GetProfilePageResponse */
+    GetProfilePageResponse: {
+      auth: components["schemas"]["GetAuthenticationNestedReturn"];
       user?: components["schemas"]["UserPrivate"] | null;
-      /** Scopes */
-      scopes?: string[] | null;
     };
     /** GoogleAuthRequest */
     GoogleAuthRequest: {
@@ -270,7 +276,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["GetAuthorizationReturn"];
+          "application/json": components["schemas"]["GetAuthenticationReturn"];
         };
       };
     };
@@ -352,9 +358,9 @@ export interface operations {
     };
   };
   /** Verify Magic Link */
-  verify_magic_link_auth_verify_magic_link__access_token__get: {
+  verify_magic_link_auth_verify_magic_link__post: {
     parameters: {
-      path: {
+      query: {
         access_token: string;
       };
     };
@@ -380,7 +386,7 @@ export interface operations {
     };
   };
   /** Sign Up */
-  sign_upauth_signup__post: {
+  sign_up_auth_signup__post: {
     requestBody: {
       content: {
         "application/json": components["schemas"]["UserCreate"];
@@ -614,6 +620,28 @@ export interface operations {
       422: {
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get Pages Profile */
+  get_pages_profile_profile_page__get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["GetProfilePageResponse"];
+        };
+      };
+    };
+  };
+  /** Get Home Page */
+  get_home_page_home_page__get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["GetHomePageResponse"];
         };
       };
     };
