@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Query, status, Response, Depends, Request
+from fastapi import FastAPI, HTTPException, Query, status, Response, Depends, Request, BackgroundTasks
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -48,134 +48,233 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token/", auto_error=False)
 
 
 class GetAuthorizationReturn(BaseModel):
-    isAuthenticated: bool = False
+    isAuthorized: bool = False
+    type: auth.BearerType | None = None
     exception: auth.EXCEPTION | None = None
     user: models.UserPrivate | None = None
 
 
+class GetAuthorizationTokenReturn(GetAuthorizationReturn):
+    type: auth.BearerType = 'token'
+
+
+class GetAuthorizationAPIKeyReturn(GetAuthorizationReturn):
+    type: auth.BearerType = 'api_key'
+
+
+def get_authorization_from_token(payload: dict, required_scopes: set[str], expiry_timedelta: datetime.timedelta, raise_exceptions: bool) -> GetAuthorizationTokenReturn:
+    if 'iat' not in payload:
+        if raise_exceptions:
+            raise auth.MISSING_REQUIRED_CLAIMS_EXCEPTION
+        return GetAuthorizationTokenReturn(exception='missing_required_claims')
+
+    dt_iat = datetime.datetime.fromtimestamp(
+        payload.get('iat'), datetime.UTC)
+    dt_now = datetime.datetime.now(datetime.UTC)
+    if dt_now > (dt_iat + expiry_timedelta):
+        return GetAuthorizationTokenReturn(exception='token_expired')
+
+    user_id = models.User.import_from_token_payload(payload)
+    if not user_id:
+        return GetAuthorizationTokenReturn(exception='missing_required_claims')
+
+    with Session(c.db_engine) as session:
+        user = session.get(models.User, user_id)
+        if not user:
+            return GetAuthorizationTokenReturn(exception='user_not_found')
+
+        # need to make sure the user has the given scopes
+        return GetAuthorizationTokenReturn(user=models.UserPrivate.model_validate(user), isAuthorized=True)
+
+
+def get_authorization_from_api_key(payload: dict, required_scopes: set[str], expiry_timedelta: datetime.timedelta, raise_exceptions: bool) -> GetAuthorizationAPIKeyReturn:
+    return GetAuthorizationAPIKeyReturn(isAuthorized=True)
+
+
+def decode_bearer(bearer: auth.BearerString) -> dict | bool:
+
+    try:
+        return jwt.decode(bearer, c.jwt_secret_key,
+                          algorithms=[c.jwt_algorithm])
+    except:
+        return False
+
+
+def get_authorization_from_bearer(bearer: auth.BearerString, required_scopes: set[str] = set(), expiry_timedelta: datetime.timedelta = typing.Annotated, raise_exceptions: bool = False) -> GetAuthorizationReturn:
+
+    payload = decode_bearer(bearer)
+
+    if payload == False:
+        if raise_exceptions:
+            raise auth.INVALID_BEARER_EXCEPTION
+        return GetAuthorizationReturn(exception='invalid_bearer')
+
+    if 'type' not in payload:
+        return GetAuthorizationReturn(exception='missing_required_claims')
+
+    bearer_type: auth.BearerType = payload['type']
+
+    # token
+    if bearer_type == 'token':
+        return get_authorization_from_token(payload, required_scopes, expiry_timedelta, raise_exceptions)
+
+    # api_key
+    elif bearer_type == 'api_key':
+        return get_authorization_from_api_key(payload, required_scopes, expiry_timedelta, raise_exceptions)
+
+
 def get_authorization(required_scopes: set[str] = set(), expiry_timedelta: typing.Annotated[datetime.timedelta, 'The timedelta from token creation in which the token is still valid'] = c.authentication['default_expiry_timedelta'], raise_exceptions: bool = False):
-    def dependecy(authorization_bearer_header: typing.Annotated[str, Depends(oauth2_scheme)]):
-
-        try:
-            payload = jwt.decode(authorization_bearer_header, c.jwt_secret_key,
-                                 algorithms=[c.jwt_algorithm])
-        except:
-            if raise_exceptions:
-                raise auth.INVALID_BEARER_EXCEPTION
-            return GetAuthorizationReturn(exception='invalid_bearer')
-
-        if 'type' not in payload:
-            return GetAuthorizationReturn(exception='missing_required_claims')
-
-        ###
-
-        return GetAuthorizationReturn(payload=payload, type=payload['type'])
-
+    def dependecy(bearer: typing.Annotated[auth.BearerString, Depends(oauth2_scheme)]):
+        return get_authorization_from_bearer(bearer, required_scopes, expiry_timedelta, raise_exceptions)
     return dependecy
 
 
-#
-
-def make_token(user: models.UserBase, expiry_datetime: typing.Annotated[typing.Optional[datetime.timedelta], 'The datetime the token expires'] = None) -> str:
-
+def make_token(user: models.UserBase) -> auth.Token:
     dt_now: datetime.datetime = datetime.datetime.now(datetime.UTC)
     to_encode = {}
     to_encode.update(user.export_for_token_payload())
     to_encode.update({"iat": dt_now.timestamp()})
-    if expiry_datetime != None:
-        to_encode.update({"exp": (dt_now + expiry_datetime).timestamp()})
-
+    to_encode.update({"type": 'token'})
     return jwt.encode(to_encode, c.jwt_secret_key, algorithm=c.jwt_algorithm)
 
 
-@ app.post('/test/')
-async def test(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=True))]):
+@ app.post("/token/")
+async def post_token(
+    form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()],
+) -> auth.Token:
+    with Session(c.db_engine) as session:
+        user = models.User.authenticate(
+            session, form_data.username, form_data.password)
+        if not user:
+            raise auth.CREDENTIALS_EXCEPTION
+        return make_token(user)
 
-    print(authorization)
-    return {'asd': 'asd'}
+
+class GetAuthenticationNestedReturn(BaseModel):
+    user: models.UserPrivate | None = None
+    exception: auth.EXCEPTION | None = None
 
 
-# @ app.post("/token/")
-# async def post_token(
-#     form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()],
-# ) -> models.Token:
-#     with Session(c.db_engine) as session:
-#         user = models.User.authenticate(
-#             session, form_data.username, form_data.password)
-#         if not user:
-#             raise auth.CREDENTIALS_EXCEPTION
-#         access_token = make_token(user)
-#         return models.Token(access_token=access_token)
-# assert c.root_config['auth_key'] == 'auth'
-# class AuthResponse(BaseModel):
-#     auth: GetAuthReturn
-# class LoginResponse(AuthResponse):
-#     token: models.Token
-# @ app.post('/auth/login/password/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Could not validate credentials', 'model': DetailOnlyResponse}})
-# async def login(form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()]) -> LoginResponse:
-#     with Session(c.db_engine) as session:
-#         email = form_data.username
-#         password = form_data.password
-#         user = models.User.authenticate(
-#             session, email, password)
-#         if not user:
-#             raise auth.CREDENTIALS_EXCEPTION
-#         access_token = create_access_token(
-#             data=user.export_for_token_payload())
-#         return LoginResponse(
-#             auth=GetAuthReturn(user=models.UserPublic.model_validate(user)),
-#             token=models.Token(access_token=access_token)
-#         )
-# class GoogleAuthResponse(LoginResponse):
-#     pass
-# class GoogleAuthRequest(BaseModel):
-#     access_token: str
-# @app.post("/auth/login/google/", responses={status.HTTP_400_BAD_REQUEST: {"description": 'Invalid token'}})
-# async def login_with_google(request_token: GoogleAuthRequest) -> GoogleAuthResponse:
-#     # call https://www.googleapis.com/oauth2/v3/userinfo?access_token=
-#     async with httpx.AsyncClient() as client:
-#         response = await client.get('https://www.googleapis.com/oauth2/v3/userinfo?access_token={}'.format(request_token.access_token))
-#         response.raise_for_status()
-#         user_info = response.json()
-#     # fields: sub, name, given_name, family_name, picture, email, email_verified
-#     email = user_info.get('email')
-#     if not email:
-#         raise HTTPException(status.HTTP_400_BAD_REQUEST,
-#                             detail='Invalid token')
-#     with Session(c.db_engine) as session:
-#         user = models.User.get_one_by_key_values(session, {'email': email})
-#         if not user:
-#             user_create = models.UserCreate(
-#                 email=email,
-#             )
-#             user = user_create.create()
-#             user.add_to_db(session)
-#         access_token = create_access_token(
-#             data=user.export_for_token_payload())
-#         return GoogleAuthResponse(
-#             auth=GetAuthReturn(user=models.UserPrivate.model_validate(user)),
-#             token=models.Token(access_token=access_token)
-#         )
-# class LoginWithEmailMagicLinkRequest(BaseModel):
-#     email: models.UserTypes.email
-# async def send_magic_link_email(model: LoginWithEmailMagicLinkRequest):
-#     with Session(c.db_engine) as session:
-#         user = models.User.get_one_by_key_values(
-#             session, {'email': model.email})
-#         if user:
-#             access_token = create_access_token(
-#                 data=user.export_for_token_payload())
-#             pass
-# @app.post('auth/login/email-magic-link/')
-# async def login_with_email_magic_link(model: LoginWithEmailMagicLinkRequest) -> DetailOnlyResponse:
-#     send_magic_link_email(model)
-#     return DetailOnlyResponse(detail='If an account with this email exists, a login link has been sent.')
-# @app.get('/auth/verify-magic-link', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
-# async def verify_magic_link(token: str) -> LoginResponse:
-#     pass
+assert c.root_config['auth_key'] == 'auth'
+
+
+class GetAuthenticationReturn(BaseModel):
+    auth: GetAuthenticationNestedReturn
+
+
+def get_authentication(get_authorization_return: GetAuthorizationReturn) -> GetAuthenticationReturn:
+    return GetAuthenticationReturn(auth=GetAuthenticationNestedReturn(user=get_authorization_return.user,
+                                                                      exception=get_authorization_return.exception))
+
+
+@ app.post('/auth/')
+async def auth_root(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=False))]) -> GetAuthorizationReturn:
+    return authorization
+
+
+class LoginResponse(GetAuthenticationReturn):
+    token: auth.Token
+
+
+@ app.post('/auth/login/password/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Could not validate credentials', 'model': DetailOnlyResponse}})
+async def login(form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()]) -> LoginResponse:
+
+    print(form_data)
+
+    with Session(c.db_engine) as session:
+        email = form_data.username
+        password = form_data.password
+        user = models.User.authenticate(
+            session, email, password)
+        if not user:
+            raise auth.CREDENTIALS_EXCEPTION
+
+        return LoginResponse(
+            auth=GetAuthenticationNestedReturn(
+                user=models.UserPrivate.model_validate(user)),
+            token=make_token(user)
+        )
+
+
+class GoogleAuthResponse(LoginResponse):
+    pass
+
+
+class GoogleAuthRequest(BaseModel):
+    access_token: str
+
+
+@app.post("/auth/login/google/", responses={status.HTTP_400_BAD_REQUEST: {"description": 'Invalid token'}})
+async def login_with_google(request_token: GoogleAuthRequest) -> GoogleAuthResponse:
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get('https://www.googleapis.com/oauth2/v3/userinfo?access_token={}'.format(request_token.access_token))
+        response.raise_for_status()
+        user_info = response.json()
+
+    # fields: sub, name, given_name, family_name, picture, email, email_verified
+    email = user_info.get('email')
+    if not email:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            detail='Invalid token')
+
+    with Session(c.db_engine) as session:
+        user = models.User.get_one_by_key_values(session, {'email': email})
+        if not user:
+            user_create = models.UserCreate(
+                email=email,
+            )
+            user = user_create.create()
+            user.add_to_db(session)
+
+        return GoogleAuthResponse(
+            auth=GetAuthenticationReturn(
+                user=models.UserPrivate.model_validate(user)),
+            token=make_token(user)
+        )
+
+
+class LoginWithEmailMagicLinkRequest(BaseModel):
+    email: models.UserTypes.email
+
+
+def send_magic_link_email(model: LoginWithEmailMagicLinkRequest):
+    with Session(c.db_engine) as session:
+        user = models.User.get_one_by_key_values(
+            session, {'email': model.email})
+        if user:
+            token = make_token(user)
+            print('beep boop beep... sending email')
+            print(token)
+
+    # still need to fill this function in!
+
+
+@app.post('/auth/login/email-magic-link/')
+async def login_with_email_magic_link(model: LoginWithEmailMagicLinkRequest, background_tasks: BackgroundTasks) -> DetailOnlyResponse:
+    background_tasks.add_task(send_magic_link_email, model)
+    return DetailOnlyResponse(detail='If an account with this email exists, a login link has been sent.')
+
+
+@app.get('/auth/verify-magic-link/{token}', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
+async def verify_magic_link(token: auth.Token) -> LoginResponse:
+
+    authorization = get_authorization_from_bearer(
+        token, expiry_timedelta=datetime.timedelta(minutes=10), raise_exceptions=True)
+
+    return LoginResponse(
+        auth=GetAuthenticationNestedReturn(
+            user=authorization.user,
+            exception=authorization.exception
+        ),
+        token=make_token(authorization.user)
+    )
+
 # class SignupResponse(AuthResponse):
 #     user: models.UserPrivate
 #     token: models.Token
+
+
 # @ app.post('auth/signup/', responses={status.HTTP_409_CONFLICT: {"description": 'User already exists', 'model': DetailOnlyResponse}})
 # async def sign_up(user_create: models.UserCreate) -> SignupResponse:
 #     user = await post_user(user_create)

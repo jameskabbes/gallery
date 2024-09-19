@@ -1,3 +1,15 @@
-POST http://localhost:8087/test/
+# POST http://localhost:8087/auth/login/password/
+# Content-Type: application/x-www-form-urlencoded
 
-Authorization: Bearer asdf
+# username=a@a.com&password=password
+
+
+POST http://localhost:8087/auth/login/email-magic-link/
+Content-Type: application/json
+    
+{
+    "email": "a@a.com"
+}
+
+
+#Authorization: Bearer token

@@ -11,8 +11,10 @@ class SCOPES:
     USERS_WRITE = 'users.write'
 
 
+type Token = str
+type APIKey = str
+type BearerString = Token | APIKey
 type BearerType = typing.Literal['token', 'api_key']
-type BearerRequiredClaims = typing.Literal['type']
 
 INVALID_BEARER_EXCEPTION = HTTPException(
     status_code=status.HTTP_400_BAD_REQUEST,

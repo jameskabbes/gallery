@@ -10,11 +10,6 @@ from enum import Enum
 #
 
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str = 'bearer'
-
-
 class PermissionLevel(Enum):
     VIEWER = 'viewer'
     EDITOR = 'editor'
