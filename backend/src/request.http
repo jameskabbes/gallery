@@ -1,5 +1,5 @@
 # get token from password auth
-POST http://localhost:8087/auth/login/password/
+POST http://localhost:8087/token/
 Content-Type: application/x-www-form-urlencoded
 
 username=a@a.com&password=password

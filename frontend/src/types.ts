@@ -1,5 +1,6 @@
 import { paths, operations, components } from './openapi_schema';
 import config from '../../config.json';
+import { IoExitOutline } from 'react-icons/io5';
 
 interface CallApiProps<T> {
   endpoint: string;
@@ -216,46 +217,66 @@ interface ToastContext {
   update: (id: ToastId, toast: Partial<Toast>) => void;
 }
 
+interface LocalStorageBaseContext<T> {
+  setState: React.Dispatch<React.SetStateAction<T>>;
+}
+
 interface AuthContextState {
-  auth: components['schemas']['GetAuthenticationNestedReturn'];
-  token: components['schemas']['Token']['access_token'] | null;
-}
-
-interface AuthReducerActionTypes {
-  SET_AUTH_USER: {
-    type: 'SET_AUTH_USER';
-    payload: AuthContextState['auth']['user'];
-  };
-  SET_TOKEN: {
-    type: 'SET_TOKEN';
-    payload: components['schemas']['Token'];
-  };
-  CLEAR_TOKEN: {
-    type: 'CLEAR_TOKEN';
-  };
-  LOGIN: {
-    type: 'LOGIN';
-    payload: AuthContextState['auth'];
-  };
-  LOGOUT: {
-    type: 'LOGOUT';
-  };
-  UPDATE: {
-    type: 'UPDATE';
-    payload: AuthContextState['auth'];
-  };
-  UPDATE_FROM_API_RESPONSE: {
-    type: 'UPDATE_FROM_API_RESPONSE';
-    payload: { auth?: AuthContextState['auth'] };
+  loggedIn: boolean;
+  user: components['schemas']['UserPrivate'];
+  token: {
+    token: components['schemas']['Token'];
+    scopes: string[];
+    expiry: Date;
   };
 }
 
-type AuthReducerAction = AuthReducerActionTypes[keyof AuthReducerActionTypes];
-
-interface AuthContext {
+interface AuthContext extends LocalStorageBaseContext<AuthContextState> {
   state: AuthContextState;
-  dispatch: React.Dispatch<AuthReducerAction>;
+  logOut: () => void;
+  updateFromApiResponse: (data: any, status_code: number) => void;
 }
+
+// interface AuthContextState {
+//   auth: components['schemas']['GetAuthenticationNestedReturn'];
+//   token: components['schemas']['Token']['access_token'] | null;
+// }
+
+// interface AuthReducerActionTypes {
+//   SET_AUTH_USER: {
+//     type: 'SET_AUTH_USER';
+//     payload: AuthContextState['auth']['user'];
+//   };
+//   SET_TOKEN: {
+//     type: 'SET_TOKEN';
+//     payload: components['schemas']['Token'];
+//   };
+//   CLEAR_TOKEN: {
+//     type: 'CLEAR_TOKEN';
+//   };
+//   LOGIN: {
+//     type: 'LOGIN';
+//     payload: AuthContextState['auth'];
+//   };
+//   LOGOUT: {
+//     type: 'LOGOUT';
+//   };
+//   UPDATE: {
+//     type: 'UPDATE';
+//     payload: AuthContextState['auth'];
+//   };
+//   UPDATE_FROM_API_RESPONSE: {
+//     type: 'UPDATE_FROM_API_RESPONSE';
+//     payload: { auth?: AuthContextState['auth'] };
+//   };
+// }
+
+// type AuthReducerAction = AuthReducerActionTypes[keyof AuthReducerActionTypes];
+
+// interface AuthContext {
+//   state: AuthContextState;
+//   dispatch: React.Dispatch<AuthReducerAction>;
+// }
 
 type Modal = React.ReactNode;
 interface ModalsReducerState {
@@ -305,8 +326,6 @@ export {
   ToastReducerActionTypes,
   ToastReducerAction,
   ToastContext,
-  AuthReducerActionTypes,
-  AuthReducerAction,
   AuthContextState,
   AuthContext,
   DeviceContext,

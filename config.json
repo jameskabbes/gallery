@@ -3,5 +3,8 @@
   "api_endpoint_base": "api",
   "domain_name": "gallery.jameskabbes.com",
   "auth_key": "auth",
-  "magic_link_frontend_url": "/magic-link"
+  "magic_link_frontend_url": "/magic-link",
+  "cookie_keys": {
+    "access_token": "access_token"
+  }
 }

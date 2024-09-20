@@ -7,6 +7,7 @@ from gallery import utils
 from abc import ABC, abstractmethod
 import datetime as datetime_module
 from enum import Enum
+import jwt
 #
 
 
@@ -36,27 +37,6 @@ class VisibilityLevel(Enum):
     PRIVATE = 'private'
 
 #
-
-
-class JWTSerializable:
-
-    _jwt_claim_to_attributes: typing.ClassVar[dict[str, str]] = {}
-
-    def _export_to_jwt_base(self) -> dict:
-        return {key: getattr(self, value) for key, value in self._jwt_claim_to_attributes.items()}
-
-    @abstractmethod
-    def export_to_jwt(self) -> dict:
-        return self._export_to_jwt_base()
-
-    @classmethod
-    def _import_from_jwt_base(cls, token_payload: dict) -> dict:
-        return {cls._jwt_claim_to_attributes[claim]: token_payload.get(claim) for claim in cls._jwt_claim_to_attributes}
-
-    @classmethod
-    @abstractmethod
-    def import_from_jwt(cls, token_payload: dict) -> dict:
-        return cls._import_from_jwt_base(token_payload)
 
 
 class Table[IDType]:
@@ -169,24 +149,8 @@ class UserTypes:
     hashed_password = str
 
 
-class UserBase(JWTSerializable):
-
-    _jwt_claim_to_attributes: typing.ClassVar[dict[str, str]] = {
-        'sub': 'id'
-    }
-
-    class JWTExport(typing.TypedDict):
-        sub: UserTypes.id
-
-    class JWTImport(typing.TypedDict):
-        id: UserTypes.id
-
-    def export_to_jwt(self) -> JWTExport:
-        return self._export_to_jwt_base()
-
-    @classmethod
-    def import_from_jwt(cls, token_payload: dict) -> JWTImport:
-        return cls._import_from_jwt_base(token_payload)
+class UserBase:
+    pass
 
 
 class UserUpdate(BaseModel, UserBase):
@@ -219,8 +183,6 @@ class User(SQLModel, Table[UserTypes.id], UserBase, table=True):
     username: UserTypes.username = Field(
         index=True, unique=True, nullable=True, default=None)
     hashed_password: UserTypes.hashed_password | None = Field(default=None)
-    scopes: list['UserScope'] = Relationship(back_populates='user')
-    api_keys: list['APIKey'] = Relationship(back_populates='user')
 
     @classmethod
     def authenticate(cls, session: Session, email: UserTypes.email, password: UserTypes.password) -> typing.Self | None:
@@ -264,33 +226,111 @@ class UserCreate(SingularCreate[User], UserBase):
         return User(id=self._SINGULAR_MODEL.generate_id(), email=self.email, hashed_password=hashed_password)
 
 
-# ApiKeys
+# Scope
+type ScopeName = typing.Literal['users.read', 'users.write']
 
-class APIKeyTypes:
+
+class ScopeTypes:
+    id = int
+    name = ScopeName
+
+
+class Scope(SQLModel, Table[ScopeName], table=True):
+    __tablename__ = 'scope'
+    id: ScopeTypes.id = Field(primary_key=True, index=True, unique=True)
+    name: ScopeTypes.name = Field(index=True, unique=True)
+
+
+# AuthCredential
+type AuthCredentialType = typing.Literal['access_token', 'api_key']
+
+
+class AuthCredentialTypes:
     id = str
     user_id = UserTypes.id
-    scope = str
+    type = AuthCredentialType
     issued = datetime_module.datetime
     expiry = datetime_module.datetime
 
 
-class APIKeyBase(JWTSerializable):
-    _jwt_claim_to_attributes: typing.ClassVar[dict[str, str]] = {
-        'sub': 'id'
-    }
+class AuthCredential(SQLModel, Table[AuthCredentialTypes.id], table=True):
+    __tablename__ = 'auth_credential'
+    id: AuthCredentialTypes.id = Field(
+        primary_key=True, index=True, unique=True)
+    user_id: UserTypes.id = Field(
+        index=True, foreign_key=User.__tablename__ + '.id')
+    type: AuthCredentialTypes.AuthCredentialType
+    issued: AuthCredentialTypes.issued = Field(
+        default=datetime_module.datetime.now(datetime_module.UTC))
+    expiry: AuthCredentialTypes.expiry
 
     class JWTExport(typing.TypedDict):
-        sub: APIKeyTypes.id
+        sub: AuthCredentialTypes.id
+        exp: AuthCredentialTypes.expiry
+        iat: AuthCredentialTypes.issued
+
+    _JWT_CLAIMS_TO_ATTRIBUTES: typing.ClassVar[dict[str, str]] = {
+        'sub': 'id',
+        'exp': 'expiry',
+        'iat': 'issued'
+    }
 
     class JWTImport(typing.TypedDict):
-        id: APIKeyTypes.id
-
-    def export_to_jwt(self) -> JWTExport:
-        return self._export_to_jwt_base()
+        id: AuthCredentialTypes.id
+        expiry: AuthCredentialTypes.expiry
+        issued: AuthCredentialTypes.issued
 
     @classmethod
     def import_from_jwt(cls, token_payload: dict) -> JWTImport:
-        return cls._import_from_jwt_base(token_payload)
+        return {cls._JWT_CLAIMS_TO_ATTRIBUTES[claim]: token_payload.get(claim) for claim in cls._jwt_claim_to_attributes}
+
+    def export_to_jwt(self) -> JWTExport:
+        return {key: getattr(self, value) for key, value in self._JWT_CLAIMS_TO_ATTRIBUTES.items()}
+
+
+class AuthCredentialCreate(SingularCreate[AuthCredential], AuthCredentialTypes):
+    user_id: AuthCredentialTypes.user_id
+    type: AuthCredentialTypes.type
+    expiry: AuthCredentialTypes.expiry | None = None
+
+    _SINGULAR_MODEL: typing.ClassVar[typing.Type[AuthCredential]
+                                     ] = AuthCredential
+
+    def create(self) -> AuthCredential:
+        return AuthCredential(id=self._SINGULAR_MODEL.generate_id(), **self.model_dump())
+
+# AuthCredentialScope
+
+
+class AuthCredentialScopeTypes:
+    id = str
+
+
+class AuthCredentialScope(SQLModel, Table[AuthCredentialScopeTypes.id], table=True):
+    __tablename__ = 'auth_credential_scope'
+    __table_args__ = (
+        PrimaryKeyConstraint('user_id', 'scope_id'),
+    )
+    _ID_COLS: typing.ClassVar[list[str]] = ['user_id', 'scope_id']
+
+    auth_credential_id: AuthCredentialTypes.id = Field(
+        index=True, foreign_key=AuthCredential.__tablename__ + '.id')
+    scope_id: ScopeTypes.id = Field(
+        index=True, foreign_key=Scope.__tablename__ + '.id')
+
+
+# APIKeyScope
+
+
+class APIKeyTypes:
+    id = str
+    user_id = UserTypes.id
+    issued = datetime_module.datetime
+    expiry = datetime_module.datetime
+
+
+class APIKeyBase:
+    pass
 
 
 class APIKeyUpdate(BaseModel, APIKeyBase):
@@ -316,7 +356,6 @@ class APIKey(SQLModel, Table[APIKeyTypes.id], APIKeyBase, table=True):
     expiry: APIKeyTypes.expiry | None = Field(default=None)
     issued: APIKeyTypes.issued = Field(default=datetime_module.datetime.now())
     user: User = Relationship(back_populates="api_keys")
-    scopes: list["APIKeyScope"] = Relationship(back_populates="api_key")
 
 
 class APIKeyCreate(SingularCreate[APIKey], APIKeyBase):
@@ -327,55 +366,6 @@ class APIKeyCreate(SingularCreate[APIKey], APIKeyBase):
 
     def create(self) -> APIKey:
         return APIKey(id=self._SINGULAR_MODEL.generate_id(), **self.model_dump())
-
-# Scope
-
-
-type ScopeID = typing.Literal['users.read', 'users.write']
-
-
-class ScopeTypes:
-    id = str
-
-
-class Scope(SQLModel, Table[ScopeID], table=True):
-    __tablename__ = 'scope'
-    id: ScopeTypes.id = Field(primary_key=True, index=True, unique=True)
-    user_scopes: list['UserScope'] = Relationship(back_populates='scope')
-    api_key_scopes: list['APIKeyScope'] = Relationship(back_populates='scope')
-
-# UserScope
-
-
-class UserScopeTypes:
-    pass
-
-
-class UserScope(SQLModel, Table[UserTypes.id], table=True):
-    __tablename__ = 'user_scope'
-    __table_args__ = (
-        PrimaryKeyConstraint('user_id', 'scope_id'),
-    )
-    _ID_COLS: typing.ClassVar[list[str]] = ['user_id', 'scope_id']
-
-    user_id: UserTypes.id = Field(
-        primary_key=True, index=True, foreign_key=User.__tablename__ + '.id')
-    scope_id: ScopeTypes.id = Field(
-        primary_key=True, foreign_key=Scope.__tablename__ + '.id')
-    user: User = Relationship(back_populates='scopes')
-    scope: Scope = Relationship(back_populates='user_scopes')
-
-# APIKeyScope
-
-
-class APIKeyScope(SQLModel, table=True):
-    __tablename__ = 'api_key_scope'
-    api_key_id: APIKeyTypes.id = Field(
-        primary_key=True, index=True, foreign_key=APIKey.__tablename__ + '.id')
-    scope_id: ScopeTypes.id = Field(
-        primary_key=True, index=True, foreign_key=Scope.__tablename__ + '.id')
-    api_key: APIKey = Relationship(back_populates='scopes')
-    scope: Scope = Relationship(back_populates='api_key_scopes')
 
 
 # Gallery
@@ -480,7 +470,6 @@ class APIKeyScope(SQLModel, table=True):
 #     user_id: UserTypes.id = Field(
 #         primary_key=True, index=True, foreign_key=User.__tablename__ + '.id')
 #     permission_level: PermissionLevel
-
 
 if __name__ == '__main__':
     print()

@@ -12,7 +12,11 @@ import { EscapeKeyContextProvider } from './EscapeKey';
 import { ToastContextProvider } from './Toast';
 import { LogInWithGoogleProvider } from './LogInWithGoogle';
 
+import { useLocalStorageSync } from '../utils/useLocalStorageSync';
+
 const ApplicationContextProvider = ({ children }) => {
+  useLocalStorageSync();
+
   return (
     <EscapeKeyContextProvider>
       <AuthContextProvider>
