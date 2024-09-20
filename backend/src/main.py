@@ -71,25 +71,26 @@ def get_authorization_from_bearer(
     permitted_token_auth_sources: set[auth.TokenAuthSource] = auth.TOKEN_AUTH_SOURCES
 ) -> GetAuthorizationReturn:
 
-    print('bearer', bearer)
+    print('bearer')
+    print(bearer)
 
     try:
         payload = jwt.decode(bearer, c.jwt_secret_key,
                              algorithms=[c.jwt_algorithm])
 
     except:
-        print('111111')
-        print('111111')
-        print('111111')
+        print('invalid_bearer')
         if raise_exceptions:
             raise auth.invalid_bearer_exception()
         return GetAuthorizationReturn(exception='invalid_bearer')
 
     if 'type' not in payload:
+        print('missing required claims')
         return GetAuthorizationReturn(exception='missing_required_claims')
 
     bearer_type: auth.BearerType = payload['type']
     if bearer_type not in permitted_bearer_types:
+        print('invalid_bearer_type')
         if raise_exceptions:
             raise auth.invalid_bearer_type_exception(
                 bearer_type, permitted_bearer_types)
@@ -97,10 +98,12 @@ def get_authorization_from_bearer(
             return GetAuthorizationReturn(exception='invalid_bearer_type')
 
     if 'iat' not in payload:
+        print('not iat')
         if raise_exceptions:
             raise auth.missing_required_claims_exception()
         return GetAuthorizationTokenReturn(exception='missing_required_claims')
     if 'exp' not in payload:
+        print('no exp')
         if raise_exceptions:
             raise auth.missing_required_claims_exception()
         return GetAuthorizationTokenReturn(exception='missing_required_claims')
@@ -111,6 +114,7 @@ def get_authorization_from_bearer(
     dt_exp = datetime.datetime.fromtimestamp(
         payload.get('exp'), datetime.UTC)
     if dt_now > dt_exp:
+        print('bearer_expired')
         if raise_exceptions:
             raise auth.bearer_expired_exception()
         return GetAuthorizationTokenReturn(exception='bearer_expired')
@@ -120,6 +124,8 @@ def get_authorization_from_bearer(
         payload.get('iat'), datetime.UTC)
 
     if dt_now > (dt_iat + expiry_timedelta):
+        print('bearer_expired')
+
         if raise_exceptions:
             raise auth.bearer_expired_exception()
         return GetAuthorizationTokenReturn(exception='bearer_expired')
@@ -127,6 +133,7 @@ def get_authorization_from_bearer(
     # for a token, check the auth source
     if bearer_type == 'token':
         if 'auth_source' not in payload:
+            print('missing auth source')
             if raise_exceptions:
                 raise auth.missing_required_claims_exception()
             return GetAuthorizationTokenReturn(exception='missing_required_claims')
@@ -134,6 +141,8 @@ def get_authorization_from_bearer(
         # make sure it is an allowed auth source
         auth_source: auth.TokenAuthSource = payload['auth_source']
         if auth_source not in permitted_token_auth_sources:
+            print('bad auth source')
+
             if raise_exceptions:
                 raise auth.invalid_token_exception()
 
@@ -146,10 +155,12 @@ def get_authorization_from_bearer(
 
         user_id = models.User.import_from_jwt(payload).get('id')
         if not user_id:
+            print('missing user_id')
             return GetAuthorizationTokenReturn(exception='missing_required_claims')
 
         with Session(c.db_engine) as session:
             user = models.User.get_one_by_id(session, user_id)
+            print('user not found')
             if not user:
                 return GetAuthorizationTokenReturn(exception='user_not_found')
             scopes = set([user_scope.scope.id for user_scope in user.scopes])
@@ -367,6 +378,9 @@ async def sign_up(user_create: models.UserCreate) -> SignupResponse:
 
     user = await post_user(user_create)
     token = make_token(user, 'sign_up')
+
+    print('asdf)')
+    print(token)
 
     return SignupResponse(
         auth=GetAuthenticationNestedReturn(user=user),
@@ -623,7 +637,7 @@ async def get_pages_profile(authorization: typing.Annotated[GetAuthorizationRetu
                                 detail=models.User.not_found_message())
         # convert user to models.UserPrivate
         return GetProfilePageResponse(
-            auth=get_authentication(authorization),
+            **get_authentication(authorization).model_dump(),
             user=models.UserPrivate.model_validate(user)
         )
 
@@ -637,7 +651,7 @@ async def get_home_page(authorization: typing.Annotated[GetAuthorizationReturn, 
         get_authorization())]) -> GetHomePageResponse:
 
     return GetHomePageResponse(
-        auth=get_authentication(authorization)
+        **get_authentication(authorization).model_dump()
     )
 
 

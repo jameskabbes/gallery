@@ -19,10 +19,6 @@ function Profile() {
   const authContext = useContext(AuthContext);
   const globalModalsContext = useContext(GlobalModalsContext);
 
-  const [user, setUser] = useState<components['schemas']['UserPrivate'] | null>(
-    null
-  );
-
   const {
     data: apiData,
     loading,
@@ -33,7 +29,7 @@ function Profile() {
       method: API_METHOD,
     },
     true,
-    [authContext.state.isActive]
+    [authContext.state.token]
   );
 
   if (loading || response.status == 200) {

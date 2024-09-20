@@ -19,7 +19,7 @@ type TokenAuthSource = typing.Literal[
     'sign_up'
 ]
 TOKEN_AUTH_SOURCES: set[TokenAuthSource] = {
-    'password', 'google_oauth2', 'magic_link', 'verified_magic_link'}
+    'password', 'google_oauth2', 'magic_link', 'verified_magic_link', 'sign_up'}
 
 type APIKey = str
 type BearerString = Token | APIKey

@@ -217,7 +217,6 @@ interface ToastContext {
 }
 
 interface AuthContextState {
-  isActive: boolean;
   auth: components['schemas']['GetAuthenticationNestedReturn'];
   token: components['schemas']['Token']['access_token'] | null;
 }
@@ -230,6 +229,9 @@ interface AuthReducerActionTypes {
   SET_TOKEN: {
     type: 'SET_TOKEN';
     payload: components['schemas']['Token'];
+  };
+  CLEAR_TOKEN: {
+    type: 'CLEAR_TOKEN';
   };
   LOGIN: {
     type: 'LOGIN';
@@ -244,7 +246,7 @@ interface AuthReducerActionTypes {
   };
   UPDATE_FROM_API_RESPONSE: {
     type: 'UPDATE_FROM_API_RESPONSE';
-    payload: any;
+    payload: { auth?: AuthContextState['auth'] };
   };
 }
 

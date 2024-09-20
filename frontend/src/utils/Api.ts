@@ -49,6 +49,8 @@ async function callApi<TResponseData extends object, TRequestData = any>({
   } catch (error) {
     responseData = null;
   }
+  console.log(responseData);
+
   return { data: responseData, response };
 }
 

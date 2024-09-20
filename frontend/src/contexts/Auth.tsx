@@ -10,10 +10,6 @@ import { paths, operations, components } from '../openapi_schema';
 import siteConfig from '../../siteConfig.json';
 import config from '../../../config.json';
 
-function removeToken() {
-  localStorage.removeItem(siteConfig['access_token_key']);
-}
-
 const cancellableExceptions = new Set<string>([
   'credentials',
   'invalid_token',
@@ -22,18 +18,33 @@ const cancellableExceptions = new Set<string>([
   'missing_required_claims',
 ]);
 
+function clearTokenStorage() {
+  localStorage.removeItem(siteConfig['access_token_key']);
+}
+
+function setTokenStorage(token: AuthContextState['token']) {
+  localStorage.setItem(siteConfig['access_token_key'], token);
+}
+
 function setToken(
   state: AuthContextState,
   payload: AuthReducerActionTypes['SET_TOKEN']['payload']
 ): AuthContextState {
-  localStorage.setItem(siteConfig['access_token_key'], payload.access_token);
+  setTokenStorage(payload.access_token);
   return { ...state, token: payload.access_token };
 }
 
-function logout(): AuthContextState {
-  removeToken();
+function clearToken(state: AuthContextState): AuthContextState {
+  clearTokenStorage();
   return {
-    isActive: false,
+    ...state,
+    token: null,
+  };
+}
+
+function logout(): AuthContextState {
+  clearTokenStorage();
+  return {
     auth: null,
     token: null,
   };
@@ -43,16 +54,9 @@ function login(
   state: AuthContextState,
   payload: AuthReducerActionTypes['LOGIN']['payload']
 ): AuthContextState {
-  console.log('logging in');
-  console.log({
-    ...state,
-    auth: payload,
-    isActive: true,
-  });
   return {
     ...state,
     auth: payload,
-    isActive: true,
   };
 }
 
@@ -102,6 +106,8 @@ function authReducer(
       return setAuthUser(state, action.payload);
     case 'SET_TOKEN':
       return setToken(state, action.payload);
+    case 'CLEAR_TOKEN':
+      return clearToken(state);
     case 'LOGIN':
       return login(state, action.payload);
     case 'LOGOUT':
@@ -118,7 +124,6 @@ function authReducer(
 const authReducerDefaultState: AuthContextState = {
   auth: null,
   token: null,
-  isActive: false,
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -132,8 +137,28 @@ interface Props {
 
 function AuthContextProvider({ children }: Props) {
   const [state, dispatch] = useReducer(authReducer, authReducerDefaultState);
+
+  // Add this function to handle the storage event
+  function handleStorageEvent(event: StorageEvent) {
+    if (event.key === siteConfig['access_token_key']) {
+      // Dispatch an action to update the state based on the new token value
+      if (event.newValue) {
+        dispatch({
+          type: 'SET_TOKEN',
+          payload: { access_token: event.newValue },
+        });
+      } else {
+        dispatch({ type: 'LOGOUT' });
+      }
+    }
+  }
+
   useEffect(() => {
-    // Fetch the user's auth state
+    window.addEventListener('storage', handleStorageEvent);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageEvent);
+    };
   }, []);
 
   return (
