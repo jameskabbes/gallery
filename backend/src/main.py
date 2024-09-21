@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException, Query, status, Response, Depends, Request, BackgroundTasks
+import uvicorn
+from fastapi import FastAPI, HTTPException, Query, status, Response, Depends, Request, BackgroundTasks, Form
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -79,15 +80,6 @@ oauth2_scheme = OAuth2PasswordBearerMultiSource(
     tokenUrl="token/")
 
 
-async def authenticate_user_with_password(form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()]) -> models.User:
-    with Session(c.db_engine) as session:
-        user = models.User.authenticate(
-            session, form_data.username, form_data.password)
-        if not user:
-            raise auth.credentials_exception()
-        return user
-
-
 def make_auth_credential(
     user_id: models.UserTypes.id,
     auth_credential_type: models.AuthCredentialType,
@@ -108,10 +100,11 @@ def make_auth_credential(
 
         auth_credential = models.AuthCredentialCreate(
             user_id=user_id,
-            auth_credential_type=auth_credential_type,
-            expiry_datetime=expiry_datetime
+            type=auth_credential_type,
+            expiry=expiry_datetime
         ).create()
         auth_credential.add_to_db(session)
+        return auth_credential
 
 
 def set_access_token_cookie(access_token: str, response: Response):
@@ -125,13 +118,6 @@ def set_access_token_cookie(access_token: str, response: Response):
         expires=datetime.datetime.now(
             datetime.UTC) + datetime.timedelta(days=1)
     )
-
-
-@app.post('/token/')
-async def post_token(user: typing.Annotated[models.User, Depends(authenticate_user_with_password)], response: Response):
-    auth_credential = make_auth_credential(user.id, 'access_token')
-    set_access_token_cookie(jwt_encode(
-        auth_credential.export_to_jwt()), response)
 
 
 class DetailOnlyResponse(BaseModel):
@@ -152,13 +138,14 @@ class GetAuthorizationReturn(BaseModel):
     exception: auth.EXCEPTION | None = None
     user: models.UserPrivate | None = None
     scopes: set[models.ScopeTypes.id] | None = None
+    auth_credential: models.AuthCredential | None = None
 
 
 def get_authorization(
     required_scopes: set[models.ScopeTypes.id] = set(),
     override_lifetime: datetime.timedelta | None = None,
     raise_exceptions: bool = True,
-):
+) -> typing.Callable[[str], GetAuthorizationReturn]:
     def dependecy(auth_token: typing.Annotated[str, Depends(oauth2_scheme)]) -> GetAuthorizationReturn:
         # attempt to decode the jwt
         try:
@@ -176,57 +163,60 @@ def get_authorization(
 
         auth_credential_dict = models.AuthCredential.import_from_jwt(payload)
 
-        # find the auth_credential in the db
-        auth_credential = models.AuthCredential.get_one_by_id(
-            auth_credential_dict['id'])
+        with Session(c.db_engine) as session:
 
-        # not in the db, raise exception
-        if auth_credential == None:
-            if raise_exceptions:
-                raise auth.bearer_expired_exception()
-            return GetAuthorizationReturn(exception='bearer_expired')
+            # find the auth_credential in the db
+            auth_credential = models.AuthCredential.get_one_by_id(session,
+                                                                  auth_credential_dict['id'])
 
-        dt_now = datetime.datetime.now(datetime.UTC)
-
-        # take the minimum of the hardcoded jwt and database value, ### note: redundancy needed or not?
-        dt_exp = min(
-            datetime.datetime.fromtimestamp(payload['exp'], datetime.UTC),
-            auth_credential.expiry
-        )
-
-        if dt_now > dt_exp:
-            if raise_exceptions:
-                raise auth.bearer_expired_exception()
-            return GetAuthorizationReturn(exception='bearer_expired')
-
-        # if there was an overriden lifetime, check if it has expired
-        if override_lifetime != None:
-            # take the minimum of the hardcoded jwt and database value, ### note: redundancy needed or not?
-            dt_iat = min(
-                datetime.datetime.fromtimestamp(payload['exp'], datetime.UTC),
-                auth_credential.issued
-            )
-            if dt_now > (dt_iat + override_lifetime):
+            # not in the db, raise exception
+            if not auth_credential:
                 if raise_exceptions:
                     raise auth.bearer_expired_exception()
                 return GetAuthorizationReturn(exception='bearer_expired')
 
-        user = auth_credential.user
+            dt_now = datetime.datetime.now(datetime.UTC)
 
-        # check for required scopes
-        # scopes: set[models.ScopeTypes.id] = set()
+            dt_exp_jwt = datetime.datetime.fromtimestamp(
+                payload['exp'], datetime.UTC)
+            dt_exp_db = auth_credential.expiry.replace(tzinfo=datetime.UTC)
+            dt_exp = min(dt_exp_jwt, dt_exp_db)
 
-        # if not required_scopes.issubset(scopes):
-        #     if raise_exceptions:
-        #         raise auth.insufficient_scope_exception()
-        #     return GetAuthorizationReturn(exception='insufficient_scope', type=bearer_type)
+            if dt_now > dt_exp:
+                if raise_exceptions:
+                    raise auth.bearer_expired_exception()
+                return GetAuthorizationReturn(exception='bearer_expired')
 
-        return GetAuthorizationReturn(
-            isAuthorized=True,
-            user=models.UserPrivate.model_validate(user),
-            scopes=[],
-            expiry=dt_exp
-        )
+            # if there was an overriden lifetime, check if it has expired
+            if override_lifetime != None:
+                # take the minimum of the hardcoded jwt and database value, ### note: redundancy needed or not?
+
+                dt_ait_jwt = datetime.datetime.fromtimestamp(
+                    payload['iat'], datetime.UTC)
+                dt_ait_db = auth_credential.issued.replace(tzinfo=datetime.UTC)
+
+                if dt_now > (min(dt_ait_jwt, dt_ait_db) + override_lifetime):
+                    if raise_exceptions:
+                        raise auth.bearer_expired_exception()
+                    return GetAuthorizationReturn(exception='bearer_expired')
+
+            user = auth_credential.user
+
+            # check for required scopes
+            # scopes: set[models.ScopeTypes.id] = set(  )
+
+            # if not required_scopes.issubset(scopes):
+            #     if raise_exceptions:
+            #         raise auth.insufficient_scope_exception()
+            #     return GetAuthorizationReturn(exception='insufficient_scope', type=bearer_type)
+
+            return GetAuthorizationReturn(
+                isAuthorized=True,
+                expiry=dt_exp,
+                user=models.UserPrivate.model_validate(user),
+                scopes=set(),
+                auth_credential=auth_credential,
+            )
 
     return dependecy
 
@@ -253,7 +243,7 @@ def get_auth(get_authorization_return: GetAuthorizationReturn) -> GetAuthReturn:
 
 
 @ app.get('/auth/')
-async def auth_root(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=False))]) -> GetAuthorizationReturn:
+async def auth_root(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=False))]) -> GetAuthReturn:
     return get_auth(authorization)
 
 
@@ -268,149 +258,200 @@ async def auth_root(authorization: typing.Annotated[GetAuthorizationReturn, Depe
 #     )
 
 
-# class LoginResponse(GetAuthReturn):
-#     token: auth.Token
+async def authenticate_user_with_password(form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()]) -> models.User:
+    with Session(c.db_engine) as session:
+        user = models.User.authenticate(
+            session, form_data.username, form_data.password)
+        if not user:
+            raise auth.credentials_exception()
+        return user
 
 
-# @ app.post('/auth/login/password/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Could not validate credentials', 'model': DetailOnlyResponse}})
-# async def login(user: typing.Annotated[models.User, Depends(authenticate_user_with_password)]) -> LoginResponse:
-#     auth_from_user = get_auth_from_user(user)
-#     return LoginResponse(
-#         **auth_from_user.model_dump(),
-#         token=make_token(user, 'password',
-#                          expiry_datetime=auth_from_user.auth.expiry)
-#     )
+@app.post('/token/')
+async def post_token(user: typing.Annotated[models.User, Depends(authenticate_user_with_password)], response: Response):
+
+    auth_credential = make_auth_credential(
+        user.id, 'access_token')
+    set_access_token_cookie(jwt_encode(
+        auth_credential.export_to_jwt()), response)
 
 
-# class GoogleAuthResponse(LoginResponse):
-#     pass
+class LoginResponse(GetAuthReturn):
+    pass
 
 
-# class GoogleAuthRequest(BaseModel):
-#     access_token: str
+@ app.post('/auth/login/password/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Could not validate credentials', 'model': DetailOnlyResponse}})
+async def login(user: typing.Annotated[models.User, Depends(authenticate_user_with_password)], response: Response) -> LoginResponse:
+
+    auth_credential = make_auth_credential(user.id, 'access_token')
+    set_access_token_cookie(jwt_encode(
+        auth_credential.export_to_jwt()), response)
+
+    return LoginResponse(
+        auth=GetAuthBaseReturn(
+            user=models.UserPrivate.model_validate(user),
+            # [user_scope.scope.id for user_scope in user.scopes],
+            scopes=set(),
+            expiry=auth_credential.expiry
+        )
+    )
 
 
-# @ app.post("/auth/login/google/", responses={status.HTTP_400_BAD_REQUEST: {"description": 'Invalid token'}})
-# async def login_with_google(request_token: GoogleAuthRequest) -> GoogleAuthResponse:
-#     async with httpx.AsyncClient() as client:
-#         response = await client.get('https://www.googleapis.com/oauth2/v3/userinfo?access_token={}'.format(request_token.access_token))
-#         response.raise_for_status()
-#         user_info = response.json()
-#     # fields: sub, name, given_name, family_name, picture, email, email_verified
-#     email = user_info.get('email')
-#     if not email:
-#         raise HTTPException(status.HTTP_400_BAD_REQUEST,
-#                             detail='Invalid token')
-#     with Session(c.db_engine) as session:
-#         user = models.User.get_one_by_key_values(session, {'email': email})
-#         if not user:
-#             user_create = models.UserCreate(
-#                 email=email,
-#             )
-#             user = user_create.create()
-#             user.add_to_db(session)
-#         return GoogleAuthResponse(
-#             auth=GetAuthenticationReturn(
-#                 user=models.UserPrivate.model_validate(user)),
-#             token=make_token(user, 'google_oauth2')
-#         )
+class SignupResponse(LoginResponse):
+    pass
 
 
-# class LoginWithEmailMagicLinkRequest(BaseModel):
-#     email: models.UserTypes.email
+@ app.post('/auth/signup/', responses={status.HTTP_409_CONFLICT: {"description": 'User already exists', 'model': DetailOnlyResponse}})
+async def sign_up(
+    response: Response,
+    email: models.UserTypes.email = Form(...),
+    password: models.UserTypes.password = Form(...),
+) -> SignupResponse:
+
+    user_create = models.UserCreate(email=email, password=password)
+    user = await post_user(user_create)
+    auth_credential = make_auth_credential(user.id, 'access_token')
+    set_access_token_cookie(jwt_encode(
+        auth_credential.export_to_jwt()), response)
+
+    return SignupResponse(
+        auth=GetAuthBaseReturn(
+            user=models.UserPrivate.model_validate(user),
+            # [user_scope.scope.id for user_scope in user.scopes],
+            scopes=set(),
+            expiry=auth_credential.expiry
+        )
+    )
 
 
-# def send_magic_link_to_email(model: LoginWithEmailMagicLinkRequest):
-#     with Session(c.db_engine) as session:
-#         user = models.User.get_one_by_key_values(
-#             session, {'email': model.email})
-#         if user:
-#             token = make_token(
-#                 user, 'magic_link', expiry_timedelta=c.authentication['magic_link_expiry_timedelta'])
-#             print('beep boop beep... sending email')
-#             print('http://localhost:3000' +
-#                   c.root_config['magic_link_frontend_url'] + '?access_token=' + token.access_token)
-#     # still need to fill this function in!
+class LoginWithEmailMagicLinkRequest(BaseModel):
+    email: models.UserTypes.email
 
 
-# @ app.post('/auth/login/email-magic-link/')
-# async def login_with_email_magic_link(model: LoginWithEmailMagicLinkRequest, background_tasks: BackgroundTasks) -> DetailOnlyResponse:
-#     background_tasks.add_task(send_magic_link_to_email, model)
-#     return DetailOnlyResponse(detail='If an account with this email exists, a login link has been sent.')
+def send_magic_link_to_email(model: LoginWithEmailMagicLinkRequest):
+    with Session(c.db_engine) as session:
+        user = models.User.get_one_by_key_values(
+            session, {'email': model.email})
+        if user:
+            auth_credential = make_auth_credential(
+                user_id=user.id, auth_credential_type='access_token', lifespan=c.authentication['magic_link_expiry_timedelta']
+            )
+
+            print('beep boop beep... sending email')
+            print('http://localhost:3000' +
+                  c.root_config['magic_link_frontend_url'] + '?access_token=' + jwt_encode(auth_credential.export_to_jwt()))
+
+    # still need to fill this function in!
 
 
-# class VerifyMagicLinkRequest(BaseModel):
-#     access_token: str
+@ app.post('/auth/login/email-magic-link/')
+async def login_with_email_magic_link(model: LoginWithEmailMagicLinkRequest, background_tasks: BackgroundTasks) -> DetailOnlyResponse:
+    background_tasks.add_task(send_magic_link_to_email, model)
+    return DetailOnlyResponse(detail='If an account with this email exists, a login link has been sent.')
 
 
-# @ app.post('/auth/verify-magic-link/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
-# async def verify_magic_link(verify_magic_link_request: VerifyMagicLinkRequest) -> LoginResponse:
-#     authorization = get_authorization_from_bearer(
-#         verify_magic_link_request.access_token, expiry_timedelta=c.authentication['magic_link_expiry_timedelta'], raise_exceptions=True, permitted_bearer_types={'token'}, permitted_token_auth_sources={'magic_link'})
-#     return LoginResponse(
-#         auth=GetAuthenticationNestedReturn(
-#             user=authorization.user,
-#             exception=authorization.exception
-#         ),
-#         token=make_token(authorization.user, 'verified_magic_link')
-#     )
+class VerifyMagicLinkRequest(BaseModel):
+    pass
 
 
-# class SignupResponse(LoginResponse):
-#     pass
+@ app.post('/auth/verify-magic-link/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
+async def verify_magic_link(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=True))]) -> VerifyMagicLinkRequest:
 
+    print(authorization)
+    return VerifyMagicLinkRequest()
 
-# @ app.post('/auth/signup/', responses={status.HTTP_409_CONFLICT: {"description": 'User already exists', 'model': DetailOnlyResponse}})
-# async def sign_up(user_create: models.UserCreate) -> SignupResponse:
-#     user = await post_user(user_create)
-#     token = make_token(user, 'sign_up')
-#     print('asdf)')
-#     print(token)
-#     return SignupResponse(
-#         auth=GetAuthenticationNestedReturn(user=user),
-#         token=token
-#     )
+    # authorization= get_authorization_from_bearer(
+    # verify_magic_link_request.access_token, expiry_timedelta = c.authentication['magic_link_expiry_timedelta'], raise_exceptions = True, permitted_bearer_types = {'token'}, permitted_token_auth_sources = {'magic_link'})
+    # return LoginResponse(
+    # auth = GetAuthenticationNestedReturn(
+    #     user=authorization.user,
+    #     exception=authorization.exception
+    # ),
+    # token = make_token(authorization.user, 'verified_magic_link')
+    # )
 
+    # class GoogleAuthResponse(LoginResponse):
+    #     pass
+
+    # class GoogleAuthRequest(BaseModel):
+    #     access_token: str
+
+    # @ app.post("/auth/login/google/", responses={status.HTTP_400_BAD_REQUEST: {"description": 'Invalid token'}})
+    # async def login_with_google(request_token: GoogleAuthRequest) -> GoogleAuthResponse:
+    #     async with httpx.AsyncClient() as client:
+    #         response = await client.get('https://www.googleapis.com/oauth2/v3/userinfo?access_token={}'.format(request_token.access_token))
+    #         response.raise_for_status()
+    #         user_info = response.json()
+    #     # fields: sub, name, given_name, family_name, picture, email, email_verified
+    #     email = user_info.get('email')
+    #     if not email:
+    #         raise HTTPException(status.HTTP_400_BAD_REQUEST,
+    #                             detail='Invalid token')
+    #     with Session(c.db_engine) as session:
+    #         user = models.User.get_one_by_key_values(session, {'email': email})
+    #         if not user:
+    #             user_create = models.UserCreate(
+    #                 email=email,
+    #             )
+    #             user = user_create.create()
+    #             user.add_to_db(session)
+    #         return GoogleAuthResponse(
+    #             auth=GetAuthenticationReturn(
+    #                 user=models.UserPrivate.model_validate(user)),
+    #             token=make_token(user, 'google_oauth2')
+    #         )
 
 # # USERS
-# @ app.get('/users/available/username/{username}/')
-# async def user_username_available(username: models.UserTypes.username) -> ItemAvailableResponse:
-#     with Session(c.db_engine) as session:
-#         return ItemAvailableResponse(available=models.User.is_username_available(session, username))
-# @ app.get('/users/available/email/{email}/')
-# async def user_email_available(email: models.UserTypes.email) -> ItemAvailableResponse:
-#     with Session(c.db_engine) as session:
-#         return ItemAvailableResponse(available=models.User.is_email_available(session, email))
-# @ app.get('/users/username/{username}', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
-# async def get_user_by_username(username: models.UserTypes.username) -> models.UserPublic:
-#     with Session(c.db_engine) as session:
-#         user = models.User.get_one_by_key_values(
-#             session, {'username': username})
-#         if not user:
-#             raise HTTPException(status.HTTP_404_NOT_FOUND,
-#                                 detail=models.User.not_found_message())
-#         else:
-#             return models.UserPublic.model_validate(user)
-# @ app.get('/users/{user_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
-# async def get_user_by_id(user_id: models.UserTypes.id) -> models.UserPublic:
-#     with Session(c.db_engine) as session:
-#         user = models.User.get_one_by_id(session, user_id)
-#         if not user:
-#             raise HTTPException(status.HTTP_404_NOT_FOUND,
-#                                 detail=models.User.not_found_message())
-#         else:
-#             return models.UserPublic.model_validate(user)
-# @ app.post('/users/', responses={status.HTTP_409_CONFLICT: {"description": 'User already exists', 'model': DetailOnlyResponse}})
-# async def post_user(user_create: models.UserCreate) -> models.UserPrivate:
-#     with Session(c.db_engine) as session:
-#         # see if the email is available
-#         resp = await user_email_available(user_create.email)
-#         if not resp.available:
-#             raise HTTPException(
-#                 status_code=status.HTTP_409_CONFLICT, detail='User already exists')
-#         user = user_create.create()
-#         user.add_to_db(session)
-#         return models.UserPrivate.model_validate(user)
+
+
+@ app.get('/users/available/username/{username}/')
+async def user_username_available(username: models.UserTypes.username) -> ItemAvailableResponse:
+    with Session(c.db_engine) as session:
+        return ItemAvailableResponse(available=models.User.is_username_available(session, username))
+
+
+@ app.get('/users/available/email/{email}/')
+async def user_email_available(email: models.UserTypes.email) -> ItemAvailableResponse:
+    with Session(c.db_engine) as session:
+        return ItemAvailableResponse(available=models.User.is_email_available(session, email))
+
+
+@ app.get('/users/username/{username}', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+async def get_user_by_username(username: models.UserTypes.username) -> models.UserPublic:
+    with Session(c.db_engine) as session:
+        user = models.User.get_one_by_key_values(
+            session, {'username': username})
+        if not user:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail=models.User.not_found_message())
+        else:
+            return models.UserPublic.model_validate(user)
+
+
+@ app.get('/users/{user_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+async def get_user_by_id(user_id: models.UserTypes.id) -> models.UserPublic:
+    with Session(c.db_engine) as session:
+        user = models.User.get_one_by_id(
+            session, user_id)
+        if not user:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail=models.User.not_found_message())
+        else:
+            return models.UserPublic.model_validate(user)
+
+
+@ app.post('/users/', responses={status.HTTP_409_CONFLICT: {"description": 'User already exists', 'model': DetailOnlyResponse}})
+async def post_user(user_create: models.UserCreate) -> models.UserPrivate:
+    with Session(c.db_engine) as session:
+        # see if the email is available
+        resp = await user_email_available(user_create.email)
+        if not resp.available:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail='User already exists')
+        user = user_create.create()
+        user.add_to_db(session)
+        return models.UserPrivate.model_validate(user)
+
 # @ app.patch('/users/{user_id}/', responses={
 #     status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse},
 #     status.HTTP_403_FORBIDDEN: {"description": 'User does not have permission to update this user', 'model': DetailOnlyResponse},
@@ -629,5 +670,4 @@ async def auth_root(authorization: typing.Annotated[GetAuthorizationReturn, Depe
 #             gallery_permission=gallery_permission
 #         )
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

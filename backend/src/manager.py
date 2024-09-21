@@ -4,10 +4,10 @@ from fastapi import Depends
 from sqlmodel import Session
 from gallery import models
 # Adjust the import as necessary
-from main import c
+from main import c, make_auth_credential
 
 from sqlmodel import select
-
+import datetime
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
@@ -17,7 +17,16 @@ async def create_tables():
 
 
 async def main():
+
     with Session(c.db_engine) as session:
+
+        a = models.AuthCredential.get_one_by_id(
+            session, '14edcfd4-db29-4bbf-80a1-3494dc879117')
+        print(a)
+
+        b = {'dt': datetime.datetime.now(datetime.UTC)}
+        print(b)
+
         pass
 
         # #
@@ -69,6 +78,6 @@ async def main():
 if __name__ == "__main__":
     # Run the example
     asyncio.run(
-        # main()
-        create_tables()
+        main()
+        # create_tables()
     )

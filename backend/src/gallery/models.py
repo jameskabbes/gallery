@@ -1,7 +1,7 @@
 import typing
 import uuid
 from sqlmodel import SQLModel, Field, Column, Session, select, delete, Relationship
-from pydantic import BaseModel, EmailStr, constr, StringConstraints
+from pydantic import BaseModel, EmailStr, constr, StringConstraints, field_validator
 from sqlalchemy import PrimaryKeyConstraint, and_, or_
 from gallery import utils, auth
 from abc import ABC, abstractmethod
@@ -242,8 +242,8 @@ class Scope(SQLModel, Table[ScopeTypes.id], table=True):
     __tablename__ = 'scope'
     id: ScopeTypes.id = Field(primary_key=True, index=True, unique=True)
     name: str = Field(index=True, unique=True)
-    auth_credentials: list['AuthCredential'] = Relationship(
-        back_populates='scopes')
+    # auth_credentials: list['AuthCredential'] = Relationship(
+    #     back_populates='scopes')
 
     @classmethod
     def generate_id(cls):
@@ -269,12 +269,14 @@ class AuthCredential(SQLModel, Table[AuthCredentialTypes.id], table=True):
         primary_key=True, index=True, unique=True)
     user_id: UserTypes.id = Field(
         index=True, foreign_key=User.__tablename__ + '.id')
-    type: str
-    issued: AuthCredentialTypes.issued = Field(
-        default=datetime_module.datetime.now(datetime_module.UTC))
-    expiry: AuthCredentialTypes.expiry
+    type: str = Field()
+    issued: datetime_module.datetime = Field(
+        default_factory=lambda: datetime_module.datetime.now(
+            datetime_module.timezone.utc)
+    )
+    expiry: AuthCredentialTypes.expiry = Field()
 
-    scopes: list[Scope] = Relationship(back_populates='auth_credentials')
+    # scopes: list[Scope] = Relationship(back_populates='auth_credentials')
     user: User = Relationship(back_populates='auth_credentials')
 
     class JWTExport(typing.TypedDict):
@@ -312,7 +314,7 @@ class AuthCredential(SQLModel, Table[AuthCredentialTypes.id], table=True):
 class AuthCredentialCreate(SingularCreate[AuthCredential]):
     user_id: AuthCredentialTypes.user_id
     type: AuthCredentialTypes.type
-    expiry: AuthCredentialTypes.expiry | None = None
+    expiry: AuthCredentialTypes.expiry
 
     _SINGULAR_MODEL: typing.ClassVar[typing.Type[AuthCredential]
                                      ] = AuthCredential
@@ -323,26 +325,31 @@ class AuthCredentialCreate(SingularCreate[AuthCredential]):
 # AuthCredentialScope
 
 
-class AuthCredentialScopeTypes:
-    auth_credential_id = AuthCredentialTypes.id
-    scope_id = ScopeTypes.id
+# class ScopeAssignmentTypes:
+#     auth_credential_id = AuthCredentialTypes.id
+#     scope_id = ScopeTypes.id
 
 
-type AuthCredentialScopeId = tuple[AuthCredentialScopeTypes.auth_credential_id,
-                                   AuthCredentialScopeTypes.scope_id]
+# class AuthCredentialScopeTypes:
+#     auth_credential_id = AuthCredentialTypes.id
+#     scope_id = ScopeTypes.id
 
 
-class AuthCredentialScope(SQLModel, Table[AuthCredentialScopeId], table=True):
-    __tablename__ = 'auth_credential_scope'
-    __table_args__ = (
-        PrimaryKeyConstraint('auth_credential_id', 'scope_id'),
-    )
-    _ID_COLS: typing.ClassVar[list[str]] = ['auth_credential_id', 'scope_id']
+# type AuthCredentialScopeId = tuple[AuthCredentialScopeTypes.auth_credential_id,
+#                                    AuthCredentialScopeTypes.scope_id]
 
-    auth_credential_id: AuthCredentialScopeTypes.auth_credential_id = Field(
-        index=True, foreign_key=AuthCredential.__tablename__ + '.id')
-    scope_id: AuthCredentialScopeTypes.scope_id = Field(
-        index=True, foreign_key=Scope.__tablename__ + '.id')
+
+# class AuthCredentialScope(SQLModel, Table[AuthCredentialScopeId], table=True):
+#     __tablename__ = 'auth_credential_scope'
+#     __table_args__ = (
+#         PrimaryKeyConstraint('auth_credential_id', 'scope_id'),
+#     )
+#     _ID_COLS: typing.ClassVar[list[str]] = ['auth_credential_id', 'scope_id']
+
+#     auth_credential_id: AuthCredentialScopeTypes.auth_credential_id = Field(
+#         index=True, foreign_key=AuthCredential.__tablename__ + '.id')
+#     scope_id: AuthCredentialScopeTypes.scope_id = Field(
+#         index=True, foreign_key=Scope.__tablename__ + '.id')
 
 
 # Gallery
@@ -423,17 +430,13 @@ class AuthCredentialScope(SQLModel, Table[AuthCredentialScopeId], table=True):
 #         )
 #         return session.exec(query).first() is None
 
-
 # class GalleryCreate(SingularCreate[Gallery], GalleryBase):
 #     name: GalleryTypes.name
 #     visibility: typing.Optional[GalleryTypes.visibility] = VisibilityLevel.PUBLIC
 #     parent_id: typing.Optional[GalleryTypes.parent_id] = None
 #     description: typing.Optional[GalleryTypes.description] = ''
 #     date: typing.Optional[GalleryTypes.date] = None
-
 #     _SINGULAR_MODEL: typing.ClassVar[typing.Type[Gallery]] = Gallery
-
-
 # class GalleryPermission(SQLModel, Table[typing.Annotated[tuple[str, str], '(gallery_id, user_id)']], table=True):
 #     __tablename__ = 'gallery_permission'
 #     __table_args__ = (

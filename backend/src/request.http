@@ -1,12 +1,23 @@
-# get token from password auth
-POST http://localhost:8087/token/
-Content-Type: application/x-www-form-urlencoded
+#signup
+# POST http://localhost:8087/auth/signup/
+# Content-Type: application/x-www-form-urlencoded
 
-username=a@a.com&password=password
+# email=a2@a.com&password=password
+
+# login 
+# POST http://localhost:8087/auth/login/password/
+# Content-Type: application/x-www-form-urlencoded
+
+# username=a@a.com&password=password
+
+#get token from password auth
+# POST http://localhost:8087/token/
+
+# username=a@a.com&password=password
 
 # see common auth status
 # GET http://localhost:8087/auth/
-# Authorization: Bearer token
+# Cookie: access_token=token
 
 #get token from email magic link 
 # POST http://localhost:8087/auth/login/email-magic-link/
@@ -15,3 +26,8 @@ username=a@a.com&password=password
 # {
 #     "email": "a@a.com"
 # }
+
+#verify magic token
+POST http://localhost:8087/auth/verify-magic-link/
+Authorization: Bearer token
+
