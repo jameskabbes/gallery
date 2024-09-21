@@ -3,7 +3,7 @@ import uuid
 from sqlmodel import SQLModel, Field, Column, Session, select, delete, Relationship
 from pydantic import BaseModel, EmailStr, constr, StringConstraints
 from sqlalchemy import PrimaryKeyConstraint, and_, or_
-from gallery import utils
+from gallery import utils, auth
 from abc import ABC, abstractmethod
 import datetime as datetime_module
 from enum import Enum
@@ -184,6 +184,9 @@ class User(SQLModel, Table[UserTypes.id], UserBase, table=True):
         index=True, unique=True, nullable=True, default=None)
     hashed_password: UserTypes.hashed_password | None = Field(default=None)
 
+    auth_credentials: list['AuthCredential'] = Relationship(
+        back_populates='user')
+
     @classmethod
     def authenticate(cls, session: Session, email: UserTypes.email, password: UserTypes.password) -> typing.Self | None:
 
@@ -235,10 +238,16 @@ class ScopeTypes:
     name = ScopeName
 
 
-class Scope(SQLModel, Table[ScopeName], table=True):
+class Scope(SQLModel, Table[ScopeTypes.id], table=True):
     __tablename__ = 'scope'
     id: ScopeTypes.id = Field(primary_key=True, index=True, unique=True)
-    name: ScopeTypes.name = Field(index=True, unique=True)
+    name: str = Field(index=True, unique=True)
+    auth_credentials: list['AuthCredential'] = Relationship(
+        back_populates='scopes')
+
+    @classmethod
+    def generate_id(cls):
+        return len(cls.get_all_by_key_values(cls, {})) + 1
 
 
 # AuthCredential
@@ -255,14 +264,18 @@ class AuthCredentialTypes:
 
 class AuthCredential(SQLModel, Table[AuthCredentialTypes.id], table=True):
     __tablename__ = 'auth_credential'
+
     id: AuthCredentialTypes.id = Field(
         primary_key=True, index=True, unique=True)
     user_id: UserTypes.id = Field(
         index=True, foreign_key=User.__tablename__ + '.id')
-    type: AuthCredentialTypes.AuthCredentialType
+    type: str
     issued: AuthCredentialTypes.issued = Field(
         default=datetime_module.datetime.now(datetime_module.UTC))
     expiry: AuthCredentialTypes.expiry
+
+    scopes: list[Scope] = Relationship(back_populates='auth_credentials')
+    user: User = Relationship(back_populates='auth_credentials')
 
     class JWTExport(typing.TypedDict):
         sub: AuthCredentialTypes.id
@@ -280,15 +293,23 @@ class AuthCredential(SQLModel, Table[AuthCredentialTypes.id], table=True):
         expiry: AuthCredentialTypes.expiry
         issued: AuthCredentialTypes.issued
 
+    class ValidateJWTReturn(typing.TypedDict):
+        valid: bool
+        exception: typing.Optional[auth.EXCEPTION]
+
     @classmethod
-    def import_from_jwt(cls, token_payload: dict) -> JWTImport:
-        return {cls._JWT_CLAIMS_TO_ATTRIBUTES[claim]: token_payload.get(claim) for claim in cls._jwt_claim_to_attributes}
+    def validate_jwt_claims(cls, payload: JWTExport) -> bool:
+        return all(claim in payload for claim in cls._JWT_CLAIMS_TO_ATTRIBUTES)
+
+    @classmethod
+    def import_from_jwt(cls, payload: dict) -> JWTImport:
+        return {cls._JWT_CLAIMS_TO_ATTRIBUTES[claim]: payload.get(claim) for claim in cls._JWT_CLAIMS_TO_ATTRIBUTES}
 
     def export_to_jwt(self) -> JWTExport:
         return {key: getattr(self, value) for key, value in self._JWT_CLAIMS_TO_ATTRIBUTES.items()}
 
 
-class AuthCredentialCreate(SingularCreate[AuthCredential], AuthCredentialTypes):
+class AuthCredentialCreate(SingularCreate[AuthCredential]):
     user_id: AuthCredentialTypes.user_id
     type: AuthCredentialTypes.type
     expiry: AuthCredentialTypes.expiry | None = None
@@ -303,69 +324,25 @@ class AuthCredentialCreate(SingularCreate[AuthCredential], AuthCredentialTypes):
 
 
 class AuthCredentialScopeTypes:
-    id = str
+    auth_credential_id = AuthCredentialTypes.id
+    scope_id = ScopeTypes.id
 
 
-class AuthCredentialScope(SQLModel, Table[AuthCredentialScopeTypes.id], table=True):
+type AuthCredentialScopeId = tuple[AuthCredentialScopeTypes.auth_credential_id,
+                                   AuthCredentialScopeTypes.scope_id]
+
+
+class AuthCredentialScope(SQLModel, Table[AuthCredentialScopeId], table=True):
     __tablename__ = 'auth_credential_scope'
     __table_args__ = (
-        PrimaryKeyConstraint('user_id', 'scope_id'),
+        PrimaryKeyConstraint('auth_credential_id', 'scope_id'),
     )
-    _ID_COLS: typing.ClassVar[list[str]] = ['user_id', 'scope_id']
+    _ID_COLS: typing.ClassVar[list[str]] = ['auth_credential_id', 'scope_id']
 
-    auth_credential_id: AuthCredentialTypes.id = Field(
+    auth_credential_id: AuthCredentialScopeTypes.auth_credential_id = Field(
         index=True, foreign_key=AuthCredential.__tablename__ + '.id')
-    scope_id: ScopeTypes.id = Field(
+    scope_id: AuthCredentialScopeTypes.scope_id = Field(
         index=True, foreign_key=Scope.__tablename__ + '.id')
-
-
-# APIKeyScope
-
-
-class APIKeyTypes:
-    id = str
-    user_id = UserTypes.id
-    issued = datetime_module.datetime
-    expiry = datetime_module.datetime
-
-
-class APIKeyBase:
-    pass
-
-
-class APIKeyUpdate(BaseModel, APIKeyBase):
-    scope: APIKeyTypes.scope | None = None
-    expiry: APIKeyTypes.expiry | None = None
-
-
-class APIKeyPrivate(BaseModel, APIKeyBase):
-    id: APIKeyTypes.id
-    user_id: APIKeyTypes.user_id
-    issued: APIKeyTypes.issued
-    expiry: APIKeyTypes.expiry
-
-    class Config:
-        from_attributes = True
-
-
-class APIKey(SQLModel, Table[APIKeyTypes.id], APIKeyBase, table=True):
-    __tablename__ = 'api_key'
-    id: APIKeyTypes.id = Field(primary_key=True, index=True, unique=True)
-    user_id: APIKeyTypes.user_id = Field(
-        index=True, foreign_key=User.__tablename__ + '.id')
-    expiry: APIKeyTypes.expiry | None = Field(default=None)
-    issued: APIKeyTypes.issued = Field(default=datetime_module.datetime.now())
-    user: User = Relationship(back_populates="api_keys")
-
-
-class APIKeyCreate(SingularCreate[APIKey], APIKeyBase):
-    user_id: APIKeyTypes.user_id
-    expiry: APIKeyTypes.expiry | None = None
-
-    _SINGULAR_MODEL: typing.ClassVar[typing.Type[APIKey]] = APIKey
-
-    def create(self) -> APIKey:
-        return APIKey(id=self._SINGULAR_MODEL.generate_id(), **self.model_dump())
 
 
 # Gallery
@@ -458,18 +435,15 @@ class APIKeyCreate(SingularCreate[APIKey], APIKeyBase):
 
 
 # class GalleryPermission(SQLModel, Table[typing.Annotated[tuple[str, str], '(gallery_id, user_id)']], table=True):
-
 #     __tablename__ = 'gallery_permission'
 #     __table_args__ = (
 #         PrimaryKeyConstraint('gallery_id', 'user_id'),
 #     )
 #     _ID_COLS: typing.ClassVar[list[str]] = ['gallery_id', 'user_id']
-
 #     gallery_id: GalleryTypes.id = Field(
 #         primary_key=True, index=True, foreign_key=Gallery.__tablename__ + '.id')
 #     user_id: UserTypes.id = Field(
 #         primary_key=True, index=True, foreign_key=User.__tablename__ + '.id')
 #     permission_level: PermissionLevel
-
 if __name__ == '__main__':
     print()

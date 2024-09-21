@@ -4,7 +4,7 @@ from fastapi import Depends
 from sqlmodel import Session
 from gallery import models
 # Adjust the import as necessary
-from main import login, c
+from main import c
 
 from sqlmodel import select
 
@@ -18,6 +18,7 @@ async def create_tables():
 
 async def main():
     with Session(c.db_engine) as session:
+        pass
 
         # #
         # read_scope = models.Scope(id='users.read')
@@ -55,14 +56,14 @@ async def main():
         # session.add(api_key_scope_write)
         # session.commit()
 
-        user = session.exec(select(models.User)).first()
+        # user = session.exec(select(models.User)).first()
 
-        print(user)
-        for user_scope in user.scopes:
-            print(user_scope)
+        # print(user)
+        # for user_scope in user.scopes:
+        #     print(user_scope)
 
-        for use_api_key in user.api_keys:
-            print(use_api_key)
+        # for use_api_key in user.api_keys:
+        #     print(use_api_key)
 
 
 if __name__ == "__main__":

@@ -1,30 +1,5 @@
 from fastapi import HTTPException, status
 import typing
-import jwt
-import datetime
-from gallery import models
-from pydantic import BaseModel
-
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str = 'bearer'
-
-
-type TokenAuthSource = typing.Literal[
-    'password',
-    'google_oauth2',
-    'magic_link',
-    'verified_magic_link',
-    'sign_up'
-]
-TOKEN_AUTH_SOURCES: set[TokenAuthSource] = {
-    'password', 'google_oauth2', 'magic_link', 'verified_magic_link', 'sign_up'}
-
-type APIKey = str
-type BearerString = Token | APIKey
-type BearerType = typing.Literal['token', 'api_key']
-BEARER_TYPES: set[BearerType] = {'token', 'api_key'}
 
 
 def _bearer_exception(status_code: int, detail: str) -> HTTPException:
@@ -50,20 +25,6 @@ def invalid_token_exception() -> HTTPException:
 
 def invalid_api_key_exception() -> HTTPException:
     return invalid_exception("Invalid API key")
-
-
-def invalid_bearer_type_exception(given_bearer_type: BearerType | None = None, permitted_bearer_types: set[BearerType] | None = None) -> HTTPException:
-
-    if given_bearer_type is not None and permitted_bearer_types is not None:
-        return _bearer_exception(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid bearer type. {given} not in {permitted}".format(
-                given=given_bearer_type, permitted=permitted_bearer_types
-            ))
-    else:
-        return _bearer_exception(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid bearer type")
 
 
 def missing_required_claims_exception() -> HTTPException:
@@ -104,9 +65,6 @@ def insufficient_scope_exception() -> HTTPException:
 
 type EXCEPTION = typing.Literal[
     'invalid_bearer',
-    'invalid_token',
-    'invalid_api_key',
-    'invalid_bearer_type',
     'missing_required_claims',
     'bearer_expired',
     'user_not_found',
@@ -121,7 +79,6 @@ EXCEPTION_MAPPING: dict[EXCEPTION, HTTPException] = {
     'insufficient_scope': insufficient_scope_exception(),
     'invalid_api_key': invalid_api_key_exception(),
     'invalid_bearer': invalid_bearer_exception(),
-    'invalid_bearer_type': invalid_bearer_type_exception(),
     'invalid_token': invalid_token_exception(),
     'missing_required_claims': missing_required_claims_exception(),
     'user_not_found': user_not_found_exception(),
