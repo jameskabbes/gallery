@@ -683,9 +683,6 @@ class GetProfilePageResponse(GetAuthReturn):
 async def get_pages_profile(authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization(raise_exceptions=True))]) -> GetProfilePageResponse:
 
-    print('hello')
-    print(authorization)
-
     with Session(c.db_engine) as session:
         user = models.User.get_one_by_id(session, authorization.user.id)
         if user is None:
