@@ -26,10 +26,8 @@ function UpdateUsername({ user }: Props) {
   const toastContext = useContext(ToastContext);
 
   useEffect(() => {
-    setValid(
-      username.status === 'valid' && modified && authContext.state.isActive
-    );
-  }, [username.status, modified, authContext.state.isActive]);
+    setValid(username.status === 'valid' && modified);
+  }, [username.status, modified]);
 
   useEffect(() => {
     setModified(username.value !== startingUsername);
@@ -37,13 +35,13 @@ function UpdateUsername({ user }: Props) {
 
   async function handleUpdateUsername(e: React.FormEvent) {
     e.preventDefault();
-    if (valid && authContext.state.isActive) {
+    if (valid && authContext.state.user !== null) {
       let { data, response } = await patchUserFunc(
         user.id,
         {
           username: username.value,
         },
-        authContext.dispatch,
+        authContext,
         toastContext
       );
 

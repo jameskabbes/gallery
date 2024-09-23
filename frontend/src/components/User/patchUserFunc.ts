@@ -31,7 +31,10 @@ async function patchUserFunc(
 
   if (response.status === 200) {
     const apiData = data as ResponseTypesByStatus['200'];
-    authContextDispatch({ type: 'SET_AUTH_USER', payload: apiData });
+    authContext.setState({
+      ...authContext.state,
+      user: apiData,
+    });
     toastContext.update(toastId, {
       message: `Updated user`,
       type: 'success',
@@ -47,11 +50,6 @@ async function patchUserFunc(
       | '403'
       | '404'
       | '409'];
-
-    if (response.status === 401 || response.status === 404) {
-      authContextDispatch({ type: 'LOGOUT' });
-    }
-
     toastContext.update(toastId, {
       message: apiData.detail,
       type: 'error',

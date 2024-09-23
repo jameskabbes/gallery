@@ -499,73 +499,77 @@ async def post_user(user_create: models.UserCreate) -> models.UserPrivate:
         user.add_to_db(session)
         return models.UserPrivate.model_validate(user)
 
-# @ app.patch('/users/{user_id}/', responses={
-#     status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse},
-#     status.HTTP_403_FORBIDDEN: {"description": 'User does not have permission to update this user', 'model': DetailOnlyResponse},
-#     status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse},
-#     status.HTTP_409_CONFLICT: {"description": 'Username or email already exists', 'model': DetailOnlyResponse},
-# })
-# async def patch_user(
-#     user_id: models.UserTypes.id,
-#     user_update: models.UserUpdate,
-#     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-#         get_authorization(raise_exceptions=True, required_scopes={
-#         }))]
-# ) -> models.UserPrivate:
-#     print(authorization)
-#     with Session(c.db_engine) as session:
-#         user = models.User.get_one_by_id(session, user_id)
-#         if not user:
-#             raise HTTPException(status.HTTP_404_NOT_FOUND,
-#                                 detail=models.User.not_found_message())
-#         # check if the user has permission to update this specific user
-#         # if they changed their username, check if it's available
-#         if user_update.username != None:
-#             if user.username != user_update.username:
-#                 response = await user_username_available(user_update.username)
-#                 if response.available == False:
-#                     raise HTTPException(status.HTTP_409_CONFLICT,
-#                                         detail='Username already exists')
-#         # if they changed their email, check if it's available
-#         if user_update.email != None:
-#             if user.email != user_update.email:
-#                 response = await user_email_available(user_update.email)
-#                 if response.available == False:
-#                     raise HTTPException(status.HTTP_409_CONFLICT,
-#                                         detail='Email already exists')
-#         update_fields = {}
-#         if user_update.email != None:
-#             update_fields['email'] = user_update.email
-#         if user_update.username != None:
-#             update_fields['username'] = user_update.username
-#         if user_update.password != None:
-#             update_fields['hashed_password'] = utils.hash_password(
-#                 user_update.password)
-#         user.sqlmodel_update(update_fields)
-#         user.add_to_db(session)
-#         return models.UserPrivate.model_validate(user)
-# @ app.delete('/users/{user_id}/', status_code=204, responses={
-#     status.HTTP_403_FORBIDDEN: {"description": 'User does not have permission to delete this user', 'model': DetailOnlyResponse},
-#     status.HTTP_404_NOT_FOUND: {
-#         "description": models.User.not_found_message(), 'model': NotFoundResponse}
-# }
-# )
-# async def delete_user(
-#     user_id: models.UserTypes.id,
-#     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-#         get_authorization(raise_exceptions=True, required_scopes={
-#         }))]
-# ) -> Response:
-#     with Session(c.db_engine) as session:
-#         # make sure the user has permission to delete whoever user_id is
-#         # if user_id != auth_return.user.id:
-#         #     raise HTTPException(status.HTTP_403_FORBIDDEN,
-#         #                         detail='User does not have permission to delete this user')
-#         if models.User.delete_one_by_id(session, user_id) == 0:
-#             raise HTTPException(status.HTTP_404_NOT_FOUND,
-#                                 detail=models.User.not_found_message())
-#         else:
-#             return Response(status_code=204)
+
+@ app.patch('/users/{user_id}/', responses={
+    status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse},
+    status.HTTP_403_FORBIDDEN: {"description": 'User does not have permission to update this user', 'model': DetailOnlyResponse},
+    status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse},
+    status.HTTP_409_CONFLICT: {"description": 'Username or email already exists', 'model': DetailOnlyResponse},
+})
+async def patch_user(
+    user_id: models.UserTypes.id,
+    user_update: models.UserUpdate,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization(raise_exceptions=True))]
+) -> models.UserPrivate:
+
+    with Session(c.db_engine) as session:
+        user = models.User.get_one_by_id(session, user_id)
+        if not user:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail=models.User.not_found_message())
+        # check if the user has permission to update this specific user
+        # if they changed their username, check if it's available
+        if user_update.username != None:
+            if user.username != user_update.username:
+                response = await user_username_available(user_update.username)
+                if response.available == False:
+                    raise HTTPException(status.HTTP_409_CONFLICT,
+                                        detail='Username already exists')
+        # if they changed their email, check if it's available
+        if user_update.email != None:
+            if user.email != user_update.email:
+                response = await user_email_available(user_update.email)
+                if response.available == False:
+                    raise HTTPException(status.HTTP_409_CONFLICT,
+                                        detail='Email already exists')
+        update_fields = {}
+        if user_update.email != None:
+            update_fields['email'] = user_update.email
+        if user_update.username != None:
+            update_fields['username'] = user_update.username
+        if user_update.password != None:
+            update_fields['hashed_password'] = utils.hash_password(
+                user_update.password)
+        user.sqlmodel_update(update_fields)
+        user.add_to_db(session)
+        return models.UserPrivate.model_validate(user)
+
+
+@ app.delete('/users/{user_id}/', status_code=204, responses={
+    status.HTTP_403_FORBIDDEN: {"description": 'User does not have permission to delete this user', 'model': DetailOnlyResponse},
+    status.HTTP_404_NOT_FOUND: {
+        "description": models.User.not_found_message(), 'model': NotFoundResponse}
+}
+)
+async def delete_user(
+    user_id: models.UserTypes.id,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization(raise_exceptions=True, required_scopes={
+        }))]
+) -> Response:
+    with Session(c.db_engine) as session:
+        # make sure the user has permission to delete whoever user_id is
+        # if user_id != auth_return.user.id:
+        #     raise HTTPException(status.HTTP_403_FORBIDDEN,
+        #                         detail='User does not have permission to delete this user')
+        if models.User.delete_one_by_id(session, user_id) == 0:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail=models.User.not_found_message())
+        else:
+            return Response(status_code=204)
+
+
 # # Gallery
 # async def get_gallery_available_params(
 #     name: models.GalleryTypes.name,

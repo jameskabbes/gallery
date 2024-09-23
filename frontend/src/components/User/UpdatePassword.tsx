@@ -23,10 +23,7 @@ function UpdatePassword({ userId }: Props) {
   const toastContext = useContext(ToastContext);
 
   useEffect(() => {
-    setValid(
-      password.status === 'valid' &&
-        confirmPassword.status === 'valid' &&
-    );
+    setValid(password.status === 'valid' && confirmPassword.status === 'valid');
   }, [password.status, confirmPassword.status]);
 
   async function handleUpdatePassword(e: React.FormEvent) {

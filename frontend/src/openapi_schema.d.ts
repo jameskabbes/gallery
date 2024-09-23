@@ -57,6 +57,12 @@ export interface paths {
     /** Post User */
     post: operations["post_user_users__post"];
   };
+  "/users/{user_id}/": {
+    /** Delete User */
+    delete: operations["delete_user_users__user_id___delete"];
+    /** Patch User */
+    patch: operations["patch_user_users__user_id___patch"];
+  };
   "/profile/page/": {
     /** Get Pages Profile */
     get: operations["get_pages_profile_profile_page__get"];
@@ -211,6 +217,15 @@ export interface components {
       id: string;
       /** Username */
       username: string | null;
+    };
+    /** UserUpdate */
+    UserUpdate: {
+      /** Email */
+      email?: string | null;
+      /** Password */
+      password?: string | null;
+      /** Username */
+      username?: string | null;
     };
     /** ValidationError */
     ValidationError: {
@@ -519,6 +534,89 @@ export interface operations {
         };
       };
       /** @description User already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Delete User */
+  delete_user_users__user_id___delete: {
+    parameters: {
+      path: {
+        user_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      204: {
+        content: never;
+      };
+      /** @description User does not have permission to delete this user */
+      403: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Patch User */
+  patch_user_users__user_id___patch: {
+    parameters: {
+      path: {
+        user_id: string;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UserUpdate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["UserPrivate"];
+        };
+      };
+      /** @description Invalid token */
+      401: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description User does not have permission to update this user */
+      403: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Username or email already exists */
       409: {
         content: {
           "application/json": components["schemas"]["DetailOnlyResponse"];

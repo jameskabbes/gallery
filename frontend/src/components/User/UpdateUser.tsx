@@ -26,10 +26,8 @@ function UpdateUser({ user }: Props) {
   const toastContext = useContext(ToastContext);
 
   useEffect(() => {
-    setValid(
-      email.status === 'valid' && modified && authContext.state.isActive
-    );
-  }, [email.status, modified, authContext.state.isActive]);
+    setValid(email.status === 'valid' && modified);
+  }, [email.status, modified]);
 
   useEffect(() => {
     setModified(email.value !== startingEmail);
@@ -41,14 +39,14 @@ function UpdateUser({ user }: Props) {
 
   async function handleUpdateUser(e: React.FormEvent) {
     e.preventDefault();
-    if (valid && authContext.state.isActive) {
+    if (valid && authContext.state.user !== null) {
       setLoading(true);
       const { data, response } = await patchUserFunc(
         user.id,
         {
           email: email.value,
         },
-        authContext.dispatch,
+        authContext,
         toastContext
       );
       setLoading(false);
