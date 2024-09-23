@@ -555,8 +555,7 @@ async def patch_user(
 async def delete_user(
     user_id: models.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=True, required_scopes={
-        }))]
+        get_authorization())]
 ) -> Response:
     with Session(c.db_engine) as session:
         # make sure the user has permission to delete whoever user_id is
@@ -569,6 +568,25 @@ async def delete_user(
         else:
             return Response(status_code=204)
 
+
+@app.get('/users/{user_id}/sessions/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+async def get_user_sessions(user_id: models.UserTypes.id, authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> list[models.AuthCredential]:
+
+    with Session(c.db_engine) as session:
+
+        # make sure the user has permission to delete whoever user_id is
+        # if user_id != auth_return.user.id:
+        #     raise HTTPException(status.HTTP_403_FORBIDDEN,
+        #                         detail='User does not have permission to delete this user')
+
+        user = models.User.get_one_by_id(session, user_id)
+        if not user:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail=models.User.not_found_message())
+        auth_creds = user.auth_credentials
+        print(auth_creds)
+
+        return auth_creds
 
 # # Gallery
 # async def get_gallery_available_params(

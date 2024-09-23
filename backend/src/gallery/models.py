@@ -230,7 +230,10 @@ class UserCreate(SingularCreate[User], UserBase):
 
 
 # Scope
-type ScopeName = typing.Literal['users.read', 'users.write']
+type ScopeName = typing.Literal[
+    'users.read',
+    'users.write'
+]
 
 
 class ScopeTypes:

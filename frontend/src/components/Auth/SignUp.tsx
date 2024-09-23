@@ -8,7 +8,7 @@ import openapi_schema from '../../../../openapi_schema.json';
 
 import { SignUpContext } from '../../contexts/SignUp';
 import { AuthContext } from '../../contexts/Auth';
-import { GlobalModalsContext } from '../../contexts/GlobalModals';
+import { AuthModalsContext } from '../../contexts/AuthModals';
 import { ToastContext } from '../../contexts/Toast';
 
 import { Modal } from '../Modal/Modal';
@@ -29,7 +29,7 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 function SignUp() {
   const signUpContext = useContext(SignUpContext);
   const authContext = useContext(AuthContext);
-  const globalModalsContext = useContext(GlobalModalsContext);
+  const authModalsContext = useContext(AuthModalsContext);
   const toastContext = useContext(ToastContext);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -106,7 +106,7 @@ function SignUp() {
           payload: false,
         })
       }
-      show={signUpContext.state.isActive}
+      show={signUpContext.state.active}
     >
       <div id="sign-up">
         <div className="flex">
@@ -248,7 +248,7 @@ function SignUp() {
               <h6
                 className="cursor-pointer underline mb-0"
                 onClick={() => {
-                  globalModalsContext.toggleModal('logIn');
+                  authModalsContext.toggleModal('logIn');
                 }}
               >
                 Log In

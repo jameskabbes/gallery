@@ -5,7 +5,7 @@ import { ExtractResponseTypes } from '../../types';
 import { callApi } from '../../utils/Api';
 import openapi_schema from '../../../../openapi_schema.json';
 
-import { GlobalModalsContext } from '../../contexts/GlobalModals';
+import { AuthModalsContext } from '../../contexts/AuthModals';
 import { LogInWithEmailContext } from '../../contexts/LogInWithEmail';
 
 import { Modal } from '../Modal/Modal';
@@ -22,7 +22,7 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 
 function LogInWithEmail() {
   const logInWithEmailContext = useContext(LogInWithEmailContext);
-  const globalModalsContext = useContext(GlobalModalsContext);
+  const authModalsContext = useContext(AuthModalsContext);
   const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
@@ -34,7 +34,7 @@ function LogInWithEmail() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (logInWithEmailContext.state.valid) {
+    if (logInWithEmailContext.state.screen) {
       setLoading(true);
 
       const { data, response } = await callApi<
@@ -65,7 +65,7 @@ function LogInWithEmail() {
           payload: false,
         })
       }
-      show={logInWithEmailContext.state.isActive}
+      show={logInWithEmailContext.state.active}
       contentStyle={{ maxWidth: '300px', width: '100%' }}
     >
       <div className="flex flex-col">
@@ -123,7 +123,7 @@ function LogInWithEmail() {
             <h6
               className="cursor-pointer underline text-center mt-2"
               onClick={() => {
-                globalModalsContext.toggleModal('logIn');
+                authModalsContext.toggleModal('logIn');
               }}
             >
               Back to Login

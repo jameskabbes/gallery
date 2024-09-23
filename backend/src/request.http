@@ -28,6 +28,10 @@
 # }
 
 #verify magic token
-POST http://localhost:8087/auth/verify-magic-link/
-Authorization: Bearer token
+#POST http://localhost:8087/auth/verify-magic-link/
+#Authorization: Bearer token
+
+# get user sessions
+GET http://localhost:8087/user/id/sessions/
+Cookie: access_token=token
 

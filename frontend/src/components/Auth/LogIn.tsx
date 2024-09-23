@@ -6,8 +6,8 @@ import { InputState } from '../../types';
 import { InputText } from '../Form/InputText';
 import { Modal } from '../Modal/Modal';
 import { LogInContext } from '../../contexts/LogIn';
-import { GlobalModalsContext } from '../../contexts/GlobalModals';
 import { ToastContext } from '../../contexts/Toast';
+import { AuthModalsContext } from '../../contexts/AuthModals';
 import { ExtractResponseTypes } from '../../types';
 import { callApi } from '../../utils/Api';
 import { IoWarning } from 'react-icons/io5';
@@ -25,7 +25,7 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 function LogIn() {
   const logInContext = useContext(LogInContext);
   const authContext = useContext(AuthContext);
-  const globalModalsContext = useContext(GlobalModalsContext);
+  const authModalsContext = useContext(AuthModalsContext);
   const toastContext = useContext(ToastContext);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -98,7 +98,7 @@ function LogIn() {
       onExit={() =>
         logInContext.dispatch({ type: 'SET_ACTIVE', payload: false })
       }
-      show={logInContext.state.isActive}
+      show={logInContext.state.active}
     >
       <div id="login">
         <div className="flex">
@@ -194,7 +194,7 @@ function LogIn() {
               <h6
                 className="cursor-pointer underline mb-0"
                 onClick={() => {
-                  globalModalsContext.toggleModal('signUp');
+                  authModalsContext.toggleModal('signUp');
                 }}
               >
                 Sign Up
@@ -211,7 +211,7 @@ function LogIn() {
               <button
                 className="button-tertiary w-full relative"
                 onClick={() => {
-                  globalModalsContext.toggleModal('logInWithEmail');
+                  authModalsContext.toggleModal('logInWithEmail');
                 }}
               >
                 <p className="text-center mb-0 ">Login with email</p>

@@ -1,7 +1,10 @@
 import React, { useContext, useEffect } from 'react';
 import {
-  GlobalModalsContext as GlobalModalsContextType,
-  GlobalModalsType,
+  AuthModalsContext as AuthModalsContextType,
+  AuthModalsType,
+  LogInContext as LogInContextType,
+  SignUpContext as SignUpContextType,
+  LogInWithEmailContext as LogInWithEmailContextType,
 } from '../types';
 import { LogInContext, LogInContextProvider } from './LogIn';
 import { SignUpContext, SignUpContextProvider } from './SignUp';
@@ -10,7 +13,7 @@ import {
   LogInWithEmailContextProvider,
 } from './LogInWithEmail';
 
-const GlobalModalsContext = React.createContext<GlobalModalsContextType>({
+const AuthModalsContext = React.createContext<AuthModalsContextType>({
   toggleModal: () => {},
 });
 
@@ -18,18 +21,22 @@ interface Props {
   children: React.ReactNode;
 }
 
-function GlobalModalsContextProvider({ children }: Props) {
+function AuthModalsContextProvider({ children }: Props) {
   const logInContext = useContext(LogInContext);
   const signUpContext = useContext(SignUpContext);
   const logInWithEmailContext = useContext(LogInWithEmailContext);
 
-  const contextMap = new Map([
+  // Example usage
+  const contextMap = new Map<
+    AuthModalsType,
+    LogInContextType | SignUpContextType | LogInWithEmailContextType
+  >([
     ['logIn', logInContext],
     ['signUp', signUpContext],
     ['logInWithEmail', logInWithEmailContext],
   ]);
 
-  function toggleModal(targetModal: GlobalModalsType) {
+  function toggleModal(targetModal: AuthModalsType) {
     for (const modal of contextMap.keys()) {
       if (modal !== targetModal) {
         contextMap.get(modal).dispatch({ type: 'SET_ACTIVE', payload: false });
@@ -39,14 +46,14 @@ function GlobalModalsContextProvider({ children }: Props) {
   }
 
   return (
-    <GlobalModalsContext.Provider
+    <AuthModalsContext.Provider
       value={{
         toggleModal,
       }}
     >
       {children}
-    </GlobalModalsContext.Provider>
+    </AuthModalsContext.Provider>
   );
 }
 
-export { GlobalModalsContext, GlobalModalsContextProvider };
+export { AuthModalsContext, AuthModalsContextProvider };

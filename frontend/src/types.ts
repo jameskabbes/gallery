@@ -56,18 +56,28 @@ interface DarkModeContext {
   toggle: () => void;
 }
 
-interface LogInContextState {
-  isActive: boolean;
-  email: InputState;
-  password: InputState;
+type AuthModalsType = 'logIn' | 'signUp' | 'logInWithEmail';
+
+interface AuthModalsContext {
+  toggleModal: (modal: AuthModalsType) => void;
+}
+
+interface AuthModalsContextStateBase {
+  active: boolean;
   valid: boolean;
 }
 
+type AuthModalsReducerActionBase =
+  | { type: 'SET_ACTIVE'; payload: boolean }
+  | { type: 'RESET' }
+  | { type: 'SET_VALID'; payload: boolean };
+
+interface LogInContextState extends AuthModalsContextStateBase {
+  email: InputState;
+  password: InputState;
+}
+
 type LogInReducerAction =
-  | {
-      type: 'SET_VALID';
-      payload: LogInContextState['valid'];
-    }
   | {
       type: 'SET_EMAIL';
       payload: LogInContextState['email'];
@@ -76,61 +86,41 @@ type LogInReducerAction =
       type: 'SET_PASSWORD';
       payload: LogInContextState['password'];
     }
-  | {
-      type: 'SET_ACTIVE';
-      payload: LogInContextState['isActive'];
-    }
-  | { type: 'RESET' };
+  | AuthModalsReducerActionBase;
 
 interface LogInContext {
   state: LogInContextState;
   dispatch: React.Dispatch<LogInReducerAction>;
 }
 
-interface LogInWithEmailContextState {
-  isActive: boolean;
+interface LogInWithEmailContextState extends AuthModalsContextStateBase {
   email: InputState;
-  valid: boolean;
   screen: 'email' | 'sent';
 }
 
 type LogInWithEmailReducerAction =
   | {
-      type: 'SET_VALID';
-      payload: LogInWithEmailContextState['valid'];
-    }
-  | {
       type: 'SET_EMAIL';
       payload: LogInWithEmailContextState['email'];
-    }
-  | {
-      type: 'SET_ACTIVE';
-      payload: LogInWithEmailContextState['isActive'];
     }
   | {
       type: 'SET_SCREEN';
       payload: LogInWithEmailContextState['screen'];
     }
-  | { type: 'RESET' };
+  | AuthModalsReducerActionBase;
 
 interface LogInWithEmailContext {
   state: LogInWithEmailContextState;
   dispatch: React.Dispatch<LogInWithEmailReducerAction>;
 }
 
-interface SignUpContextState {
-  isActive: boolean;
+interface SignUpContextState extends AuthModalsContextStateBase {
   email: InputState;
   password: InputState;
   confirmPassword: InputState;
-  valid: boolean;
 }
 
 type SignUpReducerAction =
-  | {
-      type: 'SET_VALID';
-      payload: SignUpContextState['valid'];
-    }
   | {
       type: 'SET_EMAIL';
       payload: SignUpContextState['email'];
@@ -143,11 +133,7 @@ type SignUpReducerAction =
       type: 'SET_CONFIRM_PASSWORD';
       payload: SignUpContextState['confirmPassword'];
     }
-  | {
-      type: 'SET_ACTIVE';
-      payload: SignUpContextState['isActive'];
-    }
-  | { type: 'RESET' };
+  | AuthModalsReducerActionBase;
 
 interface SignUpContext {
   state: SignUpContextState;
@@ -224,47 +210,6 @@ interface AuthContext {
   updateFromApiResponse: (data: any) => void;
 }
 
-// interface AuthContextState {
-//   auth: components['schemas']['GetAuthenticationNestedReturn'];
-//   token: components['schemas']['Token']['access_token'] | null;
-// }
-
-// interface AuthReducerActionTypes {
-//   SET_AUTH_USER: {
-//     type: 'SET_AUTH_USER';
-//     payload: AuthContextState['auth']['user'];
-//   };
-//   SET_TOKEN: {
-//     type: 'SET_TOKEN';
-//     payload: components['schemas']['Token'];
-//   };
-//   CLEAR_TOKEN: {
-//     type: 'CLEAR_TOKEN';
-//   };
-//   LOGIN: {
-//     type: 'LOGIN';
-//     payload: AuthContextState['auth'];
-//   };
-//   LOGOUT: {
-//     type: 'LOGOUT';
-//   };
-//   UPDATE: {
-//     type: 'UPDATE';
-//     payload: AuthContextState['auth'];
-//   };
-//   UPDATE_FROM_API_RESPONSE: {
-//     type: 'UPDATE_FROM_API_RESPONSE';
-//     payload: { auth?: AuthContextState['auth'] };
-//   };
-// }
-
-// type AuthReducerAction = AuthReducerActionTypes[keyof AuthReducerActionTypes];
-
-// interface AuthContext {
-//   state: AuthContextState;
-//   dispatch: React.Dispatch<AuthReducerAction>;
-// }
-
 type Modal = React.ReactNode;
 interface ModalsReducerState {
   stack: Modal[];
@@ -275,12 +220,6 @@ type ModalsReducerAction = { type: 'PUSH'; payload: Modal } | { type: 'POP' };
 interface ModalsContext {
   state: ModalsReducerState;
   dispatch: React.Dispatch<ModalsReducerAction>;
-}
-
-type GlobalModalsType = 'logIn' | 'signUp' | 'logInWithEmail';
-
-interface GlobalModalsContext {
-  toggleModal: (modal: GlobalModalsType) => void;
 }
 
 interface EscapeKeyContext {
@@ -320,8 +259,8 @@ export {
   ModalsContext,
   ModalsReducerState,
   ModalsReducerAction,
-  GlobalModalsType,
-  GlobalModalsContext,
+  AuthModalsContext,
+  AuthModalsType,
   DataContext,
   EscapeKeyContext,
 };

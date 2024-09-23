@@ -31,6 +31,7 @@ function App(): JSX.Element {
             <Route path="/profile" element={<Profile />} />
             <Route path="/galleries/:gallery_id" element={<Gallery />} />
             <Route path="/404" element={<p>404</p>} />
+            <Route path="/settings" element={<Profile />} />
             <Route path="*" element={<Navigate to="/404" />} />
             <Route
               path={`${config.magic_link_frontend_url}`}

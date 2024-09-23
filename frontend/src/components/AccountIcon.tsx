@@ -4,7 +4,7 @@ import { IoMenuSharp } from 'react-icons/io5';
 import { Link } from 'react-router-dom';
 
 import { useClickOutside } from '../utils/useClickOutside';
-import { GlobalModalsContext } from '../contexts/GlobalModals';
+import { GlobalModalsContext } from '../contexts/AuthModals';
 import { ToastContext } from '../contexts/Toast';
 import { AuthContext } from '../contexts/Auth';
 import { logOut } from './Auth/logout';

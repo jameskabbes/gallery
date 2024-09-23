@@ -5,7 +5,7 @@ import { useApiCall } from '../../../utils/Api';
 import { AuthContext } from '../../../contexts/Auth';
 import { UpdatePassword } from '../UpdatePassword';
 import { UpdateUser } from '../UpdateUser';
-import { GlobalModalsContext } from '../../../contexts/GlobalModals';
+import { GlobalModalsContext } from '../../../contexts/AuthModals';
 import { UpdateUsername } from '../UpdateUsername';
 
 const API_PATH = '/profile/page/';

@@ -4,7 +4,7 @@ import { DataContextProvider } from './Data';
 import { ModalsContextProvider } from './Modals';
 import { DeviceContextProvider } from './Device';
 import { AuthContextProvider } from './Auth';
-import { GlobalModalsContextProvider } from './GlobalModals';
+import { GlobalModalsContextProvider } from './AuthModals';
 import { LogInContextProvider } from './LogIn';
 import { SignUpContextProvider } from './SignUp';
 import { LogInWithEmailContextProvider } from './LogInWithEmail';
