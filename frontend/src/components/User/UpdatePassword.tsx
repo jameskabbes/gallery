@@ -26,19 +26,18 @@ function UpdatePassword({ userId }: Props) {
     setValid(
       password.status === 'valid' &&
         confirmPassword.status === 'valid' &&
-        authContext.state.isActive
     );
-  }, [password.status, confirmPassword.status, authContext.state.isActive]);
+  }, [password.status, confirmPassword.status]);
 
   async function handleUpdatePassword(e: React.FormEvent) {
     e.preventDefault();
-    if (valid && authContext.state.isActive) {
+    if (valid && authContext.state.user !== null) {
       let { data, response } = await patchUserFunc(
         userId,
         {
           password: password.value,
         },
-        authContext.dispatch,
+        authContext,
         toastContext
       );
 

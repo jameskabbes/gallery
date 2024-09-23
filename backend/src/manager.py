@@ -20,12 +20,12 @@ async def main():
 
     with Session(c.db_engine) as session:
 
-        a = models.AuthCredential.get_one_by_id(
-            session, '14edcfd4-db29-4bbf-80a1-3494dc879117')
-        print(a)
+        # a = models.AuthCredential.get_one_by_id(
+        #     session, '14edcfd4-db29-4bbf-80a1-3494dc879117')
+        # print(a)
 
-        b = {'dt': datetime.datetime.now(datetime.UTC)}
-        print(b)
+        # b = {'dt': datetime.datetime.now(datetime.UTC)}
+        # print(b)
 
         pass
 
@@ -78,6 +78,6 @@ async def main():
 if __name__ == "__main__":
     # Run the example
     asyncio.run(
-        main()
-        # create_tables()
+        # main()
+        create_tables()
     )

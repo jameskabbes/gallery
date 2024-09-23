@@ -5,21 +5,21 @@
 
 
 export interface paths {
-  "/token/": {
-    /** Post Token */
-    post: operations["post_token_token__post"];
-  };
   "/auth/": {
     /** Auth Root */
     get: operations["auth_root_auth__get"];
+  };
+  "/token/": {
+    /** Post Token */
+    post: operations["post_token_token__post"];
   };
   "/auth/login/password/": {
     /** Login */
     post: operations["login_auth_login_password__post"];
   };
-  "/auth/login/google/": {
-    /** Login With Google */
-    post: operations["login_with_google_auth_login_google__post"];
+  "/auth/signup/": {
+    /** Sign Up */
+    post: operations["sign_up_auth_signup__post"];
   };
   "/auth/login/email-magic-link/": {
     /** Login With Email Magic Link */
@@ -29,9 +29,13 @@ export interface paths {
     /** Verify Magic Link */
     post: operations["verify_magic_link_auth_verify_magic_link__post"];
   };
-  "/auth/signup/": {
-    /** Sign Up */
-    post: operations["sign_up_auth_signup__post"];
+  "/auth/login/google/": {
+    /** Login With Google */
+    post: operations["login_with_google_auth_login_google__post"];
+  };
+  "/auth/logout/": {
+    /** Logout */
+    post: operations["logout_auth_logout__post"];
   };
   "/users/available/username/{username}/": {
     /** User Username Available */
@@ -52,12 +56,6 @@ export interface paths {
   "/users/": {
     /** Post User */
     post: operations["post_user_users__post"];
-  };
-  "/users/{user_id}/": {
-    /** Delete User */
-    delete: operations["delete_user_users__user_id___delete"];
-    /** Patch User */
-    patch: operations["patch_user_users__user_id___patch"];
   };
   "/profile/page/": {
     /** Get Pages Profile */
@@ -109,29 +107,40 @@ export interface components {
       /** Client Secret */
       client_secret?: string | null;
     };
+    /** Body_sign_up_auth_signup__post */
+    Body_sign_up_auth_signup__post: {
+      /**
+       * Email
+       * Format: email
+       */
+      email: string;
+      /** Password */
+      password: string;
+    };
     /** DetailOnlyResponse */
     DetailOnlyResponse: {
       /** Detail */
       detail: string;
     };
-    /** @enum {string} */
-    EXCEPTION: "invalid_bearer" | "invalid_token" | "invalid_api_key" | "invalid_bearer_type" | "missing_required_claims" | "bearer_expired" | "user_not_found" | "user_not_permitted" | "credentials" | "insufficient_scope";
-    /** GetAuthenticationNestedReturn */
-    GetAuthenticationNestedReturn: {
+    /** GetAuthBaseReturn */
+    GetAuthBaseReturn: {
       user?: components["schemas"]["UserPrivate"] | null;
-      exception?: components["schemas"]["EXCEPTION"] | null;
+      /** Scopes */
+      scopes?: number[] | null;
+      /** Expiry */
+      expiry?: string | null;
     };
-    /** GetAuthenticationReturn */
-    GetAuthenticationReturn: {
-      auth: components["schemas"]["GetAuthenticationNestedReturn"];
+    /** GetAuthReturn */
+    GetAuthReturn: {
+      auth: components["schemas"]["GetAuthBaseReturn"];
     };
     /** GetHomePageResponse */
     GetHomePageResponse: {
-      auth: components["schemas"]["GetAuthenticationNestedReturn"];
+      auth: components["schemas"]["GetAuthBaseReturn"];
     };
     /** GetProfilePageResponse */
     GetProfilePageResponse: {
-      auth: components["schemas"]["GetAuthenticationNestedReturn"];
+      auth: components["schemas"]["GetAuthBaseReturn"];
       user?: components["schemas"]["UserPrivate"] | null;
     };
     /** GoogleAuthRequest */
@@ -141,8 +150,7 @@ export interface components {
     };
     /** GoogleAuthResponse */
     GoogleAuthResponse: {
-      auth: components["schemas"]["GetAuthenticationNestedReturn"];
-      token: components["schemas"]["Token"];
+      auth: components["schemas"]["GetAuthBaseReturn"];
     };
     /** HTTPValidationError */
     HTTPValidationError: {
@@ -156,8 +164,7 @@ export interface components {
     };
     /** LoginResponse */
     LoginResponse: {
-      auth: components["schemas"]["GetAuthenticationNestedReturn"];
-      token: components["schemas"]["Token"];
+      auth: components["schemas"]["GetAuthBaseReturn"];
     };
     /** LoginWithEmailMagicLinkRequest */
     LoginWithEmailMagicLinkRequest: {
@@ -174,18 +181,7 @@ export interface components {
     };
     /** SignupResponse */
     SignupResponse: {
-      auth: components["schemas"]["GetAuthenticationNestedReturn"];
-      token: components["schemas"]["Token"];
-    };
-    /** Token */
-    Token: {
-      /** Access Token */
-      access_token: string;
-      /**
-       * Token Type
-       * @default bearer
-       */
-      token_type?: string;
+      auth: components["schemas"]["GetAuthBaseReturn"];
     };
     /** UserCreate */
     UserCreate: {
@@ -216,15 +212,6 @@ export interface components {
       /** Username */
       username: string | null;
     };
-    /** UserUpdate */
-    UserUpdate: {
-      /** Email */
-      email?: string | null;
-      /** Password */
-      password?: string | null;
-      /** Username */
-      username?: string | null;
-    };
     /** ValidationError */
     ValidationError: {
       /** Location */
@@ -233,6 +220,10 @@ export interface components {
       msg: string;
       /** Error Type */
       type: string;
+    };
+    /** VerifyMagicLinkRequest */
+    VerifyMagicLinkRequest: {
+      auth: components["schemas"]["GetAuthBaseReturn"];
     };
   };
   responses: never;
@@ -248,6 +239,17 @@ export type external = Record<string, never>;
 
 export interface operations {
 
+  /** Auth Root */
+  auth_root_auth__get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["GetAuthReturn"];
+        };
+      };
+    };
+  };
   /** Post Token */
   post_token_token__post: {
     requestBody: {
@@ -259,24 +261,13 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["Token"];
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */
       422: {
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Auth Root */
-  auth_root_auth__get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["GetAuthenticationReturn"];
         };
       };
     };
@@ -309,23 +300,25 @@ export interface operations {
       };
     };
   };
-  /** Login With Google */
-  login_with_google_auth_login_google__post: {
+  /** Sign Up */
+  sign_up_auth_signup__post: {
     requestBody: {
       content: {
-        "application/json": components["schemas"]["GoogleAuthRequest"];
+        "application/x-www-form-urlencoded": components["schemas"]["Body_sign_up_auth_signup__post"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["GoogleAuthResponse"];
+          "application/json": components["schemas"]["SignupResponse"];
         };
       };
-      /** @description Invalid token */
-      400: {
-        content: never;
+      /** @description User already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
       };
       /** @description Validation Error */
       422: {
@@ -359,16 +352,11 @@ export interface operations {
   };
   /** Verify Magic Link */
   verify_magic_link_auth_verify_magic_link__post: {
-    parameters: {
-      query: {
-        access_token: string;
-      };
-    };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["LoginResponse"];
+          "application/json": components["schemas"]["VerifyMagicLinkRequest"];
         };
       };
       /** @description Invalid token */
@@ -376,6 +364,26 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["DetailOnlyResponse"];
         };
+      };
+    };
+  };
+  /** Login With Google */
+  login_with_google_auth_login_google__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GoogleAuthRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["GoogleAuthResponse"];
+        };
+      };
+      /** @description Invalid token */
+      400: {
+        content: never;
       };
       /** @description Validation Error */
       422: {
@@ -385,30 +393,13 @@ export interface operations {
       };
     };
   };
-  /** Sign Up */
-  sign_up_auth_signup__post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UserCreate"];
-      };
-    };
+  /** Logout */
+  logout_auth_logout__post: {
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["SignupResponse"];
-        };
-      };
-      /** @description User already exists */
-      409: {
-        content: {
           "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -528,89 +519,6 @@ export interface operations {
         };
       };
       /** @description User already exists */
-      409: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Delete User */
-  delete_user_users__user_id___delete: {
-    parameters: {
-      path: {
-        user_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      204: {
-        content: never;
-      };
-      /** @description User does not have permission to delete this user */
-      403: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description User not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Patch User */
-  patch_user_users__user_id___patch: {
-    parameters: {
-      path: {
-        user_id: string;
-      };
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UserUpdate"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["UserPrivate"];
-        };
-      };
-      /** @description Invalid token */
-      401: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description User does not have permission to update this user */
-      403: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description User not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Username or email already exists */
       409: {
         content: {
           "application/json": components["schemas"]["DetailOnlyResponse"];

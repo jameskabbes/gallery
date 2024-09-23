@@ -54,20 +54,16 @@ class OAuth2PasswordBearerMultiSource(OAuth2):
             password={"tokenUrl": tokenUrl, "scopes": scopes})
         super().__init__(flows=flows, scheme_name=scheme_name, auto_error=False)
 
-    async def __call__(self, request: Request) -> typing.Optional[str]:
+    async def __call__(self, request: Request) -> str | None:
         # change to accept access token from Authorization header
 
-        print('Processing Request...')
         authorization = request.headers.get("Authorization")
-        print('authorization header')
-        print('authorization: ', authorization)
-        scheme, param = get_authorization_scheme_param(authorization)
-        if authorization and scheme.lower() == "bearer":
-            return param
+        if authorization:
+            scheme, param = get_authorization_scheme_param(authorization)
+            if scheme.lower() == "bearer":
+                return param
 
         # HTTP-only Cookie
-        print('cookie header')
-        print(request.cookies)
         cookie_access_token = request.cookies.get(
             c.root_config['cookie_keys']['access_token'])
         if cookie_access_token:
@@ -107,19 +103,6 @@ def make_auth_credential(
         return auth_credential
 
 
-def set_access_token_cookie(access_token: str, response: Response):
-
-    response.set_cookie(
-        key=c.root_config['cookie_keys']['access_token'],
-        value=access_token,
-        httponly=True,
-        secure=True,
-        samesite="Lax",
-        expires=datetime.datetime.now(
-            datetime.UTC) + datetime.timedelta(days=1)
-    )
-
-
 class DetailOnlyResponse(BaseModel):
     detail: str
 
@@ -145,78 +128,90 @@ def get_authorization(
     required_scopes: set[models.ScopeTypes.id] = set(),
     override_lifetime: datetime.timedelta | None = None,
     raise_exceptions: bool = True,
+    remove_cookie_on_exception: bool = True,
 ) -> typing.Callable[[str], GetAuthorizationReturn]:
-    def dependecy(auth_token: typing.Annotated[str, Depends(oauth2_scheme)]) -> GetAuthorizationReturn:
-        # attempt to decode the jwt
-        try:
-            payload: models.AuthCredential.JWTExport = jwt_decode(auth_token)
-        except:
-            if raise_exceptions:
-                raise auth.invalid_bearer_exception()
-            return GetAuthorizationReturn(exception='invalid_bearer')
 
-        # validate the jwt claims
-        if not models.AuthCredential.validate_jwt_claims(payload):
-            if raise_exceptions:
-                raise auth.invalid_bearer_exception()
-            return GetAuthorizationReturn(exception='missing_required_claims')
+    def dependecy(auth_token: typing.Annotated[str | None, Depends(oauth2_scheme)], response: Response) -> GetAuthorizationReturn:
+        def inner() -> GetAuthorizationReturn:
+            # attempt to decode the jwt
 
-        auth_credential_dict = models.AuthCredential.import_from_jwt(payload)
+            if auth_token == None:
+                return GetAuthorizationReturn(exception='invalid_bearer')
 
-        with Session(c.db_engine) as session:
+            try:
+                payload: models.AuthCredential.JWTExport = jwt_decode(
+                    auth_token)
+            except:
+                return GetAuthorizationReturn(exception='invalid_bearer')
 
-            # find the auth_credential in the db
-            auth_credential = models.AuthCredential.get_one_by_id(session,
-                                                                  auth_credential_dict['id'])
+            # validate the jwt claims
+            if not models.AuthCredential.validate_jwt_claims(payload):
+                return GetAuthorizationReturn(exception='missing_required_claims')
 
-            # not in the db, raise exception
-            if not auth_credential:
-                if raise_exceptions:
-                    raise auth.bearer_expired_exception()
-                return GetAuthorizationReturn(exception='bearer_expired')
+            auth_credential_dict = models.AuthCredential.import_from_jwt(
+                payload)
 
-            dt_now = datetime.datetime.now(datetime.UTC)
+            with Session(c.db_engine) as session:
 
-            dt_exp_jwt = datetime.datetime.fromtimestamp(
-                payload['exp'], datetime.UTC)
-            dt_exp_db = auth_credential.expiry.replace(tzinfo=datetime.UTC)
-            dt_exp = min(dt_exp_jwt, dt_exp_db)
+                # find the auth_credential in the db
+                auth_credential = models.AuthCredential.get_one_by_id(session,
+                                                                      auth_credential_dict['id'])
 
-            if dt_now > dt_exp:
-                if raise_exceptions:
-                    raise auth.bearer_expired_exception()
-                return GetAuthorizationReturn(exception='bearer_expired')
-
-            # if there was an overriden lifetime, check if it has expired
-            if override_lifetime != None:
-                # take the minimum of the hardcoded jwt and database value, ### note: redundancy needed or not?
-
-                dt_ait_jwt = datetime.datetime.fromtimestamp(
-                    payload['iat'], datetime.UTC)
-                dt_ait_db = auth_credential.issued.replace(tzinfo=datetime.UTC)
-
-                if dt_now > (min(dt_ait_jwt, dt_ait_db) + override_lifetime):
-                    if raise_exceptions:
-                        raise auth.bearer_expired_exception()
+                # not in the db, raise exception
+                if not auth_credential:
                     return GetAuthorizationReturn(exception='bearer_expired')
 
-            user = auth_credential.user
+                dt_now = datetime.datetime.now(datetime.UTC)
 
-            # check for required scopes
-            # scopes: set[models.ScopeTypes.id] = set(  )
+                dt_exp_jwt = datetime.datetime.fromtimestamp(
+                    payload['exp'], datetime.UTC)
+                dt_exp_db = auth_credential.expiry.replace(tzinfo=datetime.UTC)
+                dt_exp = min(dt_exp_jwt, dt_exp_db)
 
-            # if not required_scopes.issubset(scopes):
-            #     if raise_exceptions:
-            #         raise auth.insufficient_scope_exception()
-            #     return GetAuthorizationReturn(exception='insufficient_scope', type=bearer_type)
+                if dt_now > dt_exp:
+                    return GetAuthorizationReturn(exception='bearer_expired')
 
-            return GetAuthorizationReturn(
-                isAuthorized=True,
-                expiry=dt_exp,
-                user=models.UserPrivate.model_validate(user),
-                scopes=set(),
-                auth_credential=auth_credential,
-            )
+                # if there was an overriden lifetime, check if it has expired
+                if override_lifetime != None:
+                    # take the minimum of the hardcoded jwt and database value, ### note: redundancy needed or not?
+
+                    dt_ait_jwt = datetime.datetime.fromtimestamp(
+                        payload['iat'], datetime.UTC)
+                    dt_ait_db = auth_credential.issued.replace(
+                        tzinfo=datetime.UTC)
+
+                    if dt_now > (min(dt_ait_jwt, dt_ait_db) + override_lifetime):
+                        return GetAuthorizationReturn(exception='bearer_expired')
+
+                user = auth_credential.user
+                if user == None:
+                    return GetAuthorizationReturn(exception='user_not_found')
+
+                # check for required scopes
+                # scopes: set[models.ScopeTypes.id] = set(  )
+
+                # if not required_scopes.issubset(scopes):
+                #     if raise_exceptions:
+                #         raise auth.insufficient_scope_exception()
+                #     return GetAuthorizationReturn(exception='insufficient_scope', type=bearer_type)
+
+                return GetAuthorizationReturn(
+                    isAuthorized=True,
+                    expiry=dt_exp,
+                    user=models.UserPrivate.model_validate(user),
+                    scopes=set(),
+                    auth_credential=auth_credential,
+                )
+
+        inner_response = inner()
+        if inner_response.exception and raise_exceptions:
+            exception_to_raise = auth.EXCEPTION_MAPPING[inner_response.exception]
+            if remove_cookie_on_exception and exception_to_raise.status_code in {status.HTTP_400_BAD_REQUEST, status.HTTP_401_UNAUTHORIZED, status.HTTP_404_NOT_FOUND}:
+                delete_access_token_cookie(response)
+            if raise_exceptions:
+                raise exception_to_raise
+
+        return inner_response
 
     return dependecy
 
@@ -267,6 +262,19 @@ async def authenticate_user_with_password(form_data: typing.Annotated[OAuth2Pass
         return user
 
 
+def set_access_token_cookie(access_token: str, response: Response):
+
+    response.set_cookie(
+        key=c.root_config['cookie_keys']['access_token'],
+        value=access_token,
+        httponly=True,
+        secure=True,
+        samesite="Lax",
+        expires=datetime.datetime.now(
+            datetime.UTC) + datetime.timedelta(days=1)
+    )
+
+
 @app.post('/token/')
 async def post_token(user: typing.Annotated[models.User, Depends(authenticate_user_with_password)], response: Response):
 
@@ -274,6 +282,8 @@ async def post_token(user: typing.Annotated[models.User, Depends(authenticate_us
         user.id, 'access_token')
     set_access_token_cookie(jwt_encode(
         auth_credential.export_to_jwt()), response)
+
+    return
 
 
 class LoginResponse(GetAuthReturn):
@@ -297,7 +307,7 @@ async def login(user: typing.Annotated[models.User, Depends(authenticate_user_wi
     )
 
 
-class SignupResponse(LoginResponse):
+class SignupResponse(GetAuthReturn):
     pass
 
 
@@ -329,9 +339,11 @@ class LoginWithEmailMagicLinkRequest(BaseModel):
 
 
 def send_magic_link_to_email(model: LoginWithEmailMagicLinkRequest):
+
     with Session(c.db_engine) as session:
         user = models.User.get_one_by_key_values(
             session, {'email': model.email})
+
         if user:
             auth_credential = make_auth_credential(
                 user_id=user.id, auth_credential_type='access_token', lifespan=c.authentication['magic_link_expiry_timedelta']
@@ -350,56 +362,91 @@ async def login_with_email_magic_link(model: LoginWithEmailMagicLinkRequest, bac
     return DetailOnlyResponse(detail='If an account with this email exists, a login link has been sent.')
 
 
-class VerifyMagicLinkRequest(BaseModel):
+class VerifyMagicLinkRequest(GetAuthReturn):
     pass
 
 
 @ app.post('/auth/verify-magic-link/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
-async def verify_magic_link(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=True))]) -> VerifyMagicLinkRequest:
+async def verify_magic_link(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=True, override_lifetime=c.authentication['magic_link_expiry_timedelta']))], response: Response) -> VerifyMagicLinkRequest:
 
-    print(authorization)
-    return VerifyMagicLinkRequest()
+    auth_credential = make_auth_credential(
+        authorization.user.id, 'access_token')
+    set_access_token_cookie(jwt_encode(
+        auth_credential.export_to_jwt()), response)
 
-    # authorization= get_authorization_from_bearer(
-    # verify_magic_link_request.access_token, expiry_timedelta = c.authentication['magic_link_expiry_timedelta'], raise_exceptions = True, permitted_bearer_types = {'token'}, permitted_token_auth_sources = {'magic_link'})
-    # return LoginResponse(
-    # auth = GetAuthenticationNestedReturn(
-    #     user=authorization.user,
-    #     exception=authorization.exception
-    # ),
-    # token = make_token(authorization.user, 'verified_magic_link')
-    # )
+    # one time link, delete the auth_credential
+    authorization.auth_credential.delete_one_by_id(
+        authorization.auth_credential.id)
 
-    # class GoogleAuthResponse(LoginResponse):
-    #     pass
+    return VerifyMagicLinkRequest(
+        auth=GetAuthBaseReturn(
+            user=models.UserPrivate.model_validate(authorization.user),
+            # [user_scope.scope.id for user_scope in user.scopes],
+            scopes=set(),
+            expiry=auth_credential.expiry
+        )
+    )
 
-    # class GoogleAuthRequest(BaseModel):
-    #     access_token: str
 
-    # @ app.post("/auth/login/google/", responses={status.HTTP_400_BAD_REQUEST: {"description": 'Invalid token'}})
-    # async def login_with_google(request_token: GoogleAuthRequest) -> GoogleAuthResponse:
-    #     async with httpx.AsyncClient() as client:
-    #         response = await client.get('https://www.googleapis.com/oauth2/v3/userinfo?access_token={}'.format(request_token.access_token))
-    #         response.raise_for_status()
-    #         user_info = response.json()
-    #     # fields: sub, name, given_name, family_name, picture, email, email_verified
-    #     email = user_info.get('email')
-    #     if not email:
-    #         raise HTTPException(status.HTTP_400_BAD_REQUEST,
-    #                             detail='Invalid token')
-    #     with Session(c.db_engine) as session:
-    #         user = models.User.get_one_by_key_values(session, {'email': email})
-    #         if not user:
-    #             user_create = models.UserCreate(
-    #                 email=email,
-    #             )
-    #             user = user_create.create()
-    #             user.add_to_db(session)
-    #         return GoogleAuthResponse(
-    #             auth=GetAuthenticationReturn(
-    #                 user=models.UserPrivate.model_validate(user)),
-    #             token=make_token(user, 'google_oauth2')
-    #         )
+class GoogleAuthResponse(LoginResponse):
+    pass
+
+
+class GoogleAuthRequest(BaseModel):
+    access_token: str
+
+
+@ app.post("/auth/login/google/", responses={status.HTTP_400_BAD_REQUEST: {"description": 'Invalid token'}})
+async def login_with_google(request_token: GoogleAuthRequest, response: Response) -> GoogleAuthResponse:
+    async with httpx.AsyncClient() as client:
+        res = await client.get('https://www.googleapis.com/oauth2/v3/userinfo?access_token={}'.format(request_token.access_token))
+        res.raise_for_status()
+        user_info = res.json()
+
+    # fields: sub, name, given_name, family_name, picture, email, email_verified
+    email = user_info.get('email')
+    if not email:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            detail='Invalid token')
+    with Session(c.db_engine) as session:
+        user = models.User.get_one_by_key_values(session, {'email': email})
+        if not user:
+            user_create = models.UserCreate(
+                email=email,
+            )
+            user = user_create.create()
+            user.add_to_db(session)
+
+        auth_credential = make_auth_credential(
+            user.id, 'access_token')
+        set_access_token_cookie(jwt_encode(
+            auth_credential.export_to_jwt()), response)
+
+        return VerifyMagicLinkRequest(
+            auth=GetAuthBaseReturn(
+                user=models.UserPrivate.model_validate(user),
+                # [user_scope.scope.id for user_scope in user.scopes],
+                scopes=set(),
+                expiry=auth_credential.expiry
+            )
+        )
+
+
+def delete_access_token_cookie(response: Response):
+    response.delete_cookie(c.root_config['cookie_keys']['access_token'])
+
+
+@app.post('/auth/logout/')
+async def logout(response: Response, authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization(raise_exceptions=False))]) -> DetailOnlyResponse:
+
+    if authorization.auth_credential:
+        with Session(c.db_engine) as session:
+            models.AuthCredential.delete_one_by_id(session,
+                                                   authorization.auth_credential.id)
+
+    delete_access_token_cookie(response)
+    return DetailOnlyResponse(detail='Logged out')
 
 # # USERS
 
@@ -622,29 +669,42 @@ async def post_user(user_create: models.UserCreate) -> models.UserPrivate:
 #                                 detail=models.Gallery.not_found_message())
 #         return Response(status_code=204)
 # Page
-# class GetProfilePageResponse(GetAuthenticationReturn):
-#     user: models.UserPrivate | None = None
-# @ app.get('/profile/page/')
-# async def get_pages_profile(authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-#         get_authorization(raise_exceptions=True, permitted_bearer_types={'token'}))]) -> GetProfilePageResponse:
-#     with Session(c.db_engine) as session:
-#         user = models.User.get_one_by_id(session, authorization.user.id)
-#         if user is None:
-#             raise HTTPException(status.HTTP_404_NOT_FOUND,
-#                                 detail=models.User.not_found_message())
-#         # convert user to models.UserPrivate
-#         return GetProfilePageResponse(
-#             **get_authentication(authorization).model_dump(),
-#             user=models.UserPrivate.model_validate(user)
-#         )
-# class GetHomePageResponse(GetAuthenticationReturn):
-#     pass
-# @ app.get('/home/page/')
-# async def get_home_page(authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-#         get_authorization())]) -> GetHomePageResponse:
-#     return GetHomePageResponse(
-#         **get_authentication(authorization).model_dump()
-#     )
+
+
+class GetProfilePageResponse(GetAuthReturn):
+    user: models.UserPrivate | None = None
+
+
+@ app.get('/profile/page/')
+async def get_pages_profile(authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization(raise_exceptions=True))]) -> GetProfilePageResponse:
+
+    print('hello')
+    print(authorization)
+
+    with Session(c.db_engine) as session:
+        user = models.User.get_one_by_id(session, authorization.user.id)
+        if user is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail=models.User.not_found_message())
+        # convert user to models.UserPrivate
+        return GetProfilePageResponse(
+            **get_auth(authorization).model_dump(),
+            user=models.UserPrivate.model_validate(user)
+        )
+
+
+class GetHomePageResponse(GetAuthReturn):
+    pass
+
+
+@ app.get('/home/page/')
+async def get_home_page(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=False))]) -> GetHomePageResponse:
+
+    return GetHomePageResponse(
+        **get_auth(authorization).model_dump()
+    )
+
 # class GetGalleryPageResponse(AuthResponse):
 #     gallery: models.Gallery
 #     gallery_permission: models.GalleryPermission | None = None
@@ -669,5 +729,7 @@ async def post_user(user_create: models.UserCreate) -> models.UserPrivate:
 #             gallery=gallery,
 #             gallery_permission=gallery_permission
 #         )
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

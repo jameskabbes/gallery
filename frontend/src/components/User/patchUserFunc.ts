@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
 import { ExtractResponseTypes } from '../../types';
 import { callApi } from '../../utils/Api';
-import { AuthReducerAction, CallApiReturn, ToastContext } from '../../types';
+import { CallApiReturn, ToastContext, AuthContext } from '../../types';
 
 const API_ENDPOINT = '/users/{user_id}/';
 const API_METHOD = 'patch';
@@ -14,7 +14,7 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 async function patchUserFunc(
   userId: components['schemas']['UserPublic']['id'],
   formData: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json'],
-  authContextDispatch: React.Dispatch<AuthReducerAction>,
+  authContext: AuthContext,
   toastContext: ToastContext
 ): Promise<CallApiReturn<ResponseTypesByStatus[keyof ResponseTypesByStatus]>> {
   let toastId = toastContext.makePending({

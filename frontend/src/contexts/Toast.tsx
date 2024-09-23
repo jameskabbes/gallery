@@ -9,9 +9,7 @@ import {
 } from '../types';
 
 const toastReducerDefaultState: ToastContextState = {
-  toasts: new Map<string, Toast>([
-    ['1', { type: 'info', message: 'Welcome to the gallery!' }],
-  ]),
+  toasts: new Map<string, Toast>(),
 };
 
 function toastReducer(state: ToastContextState, action: ToastReducerAction) {

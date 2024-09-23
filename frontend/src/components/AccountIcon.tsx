@@ -1,24 +1,27 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { IoPersonCircleOutline } from 'react-icons/io5';
 import { IoMenuSharp } from 'react-icons/io5';
-import { AuthContext } from '../contexts/Auth';
 import { Link } from 'react-router-dom';
 
 import { useClickOutside } from '../utils/useClickOutside';
 import { GlobalModalsContext } from '../contexts/GlobalModals';
+import { ToastContext } from '../contexts/Toast';
+import { AuthContext } from '../contexts/Auth';
+import { logOut } from './Auth/logout';
 
 function AccountIcon() {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const authContext = useContext(AuthContext);
   const globalModalsContext = useContext(GlobalModalsContext);
+  const toastContext = useContext(ToastContext);
   useClickOutside(menuRef, () => setIsMenuVisible(false));
 
   const toggleMenu = () => {
     setIsMenuVisible(!isMenuVisible);
   };
 
-  const menuItems = authContext.state?.auth?.user
+  const menuItems = authContext.state.user
     ? [
         {
           element: <Link to="/profile">Profile</Link>,
@@ -28,7 +31,7 @@ function AccountIcon() {
           element: <span>Log Out</span>,
           onClick: () => {
             setIsMenuVisible(false);
-            authContext.dispatch({ type: 'LOGOUT' });
+            logOut(authContext, toastContext);
           },
         },
       ]

@@ -1,6 +1,4 @@
 import { paths, operations, components } from './openapi_schema';
-import config from '../../config.json';
-import { IoExitOutline } from 'react-icons/io5';
 
 interface CallApiProps<T> {
   endpoint: string;
@@ -217,24 +215,13 @@ interface ToastContext {
   update: (id: ToastId, toast: Partial<Toast>) => void;
 }
 
-interface LocalStorageBaseContext<T> {
-  setState: React.Dispatch<React.SetStateAction<T>>;
-}
+type AuthContextState = components['schemas']['GetAuthBaseReturn'];
 
-interface AuthContextState {
-  loggedIn: boolean;
-  user: components['schemas']['UserPrivate'];
-  token: {
-    token: components['schemas']['Token'];
-    scopes: string[];
-    expiry: Date;
-  };
-}
-
-interface AuthContext extends LocalStorageBaseContext<AuthContextState> {
+interface AuthContext {
   state: AuthContextState;
+  setState: React.Dispatch<React.SetStateAction<AuthContextState>>;
   logOut: () => void;
-  updateFromApiResponse: (data: any, status_code: number) => void;
+  updateFromApiResponse: (data: any) => void;
 }
 
 // interface AuthContextState {

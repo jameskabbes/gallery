@@ -4,6 +4,7 @@ import { paths, operations, components } from '../openapi_schema';
 import { ExtractResponseTypes } from '../types';
 import { useApiCall } from '../utils/Api';
 import { ToastContext } from '../contexts/Toast';
+import { AuthContext } from '../contexts/Auth';
 
 const API_PATH = '/home/page/';
 const API_METHOD = 'get';
@@ -15,6 +16,7 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 function Home() {
   let deviceContext = useContext(DeviceContext);
   let toastContext = useContext(ToastContext);
+  const authContext = useContext(AuthContext);
 
   const {
     data: apiData,
@@ -33,6 +35,12 @@ function Home() {
       <h1>Test again</h1>
       {/* <h1 className='loader'></h1>
       <h1 className='loader-secondary'></h1> */}
+
+      {authContext.state.user ? (
+        <p>Logged in as {authContext.state.user.email}</p>
+      ) : (
+        <p>not logged in</p>
+      )}
 
       <button
         className="button-primary"

@@ -49,8 +49,6 @@ async function callApi<TResponseData extends object, TRequestData = any>({
   } catch (error) {
     responseData = null;
   }
-  console.log(responseData);
-
   return { data: responseData, response };
 }
 
@@ -77,10 +75,7 @@ function useApiCall<TResponseData extends object, TRequestData = any>(
       setResponse(response);
       setData(data);
       if (updateAuth) {
-        authContext.dispatch({
-          type: 'UPDATE_FROM_API_RESPONSE',
-          payload: data,
-        });
+        authContext.updateFromApiResponse(data);
       }
       setLoading(false);
     };

@@ -25,15 +25,14 @@ function useLogInWithGoogle() {
       ResponseTypesByStatus[keyof ResponseTypesByStatus],
       TRequestData
     >({
-      endpoint: '/auth/google/',
-      method: 'post',
+      endpoint: API_ENDPOINT,
+      method: API_METHOD,
       data: request_data,
     });
 
     if (response.status == 200) {
       const apiData = data as ResponseTypesByStatus['200'];
-      authContext.dispatch({ type: 'SET_TOKEN', payload: apiData.token });
-      authContext.dispatch({ type: 'LOGIN', payload: apiData.auth });
+      authContext.updateFromApiResponse(apiData);
       logInContext.dispatch({ type: 'SET_ACTIVE', payload: false });
     }
   }

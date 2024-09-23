@@ -28,8 +28,7 @@ function Profile() {
       endpoint: API_PATH,
       method: API_METHOD,
     },
-    true,
-    [authContext.state.token]
+    true
   );
 
   if (loading || response.status == 200) {
@@ -43,9 +42,9 @@ function Profile() {
       <div>
         <h1>{data.user.username}</h1>
         <div className="w-80">
-          <UpdateUser user={apiData.user} />
+          {/* <UpdateUser user={apiData.user} />
           <UpdatePassword userId={apiData.user.id} />
-          <UpdateUsername user={apiData.user} />
+          <UpdateUsername user={apiData.user} /> */}
         </div>
       </div>
     );

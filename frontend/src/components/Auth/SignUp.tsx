@@ -69,21 +69,23 @@ function SignUp() {
 
       const { data, response } = await callApi<
         ResponseTypesByStatus[keyof ResponseTypesByStatus],
-        components['schemas']['UserCreate']
+        paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/x-www-form-urlencoded']
       >({
         endpoint: API_ENDPOINT,
         method: API_METHOD,
-        data: {
+        body: new URLSearchParams({
           email: signUpContext.state.email.value,
           password: signUpContext.state.password.value,
+        }).toString(),
+        overwriteHeaders: {
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
       });
       setLoading(false);
 
       if (response.status === 200) {
         const apiData = data as ResponseTypesByStatus['200'];
-        authContext.dispatch({ type: 'SET_TOKEN', payload: apiData.token });
-        authContext.dispatch({ type: 'LOGIN', payload: apiData.auth });
+        authContext.updateFromApiResponse(apiData);
         toastContext.make({
           message: 'Created new user: ' + apiData.auth.user.username,
           type: 'success',

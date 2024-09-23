@@ -13,38 +13,47 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 >;
 
 function VerifyMagicLink() {
-  const access_token: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['query']['access_token'] =
-    new URLSearchParams(useLocation().search).get('access_token');
-
-  console.log(access_token);
+  const access_token: string = new URLSearchParams(useLocation().search).get(
+    'access_token'
+  );
 
   const {
     data: apiData,
     loading,
     response,
-  } = useApiCall<
-    ResponseTypesByStatus[keyof ResponseTypesByStatus],
-    paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['query']
-  >(
+  } = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>(
     {
       endpoint: API_ENDPOINT.replace('{access_token}', access_token),
       method: API_METHOD,
-      data: { access_token: access_token },
+      overwriteHeaders: {
+        Authorization: `Bearer ${access_token}`,
+      },
     },
     true,
     [access_token]
   );
 
-  if (!loading) {
-    console.log(apiData);
+  if (loading) {
+    return (
+      <div>
+        <p>Verifying your magic link...</p>
+      </div>
+    );
+  } else {
+    if (response.status === 200) {
+      return (
+        <div>
+          <p>Magic link verified!</p>
+        </div>
+      );
+    } else {
+      return (
+        <div>
+          <p>Magic link verification failed</p>
+        </div>
+      );
+    }
   }
-
-  return (
-    <div>
-      <p>Verifying your magic link...</p>
-      {loading && <p>Loading...</p>}
-    </div>
-  );
 }
 
 export { VerifyMagicLink };

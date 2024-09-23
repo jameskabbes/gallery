@@ -74,12 +74,14 @@ function LogIn() {
 
       if (response.status == 200) {
         const apiData = data as ResponseTypesByStatus['200'];
-        authContext.dispatch({ type: 'SET_TOKEN', payload: apiData.token });
-        authContext.dispatch({ type: 'LOGIN', payload: apiData.auth });
+        authContext.updateFromApiResponse(apiData);
         logInContext.dispatch({ type: 'SET_ACTIVE', payload: false });
-
         toastContext.make({
-          message: `Welcome ${apiData.auth.user.username}`,
+          message: `Welcome ${
+            apiData.auth.user.username === null
+              ? apiData.auth.user.email
+              : apiData.auth.user.username
+          }`,
           type: 'success',
         });
       } else if (response.status == 401) {
