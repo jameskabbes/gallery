@@ -6,6 +6,8 @@ import { useApiCall } from '../utils/Api';
 import { ToastContext } from '../contexts/Toast';
 import { AuthContext } from '../contexts/Auth';
 
+import { Appearance } from '../components/Settings/Appearance';
+
 const API_PATH = '/home/page/';
 const API_METHOD = 'get';
 

@@ -53,7 +53,8 @@ const defaultInputState: InputState = {
 
 interface DarkModeContext {
   state: boolean;
-  toggle: () => void;
+  preference: 'light' | 'dark' | 'system';
+  setPreference: (preference: 'light' | 'dark' | 'system') => void;
 }
 
 type AuthModalsType = 'logIn' | 'signUp' | 'logInWithEmail';

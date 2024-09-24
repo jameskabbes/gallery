@@ -4,7 +4,7 @@ import { DataContextProvider } from './Data';
 import { ModalsContextProvider } from './Modals';
 import { DeviceContextProvider } from './Device';
 import { AuthContextProvider } from './Auth';
-import { GlobalModalsContextProvider } from './AuthModals';
+import { AuthModalsContextProvider } from './AuthModals';
 import { LogInContextProvider } from './LogIn';
 import { SignUpContextProvider } from './SignUp';
 import { LogInWithEmailContextProvider } from './LogInWithEmail';
@@ -24,11 +24,11 @@ const ApplicationContextProvider = ({ children }) => {
                   <LogInContextProvider>
                     <LogInWithEmailContextProvider>
                       <SignUpContextProvider>
-                        <GlobalModalsContextProvider>
+                        <AuthModalsContextProvider>
                           <ToastContextProvider>
                             {children}
                           </ToastContextProvider>
-                        </GlobalModalsContextProvider>
+                        </AuthModalsContextProvider>
                       </SignUpContextProvider>
                     </LogInWithEmailContextProvider>
                   </LogInContextProvider>

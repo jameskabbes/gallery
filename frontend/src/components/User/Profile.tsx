@@ -1,12 +1,12 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { paths, operations, components } from '../../../openapi_schema';
-import { ExtractResponseTypes } from '../../../types';
-import { useApiCall } from '../../../utils/Api';
-import { AuthContext } from '../../../contexts/Auth';
-import { UpdatePassword } from '../UpdatePassword';
-import { UpdateUser } from '../UpdateUser';
-import { GlobalModalsContext } from '../../../contexts/AuthModals';
-import { UpdateUsername } from '../UpdateUsername';
+import { paths, operations, components } from '../../openapi_schema';
+import { ExtractResponseTypes } from '../../types';
+import { useApiCall } from '../../utils/Api';
+import { AuthContext } from '../../contexts/Auth';
+import { UpdatePassword } from './UpdatePassword';
+import { UpdateUser } from './UpdateUser';
+import { AuthModalsContext } from '../../contexts/AuthModals';
+import { UpdateUsername } from './UpdateUsername';
 
 const API_PATH = '/profile/page/';
 const API_METHOD = 'get';
@@ -17,7 +17,7 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 
 function Profile() {
   const authContext = useContext(AuthContext);
-  const globalModalsContext = useContext(GlobalModalsContext);
+  const authModalsContext = useContext(AuthModalsContext);
 
   const {
     data: apiData,
@@ -53,7 +53,7 @@ function Profile() {
       <div className="flex-grow flex flex-col items-center justify-center">
         <button
           className="button-primary"
-          onClick={() => globalModalsContext.toggleModal('logIn')}
+          onClick={() => authModalsContext.toggleModal('logIn')}
         >
           <p>Login to continue</p>
         </button>

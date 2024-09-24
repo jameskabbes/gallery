@@ -6,7 +6,8 @@ import { Footer } from './components/Footer';
 import { ApplicationContextProvider } from './contexts/Application';
 import { Toast } from './components/Toast/Toast';
 import { Modals } from './components/Modal/Modals';
-import { Profile } from './components/User/pages/Profile';
+import { Profile } from './components/User/Profile';
+import { Settings } from './components/Settings/Settings';
 import { LogIn } from './components/Auth/LogIn';
 import { SignUp } from './components/Auth/SignUp';
 import { Gallery } from './components/Gallery/pages/Gallery';
@@ -29,9 +30,9 @@ function App(): JSX.Element {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/galleries/:gallery_id" element={<Gallery />} />
             <Route path="/404" element={<p>404</p>} />
-            <Route path="/settings" element={<Profile />} />
             <Route path="*" element={<Navigate to="/404" />} />
             <Route
               path={`${config.magic_link_frontend_url}`}

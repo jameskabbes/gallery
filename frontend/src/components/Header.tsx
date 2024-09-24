@@ -1,7 +1,6 @@
 import React, { useContext } from 'react';
-import { DarkModeToggle } from './DarkModeToggle';
 import { IoAperture } from 'react-icons/io5';
-import { AccountIcon } from './AccountIcon';
+import { Menu } from './Menu';
 import { Link } from 'react-router-dom';
 
 function Header(): JSX.Element {
@@ -17,11 +16,7 @@ function Header(): JSX.Element {
           </h5>
         </Link>
         <div className="flex flex-row items-center space-x-2">
-          <h6 className="mb-0">
-            <DarkModeToggle />
-          </h6>
-
-          <AccountIcon />
+          <Menu />
         </div>
       </div>
       <hr />
