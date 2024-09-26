@@ -37,6 +37,7 @@ function AuthModalsContextProvider({ children }: Props) {
   ]);
 
   function toggleModal(targetModal: AuthModalsType) {
+    console.log('toggleModal', targetModal);
     for (const modal of contextMap.keys()) {
       if (modal !== targetModal) {
         contextMap.get(modal).dispatch({ type: 'SET_ACTIVE', payload: false });

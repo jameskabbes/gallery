@@ -2,7 +2,7 @@
 # POST http://localhost:8087/auth/signup/
 # Content-Type: application/x-www-form-urlencoded
 
-# email=a2@a.com&password=password
+# email=a@a.com&password=password
 
 # login 
 # POST http://localhost:8087/auth/login/password/
@@ -10,10 +10,6 @@
 
 # username=a@a.com&password=password
 
-#get token from password auth
-# POST http://localhost:8087/token/
-
-# username=a@a.com&password=password
 
 # see common auth status
 # GET http://localhost:8087/auth/
@@ -32,6 +28,27 @@
 #Authorization: Bearer token
 
 # get user sessions
-GET http://localhost:8087/user/id/sessions/
-Cookie: access_token=token
+# GET http://localhost:8087/user/id/sessions/
+# Cookie: access_token=token
+
+# post auth credential
+# POST http://localhost:8087/auth-credentials/
+# Content-Type: application/json
+# Authorization: Bearer 
+
+# {
+#   "user_id": "dd77c149-fa4c-456a-baee-36c7ebb2e89d",
+#   "type": "api_key",
+#   "expiry": "2023-12-31T23:59:59Z"
+# }
+
+# DELETE http://localhost:8087/auth-credentials/8cfa7dc9-8a6a-4cd6-8da0-6bad8dc414a5
+# Authorization: Bearer token
+
+#test out admin endpoint
+# GET http://localhost:8087/users/d0d60a66-17fd-43c4-885f-71c6648f59a8/admin/
+# Authorization: Bearer token
+
+GET http://localhost:8087/users/d0d60a66-17fd-43c4-885f-71c6648f59a8/sessions/
+Authorization: Bearer 
 

@@ -135,6 +135,22 @@ class SingularCreate[TableType: Table](BaseModel):
         )
 
 
+# UserRole
+class UserRoleTypes:
+    id = str
+    name = str
+
+
+class UserRole(SQLModel, Table[UserRoleTypes.id], table=True):
+    __tablename__ = 'user_role'
+    id: UserRoleTypes.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
+    name: UserRoleTypes.name = Field(unique=True)
+    users: list['User'] = Relationship(back_populates='user_role')
+    user_role_scopes: list['UserRoleScope'] = Relationship(
+        back_populates='user_role')
+
+
 # User
 
 
@@ -147,6 +163,7 @@ class UserTypes:
     username = typing.Annotated[str, StringConstraints(
         min_length=3, max_length=20)]
     hashed_password = str
+    user_role_id = UserRoleTypes.id
 
 
 class UserBase:
@@ -157,6 +174,10 @@ class UserUpdate(BaseModel, UserBase):
     email: typing.Optional[UserTypes.email] = None
     password: typing.Optional[UserTypes.password] = None
     username: typing.Optional[UserTypes.username] = None
+
+
+class UserUpdateAdmin(UserUpdate):
+    user_role_id: typing.Optional[UserTypes.user_role_id] = None
 
 
 class UserPublic(BaseModel, UserBase):
@@ -178,14 +199,18 @@ class UserPrivate(BaseModel, UserBase):
 
 class User(SQLModel, Table[UserTypes.id], UserBase, table=True):
     __tablename__ = 'user'
-    id: UserTypes.id = Field(primary_key=True, index=True, unique=True)
+    id: UserTypes.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
     email: UserTypes.email = Field(index=True, unique=True)
     username: UserTypes.username = Field(
         index=True, unique=True, nullable=True, default=None)
     hashed_password: UserTypes.hashed_password | None = Field(default=None)
+    user_role_id: UserTypes.user_role_id = Field(
+        foreign_key=UserRole.__tablename__ + '.id', default='2')
 
     auth_credentials: list['AuthCredential'] = Relationship(
         back_populates='user')
+    user_role: UserRole = Relationship(back_populates='users')
 
     @classmethod
     def authenticate(cls, session: Session, email: UserTypes.email, password: UserTypes.password) -> typing.Self | None:
@@ -213,10 +238,14 @@ class User(SQLModel, Table[UserTypes.id], UserBase, table=True):
             return False
         return True
 
+    @property
+    def is_public(self) -> bool:
+        return self.username is not None
+
 
 class UserCreate(SingularCreate[User], UserBase):
     email: UserTypes.email
-    password: UserTypes.password | None = None
+    password: typing.Optional[UserTypes.password] = None
 
     _SINGULAR_MODEL: typing.ClassVar[typing.Type[User]] = User
 
@@ -231,26 +260,63 @@ class UserCreate(SingularCreate[User], UserBase):
 
 # Scope
 type ScopeName = typing.Literal[
+    'admin',
     'users.read',
     'users.write'
 ]
 
 
+class ScopeNames:
+    ADMIN: ScopeName = 'admin'
+    USERS_READ: ScopeName = 'users.read'
+    USERS_WRITE: ScopeName = 'users.write'
+
+
 class ScopeTypes:
-    id = int
+    id = str
     name = ScopeName
 
 
 class Scope(SQLModel, Table[ScopeTypes.id], table=True):
     __tablename__ = 'scope'
-    id: ScopeTypes.id = Field(primary_key=True, index=True, unique=True)
+    id: ScopeTypes.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
     name: str = Field(index=True, unique=True)
-    # auth_credentials: list['AuthCredential'] = Relationship(
-    #     back_populates='scopes')
+    auth_credential_scopes: list['AuthCredentialScope'] = Relationship(
+        back_populates='scope')
+    user_role_scopes: list['UserRoleScope'] = Relationship(
+        back_populates='scope')
 
     @classmethod
     def generate_id(cls):
         return len(cls.get_all_by_key_values(cls, {})) + 1
+
+
+# UserRoleScopes
+
+
+class UserRoleScopeTypes:
+    user_role_id = UserRoleTypes.id
+    scope_id = ScopeTypes.id
+
+
+type UserRoleScopeId = typing.Annotated[tuple[UserRoleScopeTypes.user_role_id,
+                                              UserRoleScopeTypes.scope_id], '(user_role_id, scope_id)']
+
+
+class UserRoleScope(SQLModel, Table[UserRoleScopeId], table=True):
+    __tablename__ = 'user_role_scope'
+    __table_args__ = (
+        PrimaryKeyConstraint('user_role_id', 'scope_id'),
+    )
+    _ID_COLS: typing.ClassVar[list[str]] = ['user_role_id', 'scope_id']
+    user_role_id: UserRoleTypes.id = Field(
+        primary_key=True, index=True, foreign_key=UserRole.__tablename__ + '.id')
+    scope_id: ScopeTypes.id = Field(
+        primary_key=True, index=True, foreign_key=Scope.__tablename__ + '.id')
+
+    user_role: UserRole = Relationship(back_populates='user_role_scopes')
+    scope: Scope = Relationship(back_populates='user_role_scopes')
 
 
 # AuthCredential
@@ -265,22 +331,27 @@ class AuthCredentialTypes:
     expiry = datetime_module.datetime
 
 
+class AuthCredentialUpdate(BaseModel):
+    expiry: AuthCredentialTypes.expiry
+
+
 class AuthCredential(SQLModel, Table[AuthCredentialTypes.id], table=True):
     __tablename__ = 'auth_credential'
 
     id: AuthCredentialTypes.id = Field(
-        primary_key=True, index=True, unique=True)
+        primary_key=True, index=True, unique=True, const=True)
     user_id: UserTypes.id = Field(
-        index=True, foreign_key=User.__tablename__ + '.id')
-    type: str = Field()
+        index=True, foreign_key=User.__tablename__ + '.id', const=True)
+    type: str = Field(const=True)
     issued: datetime_module.datetime = Field(
         default_factory=lambda: datetime_module.datetime.now(
-            datetime_module.timezone.utc)
+            datetime_module.timezone.utc), const=True
     )
     expiry: AuthCredentialTypes.expiry = Field()
 
-    # scopes: list[Scope] = Relationship(back_populates='auth_credentials')
     user: User = Relationship(back_populates='auth_credentials')
+    auth_credential_scopes: list['AuthCredentialScope'] = Relationship(
+        back_populates='auth_credential')
 
     class JWTExport(typing.TypedDict):
         sub: AuthCredentialTypes.id
@@ -325,34 +396,35 @@ class AuthCredentialCreate(SingularCreate[AuthCredential]):
     def create(self) -> AuthCredential:
         return AuthCredential(id=self._SINGULAR_MODEL.generate_id(), **self.model_dump())
 
+
 # AuthCredentialScope
 
 
-# class ScopeAssignmentTypes:
-#     auth_credential_id = AuthCredentialTypes.id
-#     scope_id = ScopeTypes.id
+class AuthCredentialScopeTypes:
+    auth_credential_id = AuthCredentialTypes.id
+    scope_id = ScopeTypes.id
 
 
-# class AuthCredentialScopeTypes:
-#     auth_credential_id = AuthCredentialTypes.id
-#     scope_id = ScopeTypes.id
+type AuthCredentialScopeId = typing.Annotated[tuple[AuthCredentialScopeTypes.auth_credential_id,
+                                                    AuthCredentialScopeTypes.scope_id], '(auth_credential_id, scope_id)'
+                                              ]
 
 
-# type AuthCredentialScopeId = tuple[AuthCredentialScopeTypes.auth_credential_id,
-#                                    AuthCredentialScopeTypes.scope_id]
+class AuthCredentialScope(SQLModel, Table[AuthCredentialScopeId], table=True):
+    __tablename__ = 'auth_credential_scope'
+    __table_args__ = (
+        PrimaryKeyConstraint('auth_credential_id', 'scope_id'),
+    )
+    _ID_COLS: typing.ClassVar[list[str]] = ['auth_credential_id', 'scope_id']
 
+    auth_credential_id: AuthCredentialScopeTypes.auth_credential_id = Field(
+        index=True, foreign_key=AuthCredential.__tablename__ + '.id')
+    scope_id: AuthCredentialScopeTypes.scope_id = Field(
+        index=True, foreign_key=Scope.__tablename__ + '.id')
 
-# class AuthCredentialScope(SQLModel, Table[AuthCredentialScopeId], table=True):
-#     __tablename__ = 'auth_credential_scope'
-#     __table_args__ = (
-#         PrimaryKeyConstraint('auth_credential_id', 'scope_id'),
-#     )
-#     _ID_COLS: typing.ClassVar[list[str]] = ['auth_credential_id', 'scope_id']
-
-#     auth_credential_id: AuthCredentialScopeTypes.auth_credential_id = Field(
-#         index=True, foreign_key=AuthCredential.__tablename__ + '.id')
-#     scope_id: AuthCredentialScopeTypes.scope_id = Field(
-#         index=True, foreign_key=Scope.__tablename__ + '.id')
+    auth_credential: AuthCredential = Relationship(
+        back_populates='auth_credential_scopes')
+    scope: Scope = Relationship(back_populates='auth_credential_scopes')
 
 
 # Gallery

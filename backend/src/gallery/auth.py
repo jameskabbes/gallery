@@ -63,3 +63,5 @@ EXCEPTION_MAPPING: dict[EXCEPTION, HTTPException] = {
     'not_permitted': not_permitted_exception(),
     'credentials': credentials_exception()
 }
+
+# Scopes

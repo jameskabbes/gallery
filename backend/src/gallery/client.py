@@ -1,6 +1,7 @@
 import typing
 import pathlib
-from gallery import config, utils
+from gallery import config, utils, models
+from sqlmodel import Session
 from sqlalchemy import create_engine, Engine
 from sqlmodel import SQLModel
 import datetime
@@ -145,6 +146,41 @@ class Client:
 
     def create_tables(self):
         SQLModel.metadata.create_all(self.db_engine)
+
+        with Session(self.db_engine) as session:
+
+            session.add_all(
+                [
+                    models.UserRole(id='1', name='admin'),
+                    models.UserRole(id='2', name='user')
+                ]
+            )
+            session.add_all(
+                [
+                    models.Scope(id='1', name='admin'),
+                    models.Scope(id='2', name='users.read'),
+                    models.Scope(id='3', name='users.write')
+                ]
+            )
+            session.add_all(
+                [
+                    # admin
+                    models.UserRoleScope(
+                        user_role_id='1', scope_id='1'),
+                    models.UserRoleScope(
+                        user_role_id='1', scope_id='2'),
+                    models.UserRoleScope(
+                        user_role_id='1', scope_id='3'),
+
+                    # user
+                    models.UserRoleScope(
+                        user_role_id='2', scope_id='2'),
+                    models.UserRoleScope(
+                        user_role_id='2', scope_id='3')
+                ]
+
+            )
+            session.commit()
 
     '''
         def sync_with_local(self):
