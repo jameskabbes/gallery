@@ -1,6 +1,5 @@
 import React from 'react';
 import { DarkModeContextProvider } from './DarkMode';
-import { DataContextProvider } from './Data';
 import { ModalsContextProvider } from './Modals';
 import { DeviceContextProvider } from './Device';
 import { AuthContextProvider } from './Auth';
@@ -17,25 +16,21 @@ const ApplicationContextProvider = ({ children }) => {
     <EscapeKeyContextProvider>
       <AuthContextProvider>
         <DeviceContextProvider>
-          <DataContextProvider>
-            <ModalsContextProvider>
-              <DarkModeContextProvider>
-                <LogInWithGoogleProvider>
-                  <LogInContextProvider>
-                    <LogInWithEmailContextProvider>
-                      <SignUpContextProvider>
-                        <AuthModalsContextProvider>
-                          <ToastContextProvider>
-                            {children}
-                          </ToastContextProvider>
-                        </AuthModalsContextProvider>
-                      </SignUpContextProvider>
-                    </LogInWithEmailContextProvider>
-                  </LogInContextProvider>
-                </LogInWithGoogleProvider>
-              </DarkModeContextProvider>
-            </ModalsContextProvider>
-          </DataContextProvider>
+          <ModalsContextProvider>
+            <DarkModeContextProvider>
+              <LogInWithGoogleProvider>
+                <LogInContextProvider>
+                  <LogInWithEmailContextProvider>
+                    <SignUpContextProvider>
+                      <AuthModalsContextProvider>
+                        <ToastContextProvider>{children}</ToastContextProvider>
+                      </AuthModalsContextProvider>
+                    </SignUpContextProvider>
+                  </LogInWithEmailContextProvider>
+                </LogInContextProvider>
+              </LogInWithGoogleProvider>
+            </DarkModeContextProvider>
+          </ModalsContextProvider>
         </DeviceContextProvider>
       </AuthContextProvider>
     </EscapeKeyContextProvider>
