@@ -12,9 +12,9 @@ import { AuthModalsContext } from '../../contexts/AuthModals';
 import { ToastContext } from '../../contexts/Toast';
 
 import { Modal } from '../Modal/Modal';
-import { isEmailAvailable } from '../User/isEmailAvailable';
-import { isEmailValid } from '../User/isEmailValid';
-import { isPasswordValid } from '../User/isPasswordValid';
+import { isEmailValid } from '../../services/api/isEmailValid';
+import { isEmailAvailable } from '../../services/api/isEmailAvailable';
+import { isPasswordValid } from '../../services/api/isPasswordValid';
 import { InputText } from '../Form/InputText';
 import { InputState } from '../../types';
 import { IoWarning } from 'react-icons/io5';

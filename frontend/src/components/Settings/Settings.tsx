@@ -1,72 +1,88 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/Auth';
+import { ToastContext } from '../../contexts/Toast';
 import { Appearance } from './Appearance';
 import { Sessions } from './Sessions';
+import { paths, operations, components } from '../../openapi_schema';
+import { ExtractResponseTypes } from '../../types';
+import { useApiCall } from '../../utils/Api';
 
 import { IoBrush } from 'react-icons/io5';
 import { IoRadioOutline } from 'react-icons/io5';
 
+const API_ENDPOINT = '/settings/page/';
+const API_METHOD = 'get';
+
+type ResponseTypesByStatus = ExtractResponseTypes<
+  paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
+>;
+
 function Settings(): JSX.Element {
   const authContext = useContext(AuthContext);
-  const defaultSelection = 'appearance';
-
-  const [selection, setSelection] = useState<string>(defaultSelection);
-
-  const baseSelectionComponentMapping = {
+  const toastContext = useContext(ToastContext);
+  const selectionComponentMapping = {
     appearance: {
       icon: <IoBrush />,
       name: 'Appearance',
       component: <Appearance />,
     },
-  };
-
-  const loggedInSelectionComponentMapping = {
     sessions: {
       icon: <IoRadioOutline />,
       name: 'Sessions',
-      component: <Sessions />,
+      component: (
+        <Sessions authContext={authContext} toastContext={toastContext} />
+      ),
     },
   };
+
+  const loggedInComponentKeys = new Set(['sessions']);
+
+  const defaultSelection = 'appearance';
+  const [selection, setSelection] = useState(defaultSelection);
+
+  const {
+    data: apiData,
+    loading,
+    response,
+  } = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>(
+    {
+      endpoint: API_ENDPOINT,
+      method: API_METHOD,
+    },
+    true
+  );
 
   useEffect(() => {
     if (
       authContext.state.user === null &&
-      !(selection in loggedInSelectionComponentMapping)
+      loggedInComponentKeys.has(selection)
     ) {
       setSelection(defaultSelection);
     }
   }, [authContext.state.user]);
-
-  const selectionComponentMapping =
-    authContext.state.user !== null
-      ? {
-          ...baseSelectionComponentMapping,
-          ...loggedInSelectionComponentMapping,
-        }
-      : baseSelectionComponentMapping;
-
-  if (!(selection in selectionComponentMapping)) {
-    setSelection(defaultSelection);
-  }
 
   return (
     <>
       <h1>Settings</h1>
       <div className="flex flex-row">
         <div className="flex flex-col">
-          {Object.keys(selectionComponentMapping).map((key) => (
-            <button
-              key={key}
-              onClick={() => setSelection(key)}
-              className={selection === key ? 'bg-color-darker' : ''}
-            >
-              <div className="flex flex-row space-x-1 items-center">
-                {selectionComponentMapping[key].icon}
-                <span>{selectionComponentMapping[key].name}</span>
-              </div>
-            </button>
-          ))}
-          {/* Add more buttons for other settings options here */}
+          {Object.keys(selectionComponentMapping).map((key) => {
+            if (authContext.state.user || !loggedInComponentKeys.has(key)) {
+              return (
+                <button
+                  key={key}
+                  onClick={() => setSelection(key)}
+                  className={selection === key ? 'bg-color-darker' : ''}
+                >
+                  <div className="flex flex-row space-x-1 items-center">
+                    {selectionComponentMapping[key].icon}
+                    <span>{selectionComponentMapping[key].name}</span>
+                  </div>
+                </button>
+              );
+            }
+          })}
         </div>
         <div>{selectionComponentMapping[selection].component}</div>
       </div>

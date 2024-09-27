@@ -567,8 +567,36 @@ async def get_user_sessions(
 
         return active_sessions
 
-# API Keys
 
+@ app.delete('/auth-credentials/{auth_credential_id}/', status_code=204, responses={
+    status.HTTP_403_FORBIDDEN: {"description": 'User does not have permission to delete this auth credential', 'model': DetailOnlyResponse},
+    status.HTTP_404_NOT_FOUND: {
+        "description": models.AuthCredential.not_found_message(), 'model': NotFoundResponse}
+})
+async def delete_auth_credential(
+    auth_credential_id: models.AuthCredentialTypes.id,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization())]
+) -> Response:
+
+    with Session(c.db_engine) as session:
+        auth_credential = models.AuthCredential.get_one_by_id(
+            session, auth_credential_id)
+
+        if not auth_credential:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail=models.AuthCredential.not_found_message())
+
+        if auth_credential.user_id != authorization.user.id:
+            raise auth.not_permitted_exception()
+
+        if models.AuthCredential.delete_one_by_id(session, auth_credential_id) == 0:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail=models.AuthCredential.not_found_message())
+
+        return Response(status_code=204)
+
+# API Keys
 
 # @ app.get('/auth-credentials/{auth_credential_id}/', responses={status.HTTP_404_NOT_FOUND: {"description": models.AuthCredential.not_found_message(), 'model': NotFoundResponse}})
 # async def get_auth_credential(auth_credential_id: models.AuthCredentialTypes.id, authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> models.AuthCredential:
@@ -602,16 +630,6 @@ async def get_user_sessions(
 #         auth_credential.sqlmodel_update(auth_credential_update)
 #         auth_credential.add_to_db(session)
 #         return auth_credential
-
-
-# @ app.delete('/auth-credentials/{auth_credential_id}/')
-# async def delete_auth_credential(auth_credential_id: models.AuthCredentialTypes.id, authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> Response:
-
-#     with Session(c.db_engine) as session:
-#         if models.AuthCredential.delete_one_by_id(session, auth_credential_id) == 0:
-#             raise HTTPException(status.HTTP_404_NOT_FOUND,
-#                                 detail=models.AuthCredential.not_found_message())
-#         return Response(status_code=204)
 
     # # Gallery
     # async def get_gallery_available_params(
@@ -748,6 +766,18 @@ async def get_home_page(authorization: typing.Annotated[GetAuthorizationReturn, 
     return GetHomePageResponse(
         **get_auth(authorization).model_dump()
     )
+
+
+class GetSettingsPageResponse(GetAuthReturn):
+    pass
+
+
+@app.get('/settings/page/')
+async def get_settings_page(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=False))]) -> GetSettingsPageResponse:
+    return GetSettingsPageResponse(
+        **get_auth(authorization).model_dump()
+    )
+
 
 # class GetGalleryPageResponse(AuthResponse):
 #     gallery: models.Gallery

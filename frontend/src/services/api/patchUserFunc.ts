@@ -4,7 +4,7 @@ import { ExtractResponseTypes } from '../../types';
 import { callApi } from '../../utils/Api';
 import { CallApiReturn, ToastContext, AuthContext } from '../../types';
 
-const API_ENDPOINT = '/users/{user_id}/';
+const API_ENDPOINT = '/user/';
 const API_METHOD = 'patch';
 
 type ResponseTypesByStatus = ExtractResponseTypes<
@@ -12,7 +12,6 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 >;
 
 async function patchUserFunc(
-  userId: components['schemas']['UserPublic']['id'],
   formData: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json'],
   authContext: AuthContext,
   toastContext: ToastContext
@@ -24,7 +23,7 @@ async function patchUserFunc(
     ResponseTypesByStatus[keyof ResponseTypesByStatus],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >({
-    endpoint: API_ENDPOINT.replace('{user_id}', userId),
+    endpoint: API_ENDPOINT,
     method: API_METHOD,
     data: formData,
   });
@@ -39,17 +38,8 @@ async function patchUserFunc(
       message: `Updated user`,
       type: 'success',
     });
-  } else if (
-    response.status === 401 ||
-    response.status === 403 ||
-    response.status === 404 ||
-    response.status === 409
-  ) {
-    const apiData = data as ResponseTypesByStatus[
-      | '401'
-      | '403'
-      | '404'
-      | '409'];
+  } else if (response.status === 404 || response.status === 409) {
+    const apiData = data as ResponseTypesByStatus['404' | '409'];
     toastContext.update(toastId, {
       message: apiData.detail,
       type: 'error',

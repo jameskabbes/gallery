@@ -401,10 +401,7 @@ class AuthCredential(SQLModel, Table[AuthCredentialTypes.id], table=True):
     user_id: UserTypes.id = Field(
         index=True, foreign_key=User.__tablename__ + '.id', const=True)
     type: str = Field(const=True)
-    issued: datetime_module.datetime = Field(
-        default_factory=lambda: datetime_module.datetime.now(
-            datetime_module.timezone.utc), const=True
-    )
+    issued: datetime_module.datetime = Field(const=True)
     expiry: AuthCredentialTypes.expiry = Field()
 
     user: User = Relationship(back_populates='auth_credentials')
@@ -452,8 +449,10 @@ class AuthCredentialCreate(SingularCreate[AuthCredential]):
                                      ] = AuthCredential
 
     def create(self) -> AuthCredential:
-        return AuthCredential(id=self._SINGULAR_MODEL.generate_id(), **self.model_dump())
-
+        return AuthCredential(
+            id=self._SINGULAR_MODEL.generate_id(),
+            issued=datetime_module.datetime.now(datetime_module.timezone.utc),
+            **self.model_dump())
 
 # AuthCredentialScope
 

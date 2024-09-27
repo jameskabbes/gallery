@@ -11,7 +11,7 @@ import { AuthModalsContext } from '../../contexts/AuthModals';
 import { ExtractResponseTypes } from '../../types';
 import { callApi } from '../../utils/Api';
 import { IoWarning } from 'react-icons/io5';
-import { isEmailValid } from '../User/isEmailValid';
+import { isEmailValid } from '../../services/api/isEmailValid';
 import { IoMail } from 'react-icons/io5';
 import { useLogInWithGoogle } from './LogInWithGoogle';
 

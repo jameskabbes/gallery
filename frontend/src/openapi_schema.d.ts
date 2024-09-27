@@ -5,6 +5,20 @@
 
 
 export interface paths {
+  "/admin/users/{user_id}": {
+    /** Get User By Id Admin */
+    get: operations["get_user_by_id_admin_admin_users__user_id__get"];
+  };
+  "/admin/users/": {
+    /** Post User Admin */
+    post: operations["post_user_admin_admin_users__post"];
+  };
+  "/admin/users/{user_id}/": {
+    /** Delete User Admin */
+    delete: operations["delete_user_admin_admin_users__user_id___delete"];
+    /** Patch User Admin */
+    patch: operations["patch_user_admin_admin_users__user_id___patch"];
+  };
   "/auth/": {
     /** Auth Root */
     get: operations["auth_root_auth__get"];
@@ -45,43 +59,21 @@ export interface paths {
     /** User Email Available */
     get: operations["user_email_available_users_available_email__email___get"];
   };
-  "/users/username/{username}/": {
-    /** Get User By Username */
-    get: operations["get_user_by_username_users_username__username___get"];
-  };
-  "/users/{user_id}/": {
-    /** Get User By Id */
-    get: operations["get_user_by_id_users__user_id___get"];
+  "/user/": {
+    /** Get User */
+    get: operations["get_user_user__get"];
     /** Delete User */
-    delete: operations["delete_user_users__user_id___delete"];
+    delete: operations["delete_user_user__delete"];
     /** Patch User */
-    patch: operations["patch_user_users__user_id___patch"];
+    patch: operations["patch_user_user__patch"];
   };
-  "/users/{user_id}/admin/": {
-    /** Get User By Id Admin */
-    get: operations["get_user_by_id_admin_users__user_id__admin__get"];
-    /** Patch User Admin */
-    patch: operations["patch_user_admin_users__user_id__admin__patch"];
-  };
-  "/users/": {
-    /** Post User */
-    post: operations["post_user_users__post"];
-  };
-  "/users/{user_id}/sessions/": {
+  "/sessions/": {
     /** Get User Sessions */
-    get: operations["get_user_sessions_users__user_id__sessions__get"];
+    get: operations["get_user_sessions_sessions__get"];
   };
   "/auth-credentials/{auth_credential_id}/": {
-    /** Get Auth Credential */
-    get: operations["get_auth_credential_auth_credentials__auth_credential_id___get"];
     /** Delete Auth Credential */
     delete: operations["delete_auth_credential_auth_credentials__auth_credential_id___delete"];
-    /** Patch Auth Credential */
-    patch: operations["patch_auth_credential_auth_credentials__auth_credential_id___patch"];
-  };
-  "/auth-credentials/": {
-    /** Post Auth Credential */
-    post: operations["post_auth_credential_auth_credentials__post"];
   };
   "/profile/page/": {
     /** Get Pages Profile */
@@ -90,6 +82,10 @@ export interface paths {
   "/home/page/": {
     /** Get Home Page */
     get: operations["get_home_page_home_page__get"];
+  };
+  "/settings/page/": {
+    /** Get Settings Page */
+    get: operations["get_settings_page_settings_page__get"];
   };
 }
 
@@ -109,28 +105,7 @@ export interface components {
        * Issued
        * Format: date-time
        */
-      issued?: string;
-      /**
-       * Expiry
-       * Format: date-time
-       */
-      expiry: string;
-    };
-    /** AuthCredentialCreate */
-    AuthCredentialCreate: {
-      /** User Id */
-      user_id: string;
-      type: components["schemas"]["AuthCredentialType"];
-      /**
-       * Expiry
-       * Format: date-time
-       */
-      expiry: string;
-    };
-    /** @enum {string} */
-    AuthCredentialType: "access_token" | "api_key";
-    /** AuthCredentialUpdate */
-    AuthCredentialUpdate: {
+      issued: string;
       /**
        * Expiry
        * Format: date-time
@@ -208,6 +183,10 @@ export interface components {
     GetProfilePageResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
       user?: components["schemas"]["UserPrivate"] | null;
+    };
+    /** GetSettingsPageResponse */
+    GetSettingsPageResponse: {
+      auth: components["schemas"]["GetAuthBaseReturn"];
     };
     /** GoogleAuthRequest */
     GoogleAuthRequest: {
@@ -290,13 +269,6 @@ export interface components {
       /** Username */
       username: string | null;
     };
-    /** UserPublic */
-    UserPublic: {
-      /** Id */
-      id: string;
-      /** Username */
-      username: string | null;
-    };
     /** UserUpdate */
     UserUpdate: {
       /** Email */
@@ -344,6 +316,109 @@ export type external = Record<string, never>;
 
 export interface operations {
 
+  /** Get User By Id Admin */
+  get_user_by_id_admin_admin_users__user_id__get: {
+    parameters: {
+      path: {
+        user_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["User"];
+        };
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Post User Admin */
+  post_user_admin_admin_users__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UserCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["User"];
+        };
+      };
+      /** @description User already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Delete User Admin */
+  delete_user_admin_admin_users__user_id___delete: {
+    parameters: {
+      path: {
+        user_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      204: {
+        content: never;
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Patch User Admin */
+  patch_user_admin_admin_users__user_id___patch: {
+    parameters: {
+      path: {
+        user_id: string;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UserUpdateAdmin"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["User"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   /** Auth Root */
   auth_root_auth__get: {
     responses: {
@@ -553,66 +628,27 @@ export interface operations {
       };
     };
   };
-  /** Get User By Username */
-  get_user_by_username_users_username__username___get: {
-    parameters: {
-      path: {
-        username: string;
-      };
-    };
+  /** Get User */
+  get_user_user__get: {
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["UserPublic"];
+          "application/json": components["schemas"]["UserPrivate"];
         };
       };
       /** @description User not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Get User By Id */
-  get_user_by_id_users__user_id___get: {
-    parameters: {
-      path: {
-        user_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["UserPublic"];
-        };
-      };
-      /** @description User not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
   };
   /** Delete User */
-  delete_user_users__user_id___delete: {
+  delete_user_user__delete: {
     parameters: {
-      path: {
+      query: {
         user_id: string;
       };
     };
@@ -620,12 +656,6 @@ export interface operations {
       /** @description Successful Response */
       204: {
         content: never;
-      };
-      /** @description User does not have permission to delete this user */
-      403: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
       };
       /** @description User not found */
       404: {
@@ -642,12 +672,7 @@ export interface operations {
     };
   };
   /** Patch User */
-  patch_user_users__user_id___patch: {
-    parameters: {
-      path: {
-        user_id: string;
-      };
-    };
+  patch_user_user__patch: {
     requestBody: {
       content: {
         "application/json": components["schemas"]["UserUpdate"];
@@ -660,18 +685,6 @@ export interface operations {
           "application/json": components["schemas"]["UserPrivate"];
         };
       };
-      /** @description Invalid token */
-      401: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description User does not have permission to update this user */
-      403: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
       /** @description User not found */
       404: {
         content: {
@@ -679,113 +692,6 @@ export interface operations {
         };
       };
       /** @description Username or email already exists */
-      409: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Get User By Id Admin */
-  get_user_by_id_admin_users__user_id__admin__get: {
-    parameters: {
-      path: {
-        user_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["User"];
-        };
-      };
-      /** @description User not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Patch User Admin */
-  patch_user_admin_users__user_id__admin__patch: {
-    parameters: {
-      path: {
-        user_id: string;
-      };
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UserUpdateAdmin"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["User"];
-        };
-      };
-      /** @description Invalid token */
-      401: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description User does not have permission to update this user */
-      403: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description User not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Username or email already exists */
-      409: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Post User */
-  post_user_users__post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UserCreate"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["UserPrivate"];
-        };
-      };
-      /** @description User already exists */
       409: {
         content: {
           "application/json": components["schemas"]["DetailOnlyResponse"];
@@ -800,12 +706,7 @@ export interface operations {
     };
   };
   /** Get User Sessions */
-  get_user_sessions_users__user_id__sessions__get: {
-    parameters: {
-      path: {
-        user_id: string;
-      };
-    };
+  get_user_sessions_sessions__get: {
     responses: {
       /** @description Successful Response */
       200: {
@@ -819,40 +720,6 @@ export interface operations {
           "application/json": components["schemas"]["NotFoundResponse"];
         };
       };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Get Auth Credential */
-  get_auth_credential_auth_credentials__auth_credential_id___get: {
-    parameters: {
-      path: {
-        auth_credential_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["AuthCredential"];
-        };
-      };
-      /** @description AuthCredential not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
     };
   };
   /** Delete Auth Credential */
@@ -864,58 +731,19 @@ export interface operations {
     };
     responses: {
       /** @description Successful Response */
-      200: {
+      204: {
+        content: never;
+      };
+      /** @description User does not have permission to delete this auth credential */
+      403: {
         content: {
-          "application/json": unknown;
+          "application/json": components["schemas"]["DetailOnlyResponse"];
         };
       };
-      /** @description Validation Error */
-      422: {
+      /** @description AuthCredential not found */
+      404: {
         content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Patch Auth Credential */
-  patch_auth_credential_auth_credentials__auth_credential_id___patch: {
-    parameters: {
-      path: {
-        auth_credential_id: string;
-      };
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["AuthCredentialUpdate"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["AuthCredential"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Post Auth Credential */
-  post_auth_credential_auth_credentials__post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["AuthCredentialCreate"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["AuthCredential"];
+          "application/json": components["schemas"]["NotFoundResponse"];
         };
       };
       /** @description Validation Error */
@@ -944,6 +772,17 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["GetHomePageResponse"];
+        };
+      };
+    };
+  };
+  /** Get Settings Page */
+  get_settings_page_settings_page__get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["GetSettingsPageResponse"];
         };
       };
     };

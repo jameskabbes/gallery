@@ -4,9 +4,9 @@ import { InputState, defaultInputState } from '../../types';
 import openapi_schema from '../../../../openapi_schema.json';
 import { AuthContext } from '../../contexts/Auth';
 import { ToastContext } from '../../contexts/Toast';
-import { patchUserFunc } from './patchUserFunc';
 import { components } from '../../openapi_schema';
-import { isUsernameAvailable } from './isUsernameAvailable';
+import { isUsernameAvailable } from '../../services/api/isUsernameAvailable';
+import { patchUserFunc } from '../../services/api/patchUserFunc';
 
 interface Props {
   user: components['schemas']['UserPrivate'];
@@ -37,7 +37,6 @@ function UpdateUsername({ user }: Props) {
     e.preventDefault();
     if (valid && authContext.state.user !== null) {
       let { data, response } = await patchUserFunc(
-        user.id,
         {
           username: username.value,
         },
@@ -62,11 +61,11 @@ function UpdateUsername({ user }: Props) {
           setState={setUsername}
           id="username"
           minLength={
-            openapi_schema.components.schemas.UserPublic.properties.username
+            openapi_schema.components.schemas.UserUpdate.properties.username
               .anyOf[0].minLength
           }
           maxLength={
-            openapi_schema.components.schemas.UserPublic.properties.username
+            openapi_schema.components.schemas.UserUpdate.properties.username
               .anyOf[0].maxLength
           }
           type="text"

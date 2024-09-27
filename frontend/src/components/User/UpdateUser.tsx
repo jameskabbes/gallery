@@ -5,9 +5,9 @@ import { paths, operations, components } from '../../openapi_schema';
 import openapi_schema from '../../../../openapi_schema.json';
 import { AuthContext } from '../../contexts/Auth';
 import { ToastContext } from '../../contexts/Toast';
-import { patchUserFunc } from './patchUserFunc';
-import { isEmailAvailable } from './isEmailAvailable';
-import { isEmailValid } from './isEmailValid';
+import { patchUserFunc } from '../../services/api/patchUserFunc';
+import { isEmailValid } from '../../services/api/isEmailValid';
+import { isEmailAvailable } from '../../services/api/isEmailAvailable';
 
 interface Props {
   user: components['schemas']['UserPrivate'];
@@ -42,7 +42,6 @@ function UpdateUser({ user }: Props) {
     if (valid && authContext.state.user !== null) {
       setLoading(true);
       const { data, response } = await patchUserFunc(
-        user.id,
         {
           email: email.value,
         },

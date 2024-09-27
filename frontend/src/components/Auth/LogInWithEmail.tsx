@@ -9,7 +9,7 @@ import { AuthModalsContext } from '../../contexts/AuthModals';
 import { LogInWithEmailContext } from '../../contexts/LogInWithEmail';
 
 import { Modal } from '../Modal/Modal';
-import { isEmailValid } from '../User/isEmailValid';
+import { isEmailValid } from '../../services/api/isEmailValid';
 import { InputText } from '../Form/InputText';
 import { InputState } from '../../types';
 

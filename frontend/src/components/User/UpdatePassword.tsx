@@ -3,15 +3,13 @@ import { InputText } from '../Form/InputText';
 import { InputState, defaultInputState } from '../../types';
 import openapi_schema from '../../../../openapi_schema.json';
 import { AuthContext } from '../../contexts/Auth';
-import { patchUserFunc } from './patchUserFunc';
 import { components } from '../../openapi_schema';
 import { ToastContext } from '../../contexts/Toast';
+import { patchUserFunc } from '../../services/api/patchUserFunc';
 
-interface Props {
-  userId: components['schemas']['UserPublic']['id'];
-}
+interface Props {}
 
-function UpdatePassword({ userId }: Props) {
+function UpdatePassword() {
   const [password, setPassword] = useState<InputState>({
     ...defaultInputState,
   });
@@ -30,7 +28,6 @@ function UpdatePassword({ userId }: Props) {
     e.preventDefault();
     if (valid && authContext.state.user !== null) {
       let { data, response } = await patchUserFunc(
-        userId,
         {
           password: password.value,
         },
