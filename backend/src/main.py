@@ -77,6 +77,7 @@ oauth2_scheme = OAuth2PasswordBearerMultiSource(
 
 
 def make_auth_credential(
+    session: Session,
     user_id: models.UserTypes.id,
     auth_credential_type: models.AuthCredentialType,
     lifespan: typing.Annotated[datetime.timedelta | None,
@@ -85,22 +86,21 @@ def make_auth_credential(
                                       'The datetime at which the token will expire'] = None
 ) -> models.AuthCredential:
 
-    with Session(c.db_engine) as session:
-        if expiry_datetime == None and lifespan == None:
-            raise ValueError(
-                'Either expiry_timedelta or expiry_datetime must be provided')
+    if expiry_datetime == None and lifespan == None:
+        raise ValueError(
+            'Either expiry_timedelta or expiry_datetime must be provided')
 
-        if expiry_datetime == None:
-            expiry_datetime = datetime.datetime.now(
-                datetime.UTC) + lifespan
+    if expiry_datetime == None:
+        expiry_datetime = datetime.datetime.now(
+            datetime.UTC) + lifespan
 
-        auth_credential = models.AuthCredentialCreate(
-            user_id=user_id,
-            type=auth_credential_type,
-            expiry=expiry_datetime
-        ).create()
-        auth_credential.add_to_db(session)
-        return auth_credential
+    auth_credential = models.AuthCredentialCreate(
+        user_id=user_id,
+        type=auth_credential_type,
+        expiry=expiry_datetime
+    ).create()
+    auth_credential.add_to_db(session)
+    return auth_credential
 
 
 class DetailOnlyResponse(BaseModel):
@@ -258,7 +258,7 @@ def get_auth(get_authorization_return: GetAuthorizationReturn) -> GetAuthReturn:
 async def get_user_by_id_admin(
     user_id: models.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=True, required_scopes={'admin'}))]
+        get_authorization(raise_exceptions=True, required_scopes={models.ScopeNames.ADMIN}))]
 ) -> models.User:
     with Session(c.db_engine) as session:
         return await models.User.get(session, user_id)
@@ -268,7 +268,7 @@ async def get_user_by_id_admin(
 async def post_user_admin(
     user_create: models.UserCreate,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=True, required_scopes={'admin'}))]
+        get_authorization(raise_exceptions=True, required_scopes={models.ScopeNames.ADMIN}))]
 ) -> models.User:
     with Session(c.db_engine) as session:
         return models.UserCreate.post(session, user_create)
@@ -279,7 +279,7 @@ async def patch_user_admin(
     user_id: models.UserTypes.id,
     user_update: models.UserUpdateAdmin,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=True, required_scopes={'admin'}))]
+        get_authorization(raise_exceptions=True, required_scopes={models.ScopeNames.ADMIN}))]
 ) -> models.User:
     with Session(c.db_engine) as session:
         return models.User.patch(session, user_id, user_update)
@@ -289,7 +289,7 @@ async def patch_user_admin(
 async def delete_user_admin(
     user_id: models.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=True, required_scopes={'admin'}))]
+        get_authorization(raise_exceptions=True, required_scopes={models.ScopeNames.ADMIN}))]
 ):
     with Session(c.db_engine) as session:
         if models.User.delete(session, user_id):
@@ -326,10 +326,11 @@ def set_access_token_cookie(access_token: str, response: Response):
 @ app.post('/token/')
 async def post_token(user: typing.Annotated[models.User, Depends(authenticate_user_with_password)], response: Response):
 
-    auth_credential = make_auth_credential(
-        user.id, 'access_token')
-    set_access_token_cookie(jwt_encode(
-        auth_credential.export_to_jwt()), response)
+    with Session(c.db_engine) as session:
+        auth_credential = make_auth_credential(session,
+                                               user.id, 'access_token')
+        set_access_token_cookie(jwt_encode(
+            auth_credential.export_to_jwt()), response)
 
     return
 
@@ -341,18 +342,22 @@ class LoginResponse(GetAuthReturn):
 @ app.post('/auth/login/password/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Could not validate credentials', 'model': DetailOnlyResponse}})
 async def login(user: typing.Annotated[models.User, Depends(authenticate_user_with_password)], response: Response) -> LoginResponse:
 
-    auth_credential = make_auth_credential(user.id, 'access_token')
-    set_access_token_cookie(jwt_encode(
-        auth_credential.export_to_jwt()), response)
+    with Session(c.db_engine) as session:
 
-    return LoginResponse(
-        auth=GetAuthBaseReturn(
-            user=models.UserPrivate.model_validate(user),
-            # [user_scope.scope.id for user_scope in user.scopes],
-            scopes=set(),
-            expiry=auth_credential.expiry
+        auth_credential = make_auth_credential(
+            session, user.id, 'access_token')
+        set_access_token_cookie(jwt_encode(
+            auth_credential.export_to_jwt()), response)
+
+        return LoginResponse(
+            auth=GetAuthBaseReturn(
+                user=models.UserPrivate.model_validate(user),
+                # [user_scope.scope.id for user_scope in user.scopes],
+                scopes=[
+                    auth_credential_scope.scope.name for auth_credential_scope in auth_credential.auth_credential_scopes],
+                expiry=auth_credential.expiry
+            )
         )
-    )
 
 
 class SignupResponse(GetAuthReturn):
@@ -371,18 +376,19 @@ async def sign_up(
     with Session(c.db_engine) as session:
         user = user_create.post(session)
 
-    auth_credential = make_auth_credential(user.id, 'access_token')
-    set_access_token_cookie(jwt_encode(
-        auth_credential.export_to_jwt()), response)
+        auth_credential = make_auth_credential(
+            session, user.id, 'access_token')
+        set_access_token_cookie(jwt_encode(
+            auth_credential.export_to_jwt()), response)
 
-    return SignupResponse(
-        auth=GetAuthBaseReturn(
-            user=models.UserPrivate.model_validate(user),
-            # [user_scope.scope.id for user_scope in user.scopes],
-            scopes=set(),
-            expiry=auth_credential.expiry
+        return SignupResponse(
+            auth=GetAuthBaseReturn(
+                user=models.UserPrivate.model_validate(user),
+                scopes=[
+                    auth_credential_scope.scope.name for auth_credential_scope in auth_credential.auth_credential_scopes],
+                expiry=auth_credential.expiry
+            )
         )
-    )
 
 
 class LoginWithEmailMagicLinkRequest(BaseModel):
@@ -396,9 +402,9 @@ def send_magic_link_to_email(model: LoginWithEmailMagicLinkRequest):
             session, {'email': model.email})
 
         if user:
-            auth_credential = make_auth_credential(
-                user_id=user.id, auth_credential_type='access_token', lifespan=c.authentication['magic_link_expiry_timedelta']
-            )
+            auth_credential = make_auth_credential(session,
+                                                   user_id=user.id, auth_credential_type='access_token', lifespan=c.authentication['magic_link_expiry_timedelta']
+                                                   )
 
             print('beep boop beep... sending email')
             print('http://localhost:3000' +
@@ -420,23 +426,26 @@ class VerifyMagicLinkRequest(GetAuthReturn):
 @ app.post('/auth/verify-magic-link/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
 async def verify_magic_link(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=True, override_lifetime=c.authentication['magic_link_expiry_timedelta']))], response: Response) -> VerifyMagicLinkRequest:
 
-    auth_credential = make_auth_credential(
-        authorization.user.id, 'access_token')
-    set_access_token_cookie(jwt_encode(
-        auth_credential.export_to_jwt()), response)
+    with Session(c.db_engine) as session:
 
-    # one time link, delete the auth_credential
-    authorization.auth_credential.delete_one_by_id(
-        authorization.auth_credential.id)
+        auth_credential = make_auth_credential(session,
+                                               authorization.user.id, 'access_token')
+        set_access_token_cookie(jwt_encode(
+            auth_credential.export_to_jwt()), response)
 
-    return VerifyMagicLinkRequest(
-        auth=GetAuthBaseReturn(
-            user=models.UserPrivate.model_validate(authorization.user),
-            # [user_scope.scope.id for user_scope in user.scopes],
-            scopes=set(),
-            expiry=auth_credential.expiry
+        # one time link, delete the auth_credential
+        authorization.auth_credential.delete_one_by_id(
+            authorization.auth_credential.id)
+
+        return VerifyMagicLinkRequest(
+            auth=GetAuthBaseReturn(
+                user=models.UserPrivate.model_validate(authorization.user),
+                # [user_scope.scope.id for user_scope in user.scopes],
+                scopes=[
+                    auth_credential_scope.scope.name for auth_credential_scope in auth_credential.auth_credential_scopes],
+                expiry=auth_credential.expiry
+            )
         )
-    )
 
 
 class GoogleAuthResponse(LoginResponse):
@@ -468,16 +477,16 @@ async def login_with_google(request_token: GoogleAuthRequest, response: Response
             user = user_create.create()
             user.add_to_db(session)
 
-        auth_credential = make_auth_credential(
-            user.id, 'access_token')
+        auth_credential = make_auth_credential(session,
+                                               user.id, 'access_token')
         set_access_token_cookie(jwt_encode(
             auth_credential.export_to_jwt()), response)
 
         return VerifyMagicLinkRequest(
             auth=GetAuthBaseReturn(
                 user=models.UserPrivate.model_validate(user),
-                # [user_scope.scope.id for user_scope in user.scopes],
-                scopes=set(),
+                scopes=[
+                    auth_credential_scope.scope.name for auth_credential_scope in auth_credential.auth_credential_scopes],
                 expiry=auth_credential.expiry
             )
         )
@@ -520,8 +529,6 @@ async def get_user(authorization: typing.Annotated[GetAuthorizationReturn, Depen
 
 
 @ app.patch('/user/', responses={
-    status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse},
-    status.HTTP_403_FORBIDDEN: {"description": 'User does not have permission to update this user', 'model': DetailOnlyResponse},
     status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse},
     status.HTTP_409_CONFLICT: {"description": 'Username or email already exists', 'model': DetailOnlyResponse},
 })
@@ -563,48 +570,48 @@ async def get_user_sessions(
 # API Keys
 
 
-@ app.get('/auth-credentials/{auth_credential_id}/', responses={status.HTTP_404_NOT_FOUND: {"description": models.AuthCredential.not_found_message(), 'model': NotFoundResponse}})
-async def get_auth_credential(auth_credential_id: models.AuthCredentialTypes.id, authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> models.AuthCredential:
-    with Session(c.db_engine) as session:
-        auth_credential = models.AuthCredential.get_one_by_id(
-            session, auth_credential_id)
-        if not auth_credential:
-            raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                detail=models.AuthCredential.not_found_message())
-        return auth_credential
+# @ app.get('/auth-credentials/{auth_credential_id}/', responses={status.HTTP_404_NOT_FOUND: {"description": models.AuthCredential.not_found_message(), 'model': NotFoundResponse}})
+# async def get_auth_credential(auth_credential_id: models.AuthCredentialTypes.id, authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> models.AuthCredential:
+#     with Session(c.db_engine) as session:
+#         auth_credential = models.AuthCredential.get_one_by_id(
+#             session, auth_credential_id)
+#         if not auth_credential:
+#             raise HTTPException(status.HTTP_404_NOT_FOUND,
+#                                 detail=models.AuthCredential.not_found_message())
+#         return auth_credential
 
 
-@ app.post('/auth-credentials/')
-async def post_auth_credential(auth_credential_create: models.AuthCredentialCreate, authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> models.AuthCredential:
+# @ app.post('/auth-credentials/')
+# async def post_auth_credential(auth_credential_create: models.AuthCredentialCreate, authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> models.AuthCredential:
 
-    with Session(c.db_engine) as session:
-        auth_credential = auth_credential_create.create()
-        auth_credential.add_to_db(session)
-        return auth_credential
-
-
-@app.patch('/auth-credentials/{auth_credential_id}/')
-async def patch_auth_credential(auth_credential_id: models.AuthCredentialTypes.id, auth_credential_update: models.AuthCredentialUpdate, authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> models.AuthCredential:
-    with Session(c.db_engine) as session:
-        auth_credential = models.AuthCredential.get_one_by_id(
-            session, auth_credential_id)
-        if not auth_credential:
-            raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                detail=models.AuthCredential.not_found_message())
-
-        auth_credential.sqlmodel_update(auth_credential_update)
-        auth_credential.add_to_db(session)
-        return auth_credential
+#     with Session(c.db_engine) as session:
+#         auth_credential = auth_credential_create.create()
+#         auth_credential.add_to_db(session)
+#         return auth_credential
 
 
-@ app.delete('/auth-credentials/{auth_credential_id}/')
-async def delete_auth_credential(auth_credential_id: models.AuthCredentialTypes.id, authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> Response:
+# @app.patch('/auth-credentials/{auth_credential_id}/')
+# async def patch_auth_credential(auth_credential_id: models.AuthCredentialTypes.id, auth_credential_update: models.AuthCredentialUpdate, authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> models.AuthCredential:
+#     with Session(c.db_engine) as session:
+#         auth_credential = models.AuthCredential.get_one_by_id(
+#             session, auth_credential_id)
+#         if not auth_credential:
+#             raise HTTPException(status.HTTP_404_NOT_FOUND,
+#                                 detail=models.AuthCredential.not_found_message())
 
-    with Session(c.db_engine) as session:
-        if models.AuthCredential.delete_one_by_id(session, auth_credential_id) == 0:
-            raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                detail=models.AuthCredential.not_found_message())
-        return Response(status_code=204)
+#         auth_credential.sqlmodel_update(auth_credential_update)
+#         auth_credential.add_to_db(session)
+#         return auth_credential
+
+
+# @ app.delete('/auth-credentials/{auth_credential_id}/')
+# async def delete_auth_credential(auth_credential_id: models.AuthCredentialTypes.id, authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> Response:
+
+#     with Session(c.db_engine) as session:
+#         if models.AuthCredential.delete_one_by_id(session, auth_credential_id) == 0:
+#             raise HTTPException(status.HTTP_404_NOT_FOUND,
+#                                 detail=models.AuthCredential.not_found_message())
+#         return Response(status_code=204)
 
     # # Gallery
     # async def get_gallery_available_params(
