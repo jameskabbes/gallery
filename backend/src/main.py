@@ -254,6 +254,48 @@ def get_auth(get_authorization_return: GetAuthorizationReturn) -> GetAuthReturn:
     ))
 
 
+@app.get('/admin/users/{user_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+async def get_user_by_id_admin(
+    user_id: models.UserTypes.id,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization(raise_exceptions=True, required_scopes={'admin'}))]
+) -> models.User:
+    with Session(c.db_engine) as session:
+        return await models.User.get(session, user_id)
+
+
+@app.post('/admin/users/', responses={status.HTTP_409_CONFLICT: {"description": 'User already exists', 'model': DetailOnlyResponse}})
+async def post_user_admin(
+    user_create: models.UserCreate,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization(raise_exceptions=True, required_scopes={'admin'}))]
+) -> models.User:
+    with Session(c.db_engine) as session:
+        return models.UserCreate.post(session, user_create)
+
+
+@app.patch('/admin/users/{user_id}/')
+async def patch_user_admin(
+    user_id: models.UserTypes.id,
+    user_update: models.UserUpdateAdmin,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization(raise_exceptions=True, required_scopes={'admin'}))]
+) -> models.User:
+    with Session(c.db_engine) as session:
+        return models.User.patch(session, user_id, user_update)
+
+
+@app.delete('/admin/users/{user_id}/', status_code=204, responses={})
+async def delete_user_admin(
+    user_id: models.UserTypes.id,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization(raise_exceptions=True, required_scopes={'admin'}))]
+):
+    with Session(c.db_engine) as session:
+        if models.User.delete(session, user_id):
+            return Response(status_code=204)
+
+
 @ app.get('/auth/')
 async def auth_root(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=False))]) -> GetAuthReturn:
     return get_auth(authorization)
@@ -325,7 +367,10 @@ async def sign_up(
 ) -> SignupResponse:
 
     user_create = models.UserCreate(email=email, password=password)
-    user = await post_user(user_create)
+
+    with Session(c.db_engine) as session:
+        user = user_create.post(session)
+
     auth_credential = make_auth_credential(user.id, 'access_token')
     set_access_token_cookie(jwt_encode(
         auth_credential.export_to_jwt()), response)
@@ -469,173 +514,28 @@ async def user_email_available(email: models.UserTypes.email) -> ItemAvailableRe
         return ItemAvailableResponse(available=models.User.is_email_available(session, email))
 
 
-@ app.get('/users/username/{username}/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
-async def get_user_by_username(
-    username: models.UserTypes.username,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=False))]) -> models.UserPublic:
-
-    with Session(c.db_engine) as session:
-        user = models.User.get_one_by_key_values(
-            session, {'username': username})
-        if not user:
-            raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                detail=models.User.not_found_message())
-        else:
-            return models.UserPublic.model_validate(user)
+@app.get('/user/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+async def get_user(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> models.UserPrivate:
+    return models.UserPrivate.model_validate(authorization.user)
 
 
-@ app.get('/users/{user_id}/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
-async def get_user_by_id(
-    user_id: models.UserTypes.id,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=False))]) -> models.UserPublic:
-
-    with Session(c.db_engine) as session:
-        user = models.User.get_one_by_id(
-            session, user_id)
-        if not user:
-            raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                detail=models.User.not_found_message())
-
-        # only allow yourself to access your info
-        elif not user.is_public and user.id != authorization.user.id:
-            raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                detail=models.User.not_found_message())
-        else:
-            return models.UserPublic.model_validate(user)
-
-
-@ app.get('/users/{user_id}/admin/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
-async def get_user_by_id_admin(
-    user_id: models.UserTypes.id,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=True, required_scopes={'admin'}))]) -> models.User:
-
-    with Session(c.db_engine) as session:
-        user = models.User.get_one_by_id(
-            session, user_id)
-        if not user:
-            raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                detail=models.User.not_found_message())
-        else:
-            return user
-
-
-@ app.post('/users/', responses={status.HTTP_409_CONFLICT: {"description": 'User already exists', 'model': DetailOnlyResponse}})
-async def post_user(user_create: models.UserCreate) -> models.UserPrivate:
-    with Session(c.db_engine) as session:
-        # see if the email is available
-        resp = await user_email_available(user_create.email)
-        if not resp.available:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail='User already exists')
-        user = user_create.create()
-        user.add_to_db(session)
-        return models.UserPrivate.model_validate(user)
-
-
-@ app.patch('/users/{user_id}/', responses={
+@ app.patch('/user/', responses={
     status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse},
     status.HTTP_403_FORBIDDEN: {"description": 'User does not have permission to update this user', 'model': DetailOnlyResponse},
     status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse},
     status.HTTP_409_CONFLICT: {"description": 'Username or email already exists', 'model': DetailOnlyResponse},
 })
 async def patch_user(
-    user_id: models.UserTypes.id,
     user_update: models.UserUpdate,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=True))]
+        get_authorization())]
 ) -> models.UserPrivate:
-
     with Session(c.db_engine) as session:
-        user = models.User.get_one_by_id(session, user_id)
-        if not user:
-            raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                detail=models.User.not_found_message())
-
-        if user.id != authorization.user.id:
-            raise HTTPException(status.HTTP_403_FORBIDDEN,
-                                detail='User does not have permission to update this user')
-
-        # if they changed their username, check if it's available
-        if user_update.username != None:
-            if user.username != user_update.username:
-                response = await user_username_available(user_update.username)
-                if response.available == False:
-                    raise HTTPException(status.HTTP_409_CONFLICT,
-                                        detail='Username already exists')
-        # if they changed their email, check if it's available
-        if user_update.email != None:
-            if user.email != user_update.email:
-                response = await user_email_available(user_update.email)
-                if response.available == False:
-                    raise HTTPException(status.HTTP_409_CONFLICT,
-                                        detail='Email already exists')
-        update_fields = {}
-        if user_update.email != None:
-            update_fields['email'] = user_update.email
-        if user_update.username != None:
-            update_fields['username'] = user_update.username
-        if user_update.password != None:
-            update_fields['hashed_password'] = utils.hash_password(
-                user_update.password)
-        user.sqlmodel_update(update_fields)
-        user.add_to_db(session)
+        user = models.User.patch(session, authorization.user.id, user_update)
         return models.UserPrivate.model_validate(user)
 
 
-@ app.patch('/users/{user_id}/admin/', responses={
-    status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse},
-    status.HTTP_403_FORBIDDEN: {"description": 'User does not have permission to update this user', 'model': DetailOnlyResponse},
-    status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse},
-    status.HTTP_409_CONFLICT: {"description": 'Username or email already exists', 'model': DetailOnlyResponse},
-})
-async def patch_user_admin(
-    user_id: models.UserTypes.id,
-    user_update: models.UserUpdateAdmin,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=True, required_scopes={'admin'}))]
-) -> models.User:
-
-    with Session(c.db_engine) as session:
-        user = models.User.get_one_by_id(session, user_id)
-        if not user:
-            raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                detail=models.User.not_found_message())
-
-        # if they changed their username, check if it's available
-        if user_update.username != None:
-            if user.username != user_update.username:
-                response = await user_username_available(user_update.username)
-                if response.available == False:
-                    raise HTTPException(status.HTTP_409_CONFLICT,
-                                        detail='Username already exists')
-        # if they changed their email, check if it's available
-        if user_update.email != None:
-            if user.email != user_update.email:
-                response = await user_email_available(user_update.email)
-                if response.available == False:
-                    raise HTTPException(status.HTTP_409_CONFLICT,
-                                        detail='Email already exists')
-        update_fields = {}
-        if user_update.email != None:
-            update_fields['email'] = user_update.email
-        if user_update.username != None:
-            update_fields['username'] = user_update.username
-        if user_update.password != None:
-            update_fields['hashed_password'] = utils.hash_password(
-                user_update.password)
-        if user_update.user_role_id != None:
-            update_fields['user_role_id'] = user_update.user_role_id
-
-        user.sqlmodel_update(update_fields)
-        user.add_to_db(session)
-        return user
-
-
-@ app.delete('/users/{user_id}/', status_code=204, responses={
-    status.HTTP_403_FORBIDDEN: {"description": 'User does not have permission to delete this user', 'model': DetailOnlyResponse},
+@ app.delete('/user/', status_code=204, responses={
     status.HTTP_404_NOT_FOUND: {
         "description": models.User.not_found_message(), 'model': NotFoundResponse}
 }
@@ -646,42 +546,23 @@ async def delete_user(
         get_authorization())]
 ) -> Response:
     with Session(c.db_engine) as session:
-        # make sure the user has permission to delete whoever user_id is
-        # if user_id != auth_return.user.id:
-        #     raise HTTPException(status.HTTP_403_FORBIDDEN,
-        #                         detail='User does not have permission to delete this user')
-        if models.User.delete_one_by_id(session, user_id) == 0:
-            raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                detail=models.User.not_found_message())
-        else:
+        if models.User.delete(session, user_id):
             return Response(status_code=204)
 
 
-@ app.get('/users/{user_id}/sessions/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+@ app.get('/sessions/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
 async def get_user_sessions(
-        user_id: models.UserTypes.id,
         authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> list[models.AuthCredential]:
 
     with Session(c.db_engine) as session:
-
-        print(authorization)
-
-        if user_id != authorization.user.id:
-            print('hello')
-            raise auth.user_not_found_exception()
-
-        user = models.User.get_one_by_id(session, user_id)
-        if not user:
-            if user_id != authorization.user.id:
-                raise auth.user_not_found_exception()
-
         active_sessions = models.AuthCredential.get_all_by_key_values(
-            session, {'user_id': user_id, 'type': 'access_token'})
+            session, {'user_id': authorization.user.id, 'type': 'access_token'})
 
         return active_sessions
 
-
 # API Keys
+
+
 @ app.get('/auth-credentials/{auth_credential_id}/', responses={status.HTTP_404_NOT_FOUND: {"description": models.AuthCredential.not_found_message(), 'model': NotFoundResponse}})
 async def get_auth_credential(auth_credential_id: models.AuthCredentialTypes.id, authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> models.AuthCredential:
     with Session(c.db_engine) as session:

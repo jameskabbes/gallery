@@ -1,5 +1,6 @@
 import typing
 import uuid
+from fastapi import HTTPException, status
 from sqlmodel import SQLModel, Field, Column, Session, select, delete, Relationship
 from pydantic import BaseModel, EmailStr, constr, StringConstraints, field_validator
 from sqlalchemy import PrimaryKeyConstraint, and_, or_
@@ -124,6 +125,22 @@ class Table[IDType]:
     async def is_available(cls, session: Session) -> bool:
         return True
 
+    @classmethod
+    async def get(cls, session: Session, id: IDType) -> typing.Self:
+        instance = cls.get_one_by_id(session, id)
+        if not instance:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
+        return instance
+
+    @classmethod
+    async def delete(cls, session: Session, id: IDType) -> bool:
+        if cls.delete_one_by_id(session, id) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
+        else:
+            return True
+
 
 class SingularCreate[TableType: Table](BaseModel):
     _SINGULAR_MODEL: typing.ClassVar[typing.Type[TableType]]
@@ -242,12 +259,53 @@ class User(SQLModel, Table[UserTypes.id], UserBase, table=True):
     def is_public(self) -> bool:
         return self.username is not None
 
+    @classmethod
+    def patch(cls, session: Session, user_id: UserTypes.id, user_update: UserUpdateAdmin) -> typing.Self:
+
+        user = cls.get_one_by_id(session, user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
+
+        # if they changed their username, check if it's available
+        if user_update.username != None:
+            if user.username != user_update.username:
+                if not cls.is_username_available(session, user_update.username):
+                    raise HTTPException(status.HTTP_409_CONFLICT,
+                                        detail='Username already exists')
+
+        # if they changed their email, check if it's available
+        if user_update.email != None:
+            if user.email != user_update.email:
+                if not cls.is_email_available(session, user_update.email):
+                    raise HTTPException(status.HTTP_409_CONFLICT,
+                                        detail='Email already exists')
+
+        exported = user_update.model_dump(
+            exclude='password', exclude_unset=True)
+
+        if user_update.password != None:
+            exported['hashed_password'] = utils.hash_password(
+                user_update.password)
+
+        user.sqlmodel_update(exported)
+        user.add_to_db(session)
+        return user
+
 
 class UserCreate(SingularCreate[User], UserBase):
     email: UserTypes.email
     password: typing.Optional[UserTypes.password] = None
 
     _SINGULAR_MODEL: typing.ClassVar[typing.Type[User]] = User
+
+    def post(self, session: Session) -> User:
+        if not User.is_email_available(session, self.email):
+            raise HTTPException(status.HTTP_409_CONFLICT,
+                                detail='Email already exists')
+        user = self.create()
+        user.add_to_db(session)
+        return user
 
     def create(self) -> User:
 
