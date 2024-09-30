@@ -48,7 +48,7 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
   }, [apiData, response]);
 
   async function handleDeleteSession(sessionId: string) {
-    // delete the key from the object
+    console.log(sessions);
 
     const sessionToDelete = sessions[sessionId];
 
@@ -65,54 +65,46 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
     console.log(response);
 
     if (response.status !== 204) {
-      console.log('removign');
-      //   setSessions({ ...sessions, [sessionId]: sessionToDelete });
+      setSessions({ ...sessions, [sessionId]: sessionToDelete });
     }
-  }
-
-  if (authContext.state.user === null) {
-    return (
-      <div>
-        <h2>Sessions</h2>
-        <p>Login to view your sessions.</p>
-      </div>
-    );
-  } else if (loading || response.status == 200) {
-    const data = apiData as ResponseTypesByStatus['200'];
-    if (!data) {
-      return <p>loading...</p>;
-    }
-    return (
-      <div>
-        {data.map((session) => (
-          <div key={session.id} className="flex flex-row">
-            <p>
-              Issued:{' '}
-              {new Date(session.issued).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </p>
-            <button
-              onClick={() => {
-                handleDeleteSession(session.id);
-              }}
-              className="button-primary"
-            >
-              Sign Out
-            </button>
-          </div>
-        ))}
-      </div>
-    );
   }
 
   return (
-    <div>
-      <h2>Sessions</h2>
-      <p>Manage your sessions here.</p>
-    </div>
+    <>
+      <h2>API Keys</h2>
+      {authContext.state.user === null ? (
+        <p>Login to view your API keys.</p>
+      ) : (
+        <>
+          <button className="button-primary">Add Key</button>
+          <div>
+            {Object.keys(sessions).map((key) => {
+              const session = sessions[key];
+              return (
+                <div key={key} className="flex flex-row">
+                  <p>
+                    Issued:{' '}
+                    {new Date(session.issued).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </p>
+                  <button
+                    onClick={() => {
+                      handleDeleteSession(key);
+                    }}
+                    className="button-primary"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </>
   );
 }
 
