@@ -52,10 +52,14 @@
 # GET http://localhost:8087/users/d0d60a66-17fd-43c4-885f-71c6648f59a8/sessions/
 # Authorization: Bearer 
 
+# PATCH http://localhost:8087/user/
+# Authorization: Bearer 
 
-PATCH http://localhost:8087/user/
-Authorization: Bearer 
+# {
+# "user_role_id": "2"
+# }
 
-{
-"user_role_id": "2"
-}
+GET http://localhost:8087/api-keys/
+Authorization: Bearer token
+
+

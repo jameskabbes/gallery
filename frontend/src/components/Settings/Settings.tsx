@@ -7,9 +7,13 @@ import { Sessions } from './Sessions';
 import { paths, operations, components } from '../../openapi_schema';
 import { ExtractResponseTypes } from '../../types';
 import { useApiCall } from '../../utils/Api';
+import { Profile } from './Profile';
 
 import { IoBrush } from 'react-icons/io5';
 import { IoRadioOutline } from 'react-icons/io5';
+import { IoPersonOutline } from 'react-icons/io5';
+import { IoKeyOutline } from 'react-icons/io5';
+import { APIKeys } from './APIKeys';
 
 const API_ENDPOINT = '/settings/page/';
 const API_METHOD = 'get';
@@ -22,6 +26,13 @@ function Settings(): JSX.Element {
   const authContext = useContext(AuthContext);
   const toastContext = useContext(ToastContext);
   const selectionComponentMapping = {
+    profile: {
+      icon: <IoPersonOutline />,
+      name: 'Profile',
+      component: (
+        <Profile authContext={authContext} toastContext={toastContext} />
+      ),
+    },
     appearance: {
       icon: <IoBrush />,
       name: 'Appearance',
@@ -34,9 +45,16 @@ function Settings(): JSX.Element {
         <Sessions authContext={authContext} toastContext={toastContext} />
       ),
     },
+    apiKeys: {
+      icon: <IoKeyOutline />,
+      name: 'API Keys',
+      component: (
+        <APIKeys authContext={authContext} toastContext={toastContext} />
+      ),
+    },
   };
 
-  const loggedInComponentKeys = new Set(['sessions']);
+  const loggedInComponentKeys = new Set(['profile', 'sessions', 'apiKeys']);
 
   const defaultSelection = 'appearance';
   const [selection, setSelection] = useState(defaultSelection);

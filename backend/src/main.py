@@ -7,6 +7,7 @@ from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from fastapi.security import OAuth2, OAuth2PasswordRequestForm, OAuth2PasswordBearer, APIKeyHeader
 from fastapi.security.utils import get_authorization_scheme_param
 from contextlib import asynccontextmanager
+from sqlalchemy.orm import selectinload
 from gallery import get_client, models, utils, config, auth
 import datetime
 from sqlmodel import Session, SQLModel, select
@@ -560,12 +561,27 @@ async def delete_user(
 @ app.get('/sessions/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
 async def get_user_sessions(
         authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> list[models.AuthCredential]:
+    with Session(c.db_engine) as session:
+        auth_credentials = models.AuthCredential.get_all_by_key_values(
+            session, {'user_id': authorization.user.id, 'type': 'access_token'})
+        return auth_credentials
+
+
+class GetAPIKeysReturn(GetAuthReturn):
+    api_keys: list[models.AuthCredential]
+
+
+@ app.get('/api-keys/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+async def get_user_sessions(
+        authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> list[models.AuthCredential]:
 
     with Session(c.db_engine) as session:
-        active_sessions = models.AuthCredential.get_all_by_key_values(
-            session, {'user_id': authorization.user.id, 'type': 'access_token'})
-
-        return active_sessions
+        query = select(
+            models.AuthCredential).where(and_(models.AuthCredential.user_id == authorization.user.id, models.AuthCredential.type == 'api_key')).options(selectinload(models.AuthCredential.auth_credential_scopes))
+        auth_credentials = session.exec(query).all()
+        print(auth_credentials)
+        print(auth_credentials[0].auth_credential_scopes)
+        return auth_credentials
 
 
 @ app.delete('/auth-credentials/{auth_credential_id}/', status_code=204, responses={

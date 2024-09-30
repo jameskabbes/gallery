@@ -67,9 +67,17 @@ export interface paths {
     /** Patch User */
     patch: operations["patch_user_user__patch"];
   };
+  "/auth-credentials/": {
+    /** Get Auth Credentials */
+    get: operations["get_auth_credentials_auth_credentials__get"];
+  };
   "/sessions/": {
     /** Get User Sessions */
     get: operations["get_user_sessions_sessions__get"];
+  };
+  "/api-keys/": {
+    /** Get User Sessions */
+    get: operations["get_user_sessions_api_keys__get"];
   };
   "/auth-credentials/{auth_credential_id}/": {
     /** Delete Auth Credential */
@@ -112,6 +120,8 @@ export interface components {
        */
       expiry: string;
     };
+    /** @enum {string} */
+    AuthCredentialType: "access_token" | "api_key";
     /** Body_login_auth_login_password__post */
     Body_login_auth_login_password__post: {
       /** Grant Type */
@@ -705,8 +715,53 @@ export interface operations {
       };
     };
   };
+  /** Get Auth Credentials */
+  get_auth_credentials_auth_credentials__get: {
+    parameters: {
+      query?: {
+        filter_type?: components["schemas"]["AuthCredentialType"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["AuthCredential"][];
+        };
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   /** Get User Sessions */
   get_user_sessions_sessions__get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["AuthCredential"][];
+        };
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+    };
+  };
+  /** Get User Sessions */
+  get_user_sessions_api_keys__get: {
     responses: {
       /** @description Successful Response */
       200: {

@@ -1,15 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import {
-  CallApiProps,
-  ToastContext,
-  ExtractResponseTypes,
-  AuthContext,
-} from '../../types';
+import { CallApiProps, ToastContext } from '../../types';
 import { useApiCall } from '../../utils/Api';
 import { paths, operations, components } from '../../openapi_schema';
+import { ExtractResponseTypes, AuthContext } from '../../types';
 import { deleteAuthCredential } from '../../services/api/deleteAuthCredential';
 
-const API_ENDPOINT = '/sessions/';
+const API_ENDPOINT = '/api-keys/';
 const API_METHOD = 'get';
 
 type ResponseTypesByStatus = ExtractResponseTypes<
@@ -21,7 +17,7 @@ interface Props {
   toastContext: ToastContext;
 }
 
-function Sessions({ authContext, toastContext }: Props): JSX.Element {
+function APIKeys({ authContext, toastContext }: Props): JSX.Element {
   const [sessions, setSessions] = useState<{
     [key: string]: ResponseTypesByStatus['200'][number];
   }>({});
@@ -120,4 +116,4 @@ function Sessions({ authContext, toastContext }: Props): JSX.Element {
   );
 }
 
-export { Sessions };
+export { APIKeys };
