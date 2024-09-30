@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 import datetime as datetime_module
 from enum import Enum
 import jwt
+import pydantic
 #
 
 
@@ -225,9 +226,10 @@ class User(SQLModel, Table[UserTypes.id], UserBase, table=True):
     user_role_id: UserTypes.user_role_id = Field(
         foreign_key=UserRole.__tablename__ + '.id', default='2')
 
-    auth_credentials: list['AuthCredential'] = Relationship(
-        back_populates='user')
+    api_keys: list['APIKey'] = Relationship(back_populates='user')
     user_role: UserRole = Relationship(back_populates='users')
+    user_access_tokens: list['UserAccessToken'] = Relationship(
+        back_populates='user')
 
     @classmethod
     def authenticate(cls, session: Session, email: UserTypes.email, password: UserTypes.password) -> typing.Self | None:
@@ -340,9 +342,9 @@ class Scope(SQLModel, Table[ScopeTypes.id], table=True):
     id: ScopeTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
     name: str = Field(index=True, unique=True)
-    auth_credential_scopes: list['AuthCredentialScope'] = Relationship(
-        back_populates='scope')
     user_role_scopes: list['UserRoleScope'] = Relationship(
+        back_populates='scope')
+    api_key_scopes: list['APIKeyScope'] = Relationship(
         back_populates='scope')
 
     @classmethod
@@ -376,53 +378,45 @@ class UserRoleScope(SQLModel, Table[UserRoleScopeId], table=True):
     user_role: UserRole = Relationship(back_populates='user_role_scopes')
     scope: Scope = Relationship(back_populates='user_role_scopes')
 
-
-# AuthCredential
-type AuthCredentialType = typing.Literal['access_token', 'api_key']
+# Auth Credential
 
 
 class AuthCredentialTypes:
-    id = str
     user_id = UserTypes.id
-    type = AuthCredentialType
-    issued = datetime_module.datetime
-    expiry = datetime_module.datetime
+    issued = typing.Annotated[datetime_module.datetime,
+                              'The datetime at which the token was issued']
+    expiry = typing.Annotated[datetime_module.datetime,
+                              'The datetime at which the token will expire']
+    lifespan = typing.Annotated[datetime_module.timedelta,
+                                'The timedelta from token creation in which the token is still valid']
+    type = typing.Literal['access_token', 'api_key']
 
 
-class AuthCredentialUpdate(BaseModel):
-    expiry: AuthCredentialTypes.expiry
-
-
-class AuthCredential(SQLModel, Table[AuthCredentialTypes.id], table=True):
-    __tablename__ = 'auth_credential'
-
-    id: AuthCredentialTypes.id = Field(
-        primary_key=True, index=True, unique=True, const=True)
+class AuthCredential[IDType](BaseModel):
     user_id: UserTypes.id = Field(
         index=True, foreign_key=User.__tablename__ + '.id', const=True)
-    type: str = Field(const=True)
     issued: datetime_module.datetime = Field(const=True)
     expiry: AuthCredentialTypes.expiry = Field()
-
-    user: User = Relationship(back_populates='auth_credentials')
-    auth_credential_scopes: list['AuthCredentialScope'] = Relationship(
-        back_populates='auth_credential')
+    type: typing.ClassVar[AuthCredentialTypes.type | None] = None
 
     class JWTExport(typing.TypedDict):
-        sub: AuthCredentialTypes.id
+        sub: IDType
         exp: AuthCredentialTypes.expiry
         iat: AuthCredentialTypes.issued
+        type: AuthCredentialTypes.type
 
     _JWT_CLAIMS_TO_ATTRIBUTES: typing.ClassVar[dict[str, str]] = {
         'sub': 'id',
         'exp': 'expiry',
-        'iat': 'issued'
+        'iat': 'issued',
+        'type': 'type',
     }
 
     class JWTImport(typing.TypedDict):
-        id: AuthCredentialTypes.id
+        id: IDType
         expiry: AuthCredentialTypes.expiry
         issued: AuthCredentialTypes.issued
+        type: AuthCredentialTypes.type
 
     class ValidateJWTReturn(typing.TypedDict):
         valid: bool
@@ -440,48 +434,134 @@ class AuthCredential(SQLModel, Table[AuthCredentialTypes.id], table=True):
         return {key: getattr(self, value) for key, value in self._JWT_CLAIMS_TO_ATTRIBUTES.items()}
 
 
-class AuthCredentialCreate(SingularCreate[AuthCredential]):
+class AuthCredentialCreate(SingularCreate[AuthCredential], ABC):
     user_id: AuthCredentialTypes.user_id
-    type: AuthCredentialTypes.type
-    expiry: AuthCredentialTypes.expiry
+    lifespan: typing.Annotated[datetime_module.timedelta | None,
+                               'The timedelta from token creation in which the token is still valid'] = None
+    expiry: typing.Annotated[datetime_module.datetime | None,
+                             'The datetime at which the token will expire'] = None
 
     _SINGULAR_MODEL: typing.ClassVar[typing.Type[AuthCredential]
                                      ] = AuthCredential
 
-    def create(self) -> AuthCredential:
-        return AuthCredential(
+    @pydantic.model_validator(mode='after')
+    def check_lifespan_or_expiry(cls, values):
+        lifespan = values.get('lifespan')
+        expiry = values.get('expiry')
+        if lifespan is None and expiry is None:
+            raise ValueError(
+                "Either 'lifespan' or 'expiry' must be set and not None.")
+        return values
+
+    def get_expiry(self) -> datetime_module.datetime:
+
+        if self.expiry != None:
+            return self.expiry
+
+        return datetime_module.datetime.now(
+            datetime_module.UTC) + self.lifespan
+
+    @abstractmethod
+    def get_scopes(self) -> list[Scope]:
+        pass
+
+
+class UserAccessTokenTypes(AuthCredentialTypes):
+    id = str
+
+
+class UserAccessToken(SQLModel, AuthCredential[UserAccessTokenTypes.id], Table[UserAccessTokenTypes.id], table=True):
+    __tablename__ = 'user_access_token'
+    id: UserAccessTokenTypes.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
+    type: typing.ClassVar[AuthCredentialTypes.type] = 'access_token'
+
+    user: User = Relationship(back_populates='user_access_tokens')
+
+    def get_scopes(self) -> list[Scope]:
+        return [user_role_scope.scope for user_role_scope in self.user.user_role.user_role_scopes]
+
+
+class UserAccessTokenCreate(SingularCreate[UserAccessToken], AuthCredentialCreate):
+    _SINGULAR_MODEL: typing.ClassVar[typing.Type[UserAccessToken]
+                                     ] = UserAccessToken
+
+    def create(self) -> UserAccessToken:
+        return UserAccessToken(
             id=self._SINGULAR_MODEL.generate_id(),
-            issued=datetime_module.datetime.now(datetime_module.timezone.utc),
-            **self.model_dump())
+            issued=datetime_module.datetime.now(
+                datetime_module.timezone.utc),
+            expiry=self.get_expiry(),
+            **self.model_dump()
+        )
 
-# AuthCredentialScope
+
+# APIKey
 
 
-class AuthCredentialScopeTypes:
-    auth_credential_id = AuthCredentialTypes.id
+class APIKeyTypes(AuthCredentialTypes):
+    id = str
+    name = str
+
+
+class APIKey(SQLModel, AuthCredential[APIKeyTypes.id], Table[APIKeyTypes.id], table=True):
+    __tablename__ = 'api_key'
+    id: APIKeyTypes.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
+    name: APIKeyTypes.name = Field()
+    type: typing.ClassVar[AuthCredentialTypes.type] = 'api_key'
+
+    user: User = Relationship(back_populates='api_keys')
+    api_key_scopes: list['APIKeyScope'] = Relationship(
+        back_populates='api_key')
+
+    def get_scopes(self) -> list[Scope]:
+        return [api_key_scope.scope for api_key_scope in self.api_key_scopes]
+
+
+class APIKeyCreate(SingularCreate[APIKey], AuthCredentialCreate):
+    _SINGULAR_MODEL: typing.ClassVar[typing.Type[UserAccessToken]
+                                     ] = UserAccessToken
+
+    def create(self) -> APIKey:
+        return APIKey(
+            id=self._SINGULAR_MODEL.generate_id(),
+            issued=datetime_module.datetime.now(
+                datetime_module.timezone.utc),
+            expiry=self.get_expiry(),
+            **self.model_dump()
+        )
+
+
+type AuthCredentialClasses = typing.Union[UserAccessToken, APIKey]
+
+# APIKeyScope
+
+
+class APIKeyScopeTypes:
+    api_key_id = APIKeyTypes.id
     scope_id = ScopeTypes.id
 
 
-type AuthCredentialScopeId = typing.Annotated[tuple[AuthCredentialScopeTypes.auth_credential_id,
-                                                    AuthCredentialScopeTypes.scope_id], '(auth_credential_id, scope_id)'
-                                              ]
+type APIKeyScopeID = typing.Annotated[tuple[APIKeyScopeTypes.api_key_id,
+                                            APIKeyScopeTypes.scope_id], '(api_key_id, scope_id)'
+                                      ]
 
 
-class AuthCredentialScope(SQLModel, Table[AuthCredentialScopeId], table=True):
-    __tablename__ = 'auth_credential_scope'
+class APIKeyScope(SQLModel, Table[APIKeyScopeID], table=True):
+    __tablename__ = 'api_key_scope'
     __table_args__ = (
-        PrimaryKeyConstraint('auth_credential_id', 'scope_id'),
+        PrimaryKeyConstraint('api_key_id', 'scope_id'),
     )
-    _ID_COLS: typing.ClassVar[list[str]] = ['auth_credential_id', 'scope_id']
+    _ID_COLS: typing.ClassVar[list[str]] = ['api_key_id', 'scope_id']
 
-    auth_credential_id: AuthCredentialScopeTypes.auth_credential_id = Field(
-        index=True, foreign_key=AuthCredential.__tablename__ + '.id')
-    scope_id: AuthCredentialScopeTypes.scope_id = Field(
+    api_key_id: APIKeyScopeTypes.api_key_id = Field(
+        index=True, foreign_key=APIKey.__tablename__ + '.id')
+    scope_id: APIKeyScopeTypes.scope_id = Field(
         index=True, foreign_key=Scope.__tablename__ + '.id')
 
-    auth_credential: AuthCredential = Relationship(
-        back_populates='auth_credential_scopes')
-    scope: Scope = Relationship(back_populates='auth_credential_scopes')
+    api_key: APIKey = Relationship(back_populates='api_key_scopes')
+    scope: Scope = Relationship(back_populates='api_key_scopes')
 
 
 # Gallery
@@ -561,7 +641,6 @@ class AuthCredentialScope(SQLModel, Table[AuthCredentialScopeId], table=True):
 #             )
 #         )
 #         return session.exec(query).first() is None
-
 # class GalleryCreate(SingularCreate[Gallery], GalleryBase):
 #     name: GalleryTypes.name
 #     visibility: typing.Optional[GalleryTypes.visibility] = VisibilityLevel.PUBLIC

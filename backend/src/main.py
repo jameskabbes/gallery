@@ -77,33 +77,6 @@ oauth2_scheme = OAuth2PasswordBearerMultiSource(
     tokenUrl="token/")
 
 
-def make_auth_credential(
-    session: Session,
-    user_id: models.UserTypes.id,
-    auth_credential_type: models.AuthCredentialType,
-    lifespan: typing.Annotated[datetime.timedelta | None,
-                               'The timedelta from token creation in which the token is still valid'] = c.authentication['default_expiry_timedelta'],
-    expiry_datetime: typing.Annotated[datetime.datetime | None,
-                                      'The datetime at which the token will expire'] = None
-) -> models.AuthCredential:
-
-    if expiry_datetime == None and lifespan == None:
-        raise ValueError(
-            'Either expiry_timedelta or expiry_datetime must be provided')
-
-    if expiry_datetime == None:
-        expiry_datetime = datetime.datetime.now(
-            datetime.UTC) + lifespan
-
-    auth_credential = models.AuthCredentialCreate(
-        user_id=user_id,
-        type=auth_credential_type,
-        expiry=expiry_datetime
-    ).create()
-    auth_credential.add_to_db(session)
-    return auth_credential
-
-
 class DetailOnlyResponse(BaseModel):
     detail: str
 
@@ -122,7 +95,7 @@ class GetAuthorizationReturn(BaseModel):
     exception: auth.EXCEPTION | None = None
     user: models.UserPrivate | None = None
     scopes: set[models.ScopeTypes.name] | None = None
-    auth_credential: models.AuthCredential | None = None
+    auth_credential: models.AuthCredentialClasses | None = None
 
 
 def get_authorization(
@@ -151,26 +124,30 @@ def get_authorization(
 
             auth_credential_dict = models.AuthCredential.import_from_jwt(
                 payload)
+            auth_credential: models.AuthCredentialClasses | None = None
 
             with Session(c.db_engine) as session:
 
-                # find the auth_credential in the db
-                auth_credential = models.AuthCredential.get_one_by_id(session,
-                                                                      auth_credential_dict['id'])
+                if auth_credential_dict['type'] == 'api_key':
+                    auth_credential = models.APIKey.get_one_by_id(
+                        session, auth_credential_dict['id'])
+
+                elif auth_credential_dict['type'] == 'access_token':
+                    auth_credential = models.UserAccessToken.get_one_by_id(
+                        session, auth_credential_dict['id'])
 
                 # not in the db, raise exception
                 if not auth_credential:
                     return GetAuthorizationReturn(exception='authorization_expired')
 
                 dt_now = datetime.datetime.now(datetime.UTC)
-
                 dt_exp_jwt = datetime.datetime.fromtimestamp(
                     payload['exp'], datetime.UTC)
                 dt_exp_db = auth_credential.expiry.replace(tzinfo=datetime.UTC)
                 dt_exp = min(dt_exp_jwt, dt_exp_db)
 
                 if dt_now > dt_exp:
-                    models.AuthCredential.delete_one_by_id(
+                    auth_credential.delete_one_by_id(
                         session, auth_credential.id)
                     return GetAuthorizationReturn(exception='authorization_expired')
 
@@ -184,7 +161,7 @@ def get_authorization(
                         tzinfo=datetime.UTC)
 
                     if dt_now > (min(dt_ait_jwt, dt_ait_db) + override_lifetime):
-                        models.AuthCredential.delete_one_by_id(
+                        auth_credential.delete_one_by_id(
                             session, auth_credential.id)
                         return GetAuthorizationReturn(exception='authorization_expired')
 
@@ -192,18 +169,7 @@ def get_authorization(
                 if user == None:
                     return GetAuthorizationReturn(exception='user_not_found')
 
-                auth_credential_type: models.AuthCredentialType = auth_credential.type
-                scopes: list[models.Scope] = []
-                if auth_credential_type == 'access_token':
-                    # access_token scopes are tied to the user
-                    scopes = [
-                        user_role_scope.scope for user_role_scope in user.user_role.user_role_scopes]
-
-                elif auth_credential_type == 'api_key':
-                    # api key scopes are tied to the api key
-                    scopes = [
-                        auth_credential_scope.scope for auth_credential_scope in auth_credential.auth_credential_scopes]
-
+                scopes = auth_credential.get_scopes()
                 scope_names: set[models.ScopeTypes.name] = {
                     scope.name for scope in scopes}
 
@@ -328,8 +294,9 @@ def set_access_token_cookie(access_token: str, response: Response):
 async def post_token(user: typing.Annotated[models.User, Depends(authenticate_user_with_password)], response: Response):
 
     with Session(c.db_engine) as session:
-        auth_credential = make_auth_credential(session,
-                                               user.id, 'access_token')
+        auth_credential = models.UserAccessTokenCreate(
+            user_id=user.id, lifespan=c.authentication['access_token_expiry_timedelta']).create()
+        auth_credential.add_to_db(session)
         set_access_token_cookie(jwt_encode(
             auth_credential.export_to_jwt()), response)
 
@@ -345,8 +312,9 @@ async def login(user: typing.Annotated[models.User, Depends(authenticate_user_wi
 
     with Session(c.db_engine) as session:
 
-        auth_credential = make_auth_credential(
-            session, user.id, 'access_token')
+        auth_credential = models.UserAccessTokenCreate(
+            user_id=user.id, lifespan=c.authentication['access_token_expiry_timedelta']).create()
+        auth_credential.add_to_db(session)
         set_access_token_cookie(jwt_encode(
             auth_credential.export_to_jwt()), response)
 
@@ -377,8 +345,9 @@ async def sign_up(
     with Session(c.db_engine) as session:
         user = user_create.post(session)
 
-        auth_credential = make_auth_credential(
-            session, user.id, 'access_token')
+        auth_credential = models.UserAccessTokenCreate(
+            user_id=user.id, type='access_token', lifespan=c.authentication['access_token_expiry_timedelta']).create()
+        auth_credential.add_to_db(session)
         set_access_token_cookie(jwt_encode(
             auth_credential.export_to_jwt()), response)
 
@@ -403,9 +372,10 @@ def send_magic_link_to_email(model: LoginWithEmailMagicLinkRequest):
             session, {'email': model.email})
 
         if user:
-            auth_credential = make_auth_credential(session,
-                                                   user_id=user.id, auth_credential_type='access_token', lifespan=c.authentication['magic_link_expiry_timedelta']
-                                                   )
+
+            auth_credential = models.UserAccessTokenCreate(
+                user_id=user.id, lifespan=c.authentication['magic_link_expiry_timedelta']).create()
+            auth_credential.add_to_db(session)
 
             print('beep boop beep... sending email')
             print('http://localhost:3000' +
@@ -429,8 +399,9 @@ async def verify_magic_link(authorization: typing.Annotated[GetAuthorizationRetu
 
     with Session(c.db_engine) as session:
 
-        auth_credential = make_auth_credential(session,
-                                               authorization.user.id, 'access_token')
+        auth_credential = models.UserAccessTokenCreate(
+            user_id=authorization.user.id, lifespan=c.authentication['access_token_expiry_timedelta']).create()
+        auth_credential.add_to_db(session)
         set_access_token_cookie(jwt_encode(
             auth_credential.export_to_jwt()), response)
 
@@ -478,8 +449,9 @@ async def login_with_google(request_token: GoogleAuthRequest, response: Response
             user = user_create.create()
             user.add_to_db(session)
 
-        auth_credential = make_auth_credential(session,
-                                               user.id, 'access_token')
+        auth_credential = models.UserAccessTokenCreate(
+            user_id=user.id, lifespan=c.authentication['access_token_expiry_timedelta']).create()
+        auth_credential.add_to_db(session)
         set_access_token_cookie(jwt_encode(
             auth_credential.export_to_jwt()), response)
 
@@ -502,9 +474,10 @@ async def logout(response: Response, authorization: typing.Annotated[GetAuthoriz
         get_authorization(raise_exceptions=False))]) -> DetailOnlyResponse:
 
     if authorization.auth_credential:
-        with Session(c.db_engine) as session:
-            models.AuthCredential.delete_one_by_id(session,
-                                                   authorization.auth_credential.id)
+        if authorization.auth_credential.type == 'access_token':
+            with Session(c.db_engine) as session:
+                models.UserAccessToken.delete_one_by_id(session,
+                                                        authorization.auth_credential.id)
 
     delete_access_token_cookie(response)
     return DetailOnlyResponse(detail='Logged out')
@@ -560,57 +533,26 @@ async def delete_user(
 
 @ app.get('/sessions/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
 async def get_user_sessions(
-        authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> list[models.AuthCredential]:
+        authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> list[models.UserAccessToken]:
     with Session(c.db_engine) as session:
-        auth_credentials = models.AuthCredential.get_all_by_key_values(
-            session, {'user_id': authorization.user.id, 'type': 'access_token'})
+        auth_credentials = models.UserAccessToken.get_all_by_key_values(
+            session, {'user_id': authorization.user.id})
         return auth_credentials
-
-
-class GetAPIKeysReturn(GetAuthReturn):
-    api_keys: list[models.AuthCredential]
 
 
 @ app.get('/api-keys/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
 async def get_user_sessions(
-        authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> list[models.AuthCredential]:
+        authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> list[models.APIKey]:
 
-    with Session(c.db_engine) as session:
-        query = select(
-            models.AuthCredential).where(and_(models.AuthCredential.user_id == authorization.user.id, models.AuthCredential.type == 'api_key')).options(selectinload(models.AuthCredential.auth_credential_scopes))
-        auth_credentials = session.exec(query).all()
-        print(auth_credentials)
-        print(auth_credentials[0].auth_credential_scopes)
-        return auth_credentials
+    # with Session(c.db_engine) as session:
+    #     query = select(
+    #         models.APIKey).where(and_(models.APIKey.user_id == authorization.user.id, models.AuthCredential.type == 'api_key')).options(selectinload(models.AuthCredential.auth_credential_scopes))
+    #     auth_credentials = session.exec(query).all()
+    #     print(auth_credentials)
+    #     print(auth_credentials[0].auth_credential_scopes)
+    #     return auth_credentials
+    return []
 
-
-@ app.delete('/auth-credentials/{auth_credential_id}/', status_code=204, responses={
-    status.HTTP_403_FORBIDDEN: {"description": 'User does not have permission to delete this auth credential', 'model': DetailOnlyResponse},
-    status.HTTP_404_NOT_FOUND: {
-        "description": models.AuthCredential.not_found_message(), 'model': NotFoundResponse}
-})
-async def delete_auth_credential(
-    auth_credential_id: models.AuthCredentialTypes.id,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization())]
-) -> Response:
-
-    with Session(c.db_engine) as session:
-        auth_credential = models.AuthCredential.get_one_by_id(
-            session, auth_credential_id)
-
-        if not auth_credential:
-            raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                detail=models.AuthCredential.not_found_message())
-
-        if auth_credential.user_id != authorization.user.id:
-            raise auth.not_permitted_exception()
-
-        if models.AuthCredential.delete_one_by_id(session, auth_credential_id) == 0:
-            raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                detail=models.AuthCredential.not_found_message())
-
-        return Response(status_code=204)
 
 # API Keys
 
