@@ -7,9 +7,9 @@ import {
 } from '../../types';
 import { useApiCall } from '../../utils/Api';
 import { paths, operations, components } from '../../openapi_schema';
-import { deleteAuthCredential } from '../../services/api/deleteAuthCredential';
+import { deleteUserAccessToken } from '../../services/api/deleteUserAccessToken';
 
-const API_ENDPOINT = '/sessions/';
+const API_ENDPOINT = '/user-access-tokens/';
 const API_METHOD = 'get';
 
 type ResponseTypesByStatus = ExtractResponseTypes<
@@ -21,8 +21,8 @@ interface Props {
   toastContext: ToastContext;
 }
 
-function Sessions({ authContext, toastContext }: Props): JSX.Element {
-  const [sessions, setSessions] = useState<{
+function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
+  const [userAccessTokens, setUserAccessTokens] = useState<{
     [key: string]: ResponseTypesByStatus['200'][number];
   }>({});
 
@@ -40,27 +40,26 @@ function Sessions({ authContext, toastContext }: Props): JSX.Element {
 
   useEffect(() => {
     if (apiData && response.status === 200) {
-      const sessionsObject = (apiData as ResponseTypesByStatus['200']).reduce(
-        (acc, session) => {
-          acc[session.id] = session;
-          return acc;
-        },
-        {} as { [key: string]: ResponseTypesByStatus['200'][number] }
-      );
-      setSessions(sessionsObject);
+      const userAccessTokensObject = (
+        apiData as ResponseTypesByStatus['200']
+      ).reduce((acc, session) => {
+        acc[session.id] = session;
+        return acc;
+      }, {} as { [key: string]: ResponseTypesByStatus['200'][number] });
+      setUserAccessTokens(userAccessTokensObject);
     }
   }, [apiData, response]);
 
   async function handleDeleteSession(sessionId: string) {
-    console.log(sessions);
+    console.log(userAccessTokens);
 
-    const sessionToDelete = sessions[sessionId];
+    const sessionToDelete = userAccessTokens[sessionId];
 
-    const newSessions = { ...sessions };
-    delete newSessions[sessionId];
-    setSessions(newSessions);
+    const newUserAccessTokens = { ...userAccessTokens };
+    delete newUserAccessTokens[sessionId];
+    setUserAccessTokens(newUserAccessTokens);
 
-    const { data, response } = await deleteAuthCredential(
+    const { data, response } = await deleteUserAccessToken(
       sessionId,
       toastContext
     );
@@ -69,7 +68,10 @@ function Sessions({ authContext, toastContext }: Props): JSX.Element {
     console.log(response);
 
     if (response.status !== 204) {
-      setSessions({ ...sessions, [sessionId]: sessionToDelete });
+      setUserAccessTokens({
+        ...userAccessTokens,
+        [sessionId]: sessionToDelete,
+      });
     }
   }
 
@@ -80,8 +82,8 @@ function Sessions({ authContext, toastContext }: Props): JSX.Element {
         <p>Login to view your sessions.</p>
       ) : (
         <div>
-          {Object.keys(sessions).map((key) => {
-            const session = sessions[key];
+          {Object.keys(userAccessTokens).map((key) => {
+            const session = userAccessTokens[key];
             return (
               <div key={key} className="flex flex-row">
                 <p>
@@ -109,4 +111,4 @@ function Sessions({ authContext, toastContext }: Props): JSX.Element {
   );
 }
 
-export { Sessions };
+export { UserAccessTokens };

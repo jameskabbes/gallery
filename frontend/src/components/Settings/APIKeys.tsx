@@ -3,7 +3,8 @@ import { CallApiProps, ToastContext } from '../../types';
 import { useApiCall } from '../../utils/Api';
 import { paths, operations, components } from '../../openapi_schema';
 import { ExtractResponseTypes, AuthContext } from '../../types';
-import { deleteAuthCredential } from '../../services/api/deleteAuthCredential';
+import { deleteAPIKey } from '../../services/api/deleteAPIKey';
+import { postAPIKey } from '../../services/api/postAPIKey';
 
 const API_ENDPOINT = '/api-keys/';
 const API_METHOD = 'get';
@@ -18,7 +19,7 @@ interface Props {
 }
 
 function APIKeys({ authContext, toastContext }: Props): JSX.Element {
-  const [sessions, setSessions] = useState<{
+  const [apiKeys, setAPIKeys] = useState<{
     [key: string]: ResponseTypesByStatus['200'][number];
   }>({});
 
@@ -36,36 +37,33 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
 
   useEffect(() => {
     if (apiData && response.status === 200) {
-      const sessionsObject = (apiData as ResponseTypesByStatus['200']).reduce(
-        (acc, session) => {
-          acc[session.id] = session;
+      const apiKeysObject = (apiData as ResponseTypesByStatus['200']).reduce(
+        (acc, apiKey) => {
+          acc[apiKey.id] = apiKey;
           return acc;
         },
         {} as { [key: string]: ResponseTypesByStatus['200'][number] }
       );
-      setSessions(sessionsObject);
+      setAPIKeys(apiKeysObject);
     }
   }, [apiData, response]);
 
-  async function handleDeleteSession(sessionId: string) {
-    console.log(sessions);
+  async function handleDeleteAPIKey(apiKeyId: string) {
+    console.log(apiKeys);
 
-    const sessionToDelete = sessions[sessionId];
+    const apiKeyToDelete = apiKeys[apiKeyId];
 
-    const newSessions = { ...sessions };
-    delete newSessions[sessionId];
-    setSessions(newSessions);
+    const newAPIKeys = { ...apiKeys };
+    delete newAPIKeys[apiKeyId];
+    setAPIKeys(newAPIKeys);
 
-    const { data, response } = await deleteAuthCredential(
-      sessionId,
-      toastContext
-    );
+    const { data, response } = await deleteAPIKey(apiKeyId, toastContext);
 
     console.log(data);
     console.log(response);
 
     if (response.status !== 204) {
-      setSessions({ ...sessions, [sessionId]: sessionToDelete });
+      setAPIKeys({ ...apiKeys, [apiKeyId]: apiKeyToDelete });
     }
   }
 
@@ -76,27 +74,45 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
         <p>Login to view your API keys.</p>
       ) : (
         <>
-          <button className="button-primary">Add Key</button>
+          <button
+            className="button-primary"
+            onClick={() => {
+              postAPIKey(
+                {
+                  user_id: authContext.state.user.id,
+                  expiry: new Date().toISOString(),
+                  name: Array.from(
+                    { length: 16 },
+                    () => Math.random().toString(36)[2]
+                  ).join(''),
+                },
+                toastContext
+              );
+            }}
+          >
+            Add Key
+          </button>
           <div>
-            {Object.keys(sessions).map((key) => {
-              const session = sessions[key];
+            {Object.keys(apiKeys).map((key) => {
+              const apiKey = apiKeys[key];
               return (
                 <div key={key} className="flex flex-row">
                   <p>
                     Issued:{' '}
-                    {new Date(session.issued).toLocaleDateString('en-US', {
+                    {new Date(apiKey.issued).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
                     })}
                   </p>
+                  <p>{apiKey.name}</p>
                   <button
                     onClick={() => {
-                      handleDeleteSession(key);
+                      handleDeleteAPIKey(key);
                     }}
                     className="button-primary"
                   >
-                    Sign Out
+                    Delete
                   </button>
                 </div>
               );

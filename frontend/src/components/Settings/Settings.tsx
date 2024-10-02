@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/Auth';
 import { ToastContext } from '../../contexts/Toast';
 import { Appearance } from './Appearance';
-import { Sessions } from './Sessions';
+import { UserAccessTokens } from './UserAccessTokens';
 import { paths, operations, components } from '../../openapi_schema';
 import { ExtractResponseTypes } from '../../types';
 import { useApiCall } from '../../utils/Api';
@@ -38,11 +38,14 @@ function Settings(): JSX.Element {
       name: 'Appearance',
       component: <Appearance />,
     },
-    sessions: {
+    UserAccessTokens: {
       icon: <IoRadioOutline />,
-      name: 'Sessions',
+      name: 'UserAccessTokens',
       component: (
-        <Sessions authContext={authContext} toastContext={toastContext} />
+        <UserAccessTokens
+          authContext={authContext}
+          toastContext={toastContext}
+        />
       ),
     },
     apiKeys: {
@@ -54,7 +57,11 @@ function Settings(): JSX.Element {
     },
   };
 
-  const loggedInComponentKeys = new Set(['profile', 'sessions', 'apiKeys']);
+  const loggedInComponentKeys = new Set([
+    'profile',
+    'UserAccessTokens',
+    'apiKeys',
+  ]);
 
   const defaultSelection = 'appearance';
   const [selection, setSelection] = useState(defaultSelection);

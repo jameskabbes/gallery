@@ -67,21 +67,25 @@ export interface paths {
     /** Patch User */
     patch: operations["patch_user_user__patch"];
   };
-  "/auth-credentials/": {
-    /** Get Auth Credentials */
-    get: operations["get_auth_credentials_auth_credentials__get"];
+  "/user-access-tokens/": {
+    /** Get User Access Tokens */
+    get: operations["get_user_access_tokens_user_access_tokens__get"];
   };
-  "/sessions/": {
-    /** Get User Sessions */
-    get: operations["get_user_sessions_sessions__get"];
+  "/user-access-tokens/{user_access_token_id}/": {
+    /** Delete User Access Token */
+    delete: operations["delete_user_access_token_user_access_tokens__user_access_token_id___delete"];
   };
   "/api-keys/": {
-    /** Get User Sessions */
-    get: operations["get_user_sessions_api_keys__get"];
+    /** Get Api Keys */
+    get: operations["get_api_keys_api_keys__get"];
+    /** Post Api Key */
+    post: operations["post_api_key_api_keys__post"];
   };
-  "/auth-credentials/{auth_credential_id}/": {
-    /** Delete Auth Credential */
-    delete: operations["delete_auth_credential_auth_credentials__auth_credential_id___delete"];
+  "/api-keys/{api_key_id}/": {
+    /** Delete Api Key */
+    delete: operations["delete_api_key_api_keys__api_key_id___delete"];
+    /** Patch Api Key */
+    patch: operations["patch_api_key_api_keys__api_key_id___patch"];
   };
   "/profile/page/": {
     /** Get Pages Profile */
@@ -101,14 +105,10 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
-    /** AuthCredential */
-    AuthCredential: {
-      /** Id */
-      id: string;
+    /** APIKey */
+    APIKey: {
       /** User Id */
       user_id: string;
-      /** Type */
-      type: string;
       /**
        * Issued
        * Format: date-time
@@ -119,9 +119,27 @@ export interface components {
        * Format: date-time
        */
       expiry: string;
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
     };
-    /** @enum {string} */
-    AuthCredentialType: "access_token" | "api_key";
+    /** APIKeyCreate */
+    APIKeyCreate: {
+      /** User Id */
+      user_id: string;
+      /** Lifespan */
+      lifespan?: string | null;
+      /** Expiry */
+      expiry?: string | null;
+      /** Name */
+      name: string;
+    };
+    /** APIKeyUpdate */
+    APIKeyUpdate: {
+      /** Name */
+      name?: string | null;
+    };
     /** Body_login_auth_login_password__post */
     Body_login_auth_login_password__post: {
       /** Grant Type */
@@ -177,7 +195,7 @@ export interface components {
     GetAuthBaseReturn: {
       user?: components["schemas"]["UserPrivate"] | null;
       /** Scopes */
-      scopes?: string[] | null;
+      scopes?: components["schemas"]["ScopeName"][] | null;
       /** Expiry */
       expiry?: string | null;
     };
@@ -234,6 +252,8 @@ export interface components {
       /** Detail */
       detail: string;
     };
+    /** @enum {string} */
+    ScopeName: "admin" | "users.read" | "users.write";
     /** SignupResponse */
     SignupResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
@@ -256,6 +276,23 @@ export interface components {
        * @default 2
        */
       user_role_id?: string;
+    };
+    /** UserAccessToken */
+    UserAccessToken: {
+      /** User Id */
+      user_id: string;
+      /**
+       * Issued
+       * Format: date-time
+       */
+      issued: string;
+      /**
+       * Expiry
+       * Format: date-time
+       */
+      expiry: string;
+      /** Id */
+      id: string;
     };
     /** UserCreate */
     UserCreate: {
@@ -657,11 +694,6 @@ export interface operations {
   };
   /** Delete User */
   delete_user_user__delete: {
-    parameters: {
-      query: {
-        user_id: string;
-      };
-    };
     responses: {
       /** @description Successful Response */
       204: {
@@ -671,12 +703,6 @@ export interface operations {
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -715,24 +741,72 @@ export interface operations {
       };
     };
   };
-  /** Get Auth Credentials */
-  get_auth_credentials_auth_credentials__get: {
-    parameters: {
-      query?: {
-        filter_type?: components["schemas"]["AuthCredentialType"];
-      };
-    };
+  /** Get User Access Tokens */
+  get_user_access_tokens_user_access_tokens__get: {
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["AuthCredential"][];
+          "application/json": components["schemas"]["UserAccessToken"][];
         };
       };
       /** @description User not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+    };
+  };
+  /** Delete User Access Token */
+  delete_user_access_token_user_access_tokens__user_access_token_id___delete: {
+    parameters: {
+      path: {
+        user_access_token_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      204: {
+        content: never;
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get Api Keys */
+  get_api_keys_api_keys__get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["APIKey"][];
+        };
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+    };
+  };
+  /** Post Api Key */
+  post_api_key_api_keys__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["APIKeyCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["APIKey"];
         };
       };
       /** @description Validation Error */
@@ -743,45 +817,11 @@ export interface operations {
       };
     };
   };
-  /** Get User Sessions */
-  get_user_sessions_sessions__get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["AuthCredential"][];
-        };
-      };
-      /** @description User not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-    };
-  };
-  /** Get User Sessions */
-  get_user_sessions_api_keys__get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["AuthCredential"][];
-        };
-      };
-      /** @description User not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-    };
-  };
-  /** Delete Auth Credential */
-  delete_auth_credential_auth_credentials__auth_credential_id___delete: {
+  /** Delete Api Key */
+  delete_api_key_api_keys__api_key_id___delete: {
     parameters: {
       path: {
-        auth_credential_id: string;
+        api_key_id: string;
       };
     };
     responses: {
@@ -789,16 +829,31 @@ export interface operations {
       204: {
         content: never;
       };
-      /** @description User does not have permission to delete this auth credential */
-      403: {
+      /** @description Validation Error */
+      422: {
         content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
-      /** @description AuthCredential not found */
-      404: {
+    };
+  };
+  /** Patch Api Key */
+  patch_api_key_api_keys__api_key_id___patch: {
+    parameters: {
+      path: {
+        api_key_id: string;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["APIKeyUpdate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
         content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
+          "application/json": components["schemas"]["APIKey"];
         };
       };
       /** @description Validation Error */

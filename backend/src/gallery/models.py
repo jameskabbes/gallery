@@ -10,6 +10,7 @@ import datetime as datetime_module
 from enum import Enum
 import jwt
 import pydantic
+import collections.abc
 #
 
 
@@ -44,6 +45,7 @@ class VisibilityLevel(Enum):
 class Table[IDType]:
 
     _ID_COLS: typing.ClassVar[list[str]] = ['id']
+    type PluralDict = dict[IDType, typing.Self]
 
     @property
     def _id(self) -> IDType:
@@ -141,6 +143,10 @@ class Table[IDType]:
                 status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
         else:
             return True
+
+    @classmethod
+    def export_plural_to_dict(cls, items: collections.abc.Iterable[typing.Self]) -> PluralDict:
+        return {item._id: item for item in items}
 
 
 class SingularCreate[TableType: Table](BaseModel):
@@ -392,7 +398,7 @@ class AuthCredentialTypes:
     type = typing.Literal['access_token', 'api_key']
 
 
-class AuthCredential[IDType](BaseModel):
+class AuthCredential[IDType](BaseModel, ABC):
     user_id: UserTypes.id = Field(
         index=True, foreign_key=User.__tablename__ + '.id', const=True)
     issued: datetime_module.datetime = Field(const=True)
@@ -433,8 +439,12 @@ class AuthCredential[IDType](BaseModel):
     def export_to_jwt(self) -> JWTExport:
         return {key: getattr(self, value) for key, value in self._JWT_CLAIMS_TO_ATTRIBUTES.items()}
 
+    @abstractmethod
+    def get_scopes(self) -> list[Scope]:
+        pass
 
-class AuthCredentialCreate(SingularCreate[AuthCredential], ABC):
+
+class AuthCredentialCreate(SingularCreate[AuthCredential]):
     user_id: AuthCredentialTypes.user_id
     lifespan: typing.Annotated[datetime_module.timedelta | None,
                                'The timedelta from token creation in which the token is still valid'] = None
@@ -445,13 +455,11 @@ class AuthCredentialCreate(SingularCreate[AuthCredential], ABC):
                                      ] = AuthCredential
 
     @pydantic.model_validator(mode='after')
-    def check_lifespan_or_expiry(cls, values):
-        lifespan = values.get('lifespan')
-        expiry = values.get('expiry')
-        if lifespan is None and expiry is None:
+    def check_lifespan_or_expiry(self):
+        if self.lifespan == None and self.expiry == None:
             raise ValueError(
                 "Either 'lifespan' or 'expiry' must be set and not None.")
-        return values
+        return self
 
     def get_expiry(self) -> datetime_module.datetime:
 
@@ -460,10 +468,6 @@ class AuthCredentialCreate(SingularCreate[AuthCredential], ABC):
 
         return datetime_module.datetime.now(
             datetime_module.UTC) + self.lifespan
-
-    @abstractmethod
-    def get_scopes(self) -> list[Scope]:
-        pass
 
 
 class UserAccessTokenTypes(AuthCredentialTypes):
@@ -492,7 +496,7 @@ class UserAccessTokenCreate(SingularCreate[UserAccessToken], AuthCredentialCreat
             issued=datetime_module.datetime.now(
                 datetime_module.timezone.utc),
             expiry=self.get_expiry(),
-            **self.model_dump()
+            **self.model_dump(exclude=['lifespan', 'expiry'])
         )
 
 
@@ -502,6 +506,10 @@ class UserAccessTokenCreate(SingularCreate[UserAccessToken], AuthCredentialCreat
 class APIKeyTypes(AuthCredentialTypes):
     id = str
     name = str
+
+
+class APIKeyUpdate(BaseModel):
+    name: typing.Optional[APIKeyTypes.name] = None
 
 
 class APIKey(SQLModel, AuthCredential[APIKeyTypes.id], Table[APIKeyTypes.id], table=True):
@@ -522,6 +530,7 @@ class APIKey(SQLModel, AuthCredential[APIKeyTypes.id], Table[APIKeyTypes.id], ta
 class APIKeyCreate(SingularCreate[APIKey], AuthCredentialCreate):
     _SINGULAR_MODEL: typing.ClassVar[typing.Type[UserAccessToken]
                                      ] = UserAccessToken
+    name: APIKeyTypes.name
 
     def create(self) -> APIKey:
         return APIKey(
@@ -529,7 +538,7 @@ class APIKeyCreate(SingularCreate[APIKey], AuthCredentialCreate):
             issued=datetime_module.datetime.now(
                 datetime_module.timezone.utc),
             expiry=self.get_expiry(),
-            **self.model_dump()
+            **self.model_dump(exclude=['lifespan', 'expiry'])
         )
 
 

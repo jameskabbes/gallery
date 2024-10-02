@@ -24,8 +24,9 @@
 # }
 
 #verify magic token
-#POST http://localhost:8087/auth/verify-magic-link/
-#Authorization: Bearer token
+# POST http://localhost:8087/auth/verify-magic-link/
+# Authorization: Bearer token
+
 
 # get user sessions
 # GET http://localhost:8087/user/id/sessions/
@@ -59,7 +60,7 @@
 # "user_role_id": "2"
 # }
 
-GET http://localhost:8087/api-keys/
-Authorization: Bearer token
+# GET http://localhost:8087/api-keys/
+# Authorization: Bearer token
 
 

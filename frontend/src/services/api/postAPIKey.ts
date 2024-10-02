@@ -3,42 +3,43 @@ import { callApi } from '../../utils/Api';
 import { paths, operations, components } from '../../openapi_schema';
 import { CallApiReturn, ExtractResponseTypes, ToastContext } from '../../types';
 
-const API_ENDPOINT = '/auth-credentials/{auth_credential_id}/';
-const API_METHOD = 'delete';
+const API_ENDPOINT = '/api-keys/';
+const API_METHOD = 'post';
 
 type ResponseTypesByStatus = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
-async function deleteAuthCredential(
-  auth_credential_id: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['auth_credential_id'],
+async function postAPIKey(
+  apiKeyCreate: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json'],
   toastContext: ToastContext
 ): Promise<CallApiReturn<ResponseTypesByStatus[keyof ResponseTypesByStatus]>> {
   let toastId = toastContext.makePending({
-    message: 'Deleting authorization credential...',
+    message: 'Making API Key...',
   });
 
   const { data, response } = await callApi<
     ResponseTypesByStatus[keyof ResponseTypesByStatus],
-    paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['auth_credential_id']
+    paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >({
-    endpoint: API_ENDPOINT.replace('{auth_credential_id}', auth_credential_id),
+    endpoint: API_ENDPOINT,
     method: API_METHOD,
+    data: apiKeyCreate,
   });
 
-  if (response.status === 204) {
-    const apiData = data as ResponseTypesByStatus['204'];
+  if (response.status === 200) {
+    const apiData = data as ResponseTypesByStatus['200'];
     toastContext.update(toastId, {
-      message: `Deleted authorization credential`,
+      message: `Created API Key`,
       type: 'success',
     });
   } else {
     toastContext.update(toastId, {
-      message: 'Could not delete authorization credential',
+      message: `Could not create API Key`,
       type: 'error',
     });
   }
   return { data, response };
 }
 
-export { deleteAuthCredential };
+export { postAPIKey };
