@@ -45,7 +45,7 @@ function UpdateUser({ user }: Props) {
     if (valid && authContext.state.user !== null) {
       setLoading(true);
       let toastId = toastContext.makePending({
-        message: 'Updating password...',
+        message: 'Updating user...',
       });
 
       const { data, response } = await patchUserFunc({
@@ -56,6 +56,10 @@ function UpdateUser({ user }: Props) {
       if (response.status === 200) {
         const apiData = data as PatchUserResponseTypes['200'];
         setStartingEmail(email.value);
+        toastContext.update(toastId, {
+          message: 'Updated user',
+          type: 'success',
+        });
         authContext.setState({
           ...authContext.state,
           user: apiData,

@@ -27,6 +27,18 @@ function Settings(): JSX.Element {
   const toastContext = useContext(ToastContext);
   const navigate = useNavigate();
 
+  const {
+    data: apiData,
+    loading,
+    response,
+  } = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>(
+    {
+      endpoint: API_ENDPOINT,
+      method: API_METHOD,
+    },
+    true
+  );
+
   const selectionComponentMapping = {
     profile: {
       icon: <IoPersonOutline />,
@@ -69,41 +81,34 @@ function Settings(): JSX.Element {
   const defaultLoggedInSelection: SelectionComponentKeys = 'profile';
   const defaultLoggedOutSelection: SelectionComponentKeys = 'appearance';
 
-  const { selection: urlSelection } = useParams<{ selection: string }>();
   const [selection, setSelection] = useState<SelectionComponentKeys>(
-    authContext.state.user
-      ? defaultLoggedInSelection
-      : defaultLoggedOutSelection
+    useParams<{ selection: string }>().selection as SelectionComponentKeys
   );
+
+  // navigate based on what the selection is
+  useEffect(() => {
+    if (!loading) {
+      navigate(`/settings/${selection}`);
+    }
+  }, [selection, loading]);
 
   useEffect(() => {
-    let validSelection = urlSelection as SelectionComponentKeys;
-    if (!validSelection || !(validSelection in selectionComponentMapping)) {
-      validSelection = authContext.state.user
-        ? defaultLoggedInSelection
-        : defaultLoggedOutSelection;
+    if (!loading) {
+      // logged out
+      if (authContext.state.user === null) {
+        if (
+          loggedInComponentKeys.has(selection) ||
+          !(selection in selectionComponentMapping)
+        ) {
+          setSelection(defaultLoggedOutSelection);
+        }
+      } else {
+        if (!(selection in selectionComponentMapping)) {
+          setSelection(defaultLoggedInSelection);
+        }
+      }
     }
-    if (
-      authContext.state.user === null &&
-      loggedInComponentKeys.has(validSelection)
-    ) {
-      navigate('/settings/');
-    } else {
-      setSelection(validSelection);
-    }
-  }, [urlSelection, authContext.state.user, navigate]);
-
-  const {
-    data: apiData,
-    loading,
-    response,
-  } = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>(
-    {
-      endpoint: API_ENDPOINT,
-      method: API_METHOD,
-    },
-    true
-  );
+  }, [authContext.state.user, selection, loading]);
 
   return (
     <>
@@ -114,22 +119,28 @@ function Settings(): JSX.Element {
             (key: SelectionComponentKeys) => {
               if (authContext.state.user || !loggedInComponentKeys.has(key)) {
                 return (
-                  <Link to={`/settings/${key}`} key={key}>
-                    <button
-                      className={selection === key ? 'bg-color-darker' : ''}
-                    >
-                      <div className="flex flex-row space-x-1 items-center">
-                        {selectionComponentMapping[key].icon}
-                        <span>{selectionComponentMapping[key].name}</span>
-                      </div>
-                    </button>
-                  </Link>
+                  <button
+                    key={key}
+                    onClick={() => setSelection(key)}
+                    className={selection === key ? 'bg-color-darker' : ''}
+                  >
+                    <div className="flex flex-row space-x-1 items-center">
+                      {selectionComponentMapping[key].icon}
+                      <span>{selectionComponentMapping[key].name}</span>
+                    </div>
+                  </button>
                 );
               }
             }
           )}
         </div>
-        <div>{selectionComponentMapping[selection].component}</div>
+        <div>
+          {loading ? (
+            <span className="loader-secondary"></span>
+          ) : selection in selectionComponentMapping ? (
+            selectionComponentMapping[selection].component
+          ) : null}
+        </div>
       </div>
     </>
   );

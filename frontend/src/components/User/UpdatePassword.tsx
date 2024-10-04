@@ -40,9 +40,12 @@ function UpdatePassword() {
 
       if (response.status === 200) {
         const apiData = data as PatchUserResponseTypes['200'];
-
         setPassword({ ...defaultInputState });
         setConfirmPassword({ ...defaultInputState });
+        toastContext.update(toastId, {
+          message: 'Updated user',
+          type: 'success',
+        });
         authContext.setState({
           ...authContext.state,
           user: apiData,

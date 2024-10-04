@@ -53,6 +53,10 @@ function UpdateUsername({ user }: Props) {
       if (response.status === 200) {
         const apiData = data as PatchUserResponseTypes['200'];
         setStartingUsername(username.value);
+        toastContext.update(toastId, {
+          message: 'Updated username',
+          type: 'success',
+        });
         authContext.setState({
           ...authContext.state,
           user: apiData,
