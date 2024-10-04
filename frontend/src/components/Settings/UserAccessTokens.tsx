@@ -7,7 +7,10 @@ import {
 } from '../../types';
 import { useApiCall } from '../../utils/Api';
 import { paths, operations, components } from '../../openapi_schema';
-import { deleteUserAccessToken } from '../../services/api/deleteUserAccessToken';
+import {
+  deleteUserAccessToken,
+  ResponseTypesByStatus as DeleteUserAccessTokenResponseTypes,
+} from '../../services/api/deleteUserAccessToken';
 
 const API_ENDPOINT = '/user-access-tokens/';
 const API_METHOD = 'get';
@@ -51,7 +54,9 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
   }, [apiData, response]);
 
   async function handleDeleteSession(sessionId: string) {
-    console.log(userAccessTokens);
+    let toastId = toastContext.makePending({
+      message: 'Deleting session...',
+    });
 
     const sessionToDelete = userAccessTokens[sessionId];
 
@@ -59,15 +64,19 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
     delete newUserAccessTokens[sessionId];
     setUserAccessTokens(newUserAccessTokens);
 
-    const { data, response } = await deleteUserAccessToken(
-      sessionId,
-      toastContext
-    );
+    const { data, response } = await deleteUserAccessToken(sessionId);
 
-    console.log(data);
-    console.log(response);
-
-    if (response.status !== 204) {
+    if (response.status === 204) {
+      const apiData = data as DeleteUserAccessTokenResponseTypes['204'];
+      toastContext.update(toastId, {
+        message: `Deleted session`,
+        type: 'success',
+      });
+    } else {
+      toastContext.update(toastId, {
+        message: 'Could not delete session',
+        type: 'error',
+      });
       setUserAccessTokens({
         ...userAccessTokens,
         [sessionId]: sessionToDelete,

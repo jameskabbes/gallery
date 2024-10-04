@@ -11,13 +11,8 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 >;
 
 async function deleteUserAccessToken(
-  user_access_token_id: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['user_access_token_id'],
-  toastContext: ToastContext
+  user_access_token_id: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['user_access_token_id']
 ): Promise<CallApiReturn<ResponseTypesByStatus[keyof ResponseTypesByStatus]>> {
-  let toastId = toastContext.makePending({
-    message: 'Deleting user access token...',
-  });
-
   const { data, response } = await callApi<
     ResponseTypesByStatus[keyof ResponseTypesByStatus]
   >({
@@ -28,19 +23,7 @@ async function deleteUserAccessToken(
     method: API_METHOD,
   });
 
-  if (response.status === 204) {
-    const apiData = data as ResponseTypesByStatus['204'];
-    toastContext.update(toastId, {
-      message: `Deleted user access token`,
-      type: 'success',
-    });
-  } else {
-    toastContext.update(toastId, {
-      message: 'Could not delete user access token',
-      type: 'error',
-    });
-  }
   return { data, response };
 }
 
-export { deleteUserAccessToken };
+export { deleteUserAccessToken, ResponseTypesByStatus };

@@ -11,13 +11,8 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 >;
 
 async function deleteAPIKey(
-  api_key_id: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['api_key_id'],
-  toastContext: ToastContext
+  api_key_id: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['api_key_id']
 ): Promise<CallApiReturn<ResponseTypesByStatus[keyof ResponseTypesByStatus]>> {
-  let toastId = toastContext.makePending({
-    message: 'Deleting API Key...',
-  });
-
   const { data, response } = await callApi<
     ResponseTypesByStatus[keyof ResponseTypesByStatus]
   >({
@@ -25,19 +20,7 @@ async function deleteAPIKey(
     method: API_METHOD,
   });
 
-  if (response.status === 204) {
-    const apiData = data as ResponseTypesByStatus['204'];
-    toastContext.update(toastId, {
-      message: `Deleted API Key`,
-      type: 'success',
-    });
-  } else {
-    toastContext.update(toastId, {
-      message: 'Could not delete API Key',
-      type: 'error',
-    });
-  }
   return { data, response };
 }
 
-export { deleteAPIKey };
+export { deleteAPIKey, ResponseTypesByStatus };
