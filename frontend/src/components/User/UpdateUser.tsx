@@ -5,9 +5,12 @@ import { paths, operations, components } from '../../openapi_schema';
 import openapi_schema from '../../../../openapi_schema.json';
 import { AuthContext } from '../../contexts/Auth';
 import { ToastContext } from '../../contexts/Toast';
-import { patchUserFunc } from '../../services/api/patchUserFunc';
 import { isEmailValid } from '../../services/api/isEmailValid';
 import { isEmailAvailable } from '../../services/api/isEmailAvailable';
+import {
+  patchUserFunc,
+  ResponseTypesByStatus as PatchUserResponseTypes,
+} from '../../services/api/patchUserFunc';
 
 interface Props {
   user: components['schemas']['UserPrivate'];
@@ -41,16 +44,32 @@ function UpdateUser({ user }: Props) {
     e.preventDefault();
     if (valid && authContext.state.user !== null) {
       setLoading(true);
-      const { data, response } = await patchUserFunc(
-        {
-          email: email.value,
-        },
-        authContext,
-        toastContext
-      );
+      let toastId = toastContext.makePending({
+        message: 'Updating password...',
+      });
+
+      const { data, response } = await patchUserFunc({
+        email: email.value,
+      });
       setLoading(false);
+
       if (response.status === 200) {
+        const apiData = data as PatchUserResponseTypes['200'];
         setStartingEmail(email.value);
+        authContext.setState({
+          ...authContext.state,
+          user: apiData,
+        });
+      } else {
+        let message = 'Error updating user';
+        if (response.status === 404 || response.status === 409) {
+          const apiData = data as PatchUserResponseTypes['404' | '409'];
+          message = apiData.detail;
+        }
+        toastContext.update(toastId, {
+          message: message,
+          type: 'error',
+        });
       }
     }
   }

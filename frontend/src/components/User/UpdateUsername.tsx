@@ -6,7 +6,10 @@ import { AuthContext } from '../../contexts/Auth';
 import { ToastContext } from '../../contexts/Toast';
 import { components } from '../../openapi_schema';
 import { isUsernameAvailable } from '../../services/api/isUsernameAvailable';
-import { patchUserFunc } from '../../services/api/patchUserFunc';
+import {
+  patchUserFunc,
+  ResponseTypesByStatus as PatchUserResponseTypes,
+} from '../../services/api/patchUserFunc';
 
 interface Props {
   user: components['schemas']['UserPrivate'];
@@ -36,16 +39,34 @@ function UpdateUsername({ user }: Props) {
   async function handleUpdateUsername(e: React.FormEvent) {
     e.preventDefault();
     if (valid && authContext.state.user !== null) {
-      let { data, response } = await patchUserFunc(
-        {
-          username: username.value,
-        },
-        authContext,
-        toastContext
-      );
+      setLoading(true);
+
+      let toastId = toastContext.makePending({
+        message: 'Updating username...',
+      });
+
+      let { data, response } = await patchUserFunc({
+        username: username.value,
+      });
+      setLoading(false);
 
       if (response.status === 200) {
-        setUsername({ ...defaultInputState });
+        const apiData = data as PatchUserResponseTypes['200'];
+        setStartingUsername(username.value);
+        authContext.setState({
+          ...authContext.state,
+          user: apiData,
+        });
+      } else {
+        let message = 'Error updating user';
+        if (response.status === 404 || response.status === 409) {
+          const apiData = data as PatchUserResponseTypes['404' | '409'];
+          message = apiData.detail;
+        }
+        toastContext.update(toastId, {
+          message: message,
+          type: 'error',
+        });
       }
     }
   }

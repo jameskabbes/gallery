@@ -5,7 +5,10 @@ import openapi_schema from '../../../../openapi_schema.json';
 import { AuthContext } from '../../contexts/Auth';
 import { components } from '../../openapi_schema';
 import { ToastContext } from '../../contexts/Toast';
-import { patchUserFunc } from '../../services/api/patchUserFunc';
+import {
+  patchUserFunc,
+  ResponseTypesByStatus as PatchUserResponseTypes,
+} from '../../services/api/patchUserFunc';
 
 interface Props {}
 
@@ -27,17 +30,33 @@ function UpdatePassword() {
   async function handleUpdatePassword(e: React.FormEvent) {
     e.preventDefault();
     if (valid && authContext.state.user !== null) {
-      let { data, response } = await patchUserFunc(
-        {
-          password: password.value,
-        },
-        authContext,
-        toastContext
-      );
+      let toastId = toastContext.makePending({
+        message: 'Updating password...',
+      });
+
+      let { data, response } = await patchUserFunc({
+        password: password.value,
+      });
 
       if (response.status === 200) {
+        const apiData = data as PatchUserResponseTypes['200'];
+
         setPassword({ ...defaultInputState });
         setConfirmPassword({ ...defaultInputState });
+        authContext.setState({
+          ...authContext.state,
+          user: apiData,
+        });
+      } else {
+        let message = 'Error updating password';
+        if (response.status === 404 || response.status === 409) {
+          const apiData = data as PatchUserResponseTypes['404' | '409'];
+          message = apiData.detail;
+        }
+        toastContext.update(toastId, {
+          message: message,
+          type: 'error',
+        });
       }
     }
   }
