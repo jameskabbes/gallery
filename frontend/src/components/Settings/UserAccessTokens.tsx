@@ -53,16 +53,20 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
     }
   }, [apiData, response]);
 
-  async function handleDeleteSession(sessionId: string) {
+  async function handleDeleteSession(
+    sessionId: components['schemas']['UserAccessToken']['id']
+  ) {
     let toastId = toastContext.makePending({
       message: 'Deleting session...',
     });
 
     const sessionToDelete = userAccessTokens[sessionId];
 
-    const newUserAccessTokens = { ...userAccessTokens };
-    delete newUserAccessTokens[sessionId];
-    setUserAccessTokens(newUserAccessTokens);
+    setUserAccessTokens((prevUserAccessTokens) => {
+      const newUserAccessTokens = { ...prevUserAccessTokens };
+      delete newUserAccessTokens[sessionId];
+      return newUserAccessTokens;
+    });
 
     const { data, response } = await deleteUserAccessToken(sessionId);
 
@@ -77,10 +81,10 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
         message: 'Could not delete session',
         type: 'error',
       });
-      setUserAccessTokens({
-        ...userAccessTokens,
+      setUserAccessTokens((prevUserAccessTokens) => ({
+        ...prevUserAccessTokens,
         [sessionId]: sessionToDelete,
-      });
+      }));
     }
   }
 
