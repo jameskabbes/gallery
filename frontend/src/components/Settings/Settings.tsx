@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../../contexts/Auth';
 import { ToastContext } from '../../contexts/Toast';
 import { Appearance } from './Appearance';
@@ -25,6 +25,8 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 function Settings(): JSX.Element {
   const authContext = useContext(AuthContext);
   const toastContext = useContext(ToastContext);
+  const navigate = useNavigate();
+
   const selectionComponentMapping = {
     profile: {
       icon: <IoPersonOutline />,
@@ -38,9 +40,9 @@ function Settings(): JSX.Element {
       name: 'Appearance',
       component: <Appearance />,
     },
-    UserAccessTokens: {
+    sessions: {
       icon: <IoRadioOutline />,
-      name: 'UserAccessTokens',
+      name: 'Sessions',
       component: (
         <UserAccessTokens
           authContext={authContext}
@@ -48,7 +50,7 @@ function Settings(): JSX.Element {
         />
       ),
     },
-    apiKeys: {
+    'api-keys': {
       icon: <IoKeyOutline />,
       name: 'API Keys',
       component: (
@@ -57,14 +59,39 @@ function Settings(): JSX.Element {
     },
   };
 
-  const loggedInComponentKeys = new Set([
+  type SelectionComponentKeys = keyof typeof selectionComponentMapping;
+  const loggedInComponentKeys = new Set<SelectionComponentKeys>([
     'profile',
-    'UserAccessTokens',
-    'apiKeys',
+    'sessions',
+    'api-keys',
   ]);
 
-  const defaultSelection = 'appearance';
-  const [selection, setSelection] = useState(defaultSelection);
+  const defaultLoggedInSelection: SelectionComponentKeys = 'profile';
+  const defaultLoggedOutSelection: SelectionComponentKeys = 'appearance';
+
+  const { selection: urlSelection } = useParams<{ selection: string }>();
+  const [selection, setSelection] = useState<SelectionComponentKeys>(
+    authContext.state.user
+      ? defaultLoggedInSelection
+      : defaultLoggedOutSelection
+  );
+
+  useEffect(() => {
+    let validSelection = urlSelection as SelectionComponentKeys;
+    if (!validSelection || !(validSelection in selectionComponentMapping)) {
+      validSelection = authContext.state.user
+        ? defaultLoggedInSelection
+        : defaultLoggedOutSelection;
+    }
+    if (
+      authContext.state.user === null &&
+      loggedInComponentKeys.has(validSelection)
+    ) {
+      navigate('/settings/');
+    } else {
+      setSelection(validSelection);
+    }
+  }, [urlSelection, authContext.state.user, navigate]);
 
   const {
     data: apiData,
@@ -78,36 +105,29 @@ function Settings(): JSX.Element {
     true
   );
 
-  useEffect(() => {
-    if (
-      authContext.state.user === null &&
-      loggedInComponentKeys.has(selection)
-    ) {
-      setSelection(defaultSelection);
-    }
-  }, [authContext.state.user]);
-
   return (
     <>
       <h1>Settings</h1>
       <div className="flex flex-row">
         <div className="flex flex-col">
-          {Object.keys(selectionComponentMapping).map((key) => {
-            if (authContext.state.user || !loggedInComponentKeys.has(key)) {
-              return (
-                <button
-                  key={key}
-                  onClick={() => setSelection(key)}
-                  className={selection === key ? 'bg-color-darker' : ''}
-                >
-                  <div className="flex flex-row space-x-1 items-center">
-                    {selectionComponentMapping[key].icon}
-                    <span>{selectionComponentMapping[key].name}</span>
-                  </div>
-                </button>
-              );
+          {Object.keys(selectionComponentMapping).map(
+            (key: SelectionComponentKeys) => {
+              if (authContext.state.user || !loggedInComponentKeys.has(key)) {
+                return (
+                  <Link to={`/settings/${key}`} key={key}>
+                    <button
+                      className={selection === key ? 'bg-color-darker' : ''}
+                    >
+                      <div className="flex flex-row space-x-1 items-center">
+                        {selectionComponentMapping[key].icon}
+                        <span>{selectionComponentMapping[key].name}</span>
+                      </div>
+                    </button>
+                  </Link>
+                );
+              }
             }
-          })}
+          )}
         </div>
         <div>{selectionComponentMapping[selection].component}</div>
       </div>

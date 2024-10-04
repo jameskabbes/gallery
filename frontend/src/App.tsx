@@ -31,6 +31,7 @@ function App(): JSX.Element {
             <Route path="/" element={<Home />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/settings/:selection" element={<Settings />} />
             <Route path="/galleries/:gallery_id" element={<Gallery />} />
             <Route path="/404" element={<p>404</p>} />
             <Route path="*" element={<Navigate to="/404" />} />
