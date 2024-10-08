@@ -93,10 +93,7 @@ p {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.7); /* Semi-transparent black */
-  display: grid;
-  place-items: center;
   z-index: 1000; /* Ensure it is above other content */
-  padding: 4px;
 }
 
 /* Modal content */
@@ -163,7 +160,7 @@ button {
 }
 
 .card {
-  @apply rounded-2xl shadow-lg p-2 m-1;
+  @apply rounded-2xl shadow-lg p-2;
 }
 
 #mobile-footer {

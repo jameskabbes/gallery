@@ -48,14 +48,14 @@ function Menu() {
           element: <span>Log In</span>,
           onClick: () => {
             setIsMenuVisible(false);
-            authModalsContext.toggleModal('logIn');
+            authModalsContext.setActiveModalType('logIn');
           },
         },
         {
           element: <span>Sign Up</span>,
           onClick: () => {
             setIsMenuVisible(false);
-            authModalsContext.toggleModal('signUp');
+            authModalsContext.setActiveModalType('signUp');
           },
         },
       ];

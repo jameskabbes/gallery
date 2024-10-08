@@ -1,3 +1,4 @@
+import React from 'react';
 import { paths, operations, components } from './openapi_schema';
 
 interface CallApiProps<T> {
@@ -60,7 +61,10 @@ interface DarkModeContext {
 type AuthModalsType = 'logIn' | 'signUp' | 'logInWithEmail';
 
 interface AuthModalsContext {
-  toggleModal: (modal: AuthModalsType) => void;
+  activeModalType: AuthModalsType | null;
+  setActiveModalType: React.Dispatch<
+    React.SetStateAction<AuthModalsContext['activeModalType']>
+  >;
 }
 
 interface AuthModalsContextStateBase {
@@ -141,6 +145,21 @@ interface SignUpContext {
   dispatch: React.Dispatch<SignUpReducerAction>;
 }
 
+interface Modal {
+  component: React.ReactNode;
+  contentStyle?: React.CSSProperties;
+  includeExitButton?: boolean;
+  onExit?: () => void;
+  key?: string;
+}
+
+interface GlobalModalsContext {
+  activeModal: Modal | null;
+  setActiveModal: React.Dispatch<
+    React.SetStateAction<GlobalModalsContext['activeModal']>
+  >;
+}
+
 interface DeviceContext {
   isMobile: boolean;
 }
@@ -211,18 +230,6 @@ interface AuthContext {
   updateFromApiResponse: (data: any) => void;
 }
 
-type Modal = React.ReactNode;
-interface ModalsReducerState {
-  stack: Modal[];
-}
-
-type ModalsReducerAction = { type: 'PUSH'; payload: Modal } | { type: 'POP' };
-
-interface ModalsContext {
-  state: ModalsReducerState;
-  dispatch: React.Dispatch<ModalsReducerAction>;
-}
-
 interface EscapeKeyContext {
   addCallback: (callback: () => void) => void;
   removeCallback: (callback: () => void) => void;
@@ -257,9 +264,7 @@ export {
   AuthContext,
   DeviceContext,
   Modal,
-  ModalsContext,
-  ModalsReducerState,
-  ModalsReducerAction,
+  GlobalModalsContext,
   AuthModalsContext,
   AuthModalsType,
   DataContext,

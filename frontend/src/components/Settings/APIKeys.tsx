@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { CallApiProps, ToastContext } from '../../types';
 import { useApiCall } from '../../utils/Api';
 import { paths, operations, components } from '../../openapi_schema';
@@ -11,6 +11,9 @@ import {
   postAPIKey,
   ResponseTypesByStatus as PostAPIKeyResponseTypes,
 } from '../../services/api/postAPIKey';
+
+import { GlobalModalsContext } from '../../contexts/GlobalModals';
+import { Modal } from '../Modal/Modal';
 
 const API_ENDPOINT = '/api-keys/';
 const API_METHOD = 'get';
@@ -25,6 +28,8 @@ interface Props {
 }
 
 function APIKeys({ authContext, toastContext }: Props): JSX.Element {
+  const globalModalsContext = useContext(GlobalModalsContext);
+
   const [apiKeys, setAPIKeys] = useState<{
     [key: string]: ResponseTypesByStatus['200'][number];
   }>({});
@@ -70,13 +75,10 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
       user_id: authContext.state.user.id,
       expiry: new Date().toISOString(),
       issued: new Date().toISOString(),
-      name: 'adding...',
+      name: '',
     };
 
     setAPIKeys((prevAPIKeys) => ({ ...prevAPIKeys, [tempID]: tempAPIKey }));
-
-    // wait two seconds
-    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     const { data, response } = await postAPIKey({
       user_id: authContext.state.user.id,
@@ -149,7 +151,12 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
         <p>Login to view your API keys.</p>
       ) : (
         <>
-          <button className="button-primary" onClick={handleAddAPIKey}>
+          <button
+            className="button-primary"
+            onClick={() => {
+              globalModalsContext.setCurrentModal(<p>asdfasdfasdf</p>);
+            }}
+          >
             Add Key
           </button>
           <div>

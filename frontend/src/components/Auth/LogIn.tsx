@@ -4,7 +4,6 @@ import { paths, operations, components } from '../../openapi_schema';
 import openapi_schema from '../../../../openapi_schema.json';
 import { InputState } from '../../types';
 import { InputText } from '../Form/InputText';
-import { Modal } from '../Modal/Modal';
 import { LogInContext } from '../../contexts/LogIn';
 import { ToastContext } from '../../contexts/Toast';
 import { AuthModalsContext } from '../../contexts/AuthModals';
@@ -94,148 +93,141 @@ function LogIn() {
   }
 
   return (
-    <Modal
-      onExit={() =>
-        logInContext.dispatch({ type: 'SET_ACTIVE', payload: false })
-      }
-      show={logInContext.state.active}
-    >
-      <div id="login">
-        <div className="flex">
-          <div className="flex-1">
-            <form onSubmit={handleLogin} className="flex flex-col space-y-2">
-              <h2 className="text-center">Login</h2>
-              <div>
-                <label htmlFor="email">
-                  <p>Email</p>
-                </label>
-                <h4>
-                  <InputText
-                    state={logInContext.state.email}
-                    setState={(state: InputState) => {
-                      logInContext.dispatch({
-                        type: 'SET_EMAIL',
-                        payload: state,
-                      });
-                    }}
-                    id="email"
-                    minLength={1}
-                    maxLength={
-                      openapi_schema.components.schemas.UserCreate.properties
-                        .email.maxLength
-                    }
-                    type="email"
-                    checkAvailability={false}
-                    isValid={isEmailValid}
-                  />
-                </h4>
-              </div>
-              <div>
-                <label htmlFor="password">
-                  <p>Password</p>
-                </label>
-                <h4>
-                  <InputText
-                    state={logInContext.state.password}
-                    setState={(state: InputState) =>
-                      logInContext.dispatch({
-                        type: 'SET_PASSWORD',
-                        payload: state,
-                      })
-                    }
-                    id="password"
-                    minLength={
-                      openapi_schema.components.schemas.UserCreate.properties
-                        .password.anyOf[0].minLength
-                    }
-                    maxLength={
-                      openapi_schema.components.schemas.UserCreate.properties
-                        .password.anyOf[0].maxLength
-                    }
-                    type="password"
-                    checkAvailability={false}
-                  />
-                </h4>
-              </div>
-              {error && (
-                <div className="flex flex-row justify-center space-x-2">
-                  <p className="rounded-full p-1 text-light leading-none bg-error-500">
-                    <span>
-                      <IoWarning
-                        style={{
-                          animation: 'scaleUp 0.2s ease-in-out',
-                        }}
-                      />
-                    </span>
-                  </p>
-                  <p>{error}</p>
-                </div>
-              )}
-
-              <button
-                className={`button-primary ${
-                  !logInContext.state.valid && 'button-invalid'
-                }`}
-                type="submit"
-                disabled={!logInContext.state.valid}
-              >
-                <div className="flex flex-row justify-center items-center p-1">
-                  <h6 className="mb-0 leading-none">
-                    {loading ? (
-                      <span className="loader-secondary"></span>
-                    ) : (
-                      'Login'
-                    )}
-                  </h6>
-                </div>
-              </button>
-            </form>
-            <div className="flex flex-row justify-center mt-2">
-              <h6
-                className="cursor-pointer underline mb-0"
-                onClick={() => {
-                  authModalsContext.toggleModal('signUp');
-                }}
-              >
-                Sign Up
-              </h6>
-            </div>
-
-            <div className="flex flex-row items-center space-x-2 my-2">
-              <hr className="flex-1 bg-color" />
-              <p>or</p>
-              <hr className="flex-1 bg-color" />
-            </div>
-
-            <div className="space-y-1">
-              <button
-                className="button-tertiary w-full relative"
-                onClick={() => {
-                  authModalsContext.toggleModal('logInWithEmail');
-                }}
-              >
-                <p className="text-center mb-0 ">Login with email</p>
-                <IoMail className="absolute left-4 top-1/2 transform -translate-y-1/2" />
-              </button>
-              <button
-                className="button-tertiary w-full relative"
-                onClick={() => {
-                  logInWithGoogle();
-                }}
-              >
-                <p className="text-center mb-0 ">Login with Google</p>
-                <img
-                  src="/google_g_logo.svg"
-                  alt="google_logo"
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2"
-                  style={{ width: '1rem', height: '1rem' }}
+    <div id="login">
+      <div className="flex">
+        <div className="flex-1">
+          <form onSubmit={handleLogin} className="flex flex-col space-y-2">
+            <h2 className="text-center">Login</h2>
+            <div>
+              <label htmlFor="email">
+                <p>Email</p>
+              </label>
+              <h4>
+                <InputText
+                  state={logInContext.state.email}
+                  setState={(state: InputState) => {
+                    logInContext.dispatch({
+                      type: 'SET_EMAIL',
+                      payload: state,
+                    });
+                  }}
+                  id="email"
+                  minLength={1}
+                  maxLength={
+                    openapi_schema.components.schemas.UserCreate.properties
+                      .email.maxLength
+                  }
+                  type="email"
+                  checkAvailability={false}
+                  isValid={isEmailValid}
                 />
-              </button>
+              </h4>
             </div>
+            <div>
+              <label htmlFor="password">
+                <p>Password</p>
+              </label>
+              <h4>
+                <InputText
+                  state={logInContext.state.password}
+                  setState={(state: InputState) =>
+                    logInContext.dispatch({
+                      type: 'SET_PASSWORD',
+                      payload: state,
+                    })
+                  }
+                  id="password"
+                  minLength={
+                    openapi_schema.components.schemas.UserCreate.properties
+                      .password.anyOf[0].minLength
+                  }
+                  maxLength={
+                    openapi_schema.components.schemas.UserCreate.properties
+                      .password.anyOf[0].maxLength
+                  }
+                  type="password"
+                  checkAvailability={false}
+                />
+              </h4>
+            </div>
+            {error && (
+              <div className="flex flex-row justify-center space-x-2">
+                <p className="rounded-full p-1 text-light leading-none bg-error-500">
+                  <span>
+                    <IoWarning
+                      style={{
+                        animation: 'scaleUp 0.2s ease-in-out',
+                      }}
+                    />
+                  </span>
+                </p>
+                <p>{error}</p>
+              </div>
+            )}
+
+            <button
+              className={`button-primary ${
+                !logInContext.state.valid && 'button-invalid'
+              }`}
+              type="submit"
+              disabled={!logInContext.state.valid}
+            >
+              <div className="flex flex-row justify-center items-center p-1">
+                <h6 className="mb-0 leading-none">
+                  {loading ? (
+                    <span className="loader-secondary"></span>
+                  ) : (
+                    'Login'
+                  )}
+                </h6>
+              </div>
+            </button>
+          </form>
+          <div className="flex flex-row justify-center mt-2">
+            <h6
+              className="cursor-pointer underline mb-0"
+              onClick={() => {
+                authModalsContext.setActiveModalType('signUp');
+              }}
+            >
+              Sign Up
+            </h6>
+          </div>
+
+          <div className="flex flex-row items-center space-x-2 my-2">
+            <hr className="flex-1 bg-color" />
+            <p>or</p>
+            <hr className="flex-1 bg-color" />
+          </div>
+
+          <div className="space-y-1">
+            <button
+              className="button-tertiary w-full relative"
+              onClick={() => {
+                authModalsContext.setActiveModalType('logInWithEmail');
+              }}
+            >
+              <p className="text-center mb-0 ">Login with email</p>
+              <IoMail className="absolute left-4 top-1/2 transform -translate-y-1/2" />
+            </button>
+            <button
+              className="button-tertiary w-full relative"
+              onClick={() => {
+                logInWithGoogle();
+              }}
+            >
+              <p className="text-center mb-0 ">Login with Google</p>
+              <img
+                src="/google_g_logo.svg"
+                alt="google_logo"
+                className="absolute left-4 top-1/2 transform -translate-y-1/2"
+                style={{ width: '1rem', height: '1rem' }}
+              />
+            </button>
           </div>
         </div>
       </div>
-    </Modal>
+    </div>
   );
 }
 

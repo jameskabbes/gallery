@@ -5,13 +5,11 @@ import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { ApplicationContextProvider } from './contexts/Application';
 import { Toast } from './components/Toast/Toast';
-import { Modals } from './components/Modal/Modals';
 import { Profile } from './components/User/Profile';
 import { Settings } from './components/Settings/Settings';
-import { LogIn } from './components/Auth/LogIn';
-import { SignUp } from './components/Auth/SignUp';
+import { AuthModals } from './components/Auth/AuthModals';
+import { GlobalModals } from './components/GlobalModals';
 import { Gallery } from './components/Gallery/pages/Gallery';
-import { LogInWithEmail } from './components/Auth/LogInWithEmail';
 import { VerifyMagicLink } from './components/Auth/VerifyMagicLink';
 
 import config from '../../config.json';
@@ -21,10 +19,8 @@ function App(): JSX.Element {
     <ApplicationContextProvider>
       <div className="App">
         <Toast />
-        <LogIn />
-        <SignUp />
-        <LogInWithEmail />
-        <Modals />
+        <AuthModals />
+        <GlobalModals />
         <BrowserRouter>
           <Header />
           <Routes>

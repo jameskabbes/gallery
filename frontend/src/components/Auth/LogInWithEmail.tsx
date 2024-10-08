@@ -1,5 +1,4 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { ModalsContext } from '../../contexts/Modals';
 import { paths, operations, components } from '../../openapi_schema';
 import { ExtractResponseTypes } from '../../types';
 import { callApi } from '../../utils/Api';
@@ -8,7 +7,6 @@ import openapi_schema from '../../../../openapi_schema.json';
 import { AuthModalsContext } from '../../contexts/AuthModals';
 import { LogInWithEmailContext } from '../../contexts/LogInWithEmail';
 
-import { Modal } from '../Modal/Modal';
 import { isEmailValid } from '../../services/api/isEmailValid';
 import { InputText } from '../Form/InputText';
 import { InputState } from '../../types';
@@ -58,98 +56,87 @@ function LogInWithEmail() {
   }
 
   return (
-    <Modal
-      onExit={() =>
-        logInWithEmailContext.dispatch({
-          type: 'SET_ACTIVE',
-          payload: false,
-        })
-      }
-      show={logInWithEmailContext.state.active}
-      contentStyle={{ maxWidth: '300px', width: '100%' }}
-    >
-      <div className="flex flex-col">
-        {logInWithEmailContext.state.screen === 'email' ? (
-          <div className="flex flex-col">
-            <form onSubmit={handleSubmit} className="flex flex-col">
-              <h2 className="text-center">Send Email</h2>
-              <div className="mt-2">
-                <label htmlFor="email">
-                  <p>Email</p>
-                </label>
-                <h4>
-                  <InputText
-                    state={logInWithEmailContext.state.email}
-                    setState={(state: InputState) => {
-                      logInWithEmailContext.dispatch({
-                        type: 'SET_EMAIL',
-                        payload: state,
-                      });
-                    }}
-                    id="email"
-                    minLength={
-                      openapi_schema.components.schemas.UserCreate.properties
-                        .email.minLength
-                    }
-                    maxLength={
-                      openapi_schema.components.schemas.UserCreate.properties
-                        .email.maxLength
-                    }
-                    type="email"
-                    isValid={isEmailValid}
-                  />
-                </h4>
-              </div>
-              <p>
-                If an account with this email exists, we will send a login link
-                to your email.
-              </p>
-              <button
-                className={`button-primary ${
-                  !logInWithEmailContext.state.valid && 'button-invalid'
-                }`}
-                type="submit"
-                disabled={!logInWithEmailContext.state.valid}
-              >
-                <h6 className="mb-0 leading-none p-2">
-                  {loading ? (
-                    <span className="loader-secondary"></span>
-                  ) : (
-                    'Send Email'
-                  )}
-                </h6>
-              </button>
-            </form>
-            <h6
-              className="cursor-pointer underline text-center mt-2"
-              onClick={() => {
-                authModalsContext.toggleModal('logIn');
-              }}
-            >
-              Back to Login
-            </h6>
-          </div>
-        ) : logInWithEmailContext.state.screen === 'sent' ? (
-          <div className="flex flex-col">
-            <h2 className="text-center">Sent!</h2>
-            <p className="text-center">
-              Check your inbox for a secure login link.
+    <div className="flex flex-col">
+      {logInWithEmailContext.state.screen === 'email' ? (
+        <div className="flex flex-col">
+          <form onSubmit={handleSubmit} className="flex flex-col">
+            <h2 className="text-center">Send Email</h2>
+            <div className="mt-2">
+              <label htmlFor="email">
+                <p>Email</p>
+              </label>
+              <h4>
+                <InputText
+                  state={logInWithEmailContext.state.email}
+                  setState={(state: InputState) => {
+                    logInWithEmailContext.dispatch({
+                      type: 'SET_EMAIL',
+                      payload: state,
+                    });
+                  }}
+                  id="email"
+                  minLength={
+                    openapi_schema.components.schemas.UserCreate.properties
+                      .email.minLength
+                  }
+                  maxLength={
+                    openapi_schema.components.schemas.UserCreate.properties
+                      .email.maxLength
+                  }
+                  type="email"
+                  isValid={isEmailValid}
+                />
+              </h4>
+            </div>
+            <p>
+              If an account with this email exists, we will send a login link to
+              your email.
             </p>
             <button
-              className="button-primary mt-4"
-              onClick={() => {
-                logInWithEmailContext.dispatch({
-                  type: 'SET_ACTIVE',
-                  payload: false,
-                });
-              }}
+              className={`button-primary ${
+                !logInWithEmailContext.state.valid && 'button-invalid'
+              }`}
+              type="submit"
+              disabled={!logInWithEmailContext.state.valid}
             >
-              Okay!
+              <h6 className="mb-0 leading-none p-2">
+                {loading ? (
+                  <span className="loader-secondary"></span>
+                ) : (
+                  'Send Email'
+                )}
+              </h6>
             </button>
-          </div>
-        ) : null}
-      </div>
-    </Modal>
+          </form>
+          <h6
+            className="cursor-pointer underline text-center mt-2"
+            onClick={() => {
+              authModalsContext.setActiveModalType('logIn');
+            }}
+          >
+            Back to Login
+          </h6>
+        </div>
+      ) : logInWithEmailContext.state.screen === 'sent' ? (
+        <div className="flex flex-col">
+          <h2 className="text-center">Sent!</h2>
+          <p className="text-center">
+            Check your inbox for a secure login link.
+          </p>
+          <button
+            className="button-primary mt-4"
+            onClick={() => {
+              logInWithEmailContext.dispatch({
+                type: 'SET_ACTIVE',
+                payload: false,
+              });
+            }}
+          >
+            Okay!
+          </button>
+        </div>
+      ) : null}
+    </div>
   );
 }
 

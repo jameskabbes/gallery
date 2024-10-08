@@ -1,32 +1,66 @@
-import React, { useEffect, useRef, useContext } from 'react';
-import { CSSTransition } from 'react-transition-group';
-import { ModalsContext } from '../../contexts/Modals';
+import React, { useRef } from 'react';
+import { Modal } from '../../types';
+import { CSSTransition, TransitionGroup } from 'react-transition-group';
+import './Modal.css';
 import { useEscapeKey } from '../../contexts/EscapeKey';
+import { useClickOutside } from '../../utils/useClickOutside';
+import { IoClose } from 'react-icons/io5';
 
-function Modals() {
-  const modalsContext = useContext(ModalsContext);
-  const currentModal =
-    modalsContext.state.stack[modalsContext.state.stack.length - 1];
-  const nodeRef = useRef(null);
+const timeouts = {
+  enter: 200,
+  exit: 200,
+};
 
-  useEscapeKey(() => {
-    modalsContext.dispatch({ type: 'POP' });
-  });
+interface Props {
+  activeModal: Modal | null;
+  overlayStyle?: React.CSSProperties;
+}
+
+function Modals({ activeModal, overlayStyle = {} }: Props) {
+  const ref = useRef(null);
+
+  useEscapeKey(() => activeModal.onExit());
+  useClickOutside(ref, () => activeModal.onExit());
+
+  console.log('active modal key', activeModal.key);
 
   return (
     <CSSTransition
-      nodeRef={nodeRef}
-      in={currentModal !== undefined}
-      timeout={200}
+      in={activeModal.component !== null}
+      timeout={timeouts}
       classNames="modal"
       unmountOnExit
     >
-      <div
-        ref={nodeRef}
-        className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center"
-      >
-        {currentModal}
-      </div>
+      <TransitionGroup className="modal-overlay relative" style={overlayStyle}>
+        <CSSTransition
+          in={activeModal.component !== null}
+          key={activeModal.key || 'modal-content'}
+          timeout={timeouts}
+          classNames="modal"
+        >
+          <>
+            {activeModal.component !== null && (
+              <div className="absolute h-full w-full flex flex-col justify-center items-center">
+                <div className="modal-content" style={activeModal.contentStyle}>
+                  {activeModal.includeExitButton && (
+                    <div className="flex flex-row justify-end">
+                      <button>
+                        <p>
+                          <IoClose
+                            onClick={() => activeModal.onExit()}
+                            className="cursor-pointer"
+                          />
+                        </p>
+                      </button>
+                    </div>
+                  )}
+                  {activeModal.component}
+                </div>
+              </div>
+            )}
+          </>
+        </CSSTransition>
+      </TransitionGroup>
     </CSSTransition>
   );
 }
