@@ -68,12 +68,10 @@ interface AuthModalsContext {
 }
 
 interface AuthModalsContextStateBase {
-  active: boolean;
   valid: boolean;
 }
 
 type AuthModalsReducerActionBase =
-  | { type: 'SET_ACTIVE'; payload: boolean }
   | { type: 'RESET' }
   | { type: 'SET_VALID'; payload: boolean };
 

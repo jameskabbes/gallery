@@ -74,7 +74,7 @@ function LogIn() {
       if (response.status == 200) {
         const apiData = data as ResponseTypesByStatus['200'];
         authContext.updateFromApiResponse(apiData);
-        logInContext.dispatch({ type: 'SET_ACTIVE', payload: false });
+        authModalsContext.setActiveModalType(null);
         toastContext.make({
           message: `Welcome ${
             apiData.auth.user.username === null
@@ -99,7 +99,7 @@ function LogIn() {
           <form onSubmit={handleLogin} className="flex flex-col space-y-2">
             <h2 className="text-center">Login</h2>
             <div>
-              <label htmlFor="email">
+              <label htmlFor="login-email">
                 <p>Email</p>
               </label>
               <h4>
@@ -111,7 +111,7 @@ function LogIn() {
                       payload: state,
                     });
                   }}
-                  id="email"
+                  id="login-email"
                   minLength={1}
                   maxLength={
                     openapi_schema.components.schemas.UserCreate.properties
@@ -124,7 +124,7 @@ function LogIn() {
               </h4>
             </div>
             <div>
-              <label htmlFor="password">
+              <label htmlFor="login-password">
                 <p>Password</p>
               </label>
               <h4>
@@ -136,7 +136,7 @@ function LogIn() {
                       payload: state,
                     })
                   }
-                  id="password"
+                  id="login-password"
                   minLength={
                     openapi_schema.components.schemas.UserCreate.properties
                       .password.anyOf[0].minLength

@@ -17,8 +17,6 @@ import React, { useContext, useRef } from 'react';
 //   confirmText = 'Confirm',
 //   cancelText = 'Cancel',
 // }: Props): JSX.Element {
-//   let modalContext = useContext(ModalsContext);
-
 //   return (
 //     <div className="p-4 card">
 //       <h4>{title}</h4>

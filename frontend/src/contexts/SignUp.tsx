@@ -7,7 +7,6 @@ import {
 } from '../types';
 
 const signUpReducerDefaultState: SignUpContextState = {
-  active: false,
   email: { ...defaultInputState },
   password: { ...defaultInputState },
   confirmPassword: { ...defaultInputState },
@@ -24,8 +23,6 @@ function signUpReducer(state: SignUpContextState, action: SignUpReducerAction) {
       return { ...state, password: action.payload };
     case 'SET_CONFIRM_PASSWORD':
       return { ...state, confirmPassword: action.payload };
-    case 'SET_ACTIVE':
-      return { ...state, active: action.payload };
     case 'RESET':
       return { ...signUpReducerDefaultState };
     default:

@@ -22,8 +22,6 @@ function Modals({ activeModal, overlayStyle = {} }: Props) {
   useEscapeKey(() => activeModal.onExit());
   useClickOutside(ref, () => activeModal.onExit());
 
-  console.log('active modal key', activeModal.key);
-
   return (
     <CSSTransition
       in={activeModal.component !== null}

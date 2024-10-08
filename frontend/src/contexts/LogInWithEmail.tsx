@@ -7,7 +7,6 @@ import {
 } from '../types';
 
 const logInWithEmailReducerDefaultState: LogInWithEmailContextState = {
-  active: false,
   email: { ...defaultInputState },
   valid: false,
   screen: 'email',
@@ -22,15 +21,6 @@ function logInWithEmailReducer(
       return { ...state, valid: action.payload };
     case 'SET_EMAIL':
       return { ...state, email: action.payload };
-    case 'SET_ACTIVE':
-      if (action.payload === true) {
-        return {
-          ...state,
-          active: action.payload,
-          screen: logInWithEmailReducerDefaultState.screen,
-        };
-      }
-      return { ...state, isActive: action.payload };
     case 'SET_SCREEN':
       return { ...state, screen: action.payload };
     case 'RESET':

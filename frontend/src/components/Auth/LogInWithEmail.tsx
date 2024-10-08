@@ -56,7 +56,7 @@ function LogInWithEmail() {
   }
 
   return (
-    <div className="flex flex-col">
+    <div id="login-with-email" className="flex flex-col">
       {logInWithEmailContext.state.screen === 'email' ? (
         <div className="flex flex-col">
           <form onSubmit={handleSubmit} className="flex flex-col">
@@ -74,7 +74,7 @@ function LogInWithEmail() {
                       payload: state,
                     });
                   }}
-                  id="email"
+                  id="login-with-email-email"
                   minLength={
                     openapi_schema.components.schemas.UserCreate.properties
                       .email.minLength
@@ -126,10 +126,7 @@ function LogInWithEmail() {
           <button
             className="button-primary mt-4"
             onClick={() => {
-              logInWithEmailContext.dispatch({
-                type: 'SET_ACTIVE',
-                payload: false,
-              });
+              authModalsContext.setActiveModalType(null);
             }}
           >
             Okay!

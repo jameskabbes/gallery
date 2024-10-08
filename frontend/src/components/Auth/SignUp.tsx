@@ -88,7 +88,7 @@ function SignUp() {
           message: 'Created new user: ' + apiData.auth.user.username,
           type: 'success',
         });
-        signUpContext.dispatch({ type: 'SET_ACTIVE', payload: false });
+        authModalsContext.setActiveModalType(null);
       } else {
         console.error('Error creating user:', response.status, data);
         setError('Error creating user');
@@ -103,7 +103,7 @@ function SignUp() {
           <form onSubmit={handleLogin} className="flex flex-col space-y-2">
             <h2 className="text-center">Sign Up</h2>
             <div>
-              <label htmlFor="email">Email</label>
+              <label htmlFor="sign-up-email">Email</label>
               <h4>
                 <InputText
                   state={signUpContext.state.email}
@@ -113,7 +113,7 @@ function SignUp() {
                       payload: state,
                     });
                   }}
-                  id="email"
+                  id="sign-up-email"
                   minLength={
                     openapi_schema.components.schemas.UserCreate.properties
                       .email.minLength
@@ -130,7 +130,7 @@ function SignUp() {
               </h4>
             </div>
             <div>
-              <label htmlFor="password">
+              <label htmlFor="sign-up-password">
                 <p>Password</p>
               </label>
               <h4>
@@ -142,7 +142,7 @@ function SignUp() {
                       payload: state,
                     })
                   }
-                  id="password"
+                  id="sign-up-password"
                   minLength={
                     openapi_schema.components.schemas.UserCreate.properties
                       .password.anyOf[0].minLength
@@ -158,7 +158,7 @@ function SignUp() {
               </h4>
             </div>
             <div>
-              <label htmlFor="confirmPassword">
+              <label htmlFor="sign-up-confirmPassword">
                 <p>Confirm Password</p>
               </label>
               <h4>
@@ -170,7 +170,7 @@ function SignUp() {
                       payload: state,
                     })
                   }
-                  id="confirmPassword"
+                  id="sign-up-confirmPassword"
                   minLength={
                     openapi_schema.components.schemas.UserCreate.properties
                       .password.anyOf[0].minLength
