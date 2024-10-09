@@ -10,8 +10,8 @@ function ConfirmationModal({
   cancelText = 'Cancel',
 }: ConfirmationModalType): JSX.Element {
   return (
-    <div>
-      <h4>{title}</h4>
+    <div className="max-w-[300]">
+      <h3>{title}</h3>
       <p>{message}</p>
       <div className="flex flex-row justify-center space-x-2">
         <button

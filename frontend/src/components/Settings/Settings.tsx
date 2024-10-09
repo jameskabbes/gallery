@@ -13,7 +13,7 @@ import { IoBrush } from 'react-icons/io5';
 import { IoRadioOutline } from 'react-icons/io5';
 import { IoPersonOutline } from 'react-icons/io5';
 import { IoKeyOutline } from 'react-icons/io5';
-import { APIKeys } from './APIKeys';
+import { APIKeys } from './APIKeys/APIKeys';
 
 const API_ENDPOINT = '/settings/page/';
 const API_METHOD = 'get';
