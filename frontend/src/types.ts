@@ -145,17 +145,23 @@ interface SignUpContext {
 
 interface Modal {
   component: React.ReactNode;
-  contentStyle?: React.CSSProperties;
-  includeExitButton?: boolean;
-  onExit?: () => void;
-  key?: string;
+  contentStyle: React.CSSProperties;
+  includeExitButton: boolean;
+  onExit: () => void;
+  key: string;
 }
+
+const defaultModal: Modal = {
+  component: null,
+  onExit: () => null,
+  includeExitButton: true,
+  contentStyle: {},
+  key: null,
+};
 
 interface GlobalModalsContext {
   activeModal: Modal | null;
-  setActiveModal: React.Dispatch<
-    React.SetStateAction<GlobalModalsContext['activeModal']>
-  >;
+  setModal: (modal: Partial<Modal>) => void;
 }
 
 interface DeviceContext {
@@ -233,6 +239,15 @@ interface EscapeKeyContext {
   removeCallback: (callback: () => void) => void;
 }
 
+interface ConfirmationModal {
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  confirmText?: string;
+  cancelText?: string;
+}
+
 export {
   ExtractResponseTypes,
   CallApiProps,
@@ -262,9 +277,11 @@ export {
   AuthContext,
   DeviceContext,
   Modal,
+  defaultModal,
   GlobalModalsContext,
   AuthModalsContext,
   AuthModalsType,
   DataContext,
   EscapeKeyContext,
+  ConfirmationModal,
 };

@@ -126,12 +126,12 @@ export interface components {
     };
     /** APIKeyCreate */
     APIKeyCreate: {
-      /** User Id */
-      user_id: string;
       /** Lifespan */
       lifespan?: string | null;
       /** Expiry */
       expiry?: string | null;
+      /** Issued */
+      issued?: string | null;
       /** Name */
       name: string;
     };

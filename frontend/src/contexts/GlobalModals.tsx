@@ -1,19 +1,11 @@
 import React, { useState, useReducer, createContext } from 'react';
 import { GlobalModalsContext as GlobalModalsContextType } from '../types';
 
-import { Modal } from '../types';
-
-const defaultModal: Modal = {
-  component: null,
-  onExit: () => null,
-  includeExitButton: true,
-  contentStyle: {},
-  key: null,
-};
+import { Modal, defaultModal } from '../types';
 
 const GlobalModalsContext = createContext<GlobalModalsContextType>({
   activeModal: { ...defaultModal },
-  setActiveModal: () => null,
+  setModal: (modal) => null,
 });
 
 interface Props {
@@ -25,11 +17,19 @@ function GlobalModalsContextProvider({ children }: Props) {
     GlobalModalsContextType['activeModal']
   >({ ...defaultModal });
 
+  function setModal(modal: Partial<Modal>) {
+    setActiveModal({
+      ...defaultModal,
+      onExit: () => setActiveModal({ ...defaultModal }),
+      ...modal,
+    });
+  }
+
   return (
     <GlobalModalsContext.Provider
       value={{
         activeModal,
-        setActiveModal,
+        setModal,
       }}
     >
       {children}

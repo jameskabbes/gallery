@@ -572,8 +572,11 @@ async def post_api_key(
         api_key_create: models.APIKeyCreate,
         authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> models.APIKey:
 
+    api_key_admin_create = models.APIKeyAdminCreate(
+        **api_key_create.model_dump(), user_id=authorization.user.id)
+
     with Session(c.db_engine) as session:
-        api_key = api_key_create.create()
+        api_key = api_key_admin_create.create()
         api_key.add_to_db(session)
         return api_key
 

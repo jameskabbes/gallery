@@ -390,11 +390,11 @@ class UserRoleScope(SQLModel, Table[UserRoleScopeId], table=True):
 class AuthCredentialTypes:
     user_id = UserTypes.id
     issued = typing.Annotated[datetime_module.datetime,
-                              'The datetime at which the token was issued']
+                              'The datetime at which the auth credential was issued']
     expiry = typing.Annotated[datetime_module.datetime,
-                              'The datetime at which the token will expire']
+                              'The datetime at which the auth credential will expire']
     lifespan = typing.Annotated[datetime_module.timedelta,
-                                'The timedelta from token creation in which the token is still valid']
+                                'The timedelta from creation in which the auth credential is still valid']
     type = typing.Literal['access_token', 'api_key']
 
 
@@ -444,12 +444,13 @@ class AuthCredential[IDType](BaseModel, ABC):
         pass
 
 
-class AuthCredentialCreate(SingularCreate[AuthCredential]):
+class AuthCredentialCreate(BaseModel):
+    lifespan: AuthCredentialTypes.lifespan | None = None
+    expiry: AuthCredentialTypes.expiry | None = None
+
+
+class AuthCredentialAdminCreate(SingularCreate[AuthCredential], AuthCredentialCreate):
     user_id: AuthCredentialTypes.user_id
-    lifespan: typing.Annotated[datetime_module.timedelta | None,
-                               'The timedelta from token creation in which the token is still valid'] = None
-    expiry: typing.Annotated[datetime_module.datetime | None,
-                             'The datetime at which the token will expire'] = None
 
     _SINGULAR_MODEL: typing.ClassVar[typing.Type[AuthCredential]
                                      ] = AuthCredential
@@ -486,7 +487,7 @@ class UserAccessToken(SQLModel, AuthCredential[UserAccessTokenTypes.id], Table[U
         return [user_role_scope.scope for user_role_scope in self.user.user_role.user_role_scopes]
 
 
-class UserAccessTokenCreate(SingularCreate[UserAccessToken], AuthCredentialCreate):
+class UserAccessTokenAdminCreate(SingularCreate[UserAccessToken], AuthCredentialAdminCreate):
     _SINGULAR_MODEL: typing.ClassVar[typing.Type[UserAccessToken]
                                      ] = UserAccessToken
 
@@ -527,10 +528,13 @@ class APIKey(SQLModel, AuthCredential[APIKeyTypes.id], Table[APIKeyTypes.id], ta
         return [api_key_scope.scope for api_key_scope in self.api_key_scopes]
 
 
-class APIKeyCreate(SingularCreate[APIKey], AuthCredentialCreate):
+class APIKeyCreate(AuthCredentialCreate):
+    name: APIKeyTypes.name
+
+
+class APIKeyAdminCreate(SingularCreate[APIKey], AuthCredentialAdminCreate, APIKeyCreate):
     _SINGULAR_MODEL: typing.ClassVar[typing.Type[UserAccessToken]
                                      ] = UserAccessToken
-    name: APIKeyTypes.name
 
     def create(self) -> APIKey:
         return APIKey(

@@ -13,7 +13,7 @@ import {
 } from '../../services/api/postAPIKey';
 
 import { GlobalModalsContext } from '../../contexts/GlobalModals';
-import { Modal } from '../Modal/Modal';
+import { useConfirmationModal } from '../../utils/useConfirmationModal';
 
 const API_ENDPOINT = '/api-keys/';
 const API_METHOD = 'get';
@@ -29,6 +29,7 @@ interface Props {
 
 function APIKeys({ authContext, toastContext }: Props): JSX.Element {
   const globalModalsContext = useContext(GlobalModalsContext);
+  const { checkConfirmation } = useConfirmationModal();
 
   const [apiKeys, setAPIKeys] = useState<{
     [key: string]: ResponseTypesByStatus['200'][number];
@@ -59,61 +60,91 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
     }
   }, [apiData, response]);
 
-  async function handleAddAPIKey() {
-    let toastId = toastContext.makePending({
-      message: 'Creating API Key...',
-    });
+  function AddAPIKey() {
+    const [name, setName] =
+      useState<components['schemas']['APIKeyCreate']['name']>('');
+    const [expiry, setExpiry] = useState<Date>(new Date());
 
-    // make a random 16 character string
-    const tempID = Array.from(
-      { length: 16 },
-      () => Math.random().toString(36)[2]
-    ).join('');
+    async function addAPIKey() {
+      globalModalsContext.setModal(null);
+      let toastId = toastContext.makePending({
+        message: 'Creating API Key...',
+      });
 
-    const tempAPIKey: PostAPIKeyResponseTypes['200'] = {
-      id: tempID,
-      user_id: authContext.state.user.id,
-      expiry: new Date().toISOString(),
-      issued: new Date().toISOString(),
-      name: '',
-    };
-
-    setAPIKeys((prevAPIKeys) => ({ ...prevAPIKeys, [tempID]: tempAPIKey }));
-
-    const { data, response } = await postAPIKey({
-      user_id: authContext.state.user.id,
-      expiry: new Date().toISOString(),
-      name: Array.from(
+      // make a random 16 character string
+      const tempID = Array.from(
         { length: 16 },
         () => Math.random().toString(36)[2]
-      ).join(''),
-    });
+      ).join('');
 
-    if (response.status === 200) {
-      const apiData = data as PostAPIKeyResponseTypes['200'];
-      toastContext.update(toastId, {
-        message: `Created API Key ${apiData.name}`,
-        type: 'success',
-      });
+      const tempAPIKey: PostAPIKeyResponseTypes['200'] = {
+        id: tempID,
+        user_id: authContext.state.user.id,
+        expiry: expiry.toISOString(),
+        issued: new Date().toISOString(),
+        name: name,
+      };
 
-      setAPIKeys((prevAPIKeys) => {
-        const newAPIKeys = { ...prevAPIKeys };
-        delete newAPIKeys[tempID];
-        newAPIKeys[apiData.id] = apiData;
-        return newAPIKeys;
-      });
-    } else {
-      toastContext.update(toastId, {
-        message: 'Error creating API Key',
-        type: 'error',
+      setAPIKeys((prevAPIKeys) => ({
+        ...prevAPIKeys,
+        [tempID]: tempAPIKey,
+      }));
+
+      const { data, response } = await postAPIKey({
+        expiry: expiry.toISOString(),
+        name: name,
       });
 
-      setAPIKeys((prevAPIKeys) => {
-        const newAPIKeys = { ...prevAPIKeys };
-        delete newAPIKeys[tempID];
-        return newAPIKeys;
-      });
+      if (response.status === 200) {
+        const apiData = data as PostAPIKeyResponseTypes['200'];
+        toastContext.update(toastId, {
+          message: `Created API Key ${apiData.name}`,
+          type: 'success',
+        });
+
+        setAPIKeys((prevAPIKeys) => {
+          const newAPIKeys = { ...prevAPIKeys };
+          delete newAPIKeys[tempID];
+          newAPIKeys[apiData.id] = apiData;
+          return newAPIKeys;
+        });
+      } else {
+        toastContext.update(toastId, {
+          message: 'Error creating API Key',
+          type: 'error',
+        });
+
+        setAPIKeys((prevAPIKeys) => {
+          const newAPIKeys = { ...prevAPIKeys };
+          delete newAPIKeys[tempID];
+          return newAPIKeys;
+        });
+      }
     }
+
+    return (
+      <div>
+        <h1>Add API Key</h1>
+        <label htmlFor="api-key-name">Name</label>
+        <input
+          id="api-key-name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        {/* expiry */}
+        <label htmlFor="api-key-expiry">Expiry</label>
+        <input
+          id="api-key-expiry"
+          type="date"
+          value={expiry.toISOString().split('T')[0]}
+          onChange={(e) => setExpiry(new Date(e.target.value))}
+        />
+
+        <button onClick={addAPIKey} className="button-primary">
+          Add
+        </button>
+      </div>
+    );
   }
 
   async function handleDeleteAPIKey(apiKeyId: string) {
@@ -154,7 +185,10 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
           <button
             className="button-primary"
             onClick={() => {
-              globalModalsContext.setCurrentModal(<p>asdfasdfasdf</p>);
+              globalModalsContext.setModal({
+                component: <AddAPIKey />,
+                key: 'modal-make-api-key',
+              });
             }}
           >
             Add Key
@@ -175,7 +209,18 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
                   <p>{apiKey.name}</p>
                   <button
                     onClick={() => {
-                      handleDeleteAPIKey(key);
+                      checkConfirmation({
+                        title: 'Delete API Key?',
+                        confirmText: 'Delete',
+                        message: `Are you sure you want to delete the API Key ${apiKey.name}?`,
+                        onConfirm: () => {
+                          handleDeleteAPIKey(key);
+                          globalModalsContext.setModal(null);
+                        },
+                        onCancel: () => {
+                          globalModalsContext.setModal(null);
+                        },
+                      });
                     }}
                     className="button-primary"
                   >
