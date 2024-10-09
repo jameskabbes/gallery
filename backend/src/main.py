@@ -294,7 +294,7 @@ def set_access_token_cookie(access_token: str, response: Response):
 async def post_token(user: typing.Annotated[models.User, Depends(authenticate_user_with_password)], response: Response):
 
     with Session(c.db_engine) as session:
-        auth_credential = models.UserAccessTokenCreate(
+        auth_credential = models.UserAccessTokenAdminCreate(
             user_id=user.id, lifespan=c.authentication['default_expiry_timedelta']).create()
         auth_credential.add_to_db(session)
         set_access_token_cookie(jwt_encode(
@@ -312,7 +312,7 @@ async def login(user: typing.Annotated[models.User, Depends(authenticate_user_wi
 
     with Session(c.db_engine) as session:
 
-        user_access_token = models.UserAccessTokenCreate(
+        user_access_token = models.UserAccessTokenAdminCreate(
             user_id=user.id, lifespan=c.authentication['default_expiry_timedelta']).create()
         user_access_token.add_to_db(session)
         set_access_token_cookie(jwt_encode(
@@ -344,7 +344,7 @@ async def sign_up(
     with Session(c.db_engine) as session:
         user = user_create.post(session)
 
-        user_access_token = models.UserAccessTokenCreate(
+        user_access_token = models.UserAccessTokenAdminCreate(
             user_id=user.id, type='access_token', lifespan=c.authentication['default_expiry_timedelta']).create()
         user_access_token.add_to_db(session)
         set_access_token_cookie(jwt_encode(
@@ -372,7 +372,7 @@ def send_magic_link_to_email(model: LoginWithEmailMagicLinkRequest):
 
         if user:
 
-            user_access_token = models.UserAccessTokenCreate(
+            user_access_token = models.UserAccessTokenAdminCreate(
                 user_id=user.id, lifespan=c.authentication['magic_link_expiry_timedelta']).create()
             user_access_token.add_to_db(session)
 
@@ -402,7 +402,7 @@ async def verify_magic_link(authorization: typing.Annotated[GetAuthorizationRetu
 
     with Session(c.db_engine) as session:
 
-        user_access_token = models.UserAccessTokenCreate(
+        user_access_token = models.UserAccessTokenAdminCreate(
             user_id=authorization.user.id, lifespan=c.authentication['default_expiry_timedelta']).create()
         user_access_token.add_to_db(session)
         set_access_token_cookie(jwt_encode(
@@ -451,7 +451,7 @@ async def login_with_google(request_token: GoogleAuthRequest, response: Response
             user = user_create.create()
             user.add_to_db(session)
 
-        user_access_token = models.UserAccessTokenCreate(
+        user_access_token = models.UserAccessTokenAdminCreate(
             user_id=user.id, lifespan=c.authentication['default_expiry_timedelta']).create()
         user_access_token.add_to_db(session)
         set_access_token_cookie(jwt_encode(
