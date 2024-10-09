@@ -35,51 +35,45 @@ function Toast() {
   return (
     <div id="toast-container">
       <TransitionGroup>
-        {Array.from(toastContext.state.toasts.keys()).map(
-          (toastId, index, array) => {
-            let toast = toastContext.state.toasts.get(toastId);
+        {Array.from(toastContext.state.toasts.keys()).map((toastId) => {
+          let toast = toastContext.state.toasts.get(toastId);
 
-            if (toast.type !== 'pending') {
-              setTimeout(() => {
-                toastContext.dispatch({
-                  type: 'REMOVE',
-                  payload: toastId,
-                });
-              }, lifetime);
-            }
+          if (toast.type !== 'pending') {
+            setTimeout(() => {
+              toastContext.dispatch({
+                type: 'REMOVE',
+                payload: toastId,
+              });
+            }, lifetime);
+          }
 
-            return (
-              <CSSTransition
-                key={toastId}
-                classNames="toast"
-                timeout={timeouts}
+          return (
+            <CSSTransition key={toastId} classNames="toast" timeout={timeouts}>
+              <div
+                id={toastId}
+                className="toast m-2"
+                style={{ height: `${height}px` }}
+                onClick={() => {
+                  toastContext.dispatch({ type: 'REMOVE', payload: toastId });
+                }}
               >
-                <div
-                  id={toastId}
-                  className="toast"
-                  style={{ height: `${height}px` }}
-                  onClick={() => {
-                    toastContext.dispatch({ type: 'REMOVE', payload: toastId });
+                <p
+                  className="rounded-full p-1 text-light leading-none"
+                  style={{
+                    backgroundColor:
+                      toast.type !== 'pending' &&
+                      tailwindConfig.theme.extend.colors[toast.type]['500'],
+                    animation:
+                      toast.type !== 'pending' && 'scaleUp 0.2s ease-in-out',
                   }}
                 >
-                  <p
-                    className="rounded-full p-1 text-light leading-none"
-                    style={{
-                      backgroundColor:
-                        toast.type !== 'pending' &&
-                        tailwindConfig.theme.extend.colors[toast.type]['500'],
-                      animation:
-                        toast.type !== 'pending' && 'scaleUp 0.2s ease-in-out',
-                    }}
-                  >
-                    <span>{IconMapping.get(toast.type)}</span>
-                  </p>
-                  <p>{toast.message}</p>
-                </div>
-              </CSSTransition>
-            );
-          }
-        )}
+                  <span>{IconMapping.get(toast.type)}</span>
+                </p>
+                <p>{toast.message}</p>
+              </div>
+            </CSSTransition>
+          );
+        })}
       </TransitionGroup>
     </div>
   );
