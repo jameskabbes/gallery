@@ -7,8 +7,8 @@ import {
 } from '../types';
 
 const logInReducerDefaultState: LogInContextState = {
-  email: { ...defaultInputState },
-  password: { ...defaultInputState },
+  email: { ...defaultInputState<string>('') },
+  password: { ...defaultInputState<string>('') },
   valid: false,
 };
 

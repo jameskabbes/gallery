@@ -2,8 +2,10 @@ import typing
 import uuid
 from fastapi import HTTPException, status
 from sqlmodel import SQLModel, Field, Column, Session, select, delete, Relationship
-from pydantic import BaseModel, EmailStr, constr, StringConstraints, field_validator
+from pydantic import BaseModel, EmailStr, constr, StringConstraints, field_validator, ValidationInfo, ValidatorFunctionWrapHandler, ValidationError
+from pydantic.functional_validators import WrapValidator
 from sqlalchemy import PrimaryKeyConstraint, and_, or_
+from sqlalchemy.types import DateTime
 from gallery import utils, auth
 from abc import ABC, abstractmethod
 import datetime as datetime_module
@@ -42,12 +44,26 @@ class VisibilityLevel(Enum):
 #
 
 
+def ensure_given_timezone(value: datetime_module.datetime, handler: ValidatorFunctionWrapHandler, info: ValidationInfo) -> datetime_module.datetime:
+
+    print('value')
+    print(value)
+
+    if hasattr(value, 'tzinfo') and value.tzinfo != None:
+        return value
+    raise ValidationError(info.field_name + ' must have a timezone')
+
+
+DatetimeWithTimezone = typing.Annotated[datetime_module.datetime, WrapValidator(
+    ensure_given_timezone)]
+
+
 class Table[IDType]:
 
     _ID_COLS: typing.ClassVar[list[str]] = ['id']
     type PluralDict = dict[IDType, typing.Self]
 
-    @property
+    @ property
     def _id(self) -> IDType:
         """Return the ID of the model"""
 
@@ -56,13 +72,13 @@ class Table[IDType]:
         else:
             return getattr(self, self._ID_COLS[0])
 
-    @classmethod
+    @ classmethod
     def generate_id(cls):
         """Generate a new ID for the model"""
 
         return str(uuid.uuid4())
 
-    @classmethod
+    @ classmethod
     def get_one_by_id(cls, session: Session, id: IDType) -> typing.Self | None:
         """Get a model by its ID"""
 
@@ -73,17 +89,17 @@ class Table[IDType]:
         else:
             return cls._get_by_key_values(session, {cls._ID_COLS[0]: id}).one_or_none()
 
-    @classmethod
+    @ classmethod
     def get_one_by_key_values(cls, session: Session, key_values: dict[str, typing.Any]) -> typing.Self | None:
         """Get a model by its key values"""
         return cls._get_by_key_values(session, key_values).one_or_none()
 
-    @classmethod
+    @ classmethod
     def get_all_by_key_values(cls, session: Session, key_values: dict[str, typing.Any]) -> list[typing.Self]:
         """Get all models by their key values"""
         return cls._get_by_key_values(session, key_values).all()
 
-    @classmethod
+    @ classmethod
     def _get_by_key_values(cls, session: Session, key_values: dict[str, typing.Any]):
 
         conditions = [getattr(cls, key) == value for key,
@@ -99,13 +115,13 @@ class Table[IDType]:
         session.commit()
         session.refresh(self)
 
-    @classmethod
+    @ classmethod
     def delete_one_by_id(cls, session: Session, id: IDType) -> int:
         """Delete a model by its ID"""
 
         return cls.delete_many_by_ids(session, [id])
 
-    @classmethod
+    @ classmethod
     def delete_many_by_ids(cls, session: Session, ids: list[typing.Any]) -> int:
         """Delete models by their IDs"""
 
@@ -120,15 +136,15 @@ class Table[IDType]:
         session.commit()
         return result.rowcount
 
-    @classmethod
+    @ classmethod
     def not_found_message(cls) -> str:
         return f'{cls.__name__} not found'
 
-    @classmethod
+    @ classmethod
     async def is_available(cls, session: Session) -> bool:
         return True
 
-    @classmethod
+    @ classmethod
     async def get(cls, session: Session, id: IDType) -> typing.Self:
         instance = cls.get_one_by_id(session, id)
         if not instance:
@@ -136,7 +152,7 @@ class Table[IDType]:
                 status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
         return instance
 
-    @classmethod
+    @ classmethod
     async def delete(cls, session: Session, id: IDType) -> bool:
         if cls.delete_one_by_id(session, id) == 0:
             raise HTTPException(
@@ -144,7 +160,7 @@ class Table[IDType]:
         else:
             return True
 
-    @classmethod
+    @ classmethod
     def export_plural_to_dict(cls, items: collections.abc.Iterable[typing.Self]) -> PluralDict:
         return {item._id: item for item in items}
 
@@ -237,7 +253,7 @@ class User(SQLModel, Table[UserTypes.id], UserBase, table=True):
     user_access_tokens: list['UserAccessToken'] = Relationship(
         back_populates='user')
 
-    @classmethod
+    @ classmethod
     def authenticate(cls, session: Session, email: UserTypes.email, password: UserTypes.password) -> typing.Self | None:
 
         user = cls.get_one_by_key_values(session, {'email': email})
@@ -249,7 +265,7 @@ class User(SQLModel, Table[UserTypes.id], UserBase, table=True):
             return None
         return user
 
-    @classmethod
+    @ classmethod
     def is_username_available(cls, session: Session, username: UserTypes.username) -> bool:
         if len(username) < 1:
             return False
@@ -257,17 +273,17 @@ class User(SQLModel, Table[UserTypes.id], UserBase, table=True):
             return False
         return True
 
-    @classmethod
+    @ classmethod
     def is_email_available(cls, session: Session, email: UserTypes.email) -> bool:
         if cls.get_one_by_key_values(session, {'email': email}):
             return False
         return True
 
-    @property
+    @ property
     def is_public(self) -> bool:
         return self.username is not None
 
-    @classmethod
+    @ classmethod
     def patch(cls, session: Session, user_id: UserTypes.id, user_update: UserUpdateAdmin) -> typing.Self:
 
         user = cls.get_one_by_id(session, user_id)
@@ -353,7 +369,7 @@ class Scope(SQLModel, Table[ScopeTypes.id], table=True):
     api_key_scopes: list['APIKeyScope'] = Relationship(
         back_populates='scope')
 
-    @classmethod
+    @ classmethod
     def generate_id(cls):
         return len(cls.get_all_by_key_values(cls, {})) + 1
 
@@ -389,9 +405,9 @@ class UserRoleScope(SQLModel, Table[UserRoleScopeId], table=True):
 
 class AuthCredentialTypes:
     user_id = UserTypes.id
-    issued = typing.Annotated[datetime_module.datetime,
+    issued = typing.Annotated[DatetimeWithTimezone,
                               'The datetime at which the auth credential was issued']
-    expiry = typing.Annotated[datetime_module.datetime,
+    expiry = typing.Annotated[DatetimeWithTimezone,
                               'The datetime at which the auth credential will expire']
     lifespan = typing.Annotated[datetime_module.timedelta,
                                 'The timedelta from creation in which the auth credential is still valid']
@@ -401,9 +417,9 @@ class AuthCredentialTypes:
 class AuthCredential[IDType](BaseModel, ABC):
     user_id: UserTypes.id = Field(
         index=True, foreign_key=User.__tablename__ + '.id', const=True)
-    issued: datetime_module.datetime = Field(const=True)
-    expiry: AuthCredentialTypes.expiry = Field()
     type: typing.ClassVar[AuthCredentialTypes.type | None] = None
+    issued: AuthCredentialTypes.issued = Field(const=True)
+    expiry: AuthCredentialTypes.expiry = Field()
 
     class JWTExport(typing.TypedDict):
         sub: IDType
@@ -428,20 +444,25 @@ class AuthCredential[IDType](BaseModel, ABC):
         valid: bool
         exception: typing.Optional[auth.EXCEPTION]
 
-    @classmethod
+    @ classmethod
     def validate_jwt_claims(cls, payload: JWTExport) -> bool:
         return all(claim in payload for claim in cls._JWT_CLAIMS_TO_ATTRIBUTES)
 
-    @classmethod
+    @ classmethod
     def import_from_jwt(cls, payload: dict) -> JWTImport:
         return {cls._JWT_CLAIMS_TO_ATTRIBUTES[claim]: payload.get(claim) for claim in cls._JWT_CLAIMS_TO_ATTRIBUTES}
 
     def export_to_jwt(self) -> JWTExport:
         return {key: getattr(self, value) for key, value in self._JWT_CLAIMS_TO_ATTRIBUTES.items()}
 
-    @abstractmethod
+    @ abstractmethod
     def get_scopes(self) -> list[Scope]:
         pass
+
+    @ pydantic.field_serializer('issued', 'expiry')
+    def serialize_datetime(value: datetime_module.datetime) -> DatetimeWithTimezone:
+        print('serializing...')
+        return value.replace(tzinfo=datetime_module.timezone.utc)
 
 
 class AuthCredentialCreate(BaseModel):
@@ -455,7 +476,7 @@ class AuthCredentialAdminCreate(SingularCreate[AuthCredential], AuthCredentialCr
     _SINGULAR_MODEL: typing.ClassVar[typing.Type[AuthCredential]
                                      ] = AuthCredential
 
-    @pydantic.model_validator(mode='after')
+    @ pydantic.model_validator(mode='after')
     def check_lifespan_or_expiry(self):
         if self.lifespan == None and self.expiry == None:
             raise ValueError(
@@ -463,7 +484,6 @@ class AuthCredentialAdminCreate(SingularCreate[AuthCredential], AuthCredentialCr
         return self
 
     def get_expiry(self) -> datetime_module.datetime:
-
         if self.expiry != None:
             return self.expiry
 
@@ -506,11 +526,13 @@ class UserAccessTokenAdminCreate(SingularCreate[UserAccessToken], AuthCredential
 
 class APIKeyTypes(AuthCredentialTypes):
     id = str
-    name = str
+    name = typing.Annotated[str, StringConstraints(
+        min_length=1, max_length=256)]
 
 
 class APIKeyUpdate(BaseModel):
     name: typing.Optional[APIKeyTypes.name] = None
+    expiry: typing.Optional[APIKeyTypes.expiry] = None
 
 
 class APIKey(SQLModel, AuthCredential[APIKeyTypes.id], Table[APIKeyTypes.id], table=True):
@@ -519,7 +541,6 @@ class APIKey(SQLModel, AuthCredential[APIKeyTypes.id], Table[APIKeyTypes.id], ta
         primary_key=True, index=True, unique=True, const=True)
     name: APIKeyTypes.name = Field()
     type: typing.ClassVar[AuthCredentialTypes.type] = 'api_key'
-
     user: User = Relationship(back_populates='api_keys')
     api_key_scopes: list['APIKeyScope'] = Relationship(
         back_populates='api_key')

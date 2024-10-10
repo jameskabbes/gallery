@@ -6,6 +6,7 @@ import { callApi } from '../../utils/Api';
 import openapi_schema from '../../../../openapi_schema.json';
 
 import { SignUpContext } from '../../contexts/SignUp';
+import { SignUpContext as SignUpContextType } from '../../types';
 import { AuthContext } from '../../contexts/Auth';
 import { AuthModalsContext } from '../../contexts/AuthModals';
 import { ToastContext } from '../../contexts/Toast';
@@ -107,7 +108,7 @@ function SignUp() {
               <h4>
                 <InputText
                   state={signUpContext.state.email}
-                  setState={(state: InputState) => {
+                  setState={(state: SignUpContextType['state']['email']) => {
                     signUpContext.dispatch({
                       type: 'SET_EMAIL',
                       payload: state,
@@ -126,6 +127,17 @@ function SignUp() {
                   checkAvailability={true}
                   isAvailable={isEmailAvailable}
                   isValid={isEmailValid}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    let newValue: SignUpContextType['state']['email']['value'] =
+                      e.target.value;
+                    signUpContext.dispatch({
+                      type: 'SET_EMAIL',
+                      payload: {
+                        ...signUpContext.state.email,
+                        value: newValue,
+                      },
+                    });
+                  }}
                 />
               </h4>
             </div>
@@ -136,7 +148,7 @@ function SignUp() {
               <h4>
                 <InputText
                   state={signUpContext.state.password}
-                  setState={(state: InputState) =>
+                  setState={(state: SignUpContextType['state']['password']) =>
                     signUpContext.dispatch({
                       type: 'SET_PASSWORD',
                       payload: state,
@@ -154,6 +166,17 @@ function SignUp() {
                   type="password"
                   checkAvailability={false}
                   isValid={isPasswordValid}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    let newValue: SignUpContextType['state']['password']['value'] =
+                      e.target.value;
+                    signUpContext.dispatch({
+                      type: 'SET_PASSWORD',
+                      payload: {
+                        ...signUpContext.state.email,
+                        value: newValue,
+                      },
+                    });
+                  }}
                 />
               </h4>
             </div>
@@ -164,7 +187,9 @@ function SignUp() {
               <h4>
                 <InputText
                   state={signUpContext.state.confirmPassword}
-                  setState={(state: InputState) =>
+                  setState={(
+                    state: SignUpContextType['state']['confirmPassword']
+                  ) =>
                     signUpContext.dispatch({
                       type: 'SET_CONFIRM_PASSWORD',
                       payload: state,
@@ -181,7 +206,9 @@ function SignUp() {
                   }
                   type="password"
                   checkAvailability={false}
-                  isValid={(confirmPassword: InputState['value']) => {
+                  isValid={(
+                    confirmPassword: SignUpContextType['state']['confirmPassword']['value']
+                  ) => {
                     if (signUpContext.state.password.status !== 'valid') {
                       return { valid: false, message: 'Password is invalid' };
                     } else if (
@@ -194,6 +221,17 @@ function SignUp() {
                     } else {
                       return { valid: true };
                     }
+                  }}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    let newValue: SignUpContextType['state']['confirmPassword']['value'] =
+                      e.target.value;
+                    signUpContext.dispatch({
+                      type: 'SET_CONFIRM_PASSWORD',
+                      payload: {
+                        ...signUpContext.state.email,
+                        value: newValue,
+                      },
+                    });
                   }}
                 />
               </h4>

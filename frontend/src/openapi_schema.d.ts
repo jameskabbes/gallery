@@ -130,8 +130,6 @@ export interface components {
       lifespan?: string | null;
       /** Expiry */
       expiry?: string | null;
-      /** Issued */
-      issued?: string | null;
       /** Name */
       name: string;
     };
@@ -139,6 +137,8 @@ export interface components {
     APIKeyUpdate: {
       /** Name */
       name?: string | null;
+      /** Expiry */
+      expiry?: string | null;
     };
     /** Body_login_auth_login_password__post */
     Body_login_auth_login_password__post: {

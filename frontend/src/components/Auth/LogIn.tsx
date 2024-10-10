@@ -5,6 +5,7 @@ import openapi_schema from '../../../../openapi_schema.json';
 import { InputState } from '../../types';
 import { InputText } from '../Form/InputText';
 import { LogInContext } from '../../contexts/LogIn';
+import { LogInContext as LogInContextType } from '../../types';
 import { ToastContext } from '../../contexts/Toast';
 import { AuthModalsContext } from '../../contexts/AuthModals';
 import { ExtractResponseTypes } from '../../types';
@@ -20,6 +21,9 @@ const API_METHOD = 'post';
 type ResponseTypesByStatus = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
+
+type TRequestData =
+  paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/x-www-form-urlencoded'];
 
 function LogIn() {
   const logInContext = useContext(LogInContext);
@@ -56,7 +60,7 @@ function LogIn() {
 
       const { data, response } = await callApi<
         ResponseTypesByStatus[keyof ResponseTypesByStatus],
-        paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/x-www-form-urlencoded']
+        TRequestData
       >({
         endpoint: API_ENDPOINT,
         method: API_METHOD,
@@ -105,7 +109,7 @@ function LogIn() {
               <h4>
                 <InputText
                   state={logInContext.state.email}
-                  setState={(state: InputState) => {
+                  setState={(state: LogInContextType['state']['email']) => {
                     logInContext.dispatch({
                       type: 'SET_EMAIL',
                       payload: state,
@@ -117,6 +121,17 @@ function LogIn() {
                     openapi_schema.components.schemas.UserCreate.properties
                       .email.maxLength
                   }
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    let newValue: LogInContextType['state']['email']['value'] =
+                      e.target.value;
+                    logInContext.dispatch({
+                      type: 'SET_EMAIL',
+                      payload: {
+                        ...logInContext.state.email,
+                        value: newValue,
+                      },
+                    });
+                  }}
                   type="email"
                   checkAvailability={false}
                   isValid={isEmailValid}
@@ -130,7 +145,7 @@ function LogIn() {
               <h4>
                 <InputText
                   state={logInContext.state.password}
-                  setState={(state: InputState) =>
+                  setState={(state: LogInContextType['state']['password']) =>
                     logInContext.dispatch({
                       type: 'SET_PASSWORD',
                       payload: state,
@@ -147,6 +162,17 @@ function LogIn() {
                   }
                   type="password"
                   checkAvailability={false}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    let newValue: LogInContextType['state']['password']['value'] =
+                      e.target.value;
+                    logInContext.dispatch({
+                      type: 'SET_PASSWORD',
+                      payload: {
+                        ...logInContext.state.email,
+                        value: newValue,
+                      },
+                    });
+                  }}
                 />
               </h4>
             </div>

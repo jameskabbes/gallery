@@ -7,6 +7,8 @@ import openapi_schema from '../../../../openapi_schema.json';
 import { AuthModalsContext } from '../../contexts/AuthModals';
 import { LogInWithEmailContext } from '../../contexts/LogInWithEmail';
 
+import { LogInWithEmailContext as LogInWithEmailContextType } from '../../types';
+
 import { isEmailValid } from '../../services/api/isEmailValid';
 import { InputText } from '../Form/InputText';
 import { InputState } from '../../types';
@@ -17,6 +19,9 @@ const API_METHOD = 'post';
 type ResponseTypesByStatus = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
+
+type TRequestData =
+  paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json'];
 
 function LogInWithEmail() {
   const logInWithEmailContext = useContext(LogInWithEmailContext);
@@ -37,7 +42,7 @@ function LogInWithEmail() {
 
       const { data, response } = await callApi<
         ResponseTypesByStatus[keyof ResponseTypesByStatus],
-        paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
+        TRequestData
       >({
         endpoint: API_ENDPOINT,
         method: API_METHOD,
@@ -68,7 +73,9 @@ function LogInWithEmail() {
               <h4>
                 <InputText
                   state={logInWithEmailContext.state.email}
-                  setState={(state: InputState) => {
+                  setState={(
+                    state: LogInWithEmailContextType['state']['email']
+                  ) => {
                     logInWithEmailContext.dispatch({
                       type: 'SET_EMAIL',
                       payload: state,
@@ -85,6 +92,17 @@ function LogInWithEmail() {
                   }
                   type="email"
                   isValid={isEmailValid}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    let newValue: LogInWithEmailContextType['state']['email']['value'] =
+                      e.target.value;
+                    logInWithEmailContext.dispatch({
+                      type: 'SET_EMAIL',
+                      payload: {
+                        ...logInWithEmailContext.state.email,
+                        value: newValue,
+                      },
+                    });
+                  }}
                 />
               </h4>
             </div>

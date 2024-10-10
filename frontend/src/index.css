@@ -51,11 +51,19 @@ p {
 }
 
 .bg-color-darker {
-  @apply bg-light-darker dark:bg-dark-darker;
+  @apply bg-light-darker dark:bg-dark-darker border-light dark:border-dark;
+}
+
+.bg-color-lighter {
+  @apply bg-light-lighter dark:bg-dark-lighter border-light dark:border-dark;
+}
+
+.bg-color-highlight {
+  @apply bg-light-darker dark:bg-dark-lighter border-light dark:border-dark;
 }
 
 .bg-color-invert {
-  @apply bg-dark dark:bg-light;
+  @apply bg-dark dark:bg-light border-dark-darker dark:border-light-darker;
 }
 
 .App {
@@ -118,11 +126,11 @@ button {
 }
 
 .button-base {
-  @apply rounded-xl p-2;
+  @apply rounded-xl p-2 border-[1px];
 }
 
 .button-primary {
-  @apply button-base bg-primary text-white focus:outline-primary-darker;
+  @apply button-base bg-primary hover:bg-primary-darker text-white focus:outline-primary-darker;
 }
 
 .button-secondary {
@@ -130,7 +138,7 @@ button {
 }
 
 .button-tertiary {
-  @apply button-base border-dark-lighter dark:border-light-darker border-2 focus:outline-primary-darker;
+  @apply button-base  text-color focus:outline-dark-darker dark:focus:outline-light-darker;
 }
 
 .button-invalid {
@@ -147,13 +155,11 @@ button {
 }
 /* Input */
 
-.text-input {
-  @apply w-full bg-inherit focus:outline-none border-b-2 border-light-darker dark:border-dark-darker;
+input[type='text'],
+input[type='password'],
+input[type='email'] {
+  @apply w-full bg-inherit focus:outline-none border-b-2 border-light-darker dark:border-dark-darker focus:border-primary;
   transition: border-color 0.2s;
-}
-
-.text-input:focus {
-  @apply border-primary;
 }
 
 .component {

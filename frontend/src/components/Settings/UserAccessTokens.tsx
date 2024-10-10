@@ -98,7 +98,10 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
           {Object.keys(userAccessTokens).map((key) => {
             const session = userAccessTokens[key];
             return (
-              <div key={key} className="flex flex-row">
+              <div
+                key={key}
+                className="flex flex-row justify-between items-center button-tertiary m-2"
+              >
                 <p>
                   Issued:{' '}
                   {new Date(session.issued).toLocaleDateString('en-US', {

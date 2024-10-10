@@ -40,17 +40,21 @@ type ExtractResponseTypes<T> = {
 
 type InputStatus = 'valid' | 'invalid' | 'loading';
 
-interface InputState {
-  value: string;
+type Input = string | number | readonly string[];
+
+interface InputState<T extends Input> {
+  value: T;
   status: InputStatus;
   error: string | null;
 }
 
-const defaultInputState: InputState = {
-  value: '',
+const defaultInputState = <T extends Input>(
+  defaultValue: T
+): InputState<T> => ({
+  value: defaultValue,
   status: 'valid',
   error: null,
-};
+});
 
 interface DarkModeContext {
   state: boolean;
@@ -76,8 +80,8 @@ type AuthModalsReducerActionBase =
   | { type: 'SET_VALID'; payload: boolean };
 
 interface LogInContextState extends AuthModalsContextStateBase {
-  email: InputState;
-  password: InputState;
+  email: InputState<string>;
+  password: InputState<string>;
 }
 
 type LogInReducerAction =
@@ -97,7 +101,7 @@ interface LogInContext {
 }
 
 interface LogInWithEmailContextState extends AuthModalsContextStateBase {
-  email: InputState;
+  email: InputState<string>;
   screen: 'email' | 'sent';
 }
 
@@ -118,9 +122,9 @@ interface LogInWithEmailContext {
 }
 
 interface SignUpContextState extends AuthModalsContextStateBase {
-  email: InputState;
-  password: InputState;
-  confirmPassword: InputState;
+  email: InputState<string>;
+  password: InputState<string>;
+  confirmPassword: InputState<string>;
 }
 
 type SignUpReducerAction =
@@ -255,6 +259,7 @@ export {
   UseApiCallReturn,
   DarkModeContext,
   defaultInputState,
+  Input,
   InputState,
   InputStatus,
   SignUpContextState,

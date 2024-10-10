@@ -7,9 +7,9 @@ import {
 } from '../types';
 
 const signUpReducerDefaultState: SignUpContextState = {
-  email: { ...defaultInputState },
-  password: { ...defaultInputState },
-  confirmPassword: { ...defaultInputState },
+  email: { ...defaultInputState<string>('') },
+  password: { ...defaultInputState<string>('') },
+  confirmPassword: { ...defaultInputState<string>('') },
   valid: false,
 };
 

@@ -4,7 +4,7 @@ from fastapi import Depends
 from sqlmodel import Session
 from gallery import models
 # Adjust the import as necessary
-from main import c, make_auth_credential
+from main import c
 
 from sqlmodel import select
 import datetime
@@ -16,13 +16,20 @@ async def main():
 
     with Session(c.db_engine) as session:
 
-        user = models.User.get_one_by_id(
-            session, 'd0d60a66-17fd-43c4-885f-71c6648f59a8')
-        print(user)
+        dt = datetime.datetime.now()
 
-        models.User.patch(
-            session, user.id, models.UserUpdateAdmin(username=None)
-        )
+        # api_key = models.APIKeyAdminCreate(
+        #     user_id='14edcfd4-db29-4bbf-80a1-3494dc879117',
+        #     expiry=dt,
+        #     name='test',
+        # )
+
+        # print(api_key.model_dump())
+
+        # print('creating...')
+
+        # api_key = api_key.create()
+        # print(api_key.model_dump())
 
         # a = models.AuthCredential.get_one_by_id(
         #     session, '14edcfd4-db29-4bbf-80a1-3494dc879117')
@@ -30,8 +37,6 @@ async def main():
 
         # b = {'dt': datetime.datetime.now(datetime.UTC)}
         # print(b)
-
-        pass
 
         # #
         # read_scope = models.Scope(id='users.read')

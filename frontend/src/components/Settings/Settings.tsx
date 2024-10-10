@@ -13,7 +13,7 @@ import { IoBrush } from 'react-icons/io5';
 import { IoRadioOutline } from 'react-icons/io5';
 import { IoPersonOutline } from 'react-icons/io5';
 import { IoKeyOutline } from 'react-icons/io5';
-import { APIKeys } from './APIKeys/APIKeys';
+import { APIKeys } from './APIKeys';
 
 const API_ENDPOINT = '/settings/page/';
 const API_METHOD = 'get';
@@ -113,8 +113,8 @@ function Settings(): JSX.Element {
   return (
     <>
       <h1>Settings</h1>
-      <div className="flex flex-row">
-        <div className="flex flex-col">
+      <div className="flex flex-row w-full space-x-4">
+        <div className="flex flex-col p-2">
           {Object.keys(selectionComponentMapping).map(
             (key: SelectionComponentKeys) => {
               if (authContext.state.user || !loggedInComponentKeys.has(key)) {
@@ -134,7 +134,7 @@ function Settings(): JSX.Element {
             }
           )}
         </div>
-        <div>
+        <div className="flex flex-col flex-1 p-1">
           {loading ? (
             <span className="loader-secondary"></span>
           ) : selection in selectionComponentMapping ? (

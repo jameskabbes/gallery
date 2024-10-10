@@ -7,7 +7,7 @@ import {
 } from '../types';
 
 const logInWithEmailReducerDefaultState: LogInWithEmailContextState = {
-  email: { ...defaultInputState },
+  email: { ...defaultInputState<string>('') },
   valid: false,
   screen: 'email',
 };

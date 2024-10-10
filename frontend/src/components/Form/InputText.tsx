@@ -1,140 +1,70 @@
 import React, { useEffect, useRef } from 'react';
 import { CheckOrX } from './CheckOrX';
-import { InputState, InputStatus } from '../../types';
+import { InputState, Input as InputType } from '../../types';
+import {
+  BaseInputProps,
+  Input,
+  InputProps,
+  ValidityCheckReturn,
+} from './Input';
 
-const defaultInputState: InputState = {
-  value: '',
-  status: 'invalid',
-  error: null,
-};
-
-interface ValidityCheckReturn {
-  valid: boolean;
-  message?: string;
-}
-
-interface Props<T> {
-  state: InputState;
-  setState: (state: InputState) => void;
-  id: string;
-  minLength: number;
-  maxLength: number;
+interface InputTextProps extends BaseInputProps<string> {
+  state: InputProps<string>['state'];
+  setState: InputProps<string>['setState'];
+  type: InputProps<string>['type'];
+  minLength?: number | null;
+  maxLength?: number | null;
   label?: string | null;
-  type?: string;
-  placeholder?: string;
+  placeholder?: string | null;
   showValidity?: boolean;
-  checkAvailability?: boolean;
-  isValid?: (value: InputState['value']) => {
-    valid: boolean;
-    message?: string;
-  };
-  isAvailable?: (value: InputState['value']) => Promise<boolean>;
-  required?: boolean;
 }
 
-function InputText<T>({
+function InputText({
   state,
   setState,
   id,
-  minLength,
-  maxLength,
-  type = 'text',
+  type,
+  minLength = null,
+  maxLength = null,
+  label = null,
   placeholder = null,
   showValidity = true,
-  checkAvailability = false,
-  isAvailable = async (value: InputState['value']) => true,
-  isValid = (value: InputState['value']) => ({ valid: true }),
-  required = true,
-}: Props<T>) {
-  const debounceTimeout = useRef(null);
-
-  async function checkAvailabilityApi() {
-    let available = await isAvailable(state.value);
-    setState({
-      ...state,
-      status: available ? 'valid' : 'invalid',
-      error: available ? null : `Not available`,
-    });
+  isValid = (value: InputState<string>['value']) => ({ valid: true }),
+  ...rest
+}: InputTextProps) {
+  function isValidWrapper(
+    value: InputState<string>['value']
+  ): ValidityCheckReturn {
+    if (minLength && value.length < minLength) {
+      return {
+        valid: false,
+        message: `Must be at least ${minLength} characters`,
+      };
+    }
+    if (maxLength && value.length > maxLength) {
+      return {
+        valid: false,
+        message: `Must be at most ${maxLength} characters`,
+      };
+    }
+    return isValid(value);
   }
-
-  useEffect(() => {
-    if (state.value.length < minLength) {
-      if (debounceTimeout.current) {
-        clearTimeout(debounceTimeout.current);
-      }
-      setState({
-        ...state,
-        status: 'invalid',
-        error: `Must be at least ${minLength} characters`,
-      });
-      return;
-    }
-    // too long
-    if (state.value.length > maxLength) {
-      if (debounceTimeout.current) {
-        clearTimeout(debounceTimeout.current);
-      }
-      setState({
-        ...state,
-        status: 'invalid',
-        error: `Must be at most ${maxLength} characters`,
-      });
-      return;
-    }
-    // otherwise invalid
-    const { valid, message } = isValid(state.value);
-    if (!valid) {
-      if (debounceTimeout.current) {
-        clearTimeout(debounceTimeout.current);
-      }
-      setState({
-        ...state,
-        status: 'invalid',
-        error: message,
-      });
-      return;
-    }
-
-    if (!checkAvailability) {
-      setState({
-        ...state,
-        status: 'valid',
-        error: null,
-      });
-      return;
-    }
-    setState({
-      ...state,
-      status: 'loading',
-      error: null,
-    });
-
-    if (debounceTimeout.current) {
-      clearTimeout(debounceTimeout.current);
-    }
-    debounceTimeout.current = setTimeout(() => {
-      checkAvailabilityApi();
-    }, 300);
-  }, [state.value]);
 
   return (
     <div className="flex flex-row items-center space-x-2">
-      <input
-        className="text-input"
+      <Input
+        state={state}
+        setState={setState}
         type={type}
         id={id}
-        value={state.value}
-        placeholder={placeholder}
-        onChange={(e) => {
-          let newValue: InputState['value'] = e.target.value;
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          let newValue: InputState<string>['value'] = e.target.value;
           setState({
             ...state,
             value: newValue,
           });
         }}
-        required={required}
-        minLength={minLength}
-        maxLength={maxLength}
+        isValid={isValidWrapper}
       />
       {showValidity && (
         <span title={state.error || ''}>
@@ -145,4 +75,4 @@ function InputText<T>({
   );
 }
 
-export { defaultInputState, ValidityCheckReturn, InputText };
+export { InputText, InputTextProps };
