@@ -18,17 +18,29 @@ async def main():
 
         dt = datetime.datetime.now()
 
-        # api_key = models.APIKeyAdminCreate(
+        a = models.User(id='sadf', email='a@a.com',
+                        hashed_password='1234', user_role_id='asdf')
+
+        print(a)
+        print(a.model_dump())
+
+        # a = models.AuthCredential(
+        #     user_id='sadf',
+        #     issued=dt,
+        #     expiry=dt,
+        # )
+        # print(a)
+        # print(a.model_dump())
+
+        # api_key = models.APIKey(
+        #     id='14edcfd4-db29-4bbf-80a1-3494dc879117',
         #     user_id='14edcfd4-db29-4bbf-80a1-3494dc879117',
+        #     issued=dt,
         #     expiry=dt,
         #     name='test',
         # )
+        # print(api_key)
 
-        # print(api_key.model_dump())
-
-        # print('creating...')
-
-        # api_key = api_key.create()
         # print(api_key.model_dump())
 
         # a = models.AuthCredential.get_one_by_id(

@@ -1,8 +1,9 @@
+from pydantic import BaseModel, field_validator
 import typing
 import uuid
 from fastapi import HTTPException, status
 from sqlmodel import SQLModel, Field, Column, Session, select, delete, Relationship
-from pydantic import BaseModel, EmailStr, constr, StringConstraints, field_validator, ValidationInfo, ValidatorFunctionWrapHandler, ValidationError
+from pydantic import BaseModel, EmailStr, constr, StringConstraints, field_validator, ValidationInfo, ValidatorFunctionWrapHandler, ValidationError, field_serializer, model_validator
 from pydantic.functional_validators import WrapValidator
 from sqlalchemy import PrimaryKeyConstraint, and_, or_
 from sqlalchemy.types import DateTime
@@ -44,21 +45,13 @@ class VisibilityLevel(Enum):
 #
 
 
-def ensure_given_timezone(value: datetime_module.datetime, handler: ValidatorFunctionWrapHandler, info: ValidationInfo) -> datetime_module.datetime:
-
-    print('value')
-    print(value)
-
-    if hasattr(value, 'tzinfo') and value.tzinfo != None:
-        return value
-    raise ValidationError(info.field_name + ' must have a timezone')
+def validate_and_normalize_datetime(value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime:
+    if value.tzinfo == None:
+        raise ValueError(info.field_name + ' must have a timezone')
+    return value.astimezone(datetime_module.timezone.utc)
 
 
-DatetimeWithTimezone = typing.Annotated[datetime_module.datetime, WrapValidator(
-    ensure_given_timezone)]
-
-
-class Table[IDType]:
+class Singular[IDType](SQLModel):
 
     _ID_COLS: typing.ClassVar[list[str]] = ['id']
     type PluralDict = dict[IDType, typing.Self]
@@ -77,6 +70,17 @@ class Table[IDType]:
         """Generate a new ID for the model"""
 
         return str(uuid.uuid4())
+
+    @ classmethod
+    def not_found_message(cls) -> str:
+        return f'{cls.__name__} not found'
+
+    @ classmethod
+    def export_plural_to_dict(cls, items: collections.abc.Iterable[typing.Self]) -> PluralDict:
+        return {item._id: item for item in items}
+
+
+class Table[IDType](Singular):
 
     @ classmethod
     def get_one_by_id(cls, session: Session, id: IDType) -> typing.Self | None:
@@ -137,10 +141,6 @@ class Table[IDType]:
         return result.rowcount
 
     @ classmethod
-    def not_found_message(cls) -> str:
-        return f'{cls.__name__} not found'
-
-    @ classmethod
     async def is_available(cls, session: Session) -> bool:
         return True
 
@@ -160,10 +160,6 @@ class Table[IDType]:
         else:
             return True
 
-    @ classmethod
-    def export_plural_to_dict(cls, items: collections.abc.Iterable[typing.Self]) -> PluralDict:
-        return {item._id: item for item in items}
-
 
 class SingularCreate[TableType: Table](BaseModel):
     _SINGULAR_MODEL: typing.ClassVar[typing.Type[TableType]]
@@ -181,11 +177,14 @@ class UserRoleTypes:
     name = str
 
 
-class UserRole(SQLModel, Table[UserRoleTypes.id], table=True):
-    __tablename__ = 'user_role'
+class UserRole(BaseModel, Singular[UserRoleTypes.id]):
     id: UserRoleTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
     name: UserRoleTypes.name = Field(unique=True)
+
+
+class UserRoleTable(SQLModel, UserRole, Table[UserRoleTypes.id], table=True):
+    __tablename__ = 'user_role'
     users: list['User'] = Relationship(back_populates='user_role')
     user_role_scopes: list['UserRoleScope'] = Relationship(
         back_populates='user_role')
@@ -237,8 +236,7 @@ class UserPrivate(BaseModel, UserBase):
         from_attributes = True
 
 
-class User(SQLModel, Table[UserTypes.id], UserBase, table=True):
-    __tablename__ = 'user'
+class User(BaseModel, UserBase, Singular[UserTypes.id]):
     id: UserTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
     email: UserTypes.email = Field(index=True, unique=True)
@@ -247,6 +245,14 @@ class User(SQLModel, Table[UserTypes.id], UserBase, table=True):
     hashed_password: UserTypes.hashed_password | None = Field(default=None)
     user_role_id: UserTypes.user_role_id = Field(
         foreign_key=UserRole.__tablename__ + '.id', default='2')
+
+    @ property
+    def is_public(self) -> bool:
+        return self.username is not None
+
+
+class UserTable(SQLModel, User, Table[UserTypes.id], table=True):
+    __tablename__ = 'user'
 
     api_keys: list['APIKey'] = Relationship(back_populates='user')
     user_role: UserRole = Relationship(back_populates='users')
@@ -278,10 +284,6 @@ class User(SQLModel, Table[UserTypes.id], UserBase, table=True):
         if cls.get_one_by_key_values(session, {'email': email}):
             return False
         return True
-
-    @ property
-    def is_public(self) -> bool:
-        return self.username is not None
 
     @ classmethod
     def patch(cls, session: Session, user_id: UserTypes.id, user_update: UserUpdateAdmin) -> typing.Self:
@@ -321,23 +323,23 @@ class UserCreate(SingularCreate[User], UserBase):
     email: UserTypes.email
     password: typing.Optional[UserTypes.password] = None
 
-    _SINGULAR_MODEL: typing.ClassVar[typing.Type[User]] = User
+    _SINGULAR_MODEL: typing.ClassVar[typing.Type[UserTable]] = UserTable
 
-    def post(self, session: Session) -> User:
-        if not User.is_email_available(session, self.email):
+    def post(self, session: Session) -> UserTable:
+        if not UserTable.is_email_available(session, self.email):
             raise HTTPException(status.HTTP_409_CONFLICT,
                                 detail='Email already exists')
         user = self.create()
         user.add_to_db(session)
         return user
 
-    def create(self) -> User:
+    def create(self) -> UserTable:
 
         hashed_password = None
         if self.password:
             hashed_password = utils.hash_password(self.password)
 
-        return User(id=self._SINGULAR_MODEL.generate_id(), email=self.email, hashed_password=hashed_password)
+        return UserTable(id=self._SINGULAR_MODEL.generate_id(), email=self.email, hashed_password=hashed_password)
 
 
 # Scope
@@ -359,11 +361,16 @@ class ScopeTypes:
     name = ScopeName
 
 
-class Scope(SQLModel, Table[ScopeTypes.id], table=True):
-    __tablename__ = 'scope'
+class Scope(BaseModel, Singular[ScopeTypes.id]):
     id: ScopeTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
+    name: ScopeTypes.name
+
+
+class ScopeTable(SQLModel, Scope, Table[ScopeTypes.id], table=True):
     name: str = Field(index=True, unique=True)
+    __tablename__ = 'scope'
+
     user_role_scopes: list['UserRoleScope'] = Relationship(
         back_populates='scope')
     api_key_scopes: list['APIKeyScope'] = Relationship(
@@ -386,16 +393,19 @@ type UserRoleScopeId = typing.Annotated[tuple[UserRoleScopeTypes.user_role_id,
                                               UserRoleScopeTypes.scope_id], '(user_role_id, scope_id)']
 
 
-class UserRoleScope(SQLModel, Table[UserRoleScopeId], table=True):
+class UserRoleScope(BaseModel, Singular[UserRoleScopeId]):
+    user_role_id: UserRoleTypes.id = Field(
+        primary_key=True, index=True, foreign_key=UserRoleTable.__tablename__ + '.id')
+    scope_id: ScopeTypes.id = Field(
+        primary_key=True, index=True, foreign_key=ScopeTable.__tablename__ + '.id')
+
+
+class UserRoleScopeTable(SQLModel, UserRoleScope, Table[UserRoleScopeId], table=True):
     __tablename__ = 'user_role_scope'
     __table_args__ = (
         PrimaryKeyConstraint('user_role_id', 'scope_id'),
     )
     _ID_COLS: typing.ClassVar[list[str]] = ['user_role_id', 'scope_id']
-    user_role_id: UserRoleTypes.id = Field(
-        primary_key=True, index=True, foreign_key=UserRole.__tablename__ + '.id')
-    scope_id: ScopeTypes.id = Field(
-        primary_key=True, index=True, foreign_key=Scope.__tablename__ + '.id')
 
     user_role: UserRole = Relationship(back_populates='user_role_scopes')
     scope: Scope = Relationship(back_populates='user_role_scopes')
@@ -405,9 +415,9 @@ class UserRoleScope(SQLModel, Table[UserRoleScopeId], table=True):
 
 class AuthCredentialTypes:
     user_id = UserTypes.id
-    issued = typing.Annotated[DatetimeWithTimezone,
+    issued = typing.Annotated[datetime_module.datetime,
                               'The datetime at which the auth credential was issued']
-    expiry = typing.Annotated[DatetimeWithTimezone,
+    expiry = typing.Annotated[datetime_module.datetime,
                               'The datetime at which the auth credential will expire']
     lifespan = typing.Annotated[datetime_module.timedelta,
                                 'The timedelta from creation in which the auth credential is still valid']
@@ -416,10 +426,11 @@ class AuthCredentialTypes:
 
 class AuthCredential[IDType](BaseModel, ABC):
     user_id: UserTypes.id = Field(
-        index=True, foreign_key=User.__tablename__ + '.id', const=True)
-    type: typing.ClassVar[AuthCredentialTypes.type | None] = None
+        index=True, foreign_key=UserTable.__tablename__ + '.id', const=True)
     issued: AuthCredentialTypes.issued = Field(const=True)
     expiry: AuthCredentialTypes.expiry = Field()
+
+    type: typing.ClassVar[AuthCredentialTypes.type | None] = None
 
     class JWTExport(typing.TypedDict):
         sub: IDType
@@ -455,28 +466,26 @@ class AuthCredential[IDType](BaseModel, ABC):
     def export_to_jwt(self) -> JWTExport:
         return {key: getattr(self, value) for key, value in self._JWT_CLAIMS_TO_ATTRIBUTES.items()}
 
-    @ abstractmethod
-    def get_scopes(self) -> list[Scope]:
-        pass
+    @field_validator('issued', 'expiry')
+    @classmethod
+    def validate_datetime(cls, value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime:
+        print('validating...')
+        return validate_and_normalize_datetime(value, info)
 
-    @ pydantic.field_serializer('issued', 'expiry')
-    def serialize_datetime(value: datetime_module.datetime) -> DatetimeWithTimezone:
+    @field_serializer('issued', 'expiry')
+    def serialize_datetime(value: datetime_module.datetime) -> datetime_module.datetime:
         print('serializing...')
         return value.replace(tzinfo=datetime_module.timezone.utc)
 
 
-class AuthCredentialCreate(BaseModel):
+class AuthCredentialCreate(BaseModel, SingularCreate[AuthCredential]):
     lifespan: AuthCredentialTypes.lifespan | None = None
     expiry: AuthCredentialTypes.expiry | None = None
-
-
-class AuthCredentialAdminCreate(SingularCreate[AuthCredential], AuthCredentialCreate):
-    user_id: AuthCredentialTypes.user_id
 
     _SINGULAR_MODEL: typing.ClassVar[typing.Type[AuthCredential]
                                      ] = AuthCredential
 
-    @ pydantic.model_validator(mode='after')
+    @model_validator(mode='after')
     def check_lifespan_or_expiry(self):
         if self.lifespan == None and self.expiry == None:
             raise ValueError(
@@ -491,28 +500,37 @@ class AuthCredentialAdminCreate(SingularCreate[AuthCredential], AuthCredentialCr
             datetime_module.UTC) + self.lifespan
 
 
+class AuthCredentialAdminCreate(AuthCredentialCreate):
+    user_id: AuthCredentialTypes.user_id
+
+
+# User Access Token
+
 class UserAccessTokenTypes(AuthCredentialTypes):
     id = str
 
 
-class UserAccessToken(SQLModel, AuthCredential[UserAccessTokenTypes.id], Table[UserAccessTokenTypes.id], table=True):
-    __tablename__ = 'user_access_token'
+class UserAccessToken(AuthCredential[UserAccessTokenTypes.id], Singular[UserAccessTokenTypes.id]):
     id: UserAccessTokenTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
     type: typing.ClassVar[AuthCredentialTypes.type] = 'access_token'
 
-    user: User = Relationship(back_populates='user_access_tokens')
+
+class UserAccessTokenTable(SQLModel, AuthCredential[UserAccessTokenTypes.id], Table[UserAccessTokenTypes.id], table=True):
+    __tablename__ = 'user_access_token'
+
+    user: UserTable = Relationship(back_populates='user_access_tokens')
 
     def get_scopes(self) -> list[Scope]:
         return [user_role_scope.scope for user_role_scope in self.user.user_role.user_role_scopes]
 
 
-class UserAccessTokenAdminCreate(SingularCreate[UserAccessToken], AuthCredentialAdminCreate):
-    _SINGULAR_MODEL: typing.ClassVar[typing.Type[UserAccessToken]
-                                     ] = UserAccessToken
+class UserAccessTokenAdminCreate(SingularCreate[UserAccessTokenTable], AuthCredentialAdminCreate):
+    _SINGULAR_MODEL: typing.ClassVar[typing.Type[UserAccessTokenTable]
+                                     ] = UserAccessTokenTable
 
-    def create(self) -> UserAccessToken:
-        return UserAccessToken(
+    def create(self) -> UserAccessTokenTable:
+        return UserAccessTokenTable(
             id=self._SINGULAR_MODEL.generate_id(),
             issued=datetime_module.datetime.now(
                 datetime_module.timezone.utc),
@@ -535,12 +553,15 @@ class APIKeyUpdate(BaseModel):
     expiry: typing.Optional[APIKeyTypes.expiry] = None
 
 
-class APIKey(SQLModel, AuthCredential[APIKeyTypes.id], Table[APIKeyTypes.id], table=True):
-    __tablename__ = 'api_key'
+class APIKey(AuthCredential[APIKeyTypes.id], Singular[APIKeyTypes.id]):
     id: APIKeyTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
     name: APIKeyTypes.name = Field()
     type: typing.ClassVar[AuthCredentialTypes.type] = 'api_key'
+
+
+class APIKeyTable(SQLModel, AuthCredential[APIKeyTypes.id], Table[APIKeyTypes.id], table=True):
+    __tablename__ = 'api_key'
     user: User = Relationship(back_populates='api_keys')
     api_key_scopes: list['APIKeyScope'] = Relationship(
         back_populates='api_key')
@@ -549,16 +570,14 @@ class APIKey(SQLModel, AuthCredential[APIKeyTypes.id], Table[APIKeyTypes.id], ta
         return [api_key_scope.scope for api_key_scope in self.api_key_scopes]
 
 
-class APIKeyCreate(AuthCredentialCreate):
+class APIKeyCreate(SingularCreate[APIKeyTable], AuthCredentialCreate):
     name: APIKeyTypes.name
 
+    _SINGULAR_MODEL: typing.ClassVar[typing.Type[APIKeyTable]
+                                     ] = APIKeyTable
 
-class APIKeyAdminCreate(SingularCreate[APIKey], AuthCredentialAdminCreate, APIKeyCreate):
-    _SINGULAR_MODEL: typing.ClassVar[typing.Type[UserAccessToken]
-                                     ] = UserAccessToken
-
-    def create(self) -> APIKey:
-        return APIKey(
+    def create(self) -> APIKeyTable:
+        return APIKeyTable(
             id=self._SINGULAR_MODEL.generate_id(),
             issued=datetime_module.datetime.now(
                 datetime_module.timezone.utc),
@@ -567,10 +586,11 @@ class APIKeyAdminCreate(SingularCreate[APIKey], AuthCredentialAdminCreate, APIKe
         )
 
 
-type AuthCredentialClasses = typing.Union[UserAccessToken, APIKey]
+class APIKeyAdminCreate(SingularCreate[APIKeyTable], AuthCredentialAdminCreate, APIKeyCreate):
+    pass
+
 
 # APIKeyScope
-
 
 class APIKeyScopeTypes:
     api_key_id = APIKeyTypes.id
@@ -582,17 +602,20 @@ type APIKeyScopeID = typing.Annotated[tuple[APIKeyScopeTypes.api_key_id,
                                       ]
 
 
-class APIKeyScope(SQLModel, Table[APIKeyScopeID], table=True):
-    __tablename__ = 'api_key_scope'
-    __table_args__ = (
-        PrimaryKeyConstraint('api_key_id', 'scope_id'),
-    )
+class APIKeyScope(BaseModel, Singular[APIKeyScopeID]):
     _ID_COLS: typing.ClassVar[list[str]] = ['api_key_id', 'scope_id']
 
     api_key_id: APIKeyScopeTypes.api_key_id = Field(
         index=True, foreign_key=APIKey.__tablename__ + '.id')
     scope_id: APIKeyScopeTypes.scope_id = Field(
         index=True, foreign_key=Scope.__tablename__ + '.id')
+
+
+class APIKeyScopeTable(SQLModel, APIKeyScope, Table[APIKeyScopeID], table=True):
+    __tablename__ = 'api_key_scope'
+    __table_args__ = (
+        PrimaryKeyConstraint('api_key_id', 'scope_id'),
+    )
 
     api_key: APIKey = Relationship(back_populates='api_key_scopes')
     scope: Scope = Relationship(back_populates='api_key_scopes')
@@ -691,7 +714,7 @@ class APIKeyScope(SQLModel, Table[APIKeyScopeID], table=True):
 #     gallery_id: GalleryTypes.id = Field(
 #         primary_key=True, index=True, foreign_key=Gallery.__tablename__ + '.id')
 #     user_id: UserTypes.id = Field(
-#         primary_key=True, index=True, foreign_key=User.__tablename__ + '.id')
+#         primary_key=True, index=True, foreign_key=UserTable.__tablename__ + '.id')
 #     permission_level: PermissionLevel
 if __name__ == '__main__':
     print()

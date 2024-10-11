@@ -221,7 +221,7 @@ def get_auth(get_authorization_return: GetAuthorizationReturn) -> GetAuthReturn:
     ))
 
 
-@app.get('/admin/users/{user_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+@app.get('/admin/users/{user_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.UserTable.not_found_message(), 'model': NotFoundResponse}})
 async def get_user_by_id_admin(
     user_id: models.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
@@ -499,13 +499,13 @@ async def user_email_available(email: models.UserTypes.email) -> ItemAvailableRe
         return ItemAvailableResponse(available=models.User.is_email_available(session, email))
 
 
-@app.get('/user/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+@app.get('/user/', responses={status.HTTP_404_NOT_FOUND: {"description": models.UserTable.not_found_message(), 'model': NotFoundResponse}})
 async def get_user(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> models.UserPrivate:
     return models.UserPrivate.model_validate(authorization.user)
 
 
 @ app.patch('/user/', responses={
-    status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse},
+    status.HTTP_404_NOT_FOUND: {"description": models.UserTable.not_found_message(), 'model': NotFoundResponse},
     status.HTTP_409_CONFLICT: {"description": 'Username or email already exists', 'model': DetailOnlyResponse},
 })
 async def patch_user(
@@ -520,7 +520,7 @@ async def patch_user(
 
 @ app.delete('/user/', status_code=204, responses={
     status.HTTP_404_NOT_FOUND: {
-        "description": models.User.not_found_message(), 'model': NotFoundResponse}
+        "description": models.UserTable.not_found_message(), 'model': NotFoundResponse}
 }
 )
 async def delete_user(
@@ -532,7 +532,7 @@ async def delete_user(
             return Response(status_code=204)
 
 
-@ app.get('/user-access-tokens/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+@ app.get('/user-access-tokens/', responses={status.HTTP_404_NOT_FOUND: {"description": models.UserTable.not_found_message(), 'model': NotFoundResponse}})
 async def get_user_access_tokens(
         authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> list[models.UserAccessToken]:
     with Session(c.db_engine) as session:
@@ -557,7 +557,7 @@ async def delete_user_access_token(
         return Response(status_code=204)
 
 
-@ app.get('/api-keys/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+@ app.get('/api-keys/', responses={status.HTTP_404_NOT_FOUND: {"description": models.UserTable.not_found_message(), 'model': NotFoundResponse}})
 async def get_api_keys(
         authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> list[models.APIKey]:
 
@@ -735,7 +735,7 @@ async def get_pages_profile(authorization: typing.Annotated[GetAuthorizationRetu
         user = models.User.get_one_by_id(session, authorization.user.id)
         if user is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                detail=models.User.not_found_message())
+                                detail=models.UserTable.not_found_message())
         # convert user to models.UserPrivate
         return GetProfilePageResponse(
             **get_auth(authorization).model_dump(),
