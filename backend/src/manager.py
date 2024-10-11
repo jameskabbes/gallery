@@ -14,13 +14,11 @@ from google.auth.transport import requests
 
 async def main():
 
-    a = models.APIKey(
-        id='asdf',
-        user_id='sadfasdf',
-        name='sadfasdf',
-        expiry=datetime.datetime.now(),
-        issued=datetime.datetime.now(),
-    )
+    a = models.UserRoleCreateAdmin(name='sadf').create()
+    print(a.model_dump())
+
+    b = models.UserRoleUpdate(id='1', name='sadf')
+    print(b.model_dump())
 
     # with Session(c.db_engine) as session:
 
