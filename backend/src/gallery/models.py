@@ -51,7 +51,7 @@ def validate_and_normalize_datetime(value: datetime_module.datetime, info: Valid
     return value.astimezone(datetime_module.timezone.utc)
 
 
-class Singular[IDType](SQLModel):
+class Singular[IDType]:
 
     _ID_COLS: typing.ClassVar[list[str]] = ['id']
     type PluralDict = dict[IDType, typing.Self]
@@ -185,8 +185,8 @@ class UserRole(BaseModel, Singular[UserRoleTypes.id]):
 
 class UserRoleTable(SQLModel, UserRole, Table[UserRoleTypes.id], table=True):
     __tablename__ = 'user_role'
-    users: list['User'] = Relationship(back_populates='user_role')
-    user_role_scopes: list['UserRoleScope'] = Relationship(
+    users: list['UserTable'] = Relationship(back_populates='user_role')
+    user_role_scopes: list['UserRoleScopeTable'] = Relationship(
         back_populates='user_role')
 
 
@@ -244,7 +244,7 @@ class User(BaseModel, UserBase, Singular[UserTypes.id]):
         index=True, unique=True, nullable=True, default=None)
     hashed_password: UserTypes.hashed_password | None = Field(default=None)
     user_role_id: UserTypes.user_role_id = Field(
-        foreign_key=UserRole.__tablename__ + '.id', default='2')
+        foreign_key=UserRoleTable.__tablename__ + '.id', default='2')
 
     @ property
     def is_public(self) -> bool:
@@ -254,9 +254,9 @@ class User(BaseModel, UserBase, Singular[UserTypes.id]):
 class UserTable(SQLModel, User, Table[UserTypes.id], table=True):
     __tablename__ = 'user'
 
-    api_keys: list['APIKey'] = Relationship(back_populates='user')
-    user_role: UserRole = Relationship(back_populates='users')
-    user_access_tokens: list['UserAccessToken'] = Relationship(
+    api_keys: list['APIKeyTable'] = Relationship(back_populates='user')
+    user_role: UserRoleTable = Relationship(back_populates='users')
+    user_access_tokens: list['UserAccessTokenTable'] = Relationship(
         back_populates='user')
 
     @ classmethod
@@ -371,9 +371,9 @@ class ScopeTable(SQLModel, Scope, Table[ScopeTypes.id], table=True):
     name: str = Field(index=True, unique=True)
     __tablename__ = 'scope'
 
-    user_role_scopes: list['UserRoleScope'] = Relationship(
+    user_role_scopes: list['UserRoleScopeTable'] = Relationship(
         back_populates='scope')
-    api_key_scopes: list['APIKeyScope'] = Relationship(
+    api_key_scopes: list['APIKeyScopeTable'] = Relationship(
         back_populates='scope')
 
     @ classmethod
@@ -407,8 +407,8 @@ class UserRoleScopeTable(SQLModel, UserRoleScope, Table[UserRoleScopeId], table=
     )
     _ID_COLS: typing.ClassVar[list[str]] = ['user_role_id', 'scope_id']
 
-    user_role: UserRole = Relationship(back_populates='user_role_scopes')
-    scope: Scope = Relationship(back_populates='user_role_scopes')
+    user_role: UserRoleTable = Relationship(back_populates='user_role_scopes')
+    scope: ScopeTable = Relationship(back_populates='user_role_scopes')
 
 # Auth Credential
 
@@ -478,12 +478,9 @@ class AuthCredential[IDType](BaseModel, ABC):
         return value.replace(tzinfo=datetime_module.timezone.utc)
 
 
-class AuthCredentialCreate(BaseModel, SingularCreate[AuthCredential]):
+class AuthCredentialCreate(BaseModel):
     lifespan: AuthCredentialTypes.lifespan | None = None
     expiry: AuthCredentialTypes.expiry | None = None
-
-    _SINGULAR_MODEL: typing.ClassVar[typing.Type[AuthCredential]
-                                     ] = AuthCredential
 
     @model_validator(mode='after')
     def check_lifespan_or_expiry(self):
@@ -516,7 +513,7 @@ class UserAccessToken(AuthCredential[UserAccessTokenTypes.id], Singular[UserAcce
     type: typing.ClassVar[AuthCredentialTypes.type] = 'access_token'
 
 
-class UserAccessTokenTable(SQLModel, AuthCredential[UserAccessTokenTypes.id], Table[UserAccessTokenTypes.id], table=True):
+class UserAccessTokenTable(SQLModel, UserAccessToken, Table[UserAccessTokenTypes.id], table=True):
     __tablename__ = 'user_access_token'
 
     user: UserTable = Relationship(back_populates='user_access_tokens')
@@ -525,7 +522,7 @@ class UserAccessTokenTable(SQLModel, AuthCredential[UserAccessTokenTypes.id], Ta
         return [user_role_scope.scope for user_role_scope in self.user.user_role.user_role_scopes]
 
 
-class UserAccessTokenAdminCreate(SingularCreate[UserAccessTokenTable], AuthCredentialAdminCreate):
+class UserAccessTokenAdminCreate(AuthCredentialAdminCreate, SingularCreate[UserAccessTokenTable]):
     _SINGULAR_MODEL: typing.ClassVar[typing.Type[UserAccessTokenTable]
                                      ] = UserAccessTokenTable
 
@@ -560,10 +557,10 @@ class APIKey(AuthCredential[APIKeyTypes.id], Singular[APIKeyTypes.id]):
     type: typing.ClassVar[AuthCredentialTypes.type] = 'api_key'
 
 
-class APIKeyTable(SQLModel, AuthCredential[APIKeyTypes.id], Table[APIKeyTypes.id], table=True):
+class APIKeyTable(SQLModel, APIKey, Table[APIKeyTypes.id], table=True):
     __tablename__ = 'api_key'
-    user: User = Relationship(back_populates='api_keys')
-    api_key_scopes: list['APIKeyScope'] = Relationship(
+    user: UserTable = Relationship(back_populates='api_keys')
+    api_key_scopes: list['APIKeyScopeTable'] = Relationship(
         back_populates='api_key')
 
     def get_scopes(self) -> list[Scope]:
@@ -586,7 +583,7 @@ class APIKeyCreate(SingularCreate[APIKeyTable], AuthCredentialCreate):
         )
 
 
-class APIKeyAdminCreate(SingularCreate[APIKeyTable], AuthCredentialAdminCreate, APIKeyCreate):
+class APIKeyAdminCreate(APIKeyCreate, AuthCredentialAdminCreate):
     pass
 
 
@@ -606,9 +603,9 @@ class APIKeyScope(BaseModel, Singular[APIKeyScopeID]):
     _ID_COLS: typing.ClassVar[list[str]] = ['api_key_id', 'scope_id']
 
     api_key_id: APIKeyScopeTypes.api_key_id = Field(
-        index=True, foreign_key=APIKey.__tablename__ + '.id')
+        index=True, foreign_key=APIKeyTable.__tablename__ + '.id')
     scope_id: APIKeyScopeTypes.scope_id = Field(
-        index=True, foreign_key=Scope.__tablename__ + '.id')
+        index=True, foreign_key=ScopeTable.__tablename__ + '.id')
 
 
 class APIKeyScopeTable(SQLModel, APIKeyScope, Table[APIKeyScopeID], table=True):
@@ -617,8 +614,8 @@ class APIKeyScopeTable(SQLModel, APIKeyScope, Table[APIKeyScopeID], table=True):
         PrimaryKeyConstraint('api_key_id', 'scope_id'),
     )
 
-    api_key: APIKey = Relationship(back_populates='api_key_scopes')
-    scope: Scope = Relationship(back_populates='api_key_scopes')
+    api_key: APIKeyTable = Relationship(back_populates='api_key_scopes')
+    scope: ScopeTable = Relationship(back_populates='api_key_scopes')
 
 
 # Gallery
