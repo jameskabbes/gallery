@@ -46,13 +46,21 @@ def credentials_exception() -> HTTPException:
         detail="Incorrect username or password")
 
 
+def invalid_authorization_type_exception() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Invalid authorization type"
+    )
+
+
 type EXCEPTION = typing.Literal[
     'improper_format',
     'missing_required_claims',
     'authorization_expired',
     'user_not_found',
     'not_permitted',
-    'credentials'
+    'credentials',
+    'invalid_authorization_type'
 ]
 
 EXCEPTION_MAPPING: dict[EXCEPTION, HTTPException] = {
@@ -61,7 +69,8 @@ EXCEPTION_MAPPING: dict[EXCEPTION, HTTPException] = {
     'authorization_expired': authorization_expired_exception(),
     'user_not_found': user_not_found_exception(),
     'not_permitted': not_permitted_exception(),
-    'credentials': credentials_exception()
+    'credentials': credentials_exception(),
+    'invalid_authorization_type': invalid_authorization_type_exception()
 }
 
 # Scopes
