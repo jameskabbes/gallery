@@ -104,7 +104,7 @@ function LogIn() {
             <h2 className="text-center">Login</h2>
             <div>
               <label htmlFor="login-email">
-                <p>Email</p>
+                <p>Username or Email</p>
               </label>
               <h4>
                 <InputText
