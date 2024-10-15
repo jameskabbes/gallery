@@ -83,26 +83,15 @@ function LogInWithEmail() {
                   }}
                   id="login-with-email-email"
                   minLength={
-                    openapi_schema.components.schemas.UserCreate.properties
-                      .email.minLength
+                    openapi_schema.components.schemas.User.properties.email
+                      .minLength
                   }
                   maxLength={
-                    openapi_schema.components.schemas.UserCreate.properties
-                      .email.maxLength
+                    openapi_schema.components.schemas.User.properties.email
+                      .maxLength
                   }
                   type="email"
                   isValid={isEmailValid}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    let newValue: LogInWithEmailContextType['state']['email']['value'] =
-                      e.target.value;
-                    logInWithEmailContext.dispatch({
-                      type: 'SET_EMAIL',
-                      payload: {
-                        ...logInWithEmailContext.state.email,
-                        value: newValue,
-                      },
-                    });
-                  }}
                 />
               </h4>
             </div>

@@ -1,4 +1,4 @@
-import { ValidityCheckReturn } from '../Form/InputText';
+import { ValidityCheckReturn } from '../../components/Form/Input';
 
 function isPasswordValid(password: string): ValidityCheckReturn {
   return { valid: true };

@@ -1,10 +1,15 @@
 import React, { useEffect, useContext, useState } from 'react';
 import { DeviceContext } from '../contexts/Device';
 import { paths, operations, components } from '../openapi_schema';
-import { ExtractResponseTypes } from '../types';
+import {
+  defaultInputState,
+  ExtractResponseTypes,
+  InputStateAny,
+} from '../types';
 import { useApiCall } from '../utils/Api';
 import { ToastContext } from '../contexts/Toast';
 import { AuthContext } from '../contexts/Auth';
+import { InputDatetimeLocal } from '../components/Form/InputDatetimeLocal';
 
 const API_PATH = '/home/page/';
 const API_METHOD = 'get';
@@ -17,6 +22,10 @@ function Home() {
   let deviceContext = useContext(DeviceContext);
   let toastContext = useContext(ToastContext);
   const authContext = useContext(AuthContext);
+
+  const [dateInput, setDateInput] = useState<InputStateAny<Date>>({
+    ...defaultInputState<Date>(new Date()),
+  });
 
   const {
     data: apiData,
@@ -59,6 +68,32 @@ function Home() {
         }}
       >
         Add Random Toast
+      </button>
+
+      <div className="my-12">
+        <InputDatetimeLocal
+          state={dateInput}
+          setState={setDateInput}
+          id="date"
+        />
+      </div>
+      <button
+        className="button-primary"
+        onClick={() => setDateInput((prev) => ({ ...prev, value: new Date() }))}
+      >
+        Set Date
+      </button>
+      <button
+        className="button-primary"
+        onClick={() =>
+          setDateInput((prev) => {
+            const newDate = new Date(prev.value);
+            newDate.setMonth(newDate.getMonth() + 1);
+            return { ...prev, value: newDate };
+          })
+        }
+      >
+        Add month
       </button>
 
       <h1>h1</h1>

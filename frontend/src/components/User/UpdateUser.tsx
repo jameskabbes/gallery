@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { InputText, ValidityCheckReturn } from '../Form/InputText';
+import { InputText } from '../Form/InputText';
+import { ValidityCheckReturn } from '../Form/Input';
 import { InputState, defaultInputState } from '../../types';
 import { paths, operations, components } from '../../openapi_schema';
 import openapi_schema from '../../../../openapi_schema.json';
@@ -18,10 +19,12 @@ interface Props {
 
 function UpdateUser({ user }: Props) {
   const [startingEmail, setStartingEmail] = useState<string>(user.email);
-  const [email, setEmail] = useState<InputState>({
-    ...defaultInputState,
-    value: user.email,
-  });
+  const [email, setEmail] =
+    useState <
+    InputState<string>({
+      ...defaultInputState,
+      value: user.email,
+    });
   const [valid, setValid] = useState<boolean>(false);
   const [modified, setModified] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);

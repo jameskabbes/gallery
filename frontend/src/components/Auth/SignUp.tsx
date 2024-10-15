@@ -116,28 +116,17 @@ function SignUp() {
                   }}
                   id="sign-up-email"
                   minLength={
-                    openapi_schema.components.schemas.UserCreate.properties
+                    openapi_schema.components.schemas.UserCreateAdmin.properties
                       .email.minLength
                   }
                   maxLength={
-                    openapi_schema.components.schemas.UserCreate.properties
+                    openapi_schema.components.schemas.UserCreateAdmin.properties
                       .email.maxLength
                   }
                   type="email"
                   checkAvailability={true}
                   isAvailable={isEmailAvailable}
                   isValid={isEmailValid}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    let newValue: SignUpContextType['state']['email']['value'] =
-                      e.target.value;
-                    signUpContext.dispatch({
-                      type: 'SET_EMAIL',
-                      payload: {
-                        ...signUpContext.state.email,
-                        value: newValue,
-                      },
-                    });
-                  }}
                 />
               </h4>
             </div>
@@ -156,27 +145,16 @@ function SignUp() {
                   }
                   id="sign-up-password"
                   minLength={
-                    openapi_schema.components.schemas.UserCreate.properties
+                    openapi_schema.components.schemas.UserCreateAdmin.properties
                       .password.anyOf[0].minLength
                   }
                   maxLength={
-                    openapi_schema.components.schemas.UserCreate.properties
+                    openapi_schema.components.schemas.UserCreateAdmin.properties
                       .password.anyOf[0].maxLength
                   }
                   type="password"
                   checkAvailability={false}
                   isValid={isPasswordValid}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    let newValue: SignUpContextType['state']['password']['value'] =
-                      e.target.value;
-                    signUpContext.dispatch({
-                      type: 'SET_PASSWORD',
-                      payload: {
-                        ...signUpContext.state.email,
-                        value: newValue,
-                      },
-                    });
-                  }}
                 />
               </h4>
             </div>
@@ -197,11 +175,11 @@ function SignUp() {
                   }
                   id="sign-up-confirmPassword"
                   minLength={
-                    openapi_schema.components.schemas.UserCreate.properties
+                    openapi_schema.components.schemas.UserCreateAdmin.properties
                       .password.anyOf[0].minLength
                   }
                   maxLength={
-                    openapi_schema.components.schemas.UserCreate.properties
+                    openapi_schema.components.schemas.UserCreateAdmin.properties
                       .password.anyOf[0].maxLength
                   }
                   type="password"
@@ -221,17 +199,6 @@ function SignUp() {
                     } else {
                       return { valid: true };
                     }
-                  }}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    let newValue: SignUpContextType['state']['confirmPassword']['value'] =
-                      e.target.value;
-                    signUpContext.dispatch({
-                      type: 'SET_CONFIRM_PASSWORD',
-                      payload: {
-                        ...signUpContext.state.email,
-                        value: newValue,
-                      },
-                    });
                   }}
                 />
               </h4>

@@ -2,7 +2,6 @@ import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../../contexts/Auth';
 import { paths, operations, components } from '../../openapi_schema';
 import openapi_schema from '../../../../openapi_schema.json';
-import { InputState } from '../../types';
 import { InputText } from '../Form/InputText';
 import { LogInContext } from '../../contexts/LogIn';
 import { LogInContext as LogInContextType } from '../../types';
@@ -11,7 +10,7 @@ import { AuthModalsContext } from '../../contexts/AuthModals';
 import { ExtractResponseTypes } from '../../types';
 import { callApi } from '../../utils/Api';
 import { IoWarning } from 'react-icons/io5';
-import { isEmailValid } from '../../services/api/isEmailValid';
+
 import { IoMail } from 'react-icons/io5';
 import { useLogInWithGoogle } from './LogInWithGoogle';
 
@@ -36,7 +35,7 @@ function LogIn() {
 
   useEffect(() => {
     setError(null);
-  }, [logInContext.state.email.value, logInContext.state.password.value]);
+  }, [logInContext.state.username.value, logInContext.state.password.value]);
 
   useEffect(() => {
     if (loading) {
@@ -48,10 +47,10 @@ function LogIn() {
     logInContext.dispatch({
       type: 'SET_VALID',
       payload:
-        logInContext.state.email.status === 'valid' &&
-        logInContext.state.email.status === 'valid',
+        logInContext.state.username.status === 'valid' &&
+        logInContext.state.username.status === 'valid',
     });
-  }, [logInContext.state.email.status, logInContext.state.password.status]);
+  }, [logInContext.state.username.status, logInContext.state.password.status]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -65,7 +64,7 @@ function LogIn() {
         endpoint: API_ENDPOINT,
         method: API_METHOD,
         body: new URLSearchParams({
-          username: logInContext.state.email.value,
+          username: logInContext.state.username.value,
           password: logInContext.state.password.value,
         }).toString(),
         overwriteHeaders: {
@@ -103,38 +102,28 @@ function LogIn() {
           <form onSubmit={handleLogin} className="flex flex-col space-y-2">
             <h2 className="text-center">Login</h2>
             <div>
-              <label htmlFor="login-email">
+              <label htmlFor="login-username">
                 <p>Username or Email</p>
               </label>
               <h4>
                 <InputText
-                  state={logInContext.state.email}
-                  setState={(state: LogInContextType['state']['email']) => {
+                  state={logInContext.state.username}
+                  setState={(state: LogInContextType['state']['username']) => {
                     logInContext.dispatch({
-                      type: 'SET_EMAIL',
+                      type: 'SET_USERNAME',
                       payload: state,
                     });
                   }}
-                  id="login-email"
+                  id="login-username"
                   minLength={1}
-                  maxLength={
-                    openapi_schema.components.schemas.UserCreate.properties
-                      .email.maxLength
-                  }
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    let newValue: LogInContextType['state']['email']['value'] =
-                      e.target.value;
-                    logInContext.dispatch({
-                      type: 'SET_EMAIL',
-                      payload: {
-                        ...logInContext.state.email,
-                        value: newValue,
-                      },
-                    });
-                  }}
-                  type="email"
+                  maxLength={Math.max(
+                    openapi_schema.components.schemas.UserCreateAdmin.properties
+                      .email.maxLength,
+                    openapi_schema.components.schemas.User.properties.username
+                      .maxLength
+                  )}
+                  type="text"
                   checkAvailability={false}
-                  isValid={isEmailValid}
                 />
               </h4>
             </div>
@@ -153,26 +142,15 @@ function LogIn() {
                   }
                   id="login-password"
                   minLength={
-                    openapi_schema.components.schemas.UserCreate.properties
+                    openapi_schema.components.schemas.UserCreateAdmin.properties
                       .password.anyOf[0].minLength
                   }
                   maxLength={
-                    openapi_schema.components.schemas.UserCreate.properties
+                    openapi_schema.components.schemas.UserCreateAdmin.properties
                       .password.anyOf[0].maxLength
                   }
                   type="password"
                   checkAvailability={false}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    let newValue: LogInContextType['state']['password']['value'] =
-                      e.target.value;
-                    logInContext.dispatch({
-                      type: 'SET_PASSWORD',
-                      payload: {
-                        ...logInContext.state.email,
-                        value: newValue,
-                      },
-                    });
-                  }}
                 />
               </h4>
             </div>

@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import {
   CallApiProps,
   InputState,
+  InputStateAny,
   ToastContext,
   ExtractResponseTypes,
   AuthContext,
@@ -28,6 +29,7 @@ import { IoChevronForwardOutline } from 'react-icons/io5';
 import { IoChevronDownOutline } from 'react-icons/io5';
 import { Input } from '../Form/Input';
 import { InputText } from '../Form/InputText';
+import { isDatetimeValid } from '../../services/isDatetimeValid';
 
 import openapi_schema from '../../../../openapi_schema.json';
 
@@ -80,9 +82,7 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
     const [name, setName] = useState<InputState<string>>({
       ...defaultInputState<string>(''),
     });
-    const [expiry, setExpiry] = useState<InputState<string>>({
-      ...defaultInputState<string>(new Date().toISOString()),
-    });
+    const [expiry, setExpiry] = useState<InputStateAny<Date>>(new Date());
 
     async function addAPIKey() {
       globalModalsContext.setModal(null);
@@ -99,9 +99,9 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
       const tempAPIKey: PostAPIKeyResponseTypes['200'] = {
         id: tempID,
         user_id: authContext.state.user.id,
-        expiry: new Date(expiry['value']).toISOString(),
         issued: new Date().toISOString(),
         name: name['value'],
+        expiry: new Date(expiry['value']).toISOString(),
       };
 
       setAPIKeys((prevAPIKeys) => ({
@@ -110,7 +110,7 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
       }));
 
       const { data, response } = await postAPIKey({
-        expiry: new Date(expiry['value']).toISOString().slice(0, -2),
+        expiry: new Date(expiry['value']).toISOString(),
         name: name['value'],
       });
 
@@ -145,42 +145,41 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
       <div id="add-api-key">
         <h3>Add API Key</h3>
         <form onSubmit={() => {}} className="flex flex-col space-y-2">
-          <p>name</p>
-          <InputText
-            state={name}
-            setState={(state: InputState<string>) => {
-              setName(state);
-            }}
-            id="api-key-name"
-            type="text"
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              let newValue: InputState<string>['value'] = e.target.value;
-              setName({ ...name, value: newValue });
-            }}
-            minLength={
-              openapi_schema.components.schemas.APIKeyCreate.properties.name
-                .minLength
-            }
-            maxLength={
-              openapi_schema.components.schemas.APIKeyCreate.properties.name
-                .maxLength
-            }
-            required={true}
-          />
-          <p>Expiry</p>
-          <Input
-            state={expiry}
-            setState={(state: InputState<string>) => {
-              setExpiry(state);
-            }}
-            type="datetime-local"
-            id="api-key-expiry"
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              let newValue: InputState<string>['value'] = e.target.value;
-              setExpiry({ ...expiry, value: newValue });
-            }}
-            required={true}
-          />
+          <div>
+            <label htmlFor="api-key-name">
+              <p>Name</p>
+            </label>
+            <InputText
+              state={name}
+              setState={(state: InputState<string>) => {
+                setName(state);
+              }}
+              id="api-key-name"
+              type="text"
+              minLength={
+                openapi_schema.components.schemas.APIKeyCreate.properties.name
+                  .minLength
+              }
+              maxLength={
+                openapi_schema.components.schemas.APIKeyCreate.properties.name
+                  .maxLength
+              }
+              required={true}
+            />
+          </div>
+          <div>
+            <label htmlFor="api-key-expiry">
+              <p>Expiry</p>
+            </label>
+            <InputText
+              state={expiry}
+              setState={setExpiry}
+              id="api-key-expiry"
+              type="datetime-local"
+              required={true}
+              isValid={isDatetimeValid}
+            />
+          </div>
 
           <button onClick={addAPIKey} className="button-primary" type="submit">
             <span className="flex flex-row text-center">Add API Key</span>
@@ -194,8 +193,8 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
     const [isEditing, setIsEditing] = useState(false);
 
     return (
-      <div className="button-tertiary">
-        <div key={apiKey.id} className="flex flex-row items-center space-x-2">
+      <div key={apiKey.id} className="button-tertiary">
+        <div className="flex flex-row items-center space-x-2">
           <div className="flex flex-col">
             <button onClick={() => setIsEditing((prev) => !prev)}>
               {isEditing ? (
@@ -313,11 +312,12 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
               Add Key
             </button>
           </div>
-
           <div className="p-2">
-            {Object.keys(apiKeys).map((key) => {
-              return <APIKeyRow apiKey={apiKeys[key]} />;
-            })}
+            {Object.keys(apiKeys).map((key) => (
+              <div id={apiKeys[key].id}>
+                <APIKeyRow apiKey={apiKeys[key]} />
+              </div>
+            ))}
           </div>
         </>
       )}

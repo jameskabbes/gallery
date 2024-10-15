@@ -157,7 +157,8 @@ button {
 
 input[type='text'],
 input[type='password'],
-input[type='email'] {
+input[type='email'],
+input[type='datetime-local'] {
   @apply w-full bg-inherit focus:outline-none border-b-2 border-light-darker dark:border-dark-darker focus:border-primary;
   transition: border-color 0.2s;
 }

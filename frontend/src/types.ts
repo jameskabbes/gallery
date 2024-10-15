@@ -42,15 +42,15 @@ type InputStatus = 'valid' | 'invalid' | 'loading';
 
 type Input = string | number | readonly string[];
 
-interface InputState<T extends Input> {
+interface InputStateAny<T> {
   value: T;
   status: InputStatus;
   error: string | null;
 }
 
-const defaultInputState = <T extends Input>(
-  defaultValue: T
-): InputState<T> => ({
+interface InputState<T extends Input> extends InputStateAny<T> {}
+
+const defaultInputState = <T>(defaultValue: T): InputStateAny<T> => ({
   value: defaultValue,
   status: 'valid',
   error: null,
@@ -80,14 +80,14 @@ type AuthModalsReducerActionBase =
   | { type: 'SET_VALID'; payload: boolean };
 
 interface LogInContextState extends AuthModalsContextStateBase {
-  email: InputState<string>;
+  username: InputState<string>;
   password: InputState<string>;
 }
 
 type LogInReducerAction =
   | {
-      type: 'SET_EMAIL';
-      payload: LogInContextState['email'];
+      type: 'SET_USERNAME';
+      payload: LogInContextState['username'];
     }
   | {
       type: 'SET_PASSWORD';
@@ -260,6 +260,7 @@ export {
   DarkModeContext,
   defaultInputState,
   Input,
+  InputStateAny,
   InputState,
   InputStatus,
   SignUpContextState,

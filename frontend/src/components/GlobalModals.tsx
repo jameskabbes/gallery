@@ -4,9 +4,6 @@ import { Modals } from './Modal/Modals';
 
 function GlobalModals() {
   const globalModalsContext = useContext(GlobalModalsContext);
-
-  console.log(globalModalsContext.activeModal);
-
   return <Modals activeModal={globalModalsContext.activeModal} />;
 }
 

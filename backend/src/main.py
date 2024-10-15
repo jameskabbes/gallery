@@ -685,7 +685,7 @@ async def delete_api_key(
         if api_key.user_id != authorization.user.id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=models.APIKey.not_found_message())
-        if models.APIKey.delete_one_by_id(session, api_key_id) == 0:
+        if await models.APIKey.delete_one_by_id(session, api_key_id) == 0:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=models.APIKey.not_found_message())
         return Response(status_code=204)

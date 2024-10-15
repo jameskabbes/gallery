@@ -184,12 +184,12 @@ class TableUpdateAdmin[TTable: Table, IDType](TableImport[TTable], IDObject[IDTy
     _TABLE_MODEL: typing.ClassVar[typing.Type[TTable]] = Table
 
     async def patch(self, session: Session) -> TTable:
-        table_inst = self._TABLE_MODEL.get_one_by_id(session, self.id)
+        table_inst = await self._TABLE_MODEL.get_one_by_id(session, self.id)
         if not table_inst:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=self._TABLE_MODEL.not_found_message())
         table_inst.sqlmodel_update(self.model_dump(exclude_unset=True))
-        table_inst.add_to_db(session)
+        await table_inst.add_to_db(session)
         return table_inst
 
 
@@ -198,7 +198,7 @@ class TableCreateAdmin[TTable: Table](TableImport[TTable]):
 
     async def post(self, session: Session) -> TTable:
         table_inst = await self.create()
-        table_inst.add_to_db(session)
+        await table_inst.add_to_db(session)
         return table_inst
 
     async def create(self) -> TTable:
@@ -323,7 +323,7 @@ class User(Table[UserTypes.id], UserIDBase, table=True):
         user = await cls.get_one_by_key_values(session, {'email': username_or_email})
 
         if not user:
-            user = cls.get_one_by_key_values(
+            user = await cls.get_one_by_key_values(
                 session, {'username': username_or_email})
         if not user:
             return None

@@ -11,7 +11,6 @@ interface BaseInputProps<T extends InputType> {
   state: InputState<T>;
   setState: (state: InputState<T>) => void;
   id: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   checkValidity?: boolean;
   checkAvailability?: boolean;
   isValid?: (value: InputState<T>['value']) => ValidityCheckReturn;
@@ -21,6 +20,7 @@ interface BaseInputProps<T extends InputType> {
 }
 
 interface InputProps<T extends InputType> extends BaseInputProps<T> {
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   type: string;
 }
 
