@@ -48,7 +48,7 @@ function LogIn() {
       type: 'SET_VALID',
       payload:
         logInContext.state.username.status === 'valid' &&
-        logInContext.state.username.status === 'valid',
+        logInContext.state.password.status === 'valid',
     });
   }, [logInContext.state.username.status, logInContext.state.password.status]);
 
@@ -100,11 +100,9 @@ function LogIn() {
       <div className="flex">
         <div className="flex-1">
           <form onSubmit={handleLogin} className="flex flex-col space-y-2">
-            <h2 className="text-center">Login</h2>
+            <span className="title">Login</span>
             <div>
-              <label htmlFor="login-username">
-                <p>Username or Email</p>
-              </label>
+              <label htmlFor="login-username">Username or Email</label>
               <h4>
                 <InputText
                   state={logInContext.state.username}
@@ -128,31 +126,27 @@ function LogIn() {
               </h4>
             </div>
             <div>
-              <label htmlFor="login-password">
-                <p>Password</p>
-              </label>
-              <h4>
-                <InputText
-                  state={logInContext.state.password}
-                  setState={(state: LogInContextType['state']['password']) =>
-                    logInContext.dispatch({
-                      type: 'SET_PASSWORD',
-                      payload: state,
-                    })
-                  }
-                  id="login-password"
-                  minLength={
-                    openapi_schema.components.schemas.UserCreateAdmin.properties
-                      .password.anyOf[0].minLength
-                  }
-                  maxLength={
-                    openapi_schema.components.schemas.UserCreateAdmin.properties
-                      .password.anyOf[0].maxLength
-                  }
-                  type="password"
-                  checkAvailability={false}
-                />
-              </h4>
+              <label htmlFor="login-password">Password</label>
+              <InputText
+                state={logInContext.state.password}
+                setState={(state: LogInContextType['state']['password']) =>
+                  logInContext.dispatch({
+                    type: 'SET_PASSWORD',
+                    payload: state,
+                  })
+                }
+                id="login-password"
+                minLength={
+                  openapi_schema.components.schemas.UserCreateAdmin.properties
+                    .password.anyOf[0].minLength
+                }
+                maxLength={
+                  openapi_schema.components.schemas.UserCreateAdmin.properties
+                    .password.anyOf[0].maxLength
+                }
+                type="password"
+                checkAvailability={false}
+              />
             </div>
             {error && (
               <div className="flex flex-row justify-center space-x-2">
@@ -168,23 +162,10 @@ function LogIn() {
                 <p>{error}</p>
               </div>
             )}
-
-            <button
-              className={`button-primary ${
-                !logInContext.state.valid && 'button-invalid'
-              }`}
-              type="submit"
-              disabled={!logInContext.state.valid}
-            >
-              <div className="flex flex-row justify-center items-center p-1">
-                <h6 className="mb-0 leading-none">
-                  {loading ? (
-                    <span className="loader-secondary"></span>
-                  ) : (
-                    'Login'
-                  )}
-                </h6>
-              </div>
+            <button type="submit" disabled={!logInContext.state.valid}>
+              <span className="leading-none mb-0">
+                {loading ? <span className="loader-secondary"></span> : 'Login'}
+              </span>
             </button>
           </form>
           <div className="flex flex-row justify-center mt-2">

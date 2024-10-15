@@ -23,10 +23,6 @@ function Home() {
   let toastContext = useContext(ToastContext);
   const authContext = useContext(AuthContext);
 
-  const [dateInput, setDateInput] = useState<InputStateAny<Date>>({
-    ...defaultInputState<Date>(new Date()),
-  });
-
   const {
     data: apiData,
     loading,
@@ -69,33 +65,6 @@ function Home() {
       >
         Add Random Toast
       </button>
-
-      <div className="my-12">
-        <InputDatetimeLocal
-          state={dateInput}
-          setState={setDateInput}
-          id="date"
-        />
-      </div>
-      <button
-        className="button-primary"
-        onClick={() => setDateInput((prev) => ({ ...prev, value: new Date() }))}
-      >
-        Set Date
-      </button>
-      <button
-        className="button-primary"
-        onClick={() =>
-          setDateInput((prev) => {
-            const newDate = new Date(prev.value);
-            newDate.setMonth(newDate.getMonth() + 1);
-            return { ...prev, value: newDate };
-          })
-        }
-      >
-        Add month
-      </button>
-
       <h1>h1</h1>
       <h2>h2</h2>
       <h3>h3</h3>

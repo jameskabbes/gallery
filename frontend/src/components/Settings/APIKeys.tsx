@@ -32,6 +32,7 @@ import { InputText } from '../Form/InputText';
 import { isDatetimeValid } from '../../services/isDatetimeValid';
 
 import openapi_schema from '../../../../openapi_schema.json';
+import { InputDatetimeLocal } from '../Form/InputDatetimeLocal';
 
 const API_ENDPOINT = '/api-keys/';
 const API_METHOD = 'get';
@@ -82,7 +83,9 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
     const [name, setName] = useState<InputState<string>>({
       ...defaultInputState<string>(''),
     });
-    const [expiry, setExpiry] = useState<InputStateAny<Date>>(new Date());
+    const [expiry, setExpiry] = useState<InputStateAny<Date>>({
+      ...defaultInputState<Date>(new Date()),
+    });
 
     async function addAPIKey() {
       globalModalsContext.setModal(null);
@@ -171,19 +174,15 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
             <label htmlFor="api-key-expiry">
               <p>Expiry</p>
             </label>
-            <InputText
+            <InputDatetimeLocal
               state={expiry}
               setState={setExpiry}
               id="api-key-expiry"
-              type="datetime-local"
               required={true}
-              isValid={isDatetimeValid}
             />
           </div>
 
-          <button onClick={addAPIKey} className="button-primary" type="submit">
-            <span className="flex flex-row text-center">Add API Key</span>
-          </button>
+          <button type="submit">Add API Key</button>
         </form>
       </div>
     );

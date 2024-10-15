@@ -15,7 +15,6 @@ import { isEmailValid } from '../../services/api/isEmailValid';
 import { isEmailAvailable } from '../../services/api/isEmailAvailable';
 import { isPasswordValid } from '../../services/api/isPasswordValid';
 import { InputText } from '../Form/InputText';
-import { InputState } from '../../types';
 import { IoWarning } from 'react-icons/io5';
 
 const API_ENDPOINT = '/auth/signup/';
@@ -102,106 +101,96 @@ function SignUp() {
       <div className="flex">
         <div className="flex-1">
           <form onSubmit={handleLogin} className="flex flex-col space-y-2">
-            <h2 className="text-center">Sign Up</h2>
+            <span className="title">Sign Up</span>
             <div>
               <label htmlFor="sign-up-email">Email</label>
-              <h4>
-                <InputText
-                  state={signUpContext.state.email}
-                  setState={(state: SignUpContextType['state']['email']) => {
-                    signUpContext.dispatch({
-                      type: 'SET_EMAIL',
-                      payload: state,
-                    });
-                  }}
-                  id="sign-up-email"
-                  minLength={
-                    openapi_schema.components.schemas.UserCreateAdmin.properties
-                      .email.minLength
-                  }
-                  maxLength={
-                    openapi_schema.components.schemas.UserCreateAdmin.properties
-                      .email.maxLength
-                  }
-                  type="email"
-                  checkAvailability={true}
-                  isAvailable={isEmailAvailable}
-                  isValid={isEmailValid}
-                />
-              </h4>
+              <InputText
+                state={signUpContext.state.email}
+                setState={(state: SignUpContextType['state']['email']) => {
+                  signUpContext.dispatch({
+                    type: 'SET_EMAIL',
+                    payload: state,
+                  });
+                }}
+                id="sign-up-email"
+                minLength={
+                  openapi_schema.components.schemas.UserCreateAdmin.properties
+                    .email.minLength
+                }
+                maxLength={
+                  openapi_schema.components.schemas.UserCreateAdmin.properties
+                    .email.maxLength
+                }
+                type="email"
+                checkAvailability={true}
+                isAvailable={isEmailAvailable}
+                isValid={isEmailValid}
+              />
             </div>
             <div>
-              <label htmlFor="sign-up-password">
-                <p>Password</p>
-              </label>
-              <h4>
-                <InputText
-                  state={signUpContext.state.password}
-                  setState={(state: SignUpContextType['state']['password']) =>
-                    signUpContext.dispatch({
-                      type: 'SET_PASSWORD',
-                      payload: state,
-                    })
-                  }
-                  id="sign-up-password"
-                  minLength={
-                    openapi_schema.components.schemas.UserCreateAdmin.properties
-                      .password.anyOf[0].minLength
-                  }
-                  maxLength={
-                    openapi_schema.components.schemas.UserCreateAdmin.properties
-                      .password.anyOf[0].maxLength
-                  }
-                  type="password"
-                  checkAvailability={false}
-                  isValid={isPasswordValid}
-                />
-              </h4>
+              <label htmlFor="sign-up-password">Password</label>
+              <InputText
+                state={signUpContext.state.password}
+                setState={(state: SignUpContextType['state']['password']) =>
+                  signUpContext.dispatch({
+                    type: 'SET_PASSWORD',
+                    payload: state,
+                  })
+                }
+                id="sign-up-password"
+                minLength={
+                  openapi_schema.components.schemas.UserCreateAdmin.properties
+                    .password.anyOf[0].minLength
+                }
+                maxLength={
+                  openapi_schema.components.schemas.UserCreateAdmin.properties
+                    .password.anyOf[0].maxLength
+                }
+                type="password"
+                checkAvailability={false}
+                isValid={isPasswordValid}
+              />
             </div>
             <div>
-              <label htmlFor="sign-up-confirmPassword">
-                <p>Confirm Password</p>
-              </label>
-              <h4>
-                <InputText
-                  state={signUpContext.state.confirmPassword}
-                  setState={(
-                    state: SignUpContextType['state']['confirmPassword']
-                  ) =>
-                    signUpContext.dispatch({
-                      type: 'SET_CONFIRM_PASSWORD',
-                      payload: state,
-                    })
+              <label htmlFor="sign-up-confirmPassword">Confirm Password</label>
+              <InputText
+                state={signUpContext.state.confirmPassword}
+                setState={(
+                  state: SignUpContextType['state']['confirmPassword']
+                ) =>
+                  signUpContext.dispatch({
+                    type: 'SET_CONFIRM_PASSWORD',
+                    payload: state,
+                  })
+                }
+                id="sign-up-confirmPassword"
+                minLength={
+                  openapi_schema.components.schemas.UserCreateAdmin.properties
+                    .password.anyOf[0].minLength
+                }
+                maxLength={
+                  openapi_schema.components.schemas.UserCreateAdmin.properties
+                    .password.anyOf[0].maxLength
+                }
+                type="password"
+                checkAvailability={false}
+                isValid={(
+                  confirmPassword: SignUpContextType['state']['confirmPassword']['value']
+                ) => {
+                  if (signUpContext.state.password.status !== 'valid') {
+                    return { valid: false, message: 'Password is invalid' };
+                  } else if (
+                    signUpContext.state.password.value !== confirmPassword
+                  ) {
+                    return {
+                      valid: false,
+                      message: 'Passwords do not match',
+                    };
+                  } else {
+                    return { valid: true };
                   }
-                  id="sign-up-confirmPassword"
-                  minLength={
-                    openapi_schema.components.schemas.UserCreateAdmin.properties
-                      .password.anyOf[0].minLength
-                  }
-                  maxLength={
-                    openapi_schema.components.schemas.UserCreateAdmin.properties
-                      .password.anyOf[0].maxLength
-                  }
-                  type="password"
-                  checkAvailability={false}
-                  isValid={(
-                    confirmPassword: SignUpContextType['state']['confirmPassword']['value']
-                  ) => {
-                    if (signUpContext.state.password.status !== 'valid') {
-                      return { valid: false, message: 'Password is invalid' };
-                    } else if (
-                      signUpContext.state.password.value !== confirmPassword
-                    ) {
-                      return {
-                        valid: false,
-                        message: 'Passwords do not match',
-                      };
-                    } else {
-                      return { valid: true };
-                    }
-                  }}
-                />
-              </h4>
+                }}
+              />
             </div>
             <div className="mt-8"></div>
             {error && (
@@ -219,22 +208,14 @@ function SignUp() {
               </div>
             )}
 
-            <button
-              className={`button-primary ${
-                !signUpContext.state.valid && 'button-invalid'
-              }`}
-              type="submit"
-              disabled={!signUpContext.state.valid}
-            >
-              <div className="flex flex-row justify-center items-center p-1">
-                <h6 className="mb-0 leading-none">
-                  {loading ? (
-                    <span className="loader-secondary"></span>
-                  ) : (
-                    'Sign Up'
-                  )}
-                </h6>
-              </div>
+            <button type="submit" disabled={!signUpContext.state.valid}>
+              <span className="mb-0 leading-none">
+                {loading ? (
+                  <span className="loader-secondary"></span>
+                ) : (
+                  'Sign Up'
+                )}
+              </span>
             </button>
           </form>
           {/* <GoogleLogin onSuccess={() => {}}></GoogleLogin> */}

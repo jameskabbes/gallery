@@ -9,33 +9,46 @@ import {
 } from './Input';
 
 import { isDatetimeValid } from '../../services/isDatetimeValid';
-import { InputText } from './InputText';
+import { InputText, InputTextProps } from './InputText';
 
 interface InputDatetimeLocalProps {
   state: InputStateAny<Date>;
   setState: (state: InputStateAny<Date>) => void;
   id: string;
+  checkValidity?: boolean;
+  checkAvailability?: boolean;
+  isValid?: (value: InputState<string>['value']) => ValidityCheckReturn;
+  isAvailable?: (value: InputState<string>['value']) => Promise<boolean>;
+  required?: boolean;
+  className?: string;
 }
 
-function convertToLocalDate(date: Date) {
-  const newDate = new Date(
-    date.getTime() - date.getTimezoneOffset() * 60 * 1000
-  );
-  return newDate;
-}
+function InputDatetimeLocal({
+  state,
+  setState,
+  id,
+  isValid = (value: InputState<string>['value']) => ({ valid: true }),
 
-function InputDatetimeLocal({ state, setState, id }: InputDatetimeLocalProps) {
+  ...rest
+}: InputDatetimeLocalProps) {
   const [stringState, setStringState] = useState<InputState<string>>({
     ...defaultInputState<string>(''),
   });
 
-  console.log('state', state);
+  function isValidWrapper(
+    value: InputState<string>['value']
+  ): ValidityCheckReturn {
+    return isValid(value) && isDatetimeValid(value);
+  }
 
   useEffect(() => {
     if (state.value) {
-      const newStringStateValue = convertToLocalDate(state.value)
+      const newStringStateValue = new Date(
+        state.value.getTime() - state.value.getTimezoneOffset() * 60000
+      )
         .toISOString()
         .slice(0, 16);
+
       if (stringState.value !== newStringStateValue) {
         setStringState({
           ...stringState,
@@ -67,7 +80,8 @@ function InputDatetimeLocal({ state, setState, id }: InputDatetimeLocalProps) {
       type={'datetime-local'}
       id={id}
       checkValidity={true}
-      isValid={isDatetimeValid}
+      isValid={isValidWrapper}
+      {...rest}
     />
   );
 }

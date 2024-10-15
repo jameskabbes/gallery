@@ -491,13 +491,13 @@ async def delete_user_admin(
 @ app.get('/users/available/username/{username}/')
 async def user_username_available(username: models.UserTypes.username) -> ItemAvailableResponse:
     with Session(c.db_engine) as session:
-        return ItemAvailableResponse(available=models.User.is_username_available(session, username))
+        return ItemAvailableResponse(available=await models.User.is_username_available(session, username))
 
 
 @ app.get('/users/available/email/{email}/')
 async def user_email_available(email: models.UserTypes.email) -> ItemAvailableResponse:
     with Session(c.db_engine) as session:
-        return ItemAvailableResponse(available=models.User.is_email_available(session, email))
+        return ItemAvailableResponse(available=await models.User.is_email_available(session, email))
 
 
 @app.get('/user/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})

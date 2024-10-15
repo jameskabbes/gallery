@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useRef } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
 import { ExtractResponseTypes } from '../../types';
 import { callApi } from '../../utils/Api';
@@ -28,6 +28,8 @@ function LogInWithEmail() {
   const authModalsContext = useContext(AuthModalsContext);
   const [loading, setLoading] = useState<boolean>(false);
 
+  const okayButtonRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     logInWithEmailContext.dispatch({
       type: 'SET_VALID',
@@ -50,26 +52,29 @@ function LogInWithEmail() {
       });
 
       setLoading(false);
-
-      console.log(data);
-      console.log(response);
-
       if (response.status === 200) {
         logInWithEmailContext.dispatch({ type: 'SET_SCREEN', payload: 'sent' });
       }
     }
   }
 
+  useEffect(() => {
+    if (
+      logInWithEmailContext.state.screen === 'sent' &&
+      okayButtonRef.current
+    ) {
+      okayButtonRef.current.focus();
+    }
+  }, [logInWithEmailContext.state.screen]);
+
   return (
     <div id="login-with-email" className="flex flex-col">
       {logInWithEmailContext.state.screen === 'email' ? (
         <div className="flex flex-col">
           <form onSubmit={handleSubmit} className="flex flex-col">
-            <h2 className="text-center">Send Email</h2>
+            <span className="title">Send Email</span>
             <div className="mt-2">
-              <label htmlFor="email">
-                <p>Email</p>
-              </label>
+              <label htmlFor="email">Email</label>
               <h4>
                 <InputText
                   state={logInWithEmailContext.state.email}
@@ -95,24 +100,18 @@ function LogInWithEmail() {
                 />
               </h4>
             </div>
-            <p>
+            <p className="my-4 text-center">
               If an account with this email exists, we will send a login link to
               your email.
             </p>
-            <button
-              className={`button-primary ${
-                !logInWithEmailContext.state.valid && 'button-invalid'
-              }`}
-              type="submit"
-              disabled={!logInWithEmailContext.state.valid}
-            >
-              <h6 className="mb-0 leading-none p-2">
+            <button type="submit" disabled={!logInWithEmailContext.state.valid}>
+              <span className="mb-0 leading-none">
                 {loading ? (
                   <span className="loader-secondary"></span>
                 ) : (
                   'Send Email'
                 )}
-              </h6>
+              </span>
             </button>
           </form>
           <h6
@@ -125,20 +124,22 @@ function LogInWithEmail() {
           </h6>
         </div>
       ) : logInWithEmailContext.state.screen === 'sent' ? (
-        <div className="flex flex-col">
-          <h2 className="text-center">Sent!</h2>
-          <p className="text-center">
+        <form
+          className="flex flex-col"
+          onSubmit={(e) => {
+            e.preventDefault();
+            authModalsContext.setActiveModalType(null);
+            logInWithEmailContext.dispatch({ type: 'RESET' });
+          }}
+        >
+          <span className="title">Done!</span>
+          <p className="text-center my-4">
             Check your inbox for a secure login link.
           </p>
-          <button
-            className="button-primary mt-4"
-            onClick={() => {
-              authModalsContext.setActiveModalType(null);
-            }}
-          >
+          <button type="submit" ref={okayButtonRef}>
             Okay!
           </button>
-        </div>
+        </form>
       ) : null}
     </div>
   );

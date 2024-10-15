@@ -51,7 +51,7 @@ function InputText({
   }
 
   return (
-    <div className="flex flex-row items-center space-x-2">
+    <div className="flex flex-row items-center space-x-2 text-input">
       <Input
         state={state}
         setState={setState}
@@ -65,6 +65,7 @@ function InputText({
           });
         }}
         isValid={isValidWrapper}
+        {...rest}
       />
       {showValidity && (
         <span title={state.error || ''}>
