@@ -92,19 +92,25 @@ class Table[IDType](SQLModel, IDObject[IDType]):
         if len(cls._ID_COLS) > 1:
             assert isinstance(id, (tuple, list))
             assert len(id) == len(cls._ID_COLS)
-            return cls._get_by_key_values(session, {cls._ID_COLS[i]: id[i] for i in range(len(cls._ID_COLS))}).one_or_none()
+            resp = await cls._get_by_key_values(session, {cls._ID_COLS[i]: id[i] for i in range(len(cls._ID_COLS))})
         else:
-            return cls._get_by_key_values(session, {cls._ID_COLS[0]: id}).one_or_none()
+            resp = await cls._get_by_key_values(session, {cls._ID_COLS[0]: id})
+
+        return resp.one_or_none()
 
     @ classmethod
     async def get_one_by_key_values(cls, session: Session, key_values: dict[str, typing.Any]) -> typing.Self | None:
         """Get a model by its key values"""
-        return cls._get_by_key_values(session, key_values).one_or_none()
+
+        resp = await cls._get_by_key_values(session, key_values)
+        return resp.one_or_none()
 
     @ classmethod
     async def get_all_by_key_values(cls, session: Session, key_values: dict[str, typing.Any]) -> list[typing.Self]:
         """Get all models by their key values"""
-        return cls._get_by_key_values(session, key_values).all()
+
+        resp = await cls._get_by_key_values(session, key_values)
+        return resp.all()
 
     @ classmethod
     async def _get_by_key_values(cls, session: Session, key_values: dict[str, typing.Any]):
@@ -126,10 +132,10 @@ class Table[IDType](SQLModel, IDObject[IDType]):
     async def delete_one_by_id(cls, session: Session, id: IDType) -> int:
         """Delete a model by its ID"""
 
-        return cls.delete_many_by_ids(session, [id])
+        return await cls.delete_many_by_ids(session, [id])
 
     @ classmethod
-    async def delete_many_by_ids(cls, session: Session, ids: list[typing.Any]) -> int:
+    async def delete_many_by_ids(cls, session: Session, ids: list[IDType]) -> int:
         """Delete models by their IDs"""
 
         if len(cls._ID_COLS) > 1:
@@ -138,8 +144,7 @@ class Table[IDType](SQLModel, IDObject[IDType]):
         else:
             conditions = [getattr(cls, cls._ID_COLS[0]) == id for id in ids]
 
-        query = delete(cls).where(or_(*conditions))
-        result = session.exec(query)
+        result = session.exec(delete(cls).where(or_(*conditions)))
         session.commit()
         return result.rowcount
 
@@ -149,7 +154,7 @@ class Table[IDType](SQLModel, IDObject[IDType]):
 
     @ classmethod
     async def get(cls, session: Session, id: IDType) -> typing.Self:
-        instance = cls.get_one_by_id(session, id)
+        instance = await cls.get_one_by_id(session, id)
         if not instance:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
@@ -157,7 +162,7 @@ class Table[IDType](SQLModel, IDObject[IDType]):
 
     @ classmethod
     async def delete(cls, session: Session, id: IDType) -> bool:
-        if cls.delete_one_by_id(session, id) == 0:
+        if await cls.delete_one_by_id(session, id) == 0:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
         else:
@@ -213,8 +218,8 @@ class UserRoles:
 
 
 USER_ROLE_MAPPING = {
-    UserRoles.ADMIN: 1,
-    UserRoles.USER: 2
+    UserRoles.ADMIN: '1',
+    UserRoles.USER: '2'
 }
 
 
@@ -303,8 +308,8 @@ class User(Table[UserTypes.id], UserIDBase, table=True):
     user_role_id: UserTypes.user_role_id = Field(
         foreign_key=UserRole.__tablename__ + '.' + UserRole._ID_COLS[0])
 
-    api_keys: list['APIKey'] = Relationship(back_populates='user')
     user_role: UserRole = Relationship(back_populates='users')
+    api_keys: list['APIKey'] = Relationship(back_populates='user')
     user_access_tokens: list['UserAccessToken'] = Relationship(
         back_populates='user')
 
@@ -340,6 +345,8 @@ class User(Table[UserTypes.id], UserIDBase, table=True):
             return False
         return True
 
+    async def get_scopes(self) -> list['Scope']:
+        return [user_role_scope.scope for user_role_scope in self.user_role.user_role_scopes]
 
 # Export Types
 
@@ -415,17 +422,19 @@ class UserCreate(UserImport):
 
 
 class UserCreateAdmin(UserCreate, TableCreateAdmin[User]):
-    user_role_id: UserTypes.user_role_id = USER_ROLE_MAPPING[UserRoles.USER]
+    user_role_id: UserTypes.user_role_id = Field(
+        default=USER_ROLE_MAPPING[UserRoles.USER])
 
     async def post(self, session: Session) -> User:
         if not await self._TABLE_MODEL.is_email_available(session, self.email):
             raise HTTPException(status.HTTP_409_CONFLICT,
                                 detail='Email already exists')
         user = await self.create()
-        user.add_to_db(session)
+        await user.add_to_db(session)
         return user
 
     async def create(self) -> User:
+
         return self._TABLE_MODEL(
             id=self._TABLE_MODEL.generate_id(),
             hashed_password=None if self.password == None else utils.hash_password(
@@ -640,10 +649,9 @@ class AuthCredential[IDType](BaseModel, ABC):
         print('serializing...')
         return value.replace(tzinfo=datetime_module.timezone.utc)
 
-    @classmethod
     @abstractmethod
-    async def get_scopes(self) -> list[Scope]:
-        pass
+    async def get_scopes(self) -> list['Scope']:
+        return []
 
 
 class AuthCredentialExport[IDType](TableExport[AuthCredential[IDType]]):
@@ -675,6 +683,8 @@ class AuthCredentialImport[IDType](TableImport[AuthCredential[IDType]]):
 
 class AuthCredentialCreateAdmin[TTable: Table, IDType](AuthCredentialImport[IDType], TableCreateAdmin[TTable]):
 
+    user_id: UserTypes.id
+
     async def create(self) -> TTable:
         return self._TABLE_MODEL(
             id=self._TABLE_MODEL.generate_id(),
@@ -704,8 +714,8 @@ class UserAccessToken(Table[UserAccessTokenTypes.id], UserAccessTokenIDBase, Aut
 
     user: User = Relationship(back_populates='user_access_tokens')
 
-    async def get_scopes(self) -> list[Scope]:
-        return [user_role_scope.scope for user_role_scope in self.user.user_role.user_role_scopes]
+    async def get_scopes(self) -> list['Scope']:
+        return await self.user.get_scopes()
 
 
 class UserAccessTokenExport(TableExport[UserAccessToken], AuthCredentialExport[UserAccessTokenTypes.id]):
@@ -755,7 +765,7 @@ class APIKeyIDBase(IDObject[APIKeyTypes.id]):
         primary_key=True, index=True, unique=True, const=True)
 
 
-class APIKey(Table[APIKeyTypes.id], APIKeyIDBase, AuthCredential[APIKeyTypes.id]):
+class APIKey(Table[APIKeyTypes.id], APIKeyIDBase, AuthCredential[APIKeyTypes.id], table=True):
     __tablename__ = 'api_key'
 
     name: APIKeyTypes.name = Field()

@@ -273,7 +273,7 @@ async def login(user: typing.Annotated[models.User, Depends(authenticate_user_wi
 
         user_access_token = await models.UserAccessTokenCreateAdmin(
             user_id=user.id, lifespan=c.authentication['default_expiry_timedelta']).create()
-        user_access_token.add_to_db(session)
+        await user_access_token.add_to_db(session)
         set_access_token_cookie(jwt_encode(
             user_access_token.export_to_jwt()), response)
 
@@ -298,10 +298,10 @@ async def sign_up(
     password: models.UserTypes.password = Form(...),
 ) -> SignupResponse:
 
-    user_create = models.UserCreateAdmin(email=email, password=password)
+    user_create_admin = models.UserCreateAdmin(email=email, password=password)
 
     with Session(c.db_engine) as session:
-        user = await user_create.post(session)
+        user = await user_create_admin.post(session)
 
         user_access_token = await models.UserAccessTokenCreateAdmin(
             user_id=user.id, type='access_token', lifespan=c.authentication['default_expiry_timedelta']).create()
@@ -313,7 +313,7 @@ async def sign_up(
             auth=GetAuthBaseReturn(
                 user=models.UserPrivate.model_validate(user),
                 scopes=set(
-                    [scope.name for scope in user_access_token.get_scopes()]),
+                    [scope.name for scope in await user_access_token.get_scopes()]),
                 expiry=user_access_token.expiry
             )
         )
@@ -590,7 +590,7 @@ async def delete_user_admin(
 async def get_user_access_tokens(
         authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> list[models.UserAccessToken]:
     with Session(c.db_engine) as session:
-        user_access_tokens = models.UserAccessToken.get_all_by_key_values(
+        user_access_tokens = await models.UserAccessToken.get_all_by_key_values(
             session, {'user_id': authorization.user.id})
         return user_access_tokens
 
@@ -605,7 +605,7 @@ async def delete_user_access_token(
         if user_access_token.user_id != authorization.user.id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=models.UserAccessToken.not_found_message())
-        if models.UserAccessToken.delete_one_by_id(session, user_access_token_id) == 0:
+        if await models.UserAccessToken.delete_one_by_id(session, user_access_token_id) == 0:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=models.UserAccessToken.not_found_message())
         return Response(status_code=204)
@@ -640,7 +640,7 @@ async def get_api_keys(
         authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> list[models.APIKey]:
 
     with Session(c.db_engine) as session:
-        api_keys = models.APIKey.get_all_by_key_values(
+        api_keys = await models.APIKey.get_all_by_key_values(
             session, {'user_id': authorization.user.id})
         return api_keys
 
@@ -650,13 +650,11 @@ async def post_api_key(
         api_key_create: models.APIKeyCreate,
         authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> models.APIKey:
 
-    api_key_admin_create = models.APIKeyAdminCreate(
+    api_key_admin_create = models.APIKeyCreateAdmin(
         **api_key_create.model_dump(), user_id=authorization.user.id)
 
     with Session(c.db_engine) as session:
-        api_key = api_key_admin_create.create()
-        api_key.add_to_db(session)
-        return api_key
+        return await api_key_admin_create.post(session)
 
 
 @app.patch('/api-keys/{api_key_id}/')
@@ -667,17 +665,13 @@ async def patch_api_key(
 
     with Session(c.db_engine) as session:
 
-        api_key = models.APIKey.get_one_by_id(session, api_key_id)
-        if not api_key:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=models.APIKey.not_found_message())
-
+        api_key = await models.APIKey.get(session, api_key_id)
         if api_key.user_id != authorization.user.id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=models.APIKey.not_found_message())
 
         api_key.sqlmodel_update(api_key_update)
-        api_key.add_to_db(session)
+        await api_key.add_to_db(session)
         return api_key
 
 

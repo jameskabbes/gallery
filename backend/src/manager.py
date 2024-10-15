@@ -14,16 +14,18 @@ from google.auth.transport import requests
 
 async def main():
 
-    c = models.UserCreateAdmin(
-        email='a@a.com', password='1', user_role_id='1').create()
-    print(c.model_dump())
+    print()
 
-    d = models.UserUpdateAdmin(
-        id=c.id,
-        username='nAA'
-    )
+    # c = await models.UserCreateAdmin(
+    #     email='a@a.com', password='1', user_role_id='1').create()
+    # print(c.model_dump())
 
-    print(d.model_dump())
+    # d = models.UserUpdateAdmin(
+    #     id=c.id,
+    #     username='nAA'
+    # )
+
+    # print(d.model_dump())
 
     # with Session(c.db_engine) as session:
 
