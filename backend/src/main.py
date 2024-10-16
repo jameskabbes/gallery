@@ -237,27 +237,36 @@ async def authenticate_user_with_username_and_password(form_data: typing.Annotat
         return user
 
 
-def set_access_token_cookie(access_token: str, response: Response):
+def set_access_token_cookie(access_token: str, response: Response, stay_signed_in: bool):
+
+    kwargs = {}
+    if stay_signed_in:
+        kwargs['expires'] = datetime.datetime.now(
+            datetime.UTC) + c.authentication['default_expiry_timedelta']
+
     response.set_cookie(
         key=c.root_config['cookie_keys']['access_token'],
         value=access_token,
         httponly=True,
         secure=True,
         samesite="Lax",
-        expires=datetime.datetime.now(
-            datetime.UTC) + datetime.timedelta(days=1)
+        **kwargs
     )
 
 
 @ app.post('/token/')
-async def post_token(user: typing.Annotated[models.User, Depends(authenticate_user_with_username_and_password)], response: Response):
+async def post_token(
+    user: typing.Annotated[models.User, Depends(authenticate_user_with_username_and_password)],
+    response: Response,
+    stay_signed_in: bool = Form(c.authentication['stay_signed_in_default'])
+):
 
     with Session(c.db_engine) as session:
         auth_credential = await models.UserAccessTokenCreateAdmin(
             user_id=user.id, lifespan=c.authentication['default_expiry_timedelta']).create()
         auth_credential.add_to_db(session)
         set_access_token_cookie(jwt_encode(
-            auth_credential.export_to_jwt()), response)
+            auth_credential.export_to_jwt()), response, stay_signed_in)
 
     return
 
@@ -267,7 +276,14 @@ class LoginResponse(GetAuthReturn):
 
 
 @ app.post('/auth/login/password/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Could not validate credentials', 'model': DetailOnlyResponse}})
-async def login(user: typing.Annotated[models.User, Depends(authenticate_user_with_username_and_password)], response: Response) -> LoginResponse:
+async def login(
+    user: typing.Annotated[models.User, Depends(authenticate_user_with_username_and_password)],
+    response: Response,
+    stay_signed_in: bool = Form(c.authentication['stay_signed_in_default'])
+) -> LoginResponse:
+
+    print(user)
+    print(stay_signed_in)
 
     with Session(c.db_engine) as session:
 
@@ -275,7 +291,7 @@ async def login(user: typing.Annotated[models.User, Depends(authenticate_user_wi
             user_id=user.id, lifespan=c.authentication['default_expiry_timedelta']).create()
         await user_access_token.add_to_db(session)
         set_access_token_cookie(jwt_encode(
-            user_access_token.export_to_jwt()), response)
+            user_access_token.export_to_jwt()), response, stay_signed_in)
 
         return LoginResponse(
             auth=GetAuthBaseReturn(
@@ -296,6 +312,7 @@ async def sign_up(
     response: Response,
     email: models.UserTypes.email = Form(...),
     password: models.UserTypes.password = Form(...),
+    stay_signed_in: bool = Form(c.authentication['stay_signed_in_default'])
 ) -> SignupResponse:
 
     user_create_admin = models.UserCreateAdmin(email=email, password=password)
@@ -307,7 +324,7 @@ async def sign_up(
             user_id=user.id, type='access_token', lifespan=c.authentication['default_expiry_timedelta']).create()
         await user_access_token.add_to_db(session)
         set_access_token_cookie(jwt_encode(
-            user_access_token.export_to_jwt()), response)
+            user_access_token.export_to_jwt()), response, stay_signed_in)
 
         return SignupResponse(
             auth=GetAuthBaseReturn(

@@ -33,7 +33,10 @@ function Toast() {
   const deviceContext = useContext(DeviceContext);
 
   return (
-    <div id="toast-container">
+    <div
+      id="toast-container"
+      className="fixed bottom-4 right-4 flex flex-col space-y-2 w-80"
+    >
       <TransitionGroup>
         {Array.from(toastContext.state.toasts.keys()).map((toastId) => {
           let toast = toastContext.state.toasts.get(toastId);
@@ -51,7 +54,7 @@ function Toast() {
             <CSSTransition key={toastId} classNames="toast" timeout={timeouts}>
               <div
                 id={toastId}
-                className="toast m-2"
+                className="card flex flex-row items-center space-x-1 m-2"
                 style={{ height: `${height}px` }}
                 onClick={() => {
                   toastContext.dispatch({ type: 'REMOVE', payload: toastId });

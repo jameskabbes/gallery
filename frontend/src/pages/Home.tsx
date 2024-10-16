@@ -1,15 +1,11 @@
 import React, { useEffect, useContext, useState } from 'react';
 import { DeviceContext } from '../contexts/Device';
 import { paths, operations, components } from '../openapi_schema';
-import {
-  defaultInputState,
-  ExtractResponseTypes,
-  InputStateAny,
-} from '../types';
+import { defaultInputState, ExtractResponseTypes, InputState } from '../types';
 import { useApiCall } from '../utils/Api';
 import { ToastContext } from '../contexts/Toast';
 import { AuthContext } from '../contexts/Auth';
-import { InputDatetimeLocal } from '../components/Form/InputDatetimeLocal';
+import { InputCheckbox } from '../components/Form/InputCheckbox';
 
 const API_PATH = '/home/page/';
 const API_METHOD = 'get';
@@ -22,6 +18,10 @@ function Home() {
   let deviceContext = useContext(DeviceContext);
   let toastContext = useContext(ToastContext);
   const authContext = useContext(AuthContext);
+
+  const [state, setState] = useState<InputState<boolean>>({
+    ...defaultInputState<boolean>(false),
+  });
 
   const {
     data: apiData,
@@ -65,18 +65,29 @@ function Home() {
       >
         Add Random Toast
       </button>
-      <h1>h1</h1>
-      <h2>h2</h2>
-      <h3>h3</h3>
-      <h4>h4</h4>
-      <h5>h5</h5>
-      <h6>h6</h6>
-      <button className="button-primary">hello there</button>
-      <button className="button-primary button-invalid">hello there</button>
-      <button className="button-secondary">hello there</button>
-      <button className="button-secondary button-invalid">hello there</button>
+      <InputCheckbox
+        state={state}
+        setState={setState}
+        id={'checkbox'}
+        type={'checkbox'}
+      />
+      <div className="card m-8">
+        <h1>h1</h1>
+        <h2>h2</h2>
+        <h3>h3</h3>
+        <h4>h4</h4>
+        <h5>h5</h5>
+        <h6>h6</h6>
+        <button className="button-primary">hello there</button>
+        <button className="button-primary" disabled={true}>
+          hello there
+        </button>
+        <button className="button-secondary">hello there</button>
+        <button className="button-secondary" disabled={true}>
+          hello there
+        </button>
+      </div>
 
-      <p>{deviceContext.isMobile ? 'mobile' : 'not mobile'}</p>
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-primary-lighter h-64"></div>
         <div className="bg-primary h-64"></div>

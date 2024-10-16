@@ -179,6 +179,11 @@ export interface components {
     };
     /** Body_login_auth_login_password__post */
     Body_login_auth_login_password__post: {
+      /**
+       * Stay Signed In
+       * @default false
+       */
+      stay_signed_in?: boolean;
       /** Grant Type */
       grant_type?: string | null;
       /** Username */
@@ -197,6 +202,11 @@ export interface components {
     };
     /** Body_post_token_token__post */
     Body_post_token_token__post: {
+      /**
+       * Stay Signed In
+       * @default false
+       */
+      stay_signed_in?: boolean;
       /** Grant Type */
       grant_type?: string | null;
       /** Username */
@@ -222,6 +232,11 @@ export interface components {
       email: string;
       /** Password */
       password: string;
+      /**
+       * Stay Signed In
+       * @default false
+       */
+      stay_signed_in?: boolean;
     };
     /** DetailOnlyResponse */
     DetailOnlyResponse: {

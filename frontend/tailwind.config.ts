@@ -2,10 +2,8 @@ import colors from 'tailwindcss/colors';
 import Color from 'color';
 
 const baseColors = {
-  gunmetal: '#2d3142',
   paynes_gray: '#4f5d75',
   moss_green: '#8B9474',
-  white_smoke: '#f5f5f5',
   coral: '#ef8354',
 };
 
@@ -14,18 +12,7 @@ const darken = (color: string, amount: number) =>
 const lighten = (color: string, amount: number) =>
   Color(color).lighten(amount).hex();
 
-function generateShades(color: string) {
-  return {
-    DEFAULT: color,
-    lighter: lighten(color, 0.2),
-    darker: darken(color, 0.2),
-  };
-}
-
-const customColors = {};
-for (const color in baseColors) {
-  customColors[color] = generateShades(baseColors[color]);
-}
+const darkenAmount = 0.2;
 
 export default {
   darkMode: 'class',
@@ -33,11 +20,26 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: { ...customColors['coral'] },
-        secondary: { ...customColors['moss_green'] },
-        accent: { ...customColors['paynes_gray'] },
-        light: { ...customColors['white_smoke'] },
-        dark: { ...customColors['gunmetal'] },
+        primary: {
+          DEFAULT: baseColors['coral'],
+          darker: darken(baseColors['coral'], darkenAmount),
+        },
+        secondary: {
+          DEFAULT: baseColors['moss_green'],
+          darker: darken(baseColors['moss_green'], darkenAmount),
+        },
+        light: {
+          darker: 'e9e9e9',
+          DEFAULT: '#fafafa',
+          lighter: '#ffffff',
+        },
+        dark: {
+          darker: '#09090b',
+          DEFAULT: '#18181b',
+          lighter: '#363636',
+        },
+        textLight: colors.gray[100],
+        textDark: colors.gray[900],
         success: colors.green,
         info: colors.blue,
         error: colors.red,

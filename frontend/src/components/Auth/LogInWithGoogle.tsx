@@ -4,7 +4,6 @@ import { callApi } from '../../utils/Api';
 import { ExtractResponseTypes } from '../../types';
 import { paths, operations, components } from '../../openapi_schema';
 import { AuthContext } from '../../contexts/Auth';
-import { LogInContext } from '../../contexts/LogIn';
 import { AuthModalsContext } from '../../contexts/AuthModals';
 
 const API_ENDPOINT = '/auth/login/google/';
@@ -20,7 +19,6 @@ type TRequestData =
 function useLogInWithGoogle() {
   const authContext = useContext(AuthContext);
   const authModalsContext = useContext(AuthModalsContext);
-  const logInContext = useContext(LogInContext);
 
   async function call(request_data: TRequestData) {
     const { data, response } = await callApi<

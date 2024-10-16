@@ -2,79 +2,100 @@
 @tailwind components;
 @tailwind utilities;
 
-body,
-html {
-  @apply bg-color;
-  height: 100%;
+/* Base Layer */
+@layer base {
+  .app-bg-color {
+    @apply bg-light dark:bg-dark-darker;
+  }
+
+  .component-bg-color {
+    @apply bg-light-lighter dark:bg-dark border-light-darker dark:border-dark-lighter;
+  }
+
+  .component-bg-color-invert {
+    @apply bg-dark dark:bg-light border-dark-lighter dark:border-light-lighter;
+  }
+
+  .text-color {
+    @apply text-dark dark:text-light;
+  }
+  .text-color-invert {
+    @apply text-light dark:text-dark;
+  }
+
+  body,
+  html {
+    @apply app-bg-color;
+    height: 100%;
+  }
+
+  .App {
+    @apply text-color font-sans app-bg-color min-h-screen;
+  }
+
+  h1,
+  .h1 {
+    @apply mb-4 text-5xl md:text-6xl font-extrabold;
+  }
+
+  h2,
+  .h2 {
+    @apply mb-4 text-3xl md:text-4xl font-bold;
+  }
+
+  h3,
+  .h3 {
+    @apply mb-3 text-2xl md:text-3xl font-semibold;
+  }
+
+  h4,
+  .h4 {
+    @apply mb-3 text-xl md:text-2xl;
+  }
+
+  h5,
+  .h5 {
+    @apply mb-2 text-lg md:text-xl;
+  }
+  h6,
+  .h6 {
+    @apply mb-1 text-base md:text-lg;
+  }
+
+  p,
+  .p {
+    @apply text-sm md:text-base;
+  }
 }
 
-footer {
-  @apply my-2;
+@layer components {
+  .card {
+    @apply component-bg-color rounded-2xl border-[1px] p-2;
+  }
+
+  .button-base {
+    @apply rounded-xl p-2;
+  }
+
+  .button-disabled {
+    @apply bg-opacity-40 text-opacity-40;
+    pointer-events: none;
+  }
+
+  .button-base:disabled {
+    @apply button-disabled;
+  }
+
+  .button-primary {
+    @apply button-base bg-primary text-white border-primary;
+  }
+
+  .button-secondary {
+    @apply button-base component-bg-color-invert text-color-invert;
+  }
 }
 
-h1,
-.h1 {
-  @apply mb-4 text-5xl md:text-6xl font-extrabold;
-}
-
-h2,
-.h2 {
-  @apply mb-4 text-3xl md:text-4xl font-bold;
-}
-
-h3,
-.h3 {
-  @apply mb-3 text-2xl md:text-3xl font-semibold;
-}
-
-h4,
-.h4 {
-  @apply mb-3 text-xl md:text-2xl;
-}
-
-h5,
-.h5 {
-  @apply mb-2 text-lg md:text-xl;
-}
-h6,
-.h6 {
-  @apply mb-1 text-base md:text-lg;
-}
-
-p,
-.p {
-  @apply text-sm md:text-base;
-}
-
-.text-color {
-  @apply text-dark dark:text-light;
-}
-.text-color-invert {
-  @apply text-light dark:text-dark;
-}
-
-.bg-color {
-  @apply bg-light dark:bg-dark border-light-darker dark:border-dark-darker;
-}
-
-.bg-color-darker {
-  @apply bg-light-darker dark:bg-dark-darker border-light dark:border-dark;
-}
-
-.bg-color-lighter {
-  @apply bg-light-lighter dark:bg-dark-lighter border-light dark:border-dark;
-}
-
-.bg-color-highlight {
-  @apply bg-light-darker dark:bg-dark-lighter border-light dark:border-dark;
-}
-
-.bg-color-invert {
-  @apply bg-dark dark:bg-light border-dark-darker dark:border-light-darker;
-}
-
-.App {
-  @apply text-color font-sans bg-color flex flex-col min-h-screen;
+@layer utilities {
 }
 
 .page {
@@ -83,13 +104,6 @@ p,
 
 .centered-page-content {
   @apply max-w-screen-2xl mx-auto;
-}
-
-.text-color {
-  @apply text-dark dark:text-light;
-}
-.text-color-invert {
-  @apply text-light dark:text-dark;
 }
 
 .bw-icon {
@@ -111,11 +125,6 @@ p,
   z-index: 1000; /* Ensure it is above other content */
 }
 
-/* Modal content */
-.modal-content {
-  @apply card bg-color;
-}
-
 .auth-modal {
   @apply max-w-[300px];
 }
@@ -126,75 +135,10 @@ p,
   @apply auth-modal;
 }
 
-/* Input */
-form label {
-  @apply h6;
-}
-
-.auth-modal button[type='submit'] {
-  @apply p-4 rounded-3xl;
-}
-
-.auth-modal .text-input {
-  @apply h4;
-}
-
-form .title {
-  @apply h2 text-center;
-}
-
-form button[type='submit'] {
-  @apply button-primary h4 flex flex-row justify-center mb-0 leading-none;
-}
-
-input[type='text'],
-input[type='password'],
-input[type='email'],
-input[type='datetime-local'] {
-  @apply w-full bg-inherit focus:outline-none border-b-2 border-light-darker dark:border-dark-darker focus:border-primary;
-  transition: border-color 0.2s;
-}
-
 /* Button */
 
 button {
   transition: 0.2s;
-}
-
-.button-base {
-  @apply rounded-xl p-2 border-[1px];
-}
-
-.button-base:disabled {
-  @apply opacity-50;
-  pointer-events: none;
-}
-
-.button-primary {
-  @apply button-base bg-primary hover:bg-primary-darker text-white focus:outline-primary-darker;
-}
-
-.button-secondary {
-  @apply button-base bg-color-invert text-color-invert focus:outline-dark-darker dark:focus:outline-light-darker;
-}
-
-.button-tertiary {
-  @apply button-base  text-color focus:outline-dark-darker dark:focus:outline-light-darker;
-}
-
-#toast-container {
-  @apply fixed bottom-4 right-4 flex flex-col space-y-2 w-80;
-}
-
-.toast {
-  @apply card bg-color flex flex-row items-center space-x-1;
-}
-
-.component {
-}
-
-.card {
-  @apply rounded-2xl shadow-lg p-2;
 }
 
 #mobile-footer {
@@ -218,6 +162,31 @@ button {
 
 .loader-secondary {
   @apply loader-base border-primary border-t-light dark:border-t-dark;
+}
+
+/* Input */
+form header {
+  @apply h2 text-center;
+}
+
+form label {
+  @apply h6;
+}
+
+form .text-input {
+  @apply h4 rounded-xl border-2 py-1 px-2 focus-within:border-primary;
+  transition: border-color 0.2s;
+}
+
+form button[type='submit'] {
+  @apply button-primary flex flex-row justify-center p-4 rounded-3xl mb-0 h5;
+}
+
+form .text-input input[type='text'],
+form .text-input input[type='password'],
+form .text-input input[type='email'],
+form .text-input input[type='datetime-local'] {
+  @apply w-full bg-inherit focus:outline-none;
 }
 
 @keyframes rotation {
@@ -247,22 +216,3 @@ button {
     transform: scale(1);
   }
 }
-
-/* 
-.slider-container {
-  @apply flex items-center relative rounded-full bg-color-darker;
-}
-
-.slider-container input[type='radio'] {
-  display: none;
-}
-
-.slider-container label {
-  @apply flex flex-1 justify-center cursor-pointer rounded-full p-2;
-  z-index: 1;
-  transition: 0.2s;
-}
-
-.slider-container input[type='radio']:checked + label {
-  @apply text-color-invert bg-primary;
-} */

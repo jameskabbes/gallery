@@ -54,6 +54,8 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
     [key: string]: ResponseTypesByStatus['200'][number];
   }>({});
 
+  const loadingAPIKeyName = 'loading...';
+
   const {
     data: apiData,
     loading,
@@ -84,11 +86,21 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
       ...defaultInputState<string>(''),
     });
     const [expiry, setExpiry] = useState<InputStateAny<Date>>({
-      ...defaultInputState<Date>(new Date()),
+      ...defaultInputState<Date>(
+        new Date(new Date().setMonth(new Date().getMonth() + 1))
+      ),
     });
 
-    async function addAPIKey() {
+    const [valid, setValid] = useState(false);
+
+    useEffect(() => {
+      setValid(name.status === 'valid' && expiry.status === 'valid');
+    }, [name.status, expiry.status]);
+
+    async function addAPIKey(event: React.FormEvent) {
+      event.preventDefault();
       globalModalsContext.setModal(null);
+
       let toastId = toastContext.makePending({
         message: 'Creating API Key...',
       });
@@ -103,7 +115,7 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
         id: tempID,
         user_id: authContext.state.user.id,
         issued: new Date().toISOString(),
-        name: name['value'],
+        name: loadingAPIKeyName,
         expiry: new Date(expiry['value']).toISOString(),
       };
 
@@ -111,6 +123,9 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
         ...prevAPIKeys,
         [tempID]: tempAPIKey,
       }));
+
+      // wait for two seoncd
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       const { data, response } = await postAPIKey({
         expiry: new Date(expiry['value']).toISOString(),
@@ -146,12 +161,10 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
 
     return (
       <div id="add-api-key">
-        <h3>Add API Key</h3>
-        <form onSubmit={() => {}} className="flex flex-col space-y-2">
+        <form onSubmit={addAPIKey} className="flex flex-col space-y-2">
+          <span className="title">Add API Key</span>
           <div>
-            <label htmlFor="api-key-name">
-              <p>Name</p>
-            </label>
+            <label htmlFor="api-key-name">Name</label>
             <InputText
               state={name}
               setState={(state: InputState<string>) => {
@@ -171,9 +184,7 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
             />
           </div>
           <div>
-            <label htmlFor="api-key-expiry">
-              <p>Expiry</p>
-            </label>
+            <label htmlFor="api-key-expiry">Expiry</label>
             <InputDatetimeLocal
               state={expiry}
               setState={setExpiry}
@@ -182,7 +193,9 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
             />
           </div>
 
-          <button type="submit">Add API Key</button>
+          <button type="submit" disabled={!valid}>
+            <span className="leading-none mb-0">Add API Key</span>
+          </button>
         </form>
       </div>
     );
@@ -313,7 +326,7 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
           </div>
           <div className="p-2">
             {Object.keys(apiKeys).map((key) => (
-              <div id={apiKeys[key].id}>
+              <div key={apiKeys[key].id}>
                 <APIKeyRow apiKey={apiKeys[key]} />
               </div>
             ))}

@@ -1,17 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { CheckOrX } from './CheckOrX';
-import { InputState, Input as InputType } from '../../types';
-import {
-  BaseInputProps,
-  Input,
-  InputProps,
-  ValidityCheckReturn,
-} from './Input';
+import { InputState } from '../../types';
+import { BaseInputProps, Input, ValidityCheckReturn } from './Input';
 
-interface InputTextProps extends BaseInputProps<string> {
-  state: InputProps<string>['state'];
-  setState: InputProps<string>['setState'];
-  type: InputProps<string>['type'];
+type T = string;
+
+interface InputTextProps extends BaseInputProps<T> {
   minLength?: number | null;
   maxLength?: number | null;
   label?: string | null;
@@ -22,14 +16,12 @@ interface InputTextProps extends BaseInputProps<string> {
 function InputText({
   state,
   setState,
-  id,
-  type,
   minLength = null,
   maxLength = null,
   label = null,
   placeholder = null,
   showValidity = true,
-  isValid = (value: InputState<string>['value']) => ({ valid: true }),
+  isValid,
   ...rest
 }: InputTextProps) {
   function isValidWrapper(
@@ -55,10 +47,9 @@ function InputText({
       <Input
         state={state}
         setState={setState}
-        type={type}
-        id={id}
+        value={state.value}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-          let newValue: InputState<string>['value'] = e.target.value;
+          let newValue: InputTextProps['state']['value'] = e.target.value;
           setState({
             ...state,
             value: newValue,

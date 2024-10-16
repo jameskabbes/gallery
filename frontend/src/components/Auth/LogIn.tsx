@@ -3,14 +3,13 @@ import { AuthContext } from '../../contexts/Auth';
 import { paths, operations, components } from '../../openapi_schema';
 import openapi_schema from '../../../../openapi_schema.json';
 import { InputText } from '../Form/InputText';
-import { LogInContext } from '../../contexts/LogIn';
-import { LogInContext as LogInContextType } from '../../types';
+import { defaultInputState } from '../../types';
 import { ToastContext } from '../../contexts/Toast';
 import { AuthModalsContext } from '../../contexts/AuthModals';
 import { ExtractResponseTypes } from '../../types';
 import { callApi } from '../../utils/Api';
 import { IoWarning } from 'react-icons/io5';
-
+import { InputState } from '../../types';
 import { IoMail } from 'react-icons/io5';
 import { useLogInWithGoogle } from './LogInWithGoogle';
 
@@ -25,17 +24,25 @@ type TRequestData =
   paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/x-www-form-urlencoded'];
 
 function LogIn() {
-  const logInContext = useContext(LogInContext);
+  const [username, setUsername] = useState<InputState<string>>({
+    ...defaultInputState<string>(''),
+  });
+  const [password, setPassword] = useState<InputState<string>>({
+    ...defaultInputState<string>(''),
+  });
+  const [staySignedIn, setStaySignedIn] = useState<boolean>(true);
+  const [valid, setValid] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
   const authContext = useContext(AuthContext);
   const authModalsContext = useContext(AuthModalsContext);
   const toastContext = useContext(ToastContext);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const { logInWithGoogle } = useLogInWithGoogle();
 
   useEffect(() => {
     setError(null);
-  }, [logInContext.state.username.value, logInContext.state.password.value]);
+  }, [username.value, password.value]);
 
   useEffect(() => {
     if (loading) {
@@ -44,17 +51,12 @@ function LogIn() {
   }, [loading]);
 
   useEffect(() => {
-    logInContext.dispatch({
-      type: 'SET_VALID',
-      payload:
-        logInContext.state.username.status === 'valid' &&
-        logInContext.state.password.status === 'valid',
-    });
-  }, [logInContext.state.username.status, logInContext.state.password.status]);
+    setValid(username.status === 'valid' && password.status === 'valid');
+  }, [username.status, password.status]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    if (logInContext.state.valid) {
+    if (valid) {
       setLoading(true);
 
       const { data, response } = await callApi<
@@ -64,8 +66,9 @@ function LogIn() {
         endpoint: API_ENDPOINT,
         method: API_METHOD,
         body: new URLSearchParams({
-          username: logInContext.state.username.value,
-          password: logInContext.state.password.value,
+          username: username.value,
+          password: password.value,
+          stay_signed_in: staySignedIn.toString(),
         }).toString(),
         overwriteHeaders: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -100,41 +103,29 @@ function LogIn() {
       <div className="flex">
         <div className="flex-1">
           <form onSubmit={handleLogin} className="flex flex-col space-y-2">
-            <span className="title">Login</span>
+            <header>Login</header>
             <div>
               <label htmlFor="login-username">Username or Email</label>
-              <h4>
-                <InputText
-                  state={logInContext.state.username}
-                  setState={(state: LogInContextType['state']['username']) => {
-                    logInContext.dispatch({
-                      type: 'SET_USERNAME',
-                      payload: state,
-                    });
-                  }}
-                  id="login-username"
-                  minLength={1}
-                  maxLength={Math.max(
-                    openapi_schema.components.schemas.UserCreateAdmin.properties
-                      .email.maxLength,
-                    openapi_schema.components.schemas.User.properties.username
-                      .maxLength
-                  )}
-                  type="text"
-                  checkAvailability={false}
-                />
-              </h4>
+              <InputText
+                state={username}
+                setState={setUsername}
+                id="login-username"
+                minLength={1}
+                maxLength={Math.max(
+                  openapi_schema.components.schemas.UserCreateAdmin.properties
+                    .email.maxLength,
+                  openapi_schema.components.schemas.User.properties.username
+                    .maxLength
+                )}
+                type="text"
+                checkAvailability={false}
+              />
             </div>
             <div>
               <label htmlFor="login-password">Password</label>
               <InputText
-                state={logInContext.state.password}
-                setState={(state: LogInContextType['state']['password']) =>
-                  logInContext.dispatch({
-                    type: 'SET_PASSWORD',
-                    payload: state,
-                  })
-                }
+                state={password}
+                setState={setPassword}
                 id="login-password"
                 minLength={
                   openapi_schema.components.schemas.UserCreateAdmin.properties
@@ -148,6 +139,7 @@ function LogIn() {
                 checkAvailability={false}
               />
             </div>
+
             {error && (
               <div className="flex flex-row justify-center space-x-2">
                 <p className="rounded-full p-1 text-light leading-none bg-error-500">
@@ -162,7 +154,7 @@ function LogIn() {
                 <p>{error}</p>
               </div>
             )}
-            <button type="submit" disabled={!logInContext.state.valid}>
+            <button type="submit" disabled={!valid}>
               <span className="leading-none mb-0">
                 {loading ? <span className="loader-secondary"></span> : 'Login'}
               </span>

@@ -1,30 +1,32 @@
 import React, { useEffect, useRef } from 'react';
 import { CheckOrX } from './CheckOrX';
-import { InputState, Input as InputType } from '../../types';
+import { InputState, InputValue } from '../../types';
 
 interface ValidityCheckReturn {
   valid: boolean;
   message?: string;
 }
 
-interface BaseInputProps<T extends InputType> {
+interface BaseInputProps<T> {
   state: InputState<T>;
   setState: (state: InputState<T>) => void;
   id: string;
+  type: string;
   checkValidity?: boolean;
   checkAvailability?: boolean;
   isValid?: (value: InputState<T>['value']) => ValidityCheckReturn;
   isAvailable?: (value: InputState<T>['value']) => Promise<boolean>;
   required?: boolean;
   className?: string;
+  value?: InputValue;
+  checked?: boolean;
 }
 
-interface InputProps<T extends InputType> extends BaseInputProps<T> {
+interface InputProps<T> extends BaseInputProps<T> {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  type: string;
 }
 
-function Input<T extends InputType>({
+function Input<T>({
   state,
   setState,
   id,
@@ -105,7 +107,6 @@ function Input<T extends InputType>({
       className={className}
       type={type}
       id={id}
-      value={state['value']}
       required={required}
       onChange={onChange}
       {...rest}

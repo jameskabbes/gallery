@@ -40,17 +40,15 @@ type ExtractResponseTypes<T> = {
 
 type InputStatus = 'valid' | 'invalid' | 'loading';
 
-type Input = string | number | readonly string[];
+type InputValue = string | number | readonly string[];
 
-interface InputStateAny<T> {
+interface InputState<T> {
   value: T;
   status: InputStatus;
   error: string | null;
 }
 
-interface InputState<T extends Input> extends InputStateAny<T> {}
-
-const defaultInputState = <T>(defaultValue: T): InputStateAny<T> => ({
+const defaultInputState = <T>(defaultValue: T): InputState<T> => ({
   value: defaultValue,
   status: 'valid',
   error: null,
@@ -75,9 +73,7 @@ interface AuthModalsContextStateBase {
   valid: boolean;
 }
 
-type AuthModalsReducerActionBase =
-  | { type: 'RESET' }
-  | { type: 'SET_VALID'; payload: boolean };
+type AuthModalsReducerActionBase = { type: 'RESET' };
 
 interface LogInContextState extends AuthModalsContextStateBase {
   username: InputState<string>;
@@ -259,9 +255,8 @@ export {
   UseApiCallReturn,
   DarkModeContext,
   defaultInputState,
-  Input,
-  InputStateAny,
   InputState,
+  InputValue,
   InputStatus,
   SignUpContextState,
   SignUpReducerAction,

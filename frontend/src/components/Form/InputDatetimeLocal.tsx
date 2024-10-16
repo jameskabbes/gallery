@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-import { defaultInputState, InputState, InputStateAny } from '../../types';
+import { defaultInputState, InputState } from '../../types';
 import {
   BaseInputProps,
   Input,
@@ -11,35 +11,19 @@ import {
 import { isDatetimeValid } from '../../services/isDatetimeValid';
 import { InputText, InputTextProps } from './InputText';
 
-interface InputDatetimeLocalProps {
-  state: InputStateAny<Date>;
-  setState: (state: InputStateAny<Date>) => void;
-  id: string;
-  checkValidity?: boolean;
-  checkAvailability?: boolean;
-  isValid?: (value: InputState<string>['value']) => ValidityCheckReturn;
-  isAvailable?: (value: InputState<string>['value']) => Promise<boolean>;
-  required?: boolean;
-  className?: string;
-}
+type T = Date;
+
+interface InputDatetimeLocalProps extends BaseInputProps<T> {}
 
 function InputDatetimeLocal({
   state,
   setState,
-  id,
-  isValid = (value: InputState<string>['value']) => ({ valid: true }),
-
+  checkValidity = true,
   ...rest
 }: InputDatetimeLocalProps) {
   const [stringState, setStringState] = useState<InputState<string>>({
     ...defaultInputState<string>(''),
   });
-
-  function isValidWrapper(
-    value: InputState<string>['value']
-  ): ValidityCheckReturn {
-    return isValid(value) && isDatetimeValid(value);
-  }
 
   useEffect(() => {
     if (state.value) {
@@ -78,9 +62,7 @@ function InputDatetimeLocal({
       state={stringState}
       setState={setStringState}
       type={'datetime-local'}
-      id={id}
-      checkValidity={true}
-      isValid={isValidWrapper}
+      checkValidity={checkValidity}
       {...rest}
     />
   );
