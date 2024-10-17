@@ -9,6 +9,7 @@ import { InputCheckbox } from '../components/Form/InputCheckbox';
 import { InputDatetimeLocal } from '../components/Form/InputDatetimeLocal';
 import { Input } from '../components/Form/Input';
 import { Toggle } from '../components/Utils/Toggle';
+import { InputToggle } from '../components/Form/InputToggle';
 
 const API_PATH = '/home/page/';
 const API_METHOD = 'get';
@@ -48,44 +49,44 @@ function Home() {
 
   return (
     <div>
-      <div className="w-full container grid grid-cols-2 gap-8 mx-4 my-4 border-2 p-2 card">
-        <div className="container card">
+      <div className="surface grid grid-cols-2 gap-8 m-4 card">
+        <div className="surface card">
           <p>Text in here</p>
         </div>
-        <div className="container card">
+        <div className="surface card">
           <p>Text in here</p>
         </div>
-        <div className="container card">
+        <div className="surface card">
           <p>Text in here</p>
         </div>
-        <div className="container card">
+        <div className="surface card">
           <p>Text in here</p>
         </div>
-        <div className="container card">
+        <div className="surface card">
           <p>Text in here</p>
         </div>
         <button className="button-primary">button here!</button>
-        <div className="w-full container grid grid-cols-2 gap-8 mx-4 my-4 border-2 p-2 card">
-          <div className="container card">
+        <div className="w-full surface grid grid-cols-2 gap-8 mx-4 my-4 border-2 p-2 card">
+          <div className="surface card">
             <p>Text in here</p>
           </div>
-          <div className="container card">
+          <div className="surface card">
             <p>Text in here</p>
           </div>
-          <div className="container card">
+          <div className="surface card">
             <p>Text in here</p>
           </div>
-          <div className="container card">
+          <div className="surface card">
             <p>Text in here</p>
           </div>
-          <div className="container card">
+          <div className="surface card">
             <p>Text in here</p>
           </div>
           <button className="button-primary">button here!</button>
         </div>
       </div>
 
-      <div className="container mx-4 my-4 p-4 rounded-2xl">
+      <div className="surface mx-4 my-4 p-4 rounded-2xl">
         <p>More text</p>
       </div>
 
@@ -114,25 +115,35 @@ function Home() {
         <p>not logged in</p>
       )}
 
-      <form
-        action="
-      "
-      >
-        <InputCheckbox
-          state={state}
-          setState={setState}
-          id={'checkbox'}
-          type={'checkbox'}
-        />
-        <p>{state.value}</p>
-        <InputDatetimeLocal
-          state={state2}
-          setState={setState2}
-          id={'datetime-local'}
-          type="datetime-local"
-          showValidity={true}
-        />
-      </form>
+      <InputCheckbox
+        state={state}
+        setState={setState}
+        id={'checkbox'}
+        type={'checkbox'}
+      />
+      <p>{state.value}</p>
+      <InputDatetimeLocal
+        state={state2}
+        setState={setState2}
+        id={'datetime-local'}
+        type="datetime-local"
+        showValidity={true}
+      />
+      <InputToggle
+        state={state}
+        setState={setState}
+        id={'checkbox-toggle'}
+        type={'checkbox'}
+      />
+      <Toggle
+        state={toggleState.value}
+        handleToggle={() =>
+          setToggleState((prevState) => ({
+            ...prevState,
+            value: !prevState.value,
+          }))
+        }
+      />
 
       {state2.value instanceof Date ? (
         <p>{state2.value.toUTCString()}</p>
@@ -154,7 +165,7 @@ function Home() {
         Increment Date by 7 Days
       </button>
 
-      <div className="container card m-8">
+      <div className="surface card m-8">
         {/* <h1>
           <Toggle
             state={toggleState['value']}

@@ -40,4 +40,4 @@ function InputCheckbox({
   );
 }
 
-export { InputCheckbox };
+export { InputCheckbox, InputCheckboxProps };

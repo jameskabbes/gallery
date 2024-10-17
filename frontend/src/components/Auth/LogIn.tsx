@@ -10,6 +10,7 @@ import { ExtractResponseTypes } from '../../types';
 import { callApi } from '../../utils/Api';
 import { IoWarning } from 'react-icons/io5';
 import { InputState } from '../../types';
+import { IoPersonAddSharp } from 'react-icons/io5';
 import { IoMail } from 'react-icons/io5';
 import { useLogInWithGoogle } from './LogInWithGoogle';
 
@@ -169,17 +170,6 @@ function LogIn() {
               </span>
             </button>
           </form>
-          <div className="flex flex-row justify-center mt-2">
-            <h6
-              className="cursor-pointer underline mb-0"
-              onClick={() => {
-                authModalsContext.setActiveModalType('signUp');
-              }}
-            >
-              Sign Up
-            </h6>
-          </div>
-
           <div className="flex flex-row items-center space-x-2 my-2">
             <hr className="flex-1 bg-color" />
             <p>or</p>
@@ -188,7 +178,17 @@ function LogIn() {
 
           <div className="space-y-1">
             <button
-              className="button-tertiary w-full relative"
+              className="button-secondary w-full relative"
+              onClick={() => {
+                authModalsContext.setActiveModalType('signUp');
+              }}
+            >
+              <p className="text-center mb-0 ">Sign Up</p>
+              <IoPersonAddSharp className="absolute left-4 top-1/2 transform -translate-y-1/2" />
+            </button>
+
+            <button
+              className="button-secondary w-full relative"
               onClick={() => {
                 authModalsContext.setActiveModalType('logInWithEmail');
               }}
@@ -197,7 +197,7 @@ function LogIn() {
               <IoMail className="absolute left-4 top-1/2 transform -translate-y-1/2" />
             </button>
             <button
-              className="button-tertiary w-full relative"
+              className="button-secondary w-full relative"
               onClick={() => {
                 logInWithGoogle();
               }}

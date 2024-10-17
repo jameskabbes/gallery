@@ -6,7 +6,7 @@ import { DarkModeToggle } from './DarkModeToggle';
 
 function Header(): JSX.Element {
   return (
-    <header className="sticky top-0 component-bg-color bg-opacity-50 border-b-[1px]">
+    <header className="sticky top-0 surface bg-opacity-50 border-b-[1px]">
       <div className="max-w-screen-2xl mx-auto flex flex-row justify-between items-center px-2 py-2">
         <Link to="/">
           <h5 className="mb-0">

@@ -32,16 +32,16 @@
   .base {
     @apply mode-a;
   }
-  .container {
+  .surface {
     @apply mode-b;
   }
-  .container .container {
+  .surface .surface {
     @apply mode-a;
   }
-  .container .container .container {
+  .surface .surface .surface {
     @apply mode-b;
   }
-  .container .container .container .container {
+  .surface .surface .surface .surface {
     @apply mode-a;
   }
 
@@ -126,7 +126,7 @@
   }
 
   .button-secondary {
-    @apply button-base;
+    @apply surface button-base border-[1px];
   }
 }
 
@@ -252,7 +252,7 @@ form label {
 
 .input-text,
 .input-datetime-local {
-  @apply h4 rounded-xl border-2 py-1 px-2 focus-within:border-primary container;
+  @apply surface h4 rounded-xl border-2 py-1 px-2 focus-within:border-primary;
   transition: border-color 0.2s;
 }
 
