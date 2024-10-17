@@ -6,6 +6,7 @@ import { useApiCall } from '../utils/Api';
 import { ToastContext } from '../contexts/Toast';
 import { AuthContext } from '../contexts/Auth';
 import { InputCheckbox } from '../components/Form/InputCheckbox';
+import { InputDatetimeLocal } from '../components/Form/InputDatetimeLocal';
 
 const API_PATH = '/home/page/';
 const API_METHOD = 'get';
@@ -21,6 +22,10 @@ function Home() {
 
   const [state, setState] = useState<InputState<boolean>>({
     ...defaultInputState<boolean>(false),
+  });
+
+  const [state2, setState2] = useState<InputState<Date>>({
+    ...defaultInputState<Date>(new Date()),
   });
 
   const {
@@ -71,6 +76,34 @@ function Home() {
         id={'checkbox'}
         type={'checkbox'}
       />
+      <p>{state.value}</p>
+      <InputDatetimeLocal
+        state={state2}
+        setState={setState2}
+        id={'datetime-local'}
+        type={'datetime-local'}
+        showValidity={true}
+      />
+      {state2.value instanceof Date ? (
+        <p>{state2.value.toUTCString()}</p>
+      ) : (
+        <p>Invalid date</p>
+      )}
+
+      <button
+        className="button-primary"
+        onClick={() => {
+          setState2((prevState) => ({
+            ...prevState,
+            value: new Date(
+              prevState.value.getTime() + 7 * 24 * 60 * 60 * 1000
+            ),
+          }));
+        }}
+      >
+        Increment Date by 7 Days
+      </button>
+
       <div className="card m-8">
         <h1>h1</h1>
         <h2>h2</h2>

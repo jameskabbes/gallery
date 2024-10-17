@@ -173,7 +173,7 @@ form label {
   @apply h6;
 }
 
-form .text-input {
+form .input-text {
   @apply h4 rounded-xl border-2 py-1 px-2 focus-within:border-primary;
   transition: border-color 0.2s;
 }

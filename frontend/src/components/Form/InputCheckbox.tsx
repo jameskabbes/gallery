@@ -17,7 +17,7 @@ function InputCheckbox({
   ...rest
 }: InputCheckboxProps) {
   return (
-    <div>
+    <div className="flex flex-row items-center space-x-2 input-checkbox">
       <Input
         state={state}
         setState={setState}

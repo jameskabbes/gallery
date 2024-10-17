@@ -1,70 +1,68 @@
 import React, { useState, useEffect } from 'react';
-
-import { defaultInputState, InputState } from '../../types';
-import {
-  BaseInputProps,
-  Input,
-  InputProps,
-  ValidityCheckReturn,
-} from './Input';
+import { BaseInputProps, Input } from './Input';
 
 import { isDatetimeValid } from '../../services/isDatetimeValid';
-import { InputText, InputTextProps } from './InputText';
+import { CheckOrX } from './CheckOrX';
 
 type T = Date;
 
-interface InputDatetimeLocalProps extends BaseInputProps<T> {}
+interface InputDatetimeLocalProps extends BaseInputProps<T> {
+  showValidity?: boolean;
+}
 
 function InputDatetimeLocal({
   state,
   setState,
-  checkValidity = true,
+  showValidity = true,
   ...rest
 }: InputDatetimeLocalProps) {
-  const [stringState, setStringState] = useState<InputState<string>>({
-    ...defaultInputState<string>(''),
-  });
+  const [dateString, setDateString] = useState<string>('');
 
   useEffect(() => {
     if (state.value) {
-      const newStringStateValue = new Date(
-        state.value.getTime() - state.value.getTimezoneOffset() * 60000
-      )
-        .toISOString()
-        .slice(0, 16);
-
-      if (stringState.value !== newStringStateValue) {
-        setStringState({
-          ...stringState,
-          value: newStringStateValue,
-        });
-      }
+      setDateString(
+        new Date(
+          state.value.getTime() - state.value.getTimezoneOffset() * 60000
+        )
+          .toISOString()
+          .slice(0, 16)
+      );
     }
   }, [state.value]);
 
-  useEffect(() => {
-    if (stringState.value) {
-      const { valid } = isDatetimeValid(stringState.value);
-      if (valid) {
-        const newStateValue = new Date(stringState.value);
-        if (state.value !== newStateValue) {
-          setState({
-            ...state,
-            value: newStateValue,
-          });
-        }
-      }
-    }
-  }, [stringState.value]);
-
   return (
-    <InputText
-      state={stringState}
-      setState={setStringState}
-      type={'datetime-local'}
-      checkValidity={checkValidity}
-      {...rest}
-    />
+    <div className="flex flex-row items-center space-x-2 input-datetime-local">
+      <Input
+        state={state}
+        setState={setState}
+        value={dateString}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          const dateString = e.target.value;
+
+          const checkValidReturn = isDatetimeValid(dateString);
+
+          if (checkValidReturn.valid) {
+            setState({
+              ...state,
+              value: new Date(dateString),
+            });
+          } else {
+            setState({
+              ...state,
+              value: null,
+              status: 'invalid',
+              error: checkValidReturn.message,
+            });
+          }
+        }}
+        {...rest}
+      />
+      {showValidity && (
+        <span title={state.error || ''}>
+          <CheckOrX status={state.status} />
+        </span>
+      )}
+    </div>
   );
 }
 

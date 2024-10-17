@@ -21,7 +21,7 @@ function InputText({
   label = null,
   placeholder = null,
   showValidity = true,
-  isValid,
+  isValid = (value: InputTextProps['state']['value']) => ({ valid: true }),
   ...rest
 }: InputTextProps) {
   function isValidWrapper(
@@ -43,16 +43,15 @@ function InputText({
   }
 
   return (
-    <div className="flex flex-row items-center space-x-2 text-input">
+    <div className="flex flex-row items-center space-x-2 input-text">
       <Input
         state={state}
         setState={setState}
         value={state.value}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-          let newValue: InputTextProps['state']['value'] = e.target.value;
           setState({
             ...state,
-            value: newValue,
+            value: e.target.value,
           });
         }}
         isValid={isValidWrapper}
