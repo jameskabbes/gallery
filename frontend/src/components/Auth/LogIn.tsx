@@ -97,7 +97,7 @@ function LogIn() {
         <div className="flex-1">
           <form onSubmit={handleLogin} className="flex flex-col space-y-2">
             <header>Login</header>
-            <div>
+            <section>
               <label htmlFor="login-username">Username or Email</label>
               <InputText
                 state={logInContext.username}
@@ -113,9 +113,11 @@ function LogIn() {
                 type="text"
                 checkAvailability={false}
               />
-            </div>
-            <div>
-              <label htmlFor="login-password">Password</label>
+            </section>
+            <section>
+              <div className="flex flex-row justify-between items-center">
+                <label htmlFor="login-password">Password</label>
+              </div>
               <InputText
                 state={logInContext.password}
                 setState={logInContext.setPassword}
@@ -131,7 +133,7 @@ function LogIn() {
                 type="password"
                 checkAvailability={false}
               />
-            </div>
+            </section>
 
             <div className="flex flex-row items-center space-x-2">
               <label htmlFor="login-stay-signed-in">Stay signed in</label>

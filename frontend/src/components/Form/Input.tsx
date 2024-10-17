@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from 'react';
-import { CheckOrX } from './CheckOrX';
 import { InputState, InputValue } from '../../types';
 
 interface ValidityCheckReturn {
@@ -107,7 +106,7 @@ function Input<T>({
   return (
     <>
       <input
-        className={className}
+        className={`${className} dark:[color-scheme:dark]`}
         type={type}
         id={id}
         required={required}

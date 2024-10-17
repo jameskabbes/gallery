@@ -40,7 +40,7 @@ function Modals({ activeModal, overlayStyle = {} }: Props) {
             {activeModal.component !== null && (
               <div className="absolute h-full w-full flex flex-col justify-center items-center">
                 <div
-                  className="card"
+                  className="base card"
                   style={activeModal.contentStyle}
                   ref={ref}
                 >
