@@ -1,38 +1,18 @@
 import React, { useEffect, useState, useReducer, createContext } from 'react';
 import {
   LogInWithEmailContext as LogInWithEmailContextType,
-  LogInWithEmailReducerAction,
-  LogInWithEmailContextState,
   defaultInputState,
 } from '../types';
 
-const logInWithEmailReducerDefaultState: LogInWithEmailContextState = {
-  email: { ...defaultInputState<string>('') },
-  valid: false,
-  screen: 'email',
-};
-
-function logInWithEmailReducer(
-  state: LogInWithEmailContextState,
-  action: LogInWithEmailReducerAction
-) {
-  switch (action.type) {
-    case 'SET_VALID':
-      return { ...state, valid: action.payload };
-    case 'SET_EMAIL':
-      return { ...state, email: action.payload };
-    case 'SET_SCREEN':
-      return { ...state, screen: action.payload };
-    case 'RESET':
-      return { ...logInWithEmailReducerDefaultState };
-    default:
-      return state;
-  }
-}
-
 const LogInWithEmailContext = createContext<LogInWithEmailContextType>({
-  state: logInWithEmailReducerDefaultState,
-  dispatch: () => {},
+  email: null,
+  setEmail: () => {},
+  screen: 'email',
+  setScreen: () => {},
+  valid: false,
+  setValid: () => {},
+  loading: false,
+  setLoading: () => {},
 });
 
 interface Props {
@@ -40,13 +20,28 @@ interface Props {
 }
 
 function LogInWithEmailContextProvider({ children }: Props) {
-  const [state, dispatch] = useReducer(
-    logInWithEmailReducer,
-    logInWithEmailReducerDefaultState
-  );
+  const [email, setEmail] = useState<LogInWithEmailContextType['email']>({
+    ...defaultInputState<LogInWithEmailContextType['email']['value']>(''),
+  });
+  const [screen, setScreen] =
+    useState<LogInWithEmailContextType['screen']>('email');
+  const [valid, setValid] = useState<LogInWithEmailContextType['valid']>(false);
+  const [loading, setLoading] =
+    useState<LogInWithEmailContextType['loading']>(false);
 
   return (
-    <LogInWithEmailContext.Provider value={{ state, dispatch }}>
+    <LogInWithEmailContext.Provider
+      value={{
+        email,
+        setEmail,
+        screen,
+        setScreen,
+        valid,
+        setValid,
+        loading,
+        setLoading,
+      }}
+    >
       {children}
     </LogInWithEmailContext.Provider>
   );

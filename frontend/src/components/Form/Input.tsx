@@ -20,6 +20,7 @@ interface BaseInputProps<T> {
   className?: string;
   value?: InputValue;
   checked?: boolean;
+  children?: React.ReactNode;
 }
 
 interface InputProps<T> extends BaseInputProps<T> {
@@ -38,6 +39,7 @@ function Input<T>({
   isAvailable = async (value: InputState<T>['value']) => true,
   required = false,
   className = '',
+  children = null,
   ...rest
 }: InputProps<T>) {
   const debounceTimeout = useRef(null);
@@ -103,14 +105,17 @@ function Input<T>({
   }, [state.value]);
 
   return (
-    <input
-      className={className}
-      type={type}
-      id={id}
-      required={required}
-      onChange={onChange}
-      {...rest}
-    />
+    <>
+      <input
+        className={className}
+        type={type}
+        id={id}
+        required={required}
+        onChange={onChange}
+        {...rest}
+      />
+      {children}
+    </>
   );
 }
 

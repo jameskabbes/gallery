@@ -1,38 +1,22 @@
 import React, { useEffect, useState, useReducer, createContext } from 'react';
 import {
   SignUpContext as SignUpContextType,
-  SignUpContextState,
-  SignUpReducerAction,
   defaultInputState,
 } from '../types';
 
-const signUpReducerDefaultState: SignUpContextState = {
-  email: { ...defaultInputState<string>('') },
-  password: { ...defaultInputState<string>('') },
-  confirmPassword: { ...defaultInputState<string>('') },
-  valid: false,
-};
-
-function signUpReducer(state: SignUpContextState, action: SignUpReducerAction) {
-  switch (action.type) {
-    case 'SET_VALID':
-      return { ...state, valid: action.payload };
-    case 'SET_EMAIL':
-      return { ...state, email: action.payload };
-    case 'SET_PASSWORD':
-      return { ...state, password: action.payload };
-    case 'SET_CONFIRM_PASSWORD':
-      return { ...state, confirmPassword: action.payload };
-    case 'RESET':
-      return { ...signUpReducerDefaultState };
-    default:
-      return state;
-  }
-}
-
 const SignUpContext = createContext<SignUpContextType>({
-  state: signUpReducerDefaultState,
-  dispatch: () => {},
+  email: null,
+  setEmail: () => {},
+  password: null,
+  setPassword: () => {},
+  confirmPassword: null,
+  setConfirmPassword: () => {},
+  valid: false,
+  setValid: () => {},
+  loading: false,
+  setLoading: () => {},
+  error: null,
+  setError: () => {},
 });
 
 interface Props {
@@ -40,13 +24,38 @@ interface Props {
 }
 
 function SignUpContextProvider({ children }: Props) {
-  const [state, dispatch] = useReducer(
-    signUpReducer,
-    signUpReducerDefaultState
-  );
+  const [email, setEmail] = useState<SignUpContextType['email']>({
+    ...defaultInputState<SignUpContextType['email']['value']>(''),
+  });
+  const [password, setPassword] = useState<SignUpContextType['password']>({
+    ...defaultInputState<SignUpContextType['password']['value']>(''),
+  });
+  const [confirmPassword, setConfirmPassword] = useState<
+    SignUpContextType['confirmPassword']
+  >({
+    ...defaultInputState<SignUpContextType['confirmPassword']['value']>(''),
+  });
+  const [valid, setValid] = useState<SignUpContextType['valid']>(false);
+  const [loading, setLoading] = useState<SignUpContextType['loading']>(false);
+  const [error, setError] = useState<SignUpContextType['error']>(null);
 
   return (
-    <SignUpContext.Provider value={{ state, dispatch }}>
+    <SignUpContext.Provider
+      value={{
+        email,
+        setEmail,
+        password,
+        setPassword,
+        confirmPassword,
+        setConfirmPassword,
+        valid,
+        setValid,
+        loading,
+        setLoading,
+        error,
+        setError,
+      }}
+    >
       {children}
     </SignUpContext.Provider>
   );

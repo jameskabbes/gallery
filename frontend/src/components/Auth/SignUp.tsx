@@ -29,41 +29,60 @@ function SignUp() {
   const authContext = useContext(AuthContext);
   const authModalsContext = useContext(AuthModalsContext);
   const toastContext = useContext(ToastContext);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setError(null);
+    signUpContext.setError(null);
   }, [
-    signUpContext.state.email.value,
-    signUpContext.state.password.value,
-    signUpContext.state.confirmPassword.value,
+    signUpContext.email.value,
+    signUpContext.password.value,
+    signUpContext.confirmPassword.value,
   ]);
 
   useEffect(() => {
-    if (loading) {
-      setError(null);
+    if (signUpContext.loading) {
+      signUpContext.setError(null);
     }
-  }, [loading]);
+  }, [signUpContext.loading]);
 
   useEffect(() => {
-    signUpContext.dispatch({
-      type: 'SET_VALID',
-      payload:
-        signUpContext.state.email.status === 'valid' &&
-        signUpContext.state.password.status === 'valid' &&
-        signUpContext.state.confirmPassword.status === 'valid',
-    });
+    signUpContext.setValid(
+      signUpContext.email.status === 'valid' &&
+        signUpContext.password.status === 'valid' &&
+        signUpContext.confirmPassword.status === 'valid'
+    );
   }, [
-    signUpContext.state.email,
-    signUpContext.state.password,
-    signUpContext.state.confirmPassword,
+    signUpContext.email,
+    signUpContext.password,
+    signUpContext.confirmPassword,
   ]);
+
+  useEffect(() => {
+    if (signUpContext.password.status !== 'valid') {
+      signUpContext.setConfirmPassword((prev) => ({
+        ...prev,
+        status: 'invalid',
+        message: 'Password is invalid',
+      }));
+    } else if (
+      signUpContext.password.value !== signUpContext.confirmPassword.value
+    ) {
+      signUpContext.setConfirmPassword((prev) => ({
+        ...prev,
+        status: 'invalid',
+        message: 'Passwords do not match',
+      }));
+    } else {
+      signUpContext.setConfirmPassword((prev) => ({
+        ...prev,
+        status: 'valid',
+      }));
+    }
+  }, [signUpContext.confirmPassword.value, signUpContext.password]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    if (signUpContext.state.valid) {
-      setLoading(true);
+    if (signUpContext.valid) {
+      signUpContext.setLoading(true);
 
       const { data, response } = await callApi<
         ResponseTypesByStatus[keyof ResponseTypesByStatus],
@@ -72,14 +91,14 @@ function SignUp() {
         endpoint: API_ENDPOINT,
         method: API_METHOD,
         body: new URLSearchParams({
-          email: signUpContext.state.email.value,
-          password: signUpContext.state.password.value,
+          email: signUpContext.email.value,
+          password: signUpContext.password.value,
         }).toString(),
         overwriteHeaders: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       });
-      setLoading(false);
+      signUpContext.setLoading(false);
 
       if (response.status === 200) {
         const apiData = data as ResponseTypesByStatus['200'];
@@ -91,7 +110,7 @@ function SignUp() {
         authModalsContext.setActiveModalType(null);
       } else {
         console.error('Error creating user:', response.status, data);
-        setError('Error creating user');
+        signUpContext.setError('Error creating user');
       }
     }
   }
@@ -101,17 +120,12 @@ function SignUp() {
       <div className="flex">
         <div className="flex-1">
           <form onSubmit={handleLogin} className="flex flex-col space-y-2">
-            <span className="title">Sign Up</span>
+            <header>Sign Up</header>
             <div>
               <label htmlFor="sign-up-email">Email</label>
               <InputText
-                state={signUpContext.state.email}
-                setState={(state: SignUpContextType['state']['email']) => {
-                  signUpContext.dispatch({
-                    type: 'SET_EMAIL',
-                    payload: state,
-                  });
-                }}
+                state={signUpContext.email}
+                setState={signUpContext.setEmail}
                 id="sign-up-email"
                 minLength={
                   openapi_schema.components.schemas.UserCreateAdmin.properties
@@ -130,13 +144,8 @@ function SignUp() {
             <div>
               <label htmlFor="sign-up-password">Password</label>
               <InputText
-                state={signUpContext.state.password}
-                setState={(state: SignUpContextType['state']['password']) =>
-                  signUpContext.dispatch({
-                    type: 'SET_PASSWORD',
-                    payload: state,
-                  })
-                }
+                state={signUpContext.password}
+                setState={signUpContext.setPassword}
                 id="sign-up-password"
                 minLength={
                   openapi_schema.components.schemas.UserCreateAdmin.properties
@@ -154,15 +163,8 @@ function SignUp() {
             <div>
               <label htmlFor="sign-up-confirmPassword">Confirm Password</label>
               <InputText
-                state={signUpContext.state.confirmPassword}
-                setState={(
-                  state: SignUpContextType['state']['confirmPassword']
-                ) =>
-                  signUpContext.dispatch({
-                    type: 'SET_CONFIRM_PASSWORD',
-                    payload: state,
-                  })
-                }
+                state={signUpContext.confirmPassword}
+                setState={signUpContext.setConfirmPassword}
                 id="sign-up-confirmPassword"
                 minLength={
                   openapi_schema.components.schemas.UserCreateAdmin.properties
@@ -174,26 +176,10 @@ function SignUp() {
                 }
                 type="password"
                 checkAvailability={false}
-                isValid={(
-                  confirmPassword: SignUpContextType['state']['confirmPassword']['value']
-                ) => {
-                  if (signUpContext.state.password.status !== 'valid') {
-                    return { valid: false, message: 'Password is invalid' };
-                  } else if (
-                    signUpContext.state.password.value !== confirmPassword
-                  ) {
-                    return {
-                      valid: false,
-                      message: 'Passwords do not match',
-                    };
-                  } else {
-                    return { valid: true };
-                  }
-                }}
               />
             </div>
             <div className="mt-8"></div>
-            {error && (
+            {signUpContext.error && (
               <div className="flex flex-row justify-center space-x-2">
                 <p className="rounded-full p-1 text-light leading-none bg-error-500">
                   <span>
@@ -204,13 +190,13 @@ function SignUp() {
                     />
                   </span>
                 </p>
-                <p>{error}</p>
+                <p>{signUpContext.error}</p>
               </div>
             )}
 
-            <button type="submit" disabled={!signUpContext.state.valid}>
+            <button type="submit" disabled={!signUpContext.valid}>
               <span className="mb-0 leading-none">
-                {loading ? (
+                {signUpContext.loading ? (
                   <span className="loader-secondary"></span>
                 ) : (
                   'Sign Up'

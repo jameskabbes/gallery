@@ -31,15 +31,14 @@ function LogInWithEmail() {
   const okayButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    logInWithEmailContext.dispatch({
-      type: 'SET_VALID',
-      payload: logInWithEmailContext.state.email.status === 'valid',
-    });
-  }, [logInWithEmailContext.state.email.status]);
+    logInWithEmailContext.setValid(
+      logInWithEmailContext.email.status === 'valid'
+    );
+  }, [logInWithEmailContext.email.status]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (logInWithEmailContext.state.screen) {
+    if (logInWithEmailContext.screen) {
       setLoading(true);
 
       const { data, response } = await callApi<
@@ -48,28 +47,25 @@ function LogInWithEmail() {
       >({
         endpoint: API_ENDPOINT,
         method: API_METHOD,
-        data: { email: logInWithEmailContext.state.email.value },
+        data: { email: logInWithEmailContext.email.value },
       });
 
       setLoading(false);
       if (response.status === 200) {
-        logInWithEmailContext.dispatch({ type: 'SET_SCREEN', payload: 'sent' });
+        logInWithEmailContext.setScreen('sent');
       }
     }
   }
 
   useEffect(() => {
-    if (
-      logInWithEmailContext.state.screen === 'sent' &&
-      okayButtonRef.current
-    ) {
+    if (logInWithEmailContext.screen === 'sent' && okayButtonRef.current) {
       okayButtonRef.current.focus();
     }
-  }, [logInWithEmailContext.state.screen]);
+  }, [logInWithEmailContext.screen]);
 
   return (
     <div id="login-with-email" className="flex flex-col">
-      {logInWithEmailContext.state.screen === 'email' ? (
+      {logInWithEmailContext.screen === 'email' ? (
         <div className="flex flex-col">
           <form onSubmit={handleSubmit} className="flex flex-col">
             <span className="title">Send Email</span>
@@ -77,15 +73,8 @@ function LogInWithEmail() {
               <label htmlFor="email">Email</label>
               <h4>
                 <InputText
-                  state={logInWithEmailContext.state.email}
-                  setState={(
-                    state: LogInWithEmailContextType['state']['email']
-                  ) => {
-                    logInWithEmailContext.dispatch({
-                      type: 'SET_EMAIL',
-                      payload: state,
-                    });
-                  }}
+                  state={logInWithEmailContext.email}
+                  setState={logInWithEmailContext.setEmail}
                   id="login-with-email-email"
                   minLength={
                     openapi_schema.components.schemas.User.properties.email
@@ -104,7 +93,7 @@ function LogInWithEmail() {
               If an account with this email exists, we will send a login link to
               your email.
             </p>
-            <button type="submit" disabled={!logInWithEmailContext.state.valid}>
+            <button type="submit" disabled={!logInWithEmailContext.valid}>
               <span className="mb-0 leading-none">
                 {loading ? (
                   <span className="loader-secondary"></span>
@@ -123,13 +112,13 @@ function LogInWithEmail() {
             Back to Login
           </h6>
         </div>
-      ) : logInWithEmailContext.state.screen === 'sent' ? (
+      ) : logInWithEmailContext.screen === 'sent' ? (
         <form
           className="flex flex-col"
           onSubmit={(e) => {
             e.preventDefault();
             authModalsContext.setActiveModalType(null);
-            logInWithEmailContext.dispatch({ type: 'RESET' });
+            logInWithEmailContext.setScreen('email');
           }}
         >
           <span className="title">Done!</span>

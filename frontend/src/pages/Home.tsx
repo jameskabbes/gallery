@@ -7,6 +7,8 @@ import { ToastContext } from '../contexts/Toast';
 import { AuthContext } from '../contexts/Auth';
 import { InputCheckbox } from '../components/Form/InputCheckbox';
 import { InputDatetimeLocal } from '../components/Form/InputDatetimeLocal';
+import { Input } from '../components/Form/Input';
+import { Toggle } from '../components/Utils/Toggle';
 
 const API_PATH = '/home/page/';
 const API_METHOD = 'get';
@@ -26,6 +28,10 @@ function Home() {
 
   const [state2, setState2] = useState<InputState<Date>>({
     ...defaultInputState<Date>(new Date()),
+  });
+
+  const [toggleState, setToggleState] = useState<InputState<boolean>>({
+    ...defaultInputState<boolean>(false),
   });
 
   const {
@@ -105,6 +111,29 @@ function Home() {
       </button>
 
       <div className="card m-8">
+        <h1>
+          <Toggle
+            state={toggleState['value']}
+            handleToggle={() =>
+              setToggleState((prevState) => ({
+                ...prevState,
+                value: !prevState.value,
+              }))
+            }
+          />
+        </h1>
+        <p>
+          <Toggle
+            state={toggleState['value']}
+            handleToggle={() =>
+              setToggleState((prevState) => ({
+                ...prevState,
+                value: !prevState.value,
+              }))
+            }
+          />
+        </p>
+
         <h1>h1</h1>
         <h2>h2</h2>
         <h3>h3</h3>

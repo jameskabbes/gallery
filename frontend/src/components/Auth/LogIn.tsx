@@ -3,7 +3,7 @@ import { AuthContext } from '../../contexts/Auth';
 import { paths, operations, components } from '../../openapi_schema';
 import openapi_schema from '../../../../openapi_schema.json';
 import { InputText } from '../Form/InputText';
-import { defaultInputState } from '../../types';
+import { LogInContext } from '../../contexts/LogIn';
 import { ToastContext } from '../../contexts/Toast';
 import { AuthModalsContext } from '../../contexts/AuthModals';
 import { ExtractResponseTypes } from '../../types';
@@ -24,40 +24,33 @@ type TRequestData =
   paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/x-www-form-urlencoded'];
 
 function LogIn() {
-  const [username, setUsername] = useState<InputState<string>>({
-    ...defaultInputState<string>(''),
-  });
-  const [password, setPassword] = useState<InputState<string>>({
-    ...defaultInputState<string>(''),
-  });
-  const [staySignedIn, setStaySignedIn] = useState<boolean>(true);
-  const [valid, setValid] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-
+  const logInContext = useContext(LogInContext);
   const authContext = useContext(AuthContext);
   const authModalsContext = useContext(AuthModalsContext);
   const toastContext = useContext(ToastContext);
   const { logInWithGoogle } = useLogInWithGoogle();
 
   useEffect(() => {
-    setError(null);
-  }, [username.value, password.value]);
+    logInContext.setError(null);
+  }, [logInContext.username.value, logInContext.password.value]);
 
   useEffect(() => {
-    if (loading) {
-      setError(null);
+    if (logInContext.loading) {
+      logInContext.setError(null);
     }
-  }, [loading]);
+  }, [logInContext.loading]);
 
   useEffect(() => {
-    setValid(username.status === 'valid' && password.status === 'valid');
-  }, [username.status, password.status]);
+    logInContext.setValid(
+      logInContext.username.status === 'valid' &&
+        logInContext.password.status === 'valid'
+    );
+  }, [logInContext.username.status, logInContext.password.status]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    if (valid) {
-      setLoading(true);
+    if (logInContext.valid) {
+      logInContext.setLoading(true);
 
       const { data, response } = await callApi<
         ResponseTypesByStatus[keyof ResponseTypesByStatus],
@@ -66,16 +59,16 @@ function LogIn() {
         endpoint: API_ENDPOINT,
         method: API_METHOD,
         body: new URLSearchParams({
-          username: username.value,
-          password: password.value,
-          stay_signed_in: staySignedIn.toString(),
+          username: logInContext.username.value,
+          password: logInContext.password.value,
+          stay_signed_in: logInContext.staySignedIn.toString(),
         }).toString(),
         overwriteHeaders: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       });
 
-      setLoading(false);
+      logInContext.setLoading(false);
 
       if (response.status == 200) {
         const apiData = data as ResponseTypesByStatus['200'];
@@ -91,9 +84,9 @@ function LogIn() {
         });
       } else if (response.status == 401) {
         const apiData = data as ResponseTypesByStatus['401'];
-        setError(apiData.detail);
+        logInContext.setError(apiData.detail);
       } else {
-        setError('Could not log in');
+        logInContext.setError('Could not log in');
       }
     }
   }
@@ -107,8 +100,8 @@ function LogIn() {
             <div>
               <label htmlFor="login-username">Username or Email</label>
               <InputText
-                state={username}
-                setState={setUsername}
+                state={logInContext.username}
+                setState={logInContext.setUsername}
                 id="login-username"
                 minLength={1}
                 maxLength={Math.max(
@@ -124,8 +117,8 @@ function LogIn() {
             <div>
               <label htmlFor="login-password">Password</label>
               <InputText
-                state={password}
-                setState={setPassword}
+                state={logInContext.password}
+                setState={logInContext.setPassword}
                 id="login-password"
                 minLength={
                   openapi_schema.components.schemas.UserCreateAdmin.properties
@@ -140,7 +133,17 @@ function LogIn() {
               />
             </div>
 
-            {error && (
+            <div className="flex flex-row items-center space-x-2">
+              <label htmlFor="login-stay-signed-in">Stay signed in</label>
+              <input
+                type="checkbox"
+                id="login-stay-signed-in"
+                checked={logInContext.staySignedIn}
+                onChange={(e) => logInContext.setStaySignedIn(e.target.checked)}
+              />
+            </div>
+
+            {logInContext.error && (
               <div className="flex flex-row justify-center space-x-2">
                 <p className="rounded-full p-1 text-light leading-none bg-error-500">
                   <span>
@@ -151,12 +154,16 @@ function LogIn() {
                     />
                   </span>
                 </p>
-                <p>{error}</p>
+                <p>{logInContext.error}</p>
               </div>
             )}
-            <button type="submit" disabled={!valid}>
+            <button type="submit" disabled={!logInContext.valid}>
               <span className="leading-none mb-0">
-                {loading ? <span className="loader-secondary"></span> : 'Login'}
+                {logInContext.loading ? (
+                  <span className="loader-secondary"></span>
+                ) : (
+                  'Login'
+                )}
               </span>
             </button>
           </form>

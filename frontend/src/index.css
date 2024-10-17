@@ -5,15 +5,15 @@
 /* Base Layer */
 @layer base {
   .app-bg-color {
-    @apply bg-light dark:bg-dark-darker;
+    @apply bg-light-lighter dark:bg-dark-darker;
+  }
+
+  .container-bg-color {
+    @apply bg-light dark:bg-dark border-light-darker dark:border-dark-lighter;
   }
 
   .component-bg-color {
-    @apply bg-light-lighter dark:bg-dark border-light-darker dark:border-dark-lighter;
-  }
-
-  .component-bg-color-invert {
-    @apply bg-dark dark:bg-light border-dark-lighter dark:border-light-lighter;
+    @apply bg-light-darker dark:bg-dark-lighter border-light-darker dark:border-dark-lighter;
   }
 
   .text-color {
@@ -70,7 +70,7 @@
 
 @layer components {
   .card {
-    @apply component-bg-color rounded-2xl border-[1px] p-2;
+    @apply container-bg-color rounded-2xl border-[1px] p-2;
   }
 
   .button-base {
@@ -91,11 +91,49 @@
   }
 
   .button-secondary {
-    @apply button-base component-bg-color-invert text-color-invert;
+    @apply button-base text-color-invert;
   }
 }
 
 @layer utilities {
+}
+
+.toggle {
+  @apply relative inline-block bg-green-200 rounded-full;
+  width: 3rem;
+  height: 1.5rem;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 1.5rem; /* 24px if root font size is 16px */
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: '';
+  height: 1.25rem; /* 20px if root font size is 16px */
+  width: 1.25rem; /* 20px if root font size is 16px */
+  left: 0.125rem; /* 2px if root font size is 16px */
+  bottom: 0.125rem; /* 2px if root font size is 16px */
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+.toggle input:checked + .toggle-slider {
+  background-color: #4caf50;
+}
+
+.toggle input:checked + .toggle-slider:before {
+  transform: translateX(1.5rem); /* 24px if root font size is 16px */
 }
 
 .page {
@@ -182,10 +220,10 @@ form button[type='submit'] {
   @apply button-primary flex flex-row justify-center p-4 rounded-3xl mb-0 h5;
 }
 
-form .text-input input[type='text'],
-form .text-input input[type='password'],
-form .text-input input[type='email'],
-form .text-input input[type='datetime-local'] {
+form .input-text input[type='text'],
+form .input-text input[type='password'],
+form .input-text input[type='email'],
+form .input-text input[type='datetime-local'] {
   @apply w-full bg-inherit focus:outline-none;
 }
 
