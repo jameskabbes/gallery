@@ -63,7 +63,7 @@ function LogIn() {
         body: new URLSearchParams({
           username: logInContext.username.value,
           password: logInContext.password.value,
-          stay_signed_in: logInContext.staySignedIn.toString(),
+          stay_signed_in: logInContext.staySignedIn.value.toString(),
         }).toString(),
         overwriteHeaders: {
           'Content-Type': 'application/x-www-form-urlencoded',
