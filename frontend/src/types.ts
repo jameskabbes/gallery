@@ -74,7 +74,7 @@ interface LogInContext {
   setUsername: React.Dispatch<React.SetStateAction<LogInContext['username']>>;
   password: InputState<string>;
   setPassword: React.Dispatch<React.SetStateAction<LogInContext['password']>>;
-  staySignedIn: boolean;
+  staySignedIn: InputState<boolean>;
   setStaySignedIn: React.Dispatch<
     React.SetStateAction<LogInContext['staySignedIn']>
   >;

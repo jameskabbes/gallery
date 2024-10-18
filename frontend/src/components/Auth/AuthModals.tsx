@@ -27,7 +27,7 @@ function AuthModals() {
         component: component,
         onExit: () => authModalsContext.setActiveModalType(null),
         includeExitButton: true,
-        contentStyle: { maxWidth: '300px', width: '100%' },
+        contentStyle: { maxWidth: '400px', width: '100%' },
         key: authModalsContext.activeModalType || 'auth-modal',
       }}
     />

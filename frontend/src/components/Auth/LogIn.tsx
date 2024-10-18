@@ -13,6 +13,7 @@ import { InputState } from '../../types';
 import { IoPersonAddSharp } from 'react-icons/io5';
 import { IoMail } from 'react-icons/io5';
 import { useLogInWithGoogle } from './LogInWithGoogle';
+import { InputToggle } from '../Form/InputToggle';
 
 const API_ENDPOINT = '/auth/login/password/';
 const API_METHOD = 'post';
@@ -96,7 +97,7 @@ function LogIn() {
     <div id="login">
       <div className="flex">
         <div className="flex-1">
-          <form onSubmit={handleLogin} className="flex flex-col space-y-2">
+          <form onSubmit={handleLogin} className="flex flex-col space-y-4">
             <header>Login</header>
             <section>
               <label htmlFor="login-username">Username or Email</label>
@@ -135,16 +136,29 @@ function LogIn() {
                 checkAvailability={false}
               />
             </section>
-
-            <div className="flex flex-row items-center space-x-2">
-              <label htmlFor="login-stay-signed-in">Stay signed in</label>
-              <input
-                type="checkbox"
-                id="login-stay-signed-in"
-                checked={logInContext.staySignedIn}
-                onChange={(e) => logInContext.setStaySignedIn(e.target.checked)}
-              />
-            </div>
+            <section>
+              <div className="flex flex-row justify-between items-center">
+                <div className="flex flex-row items-center space-x-2">
+                  <InputToggle
+                    state={logInContext.staySignedIn}
+                    setState={logInContext.setStaySignedIn}
+                    type="checkbox"
+                    id="login-stay-signed-in"
+                  />
+                  <label htmlFor="login-stay-signed-in" className="mb-0">
+                    Remember me
+                  </label>
+                </div>
+                <span
+                  onClick={() =>
+                    authModalsContext.setActiveModalType('logInWithEmail')
+                  }
+                  className="underline cursor-pointer"
+                >
+                  Forgot Password?
+                </span>
+              </div>
+            </section>
 
             {logInContext.error && (
               <div className="flex flex-row justify-center space-x-2">
@@ -171,9 +185,9 @@ function LogIn() {
             </button>
           </form>
           <div className="flex flex-row items-center space-x-2 my-2">
-            <hr className="flex-1 bg-color" />
+            <div className="surface flex-1 border-t-[1px]" />
             <p>or</p>
-            <hr className="flex-1 bg-color" />
+            <div className="surface flex-1 border-t-[1px]" />
           </div>
 
           <div className="space-y-1">

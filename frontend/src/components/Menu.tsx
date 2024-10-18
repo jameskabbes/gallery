@@ -67,7 +67,7 @@ function Menu() {
       </h6>
       {isMenuVisible && (
         <div
-          className="absolute right-0 mt-2 w-48 bg-color border-2 rounded-xl shadow-2xl"
+          className="surface absolute right-0 mt-2 w-48 border-2 rounded-xl shadow-2xl"
           ref={menuRef}
         >
           <ul className="flex flex-col">

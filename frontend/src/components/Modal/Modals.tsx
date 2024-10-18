@@ -38,9 +38,9 @@ function Modals({ activeModal, overlayStyle = {} }: Props) {
         >
           <>
             {activeModal.component !== null && (
-              <div className="absolute h-full w-full flex flex-col justify-center items-center">
+              <div className="absolute h-full w-full flex flex-col justify-center items-center p-2">
                 <div
-                  className="base card"
+                  className="surface card"
                   style={activeModal.contentStyle}
                   ref={ref}
                 >

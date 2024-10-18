@@ -86,8 +86,22 @@ function Home() {
         </div>
       </div>
 
+      <InputToggle
+        state={state}
+        setState={setState}
+        id={'checkbox-toggle'}
+        type={'checkbox'}
+      />
+
       <div className="surface mx-4 my-4 p-4 rounded-2xl">
         <p>More text</p>
+        <InputToggle
+          state={state}
+          setState={setState}
+          id={'checkbox-toggle'}
+          type={'checkbox'}
+          showValidity={true}
+        />
       </div>
 
       <button
@@ -128,12 +142,6 @@ function Home() {
         id={'datetime-local'}
         type="datetime-local"
         showValidity={true}
-      />
-      <InputToggle
-        state={state}
-        setState={setState}
-        id={'checkbox-toggle'}
-        type={'checkbox'}
       />
       <Toggle
         state={toggleState.value}

@@ -68,7 +68,7 @@ function LogInWithEmail() {
       {logInWithEmailContext.screen === 'email' ? (
         <div className="flex flex-col">
           <form onSubmit={handleSubmit} className="flex flex-col">
-            <span className="title">Send Email</span>
+            <header>Send Email</header>
             <div className="mt-2">
               <label htmlFor="email">Email</label>
               <h4>

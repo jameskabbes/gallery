@@ -29,19 +29,19 @@
     @apply mode-b-bg-color mode-b-border-color mode-b-text-color;
   }
 
-  .base {
-    @apply mode-a;
-  }
   .surface {
-    @apply mode-b;
+    @apply mode-a;
   }
   .surface .surface {
-    @apply mode-a;
-  }
-  .surface .surface .surface {
     @apply mode-b;
   }
+  .surface .surface .surface {
+    @apply mode-a;
+  }
   .surface .surface .surface .surface {
+    @apply mode-b;
+  }
+  .surface .surface .surface .surface .surface {
     @apply mode-a;
   }
 
@@ -57,15 +57,18 @@
   .border-secondary {
     @apply border-secondary-light dark:border-secondary-dark;
   }
+  .bg-color-invert {
+    @apply bg-dark dark:bg-light;
+  }
 
   body,
   html {
-    @apply base;
+    @apply surface;
     height: 100%;
   }
 
   .App {
-    @apply font-sans base min-h-screen;
+    @apply font-sans surface min-h-screen;
   }
 
   h1,
@@ -198,16 +201,6 @@
   z-index: 1000; /* Ensure it is above other content */
 }
 
-.auth-modal {
-  @apply max-w-[300px];
-}
-
-#login,
-#sign-up,
-#login-with-email {
-  @apply auth-modal;
-}
-
 /* Button */
 
 button {
@@ -250,14 +243,27 @@ form label {
   @apply h6;
 }
 
-.input-text,
-.input-datetime-local {
-  @apply surface h4 rounded-xl border-2 py-1 px-2 focus-within:border-primary;
-  transition: border-color 0.2s;
+form .input-text,
+form .input-datetime-local,
+form .input-toggle,
+form .input-checkbox {
+  @apply h4;
+}
+
+form button[type='submit'] {
+  @apply h5;
 }
 
 button[type='submit'] {
-  @apply button-primary flex flex-row justify-center p-4 rounded-3xl mb-0 h5;
+  @apply button-primary flex flex-row justify-center p-4 rounded-3xl mb-0;
+}
+
+.input-text,
+.input-datetime-local,
+.input-toggle,
+.input-checkbox {
+  @apply surface rounded-xl border-2 py-1 px-2 focus-within:border-primary;
+  transition: border-color 0.2s;
 }
 
 .input-text input[type='text'],

@@ -7,24 +7,45 @@ import { BaseInputProps, Input, InputProps } from './Input';
 import { Toggle } from '../Utils/Toggle';
 
 import { InputCheckboxProps, InputCheckbox } from './InputCheckbox';
+import tailwindConfig from '../../../tailwind.config';
 
 interface InputToggleProps extends InputCheckboxProps {}
 
-function InputToggle({ state, setState, ...rest }: InputToggleProps) {
+function InputToggle({
+  state,
+  setState,
+  showValidity = false,
+  ...rest
+}: InputToggleProps) {
   return (
-    <div className="flex flex-row items-center space-x-2 input-checkbox">
+    <div className="flex flex-row items-center space-x-2">
       <div
-        className="rounded-full p-1 component-bg-color border-2"
-        style={{ height: '2rem', width: '4rem', position: 'relative' }}
+        onClick={() => setState({ ...state, value: !state.value })}
+        className="rounded-full p-1 surface border-[1px]"
+        style={{ height: '1.5rem', width: '3rem', position: 'relative' }}
       >
-        <InputCheckbox
-          state={state}
-          setState={setState}
-          className="rounded-full bg-primary h-full aspect-square transition-transform duration-100"
-          style={{ transform: state ? 'translateX(2rem)' : 'translateX(0)' }}
-          {...rest}
-        />
+        <div
+          className={`rounded-full ${
+            state.value ? 'bg-primary' : 'bg-color-invert'
+          } h-full aspect-square transition-transform duration-100`}
+          style={{
+            transform: state.value ? 'translateX(1.5rem)' : 'translateX(0)',
+          }}
+        ></div>{' '}
+        <div className="hidden">
+          <InputCheckbox
+            state={state}
+            setState={setState}
+            {...rest}
+            showValidity={false}
+          />
+        </div>
       </div>
+      {showValidity && (
+        <span title={state.error || ''}>
+          <CheckOrX status={state.status} />
+        </span>
+      )}
     </div>
   );
 }

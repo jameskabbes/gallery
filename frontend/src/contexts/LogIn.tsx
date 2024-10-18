@@ -10,7 +10,7 @@ const LogInContext = createContext<LogInContextType>({
   setUsername: () => {},
   password: null,
   setPassword: () => {},
-  staySignedIn: false,
+  staySignedIn: null,
   setStaySignedIn: () => {},
   valid: false,
   setValid: () => {},
@@ -31,8 +31,11 @@ function LogInContextProvider({ children }: Props) {
   const [password, setPassword] = useState<LogInContextType['password']>({
     ...defaultInputState<LogInContextType['username']['value']>(''),
   });
-  const [staySignedIn, setStaySignedIn] =
-    useState<LogInContextType['staySignedIn']>(true);
+  const [staySignedIn, setStaySignedIn] = useState<
+    LogInContextType['staySignedIn']
+  >({
+    ...defaultInputState<LogInContextType['staySignedIn']['value']>(false),
+  });
   const [valid, setValid] = useState<LogInContextType['valid']>(false);
   const [loading, setLoading] = useState<LogInContextType['loading']>(false);
   const [error, setError] = useState<LogInContextType['error']>(null);
