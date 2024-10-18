@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { CheckOrX } from './CheckOrX';
 import { InputState } from '../../types';
 import { BaseInputProps, Input, ValidityCheckReturn } from './Input';
+import { Surface } from '../Utils/Surface';
 
 type T = string;
 
@@ -43,7 +44,7 @@ function InputText({
   }
 
   return (
-    <div className="flex flex-row items-center space-x-2 input-text">
+    <Surface className="flex flex-row items-center space-x-2 input-text-container">
       <Input
         state={state}
         setState={setState}
@@ -57,12 +58,14 @@ function InputText({
         isValid={isValidWrapper}
         {...rest}
       />
-      {showValidity && (
-        <span title={state.error || ''}>
-          <CheckOrX status={state.status} />
-        </span>
-      )}
-    </div>
+      <div className="flex-1">
+        {showValidity && (
+          <span title={state.error || ''}>
+            <CheckOrX status={state.status} />
+          </span>
+        )}
+      </div>
+    </Surface>
   );
 }
 

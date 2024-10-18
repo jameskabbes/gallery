@@ -67,32 +67,30 @@ function LogInWithEmail() {
     <div id="login-with-email" className="flex flex-col">
       {logInWithEmailContext.screen === 'email' ? (
         <div className="flex flex-col">
-          <form onSubmit={handleSubmit} className="flex flex-col">
+          <form onSubmit={handleSubmit} className="flex flex-col space-y-6">
             <header>Send Email</header>
-            <div className="mt-2">
+            <section className="space-y-2">
               <label htmlFor="email">Email</label>
-              <h4>
-                <InputText
-                  state={logInWithEmailContext.email}
-                  setState={logInWithEmailContext.setEmail}
-                  id="login-with-email-email"
-                  minLength={
-                    openapi_schema.components.schemas.User.properties.email
-                      .minLength
-                  }
-                  maxLength={
-                    openapi_schema.components.schemas.User.properties.email
-                      .maxLength
-                  }
-                  type="email"
-                  isValid={isEmailValid}
-                />
-              </h4>
-            </div>
-            <p className="my-4 text-center">
+              <InputText
+                state={logInWithEmailContext.email}
+                setState={logInWithEmailContext.setEmail}
+                id="login-with-email-email"
+                minLength={
+                  openapi_schema.components.schemas.User.properties.email
+                    .minLength
+                }
+                maxLength={
+                  openapi_schema.components.schemas.User.properties.email
+                    .maxLength
+                }
+                type="email"
+                isValid={isEmailValid}
+              />
+            </section>
+            <span className="text-center mx-10">
               If an account with this email exists, we will send a login link to
               your email.
-            </p>
+            </span>
             <button type="submit" disabled={!logInWithEmailContext.valid}>
               <span className="mb-0 leading-none">
                 {loading ? (
@@ -121,10 +119,13 @@ function LogInWithEmail() {
             logInWithEmailContext.setScreen('email');
           }}
         >
-          <span className="title">Done!</span>
-          <p className="text-center my-4">
-            Check your inbox for a secure login link.
-          </p>
+          <header>Done!</header>
+          <section>
+            <span></span>
+            <p className="text-center my-4">
+              Check your inbox for a secure login link.
+            </p>
+          </section>
           <button type="submit" ref={okayButtonRef}>
             Okay!
           </button>

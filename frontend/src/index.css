@@ -29,46 +29,41 @@
     @apply mode-b-bg-color mode-b-border-color mode-b-text-color;
   }
 
+  .surface-even {
+    @apply mode-a;
+  }
+  .surface-odd {
+    @apply mode-b;
+  }
   .surface {
-    @apply mode-a;
-  }
-  .surface .surface {
-    @apply mode-b;
-  }
-  .surface .surface .surface {
-    @apply mode-a;
-  }
-  .surface .surface .surface .surface {
-    @apply mode-b;
-  }
-  .surface .surface .surface .surface .surface {
-    @apply mode-a;
   }
 
-  .bg-primary {
+  .bg-color-primary {
     @apply bg-primary-light dark:bg-primary-dark;
   }
-  .border-primary {
+  .border-color-primary {
     @apply border-primary-light dark:border-primary-dark;
   }
-  .bg-secondary {
+  .bg-color-secondary {
     @apply bg-secondary-light dark:bg-secondary-dark;
   }
-  .border-secondary {
+  .border-color-secondary {
     @apply border-secondary-light dark:border-secondary-dark;
   }
   .bg-color-invert {
     @apply bg-dark dark:bg-light;
   }
+  .border-color-invert {
+    @apply border-dark dark:border-light;
+  }
 
   body,
   html {
-    @apply surface;
     height: 100%;
   }
 
   .App {
-    @apply font-sans surface min-h-screen;
+    @apply font-sans min-h-screen;
   }
 
   h1,
@@ -107,12 +102,34 @@
 }
 
 @layer components {
+  .loader-base {
+    @apply inline-block rounded-full;
+    border-width: 0.15em;
+    height: 1em;
+    width: 1em;
+    box-sizing: border-box;
+    vertical-align: top;
+    animation: rotation 1s ease-in-out infinite;
+  }
+
+  .loader {
+    @apply loader-base border-t-primary-light dark:border-t-primary-dark;
+  }
+
+  .loader-secondary {
+    /* @apply loader-base border-primary border-t-light dark:border-t-dark; */
+  }
+
   .card {
     @apply rounded-2xl border-[1px] p-2;
   }
 
   .button-base {
-    @apply rounded-xl p-2;
+    @apply rounded-xl p-2 border-[1px] hover:border-color-invert;
+  }
+
+  .button-base:active {
+    @apply transform scale-95;
   }
 
   .button-disabled {
@@ -125,45 +142,19 @@
   }
 
   .button-primary {
-    @apply button-base bg-primary text-light-lighter;
+    @apply button-base bg-color-primary  text-light-lighter;
   }
 
   .button-secondary {
-    @apply surface button-base border-[1px];
+    @apply button-base;
   }
 }
 
 @layer utilities {
-}
-
-.toggle {
-  @apply relative inline-block bg-green-200 rounded-full;
-  width: 3rem;
-  height: 1.5rem;
-}
-
-.toggle-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  transition: 0.4s;
-  border-radius: 1.5rem; /* 24px if root font size is 16px */
-}
-
-.toggle-slider:before {
-  position: absolute;
-  content: '';
-  height: 1.25rem; /* 20px if root font size is 16px */
-  width: 1.25rem; /* 20px if root font size is 16px */
-  left: 0.125rem; /* 2px if root font size is 16px */
-  bottom: 0.125rem; /* 2px if root font size is 16px */
-  background-color: white;
-  transition: 0.4s;
-  border-radius: 50%;
+  .toggle-container {
+  }
+  .toggle-slider {
+  }
 }
 
 .toggle input:checked + .toggle-slider {
@@ -211,65 +202,47 @@ button {
   @apply fixed bottom-0 left-0 w-full transition-transform transform translate-y-full;
 }
 
-.loader-base {
-  border-width: 0.15em;
-  height: 1em;
-  width: 1em;
-  border-radius: 50%;
-  display: inline-block;
-  box-sizing: border-box;
-  vertical-align: top;
-  animation: rotation 1s ease-in-out infinite;
-}
-
-.loader {
-  /* @apply loader-base border-light dark:border-dark border-t-primary dark:border-t-primary; */
-}
-
-.loader-secondary {
-  /* @apply loader-base border-primary border-t-light dark:border-t-dark; */
-}
-
 /* Input */
 form header {
   @apply h2 text-center;
 }
 
 form section {
-  @apply space-y-1;
 }
 
 form label {
-  @apply h6;
+  @apply h4;
 }
 
-form .input-text,
-form .input-datetime-local,
-form .input-toggle,
-form .input-checkbox {
+form .input-text-container,
+form .input-datetime-local-container,
+form .input-toggle-container,
+form .input-checkbox-container {
   @apply h4;
 }
 
 form button[type='submit'] {
-  @apply h5;
+  @apply h4;
 }
 
 button[type='submit'] {
   @apply button-primary flex flex-row justify-center p-4 rounded-3xl mb-0;
 }
 
-.input-text,
-.input-datetime-local,
-.input-toggle,
-.input-checkbox {
-  @apply surface rounded-xl border-2 py-1 px-2 focus-within:border-primary;
+.input-text-container,
+.input-datetime-local-container {
+  @apply rounded-xl border-[1px] py-1 px-2 focus-within:border-color-primary;
   transition: border-color 0.2s;
 }
 
-.input-text input[type='text'],
-.input-text input[type='password'],
-.input-text input[type='email'],
-.input-datetime-local input[type='datetime-local'] {
+.input-checkbox-container,
+.input-toggle-container {
+  @apply focus-within:border-color-primary;
+  transition: border-color 0.2s;
+}
+
+.input-text-container input,
+.input-datetime-local-container input {
   @apply w-full bg-inherit focus:outline-none;
 }
 

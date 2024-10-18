@@ -11,13 +11,14 @@ import { AuthModals } from './components/Auth/AuthModals';
 import { GlobalModals } from './components/GlobalModals';
 import { Gallery } from './components/Gallery/pages/Gallery';
 import { VerifyMagicLink } from './components/Auth/VerifyMagicLink';
+import { Surface } from './components/Utils/Surface';
 
 import config from '../../config.json';
 
 function App(): JSX.Element {
   return (
     <ApplicationContextProvider>
-      <div className="App">
+      <Surface className="App">
         <Toast />
         <AuthModals />
         <GlobalModals />
@@ -38,7 +39,7 @@ function App(): JSX.Element {
           </Routes>
           <Footer />
         </BrowserRouter>
-      </div>
+      </Surface>
     </ApplicationContextProvider>
   );
 }

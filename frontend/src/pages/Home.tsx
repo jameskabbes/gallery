@@ -7,9 +7,9 @@ import { ToastContext } from '../contexts/Toast';
 import { AuthContext } from '../contexts/Auth';
 import { InputCheckbox } from '../components/Form/InputCheckbox';
 import { InputDatetimeLocal } from '../components/Form/InputDatetimeLocal';
-import { Input } from '../components/Form/Input';
-import { Toggle } from '../components/Utils/Toggle';
 import { InputToggle } from '../components/Form/InputToggle';
+import { InputText } from '../components/Form/InputText';
+import { Surface } from '../components/Utils/Surface';
 
 const API_PATH = '/home/page/';
 const API_METHOD = 'get';
@@ -23,16 +23,14 @@ function Home() {
   let toastContext = useContext(ToastContext);
   const authContext = useContext(AuthContext);
 
-  const [state, setState] = useState<InputState<boolean>>({
-    ...defaultInputState<boolean>(false),
-  });
-
-  const [state2, setState2] = useState<InputState<Date>>({
-    ...defaultInputState<Date>(new Date()),
-  });
-
   const [toggleState, setToggleState] = useState<InputState<boolean>>({
     ...defaultInputState<boolean>(false),
+  });
+  const [textState, setTextState] = useState<InputState<string>>({
+    ...defaultInputState<string>(''),
+  });
+  const [dateState, setDateState] = useState<InputState<Date>>({
+    ...defaultInputState<Date>(new Date()),
   });
 
   const {
@@ -49,56 +47,77 @@ function Home() {
 
   return (
     <div>
-      <div className="surface grid grid-cols-2 gap-8 m-4 card">
-        <div className="surface card">
+      <Surface className="grid grid-cols-2 gap-8 m-4 card">
+        <Surface className="card">
           <p>Text in here</p>
-        </div>
-        <div className="surface card">
+        </Surface>
+        <Surface className="card">
+          <div className="card">
+            <p>asdf</p>
+            <Surface className="card bg-green-400">
+              <div className="bg-inherit p-2">
+                <p className="bg-transparent">Text in here</p>
+              </div>
+            </Surface>
+          </div>
           <p>Text in here</p>
-        </div>
-        <div className="surface card">
+        </Surface>
+        <Surface className="card">
           <p>Text in here</p>
-        </div>
-        <div className="surface card">
+        </Surface>
+        <Surface className="card">
           <p>Text in here</p>
-        </div>
-        <div className="surface card">
+        </Surface>
+        <Surface className="card">
           <p>Text in here</p>
-        </div>
+        </Surface>
         <button className="button-primary">button here!</button>
+        <InputText
+          state={textState}
+          setState={setTextState}
+          id={'text-input-1'}
+          type={'text'}
+        />
+        <InputDatetimeLocal
+          state={dateState}
+          setState={setDateState}
+          id={'datetime-local'}
+          type="datetime-local"
+          showValidity={true}
+        />
+
         <div className="w-full surface grid grid-cols-2 gap-8 mx-4 my-4 border-2 p-2 card">
           <div className="surface card">
-            <p>Text in here</p>
-          </div>
-          <div className="surface card">
-            <p>Text in here</p>
-          </div>
-          <div className="surface card">
-            <p>Text in here</p>
-          </div>
-          <div className="surface card">
-            <p>Text in here</p>
-          </div>
-          <div className="surface card">
-            <p>Text in here</p>
+            <p>Text in sadfasdfasdf</p>
+            <InputCheckbox
+              state={toggleState}
+              setState={setToggleState}
+              id="checkbox-9"
+              type={'checkbox'}
+            />
           </div>
           <button className="button-primary">button here!</button>
+          <InputCheckbox
+            state={toggleState}
+            setState={setToggleState}
+            id="checkbox-4"
+            type={'checkbox'}
+          />
         </div>
-      </div>
-
-      <InputToggle
-        state={state}
-        setState={setState}
-        id={'checkbox-toggle'}
-        type={'checkbox'}
-      />
+        <InputToggle
+          state={toggleState}
+          setState={setToggleState}
+          id={'checkbox-toggle'}
+          type={'checkbox'}
+        />
+      </Surface>
 
       <div className="surface mx-4 my-4 p-4 rounded-2xl">
         <p>More text</p>
         <InputToggle
-          state={state}
-          setState={setState}
-          id={'checkbox-toggle'}
+          state={toggleState}
+          setState={setToggleState}
+          id={'checkbox-toggle-123'}
           type={'checkbox'}
           showValidity={true}
         />
@@ -129,73 +148,46 @@ function Home() {
         <p>not logged in</p>
       )}
 
-      <InputCheckbox
-        state={state}
-        setState={setState}
-        id={'checkbox'}
-        type={'checkbox'}
-      />
-      <p>{state.value}</p>
-      <InputDatetimeLocal
-        state={state2}
-        setState={setState2}
-        id={'datetime-local'}
-        type="datetime-local"
-        showValidity={true}
-      />
-      <Toggle
-        state={toggleState.value}
-        handleToggle={() =>
-          setToggleState((prevState) => ({
-            ...prevState,
-            value: !prevState.value,
-          }))
-        }
-      />
-
-      {state2.value instanceof Date ? (
-        <p>{state2.value.toUTCString()}</p>
-      ) : (
-        <p>Invalid date</p>
-      )}
-
-      <button
-        className="button-primary"
-        onClick={() => {
-          setState2((prevState) => ({
-            ...prevState,
-            value: new Date(
-              prevState.value.getTime() + 7 * 24 * 60 * 60 * 1000
-            ),
-          }));
-        }}
-      >
-        Increment Date by 7 Days
-      </button>
-
       <div className="surface card m-8">
-        {/* <h1>
-          <Toggle
-            state={toggleState['value']}
-            handleToggle={() =>
-              setToggleState((prevState) => ({
-                ...prevState,
-                value: !prevState.value,
-              }))
-            }
+        <h1>
+          <InputCheckbox
+            state={toggleState}
+            setState={setToggleState}
+            id={'toggle-sadf'}
+            type={'checkbox'}
+            showValidity={true}
           />
         </h1>
-        <p>
-          <Toggle
-            state={toggleState['value']}
-            handleToggle={() =>
-              setToggleState((prevState) => ({
-                ...prevState,
-                value: !prevState.value,
-              }))
-            }
+        <h2>
+          <InputCheckbox
+            state={toggleState}
+            setState={setToggleState}
+            id={'toggle-2'}
+            type={'checkbox'}
           />
-        </p> */}
+        </h2>
+        <h3>
+          <InputCheckbox
+            state={toggleState}
+            setState={setToggleState}
+            id={'toggle-3'}
+            type={'checkbox'}
+          />
+        </h3>
+        <h4>
+          <InputCheckbox
+            state={toggleState}
+            setState={setToggleState}
+            id={'toggle-3'}
+            type={'checkbox'}
+          />
+        </h4>
+        <InputCheckbox
+          state={toggleState}
+          setState={setToggleState}
+          id={'toggle-3'}
+          type={'checkbox'}
+        />
 
         <h1>h1</h1>
         <h2>h2</h2>

@@ -3,10 +3,14 @@ import { IoAperture } from 'react-icons/io5';
 import { Menu } from './Menu';
 import { Link } from 'react-router-dom';
 import { DarkModeToggle } from './DarkModeToggle';
+import { Surface } from './Utils/Surface';
 
 function Header(): JSX.Element {
   return (
-    <header className="sticky top-0 surface bg-opacity-50 border-b-[1px]">
+    <Surface
+      as="header"
+      className="sticky top-0 surface bg-opacity-50 border-b-[1px]"
+    >
       <div className="max-w-screen-2xl mx-auto flex flex-row justify-between items-center px-2 py-2">
         <Link to="/">
           <h5 className="mb-0">
@@ -21,7 +25,7 @@ function Header(): JSX.Element {
           <Menu />
         </div>
       </div>
-    </header>
+    </Surface>
   );
 }
 

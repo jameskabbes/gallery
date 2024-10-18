@@ -8,7 +8,7 @@ interface ValidityCheckReturn {
 
 interface BaseInputProps<T> {
   state: InputState<T>;
-  setState: (state: InputState<T>) => void;
+  setState: React.Dispatch<React.SetStateAction<InputState<T>>>;
   id: string;
   type: string;
   checkValidity?: boolean;

@@ -5,6 +5,7 @@ import './Modal.css';
 import { useEscapeKey } from '../../contexts/EscapeKey';
 import { useClickOutside } from '../../utils/useClickOutside';
 import { IoClose } from 'react-icons/io5';
+import { Surface } from '../Utils/Surface';
 
 const timeouts = {
   enter: 200,
@@ -39,25 +40,23 @@ function Modals({ activeModal, overlayStyle = {} }: Props) {
           <>
             {activeModal.component !== null && (
               <div className="absolute h-full w-full flex flex-col justify-center items-center p-2">
-                <div
-                  className="surface card"
-                  style={activeModal.contentStyle}
-                  ref={ref}
-                >
-                  {activeModal.includeExitButton && (
-                    <div className="flex flex-row justify-end">
-                      <button>
-                        <p>
-                          <IoClose
-                            onClick={() => activeModal.onExit()}
-                            className="cursor-pointer"
-                          />
-                        </p>
-                      </button>
-                    </div>
-                  )}
-                  {activeModal.component}
-                </div>
+                <Surface className="card" style={activeModal.contentStyle}>
+                  <div ref={ref}>
+                    {activeModal.includeExitButton && (
+                      <div className="flex flex-row justify-end">
+                        <button>
+                          <p>
+                            <IoClose
+                              onClick={() => activeModal.onExit()}
+                              className="cursor-pointer"
+                            />
+                          </p>
+                        </button>
+                      </div>
+                    )}
+                    {activeModal.component}
+                  </div>
+                </Surface>
               </div>
             )}
           </>

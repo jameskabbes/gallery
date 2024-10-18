@@ -9,11 +9,10 @@ import { AuthModalsContext } from '../../contexts/AuthModals';
 import { ExtractResponseTypes } from '../../types';
 import { callApi } from '../../utils/Api';
 import { IoWarning } from 'react-icons/io5';
-import { InputState } from '../../types';
 import { IoPersonAddSharp } from 'react-icons/io5';
 import { IoMail } from 'react-icons/io5';
 import { useLogInWithGoogle } from './LogInWithGoogle';
-import { InputToggle } from '../Form/InputToggle';
+import { InputCheckbox } from '../Form/InputCheckbox';
 
 const API_ENDPOINT = '/auth/login/password/';
 const API_METHOD = 'post';
@@ -97,9 +96,9 @@ function LogIn() {
     <div id="login">
       <div className="flex">
         <div className="flex-1">
-          <form onSubmit={handleLogin} className="flex flex-col space-y-4">
+          <form onSubmit={handleLogin} className="flex flex-col space-y-6">
             <header>Login</header>
-            <section>
+            <section className="space-y-2">
               <label htmlFor="login-username">Username or Email</label>
               <InputText
                 state={logInContext.username}
@@ -116,10 +115,8 @@ function LogIn() {
                 checkAvailability={false}
               />
             </section>
-            <section>
-              <div className="flex flex-row justify-between items-center">
-                <label htmlFor="login-password">Password</label>
-              </div>
+            <section className="space-y-2">
+              <label htmlFor="login-password">Password</label>
               <InputText
                 state={logInContext.password}
                 setState={logInContext.setPassword}
@@ -139,7 +136,7 @@ function LogIn() {
             <section>
               <div className="flex flex-row justify-between items-center">
                 <div className="flex flex-row items-center space-x-2">
-                  <InputToggle
+                  <InputCheckbox
                     state={logInContext.staySignedIn}
                     setState={logInContext.setStaySignedIn}
                     type="checkbox"

@@ -3,6 +3,7 @@ import { BaseInputProps, Input } from './Input';
 
 import { isDatetimeValid } from '../../services/isDatetimeValid';
 import { CheckOrX } from './CheckOrX';
+import { Surface } from '../Utils/Surface';
 
 type T = Date;
 
@@ -13,7 +14,7 @@ interface InputDatetimeLocalProps extends BaseInputProps<T> {
 function InputDatetimeLocal({
   state,
   setState,
-  showValidity = true,
+  showValidity = false,
   ...rest
 }: InputDatetimeLocalProps) {
   const [dateString, setDateString] = useState<string>('');
@@ -31,7 +32,7 @@ function InputDatetimeLocal({
   }, [state.value]);
 
   return (
-    <div className="flex flex-row items-center space-x-2 input-datetime-local">
+    <Surface className="flex flex-row items-center space-x-2 input-datetime-local-container">
       <Input
         state={state}
         setState={setState}
@@ -57,12 +58,14 @@ function InputDatetimeLocal({
         }}
         {...rest}
       />
-      {showValidity && (
-        <span title={state.error || ''}>
-          <CheckOrX status={state.status} />
-        </span>
-      )}
-    </div>
+      <div className="flex-1">
+        {showValidity && showValidity == true && (
+          <span title={state.error || ''}>
+            <CheckOrX status={state.status} />
+          </span>
+        )}
+      </div>
+    </Surface>
   );
 }
 
