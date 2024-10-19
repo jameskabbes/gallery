@@ -6,6 +6,7 @@ import { BaseInputProps, Input, InputProps } from './Input';
 
 import { InputCheckboxProps, InputCheckbox } from './InputCheckbox';
 import tailwindConfig from '../../../tailwind.config';
+import { Surface } from '../Utils/Surface';
 
 interface InputToggleProps extends InputCheckboxProps {}
 
@@ -17,7 +18,7 @@ function InputToggle({
 }: InputToggleProps) {
   return (
     <div className="flex flex-row items-center space-x-2">
-      <div
+      <Surface
         onClick={() => setState({ ...state, value: !state.value })}
         className="rounded-full p-1 surface border-[1px] "
         style={{ height: '1.5rem', width: '3rem', position: 'relative' }}
@@ -39,7 +40,7 @@ function InputToggle({
             showValidity={false}
           />
         </div>
-      </div>
+      </Surface>
       {showValidity && (
         <span title={state.error || ''}>
           <CheckOrX status={state.status} />

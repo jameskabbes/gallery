@@ -227,6 +227,11 @@ interface ConfirmationModal {
   cancelText?: string;
 }
 
+interface SurfaceContextValue {
+  level: number;
+  mode: 'even' | 'odd';
+}
+
 export {
   ExtractResponseTypes,
   CallApiProps,
@@ -258,4 +263,5 @@ export {
   DataContext,
   EscapeKeyContext,
   ConfirmationModal,
+  SurfaceContextValue,
 };

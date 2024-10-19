@@ -10,6 +10,8 @@ import { InputDatetimeLocal } from '../components/Form/InputDatetimeLocal';
 import { InputToggle } from '../components/Form/InputToggle';
 import { InputText } from '../components/Form/InputText';
 import { Surface } from '../components/Utils/Surface';
+import tailwindConfig from '../../tailwind.config';
+import colors from 'tailwindcss/colors';
 
 const API_PATH = '/home/page/';
 const API_METHOD = 'get';
@@ -52,14 +54,12 @@ function Home() {
           <p>Text in here</p>
         </Surface>
         <Surface className="card">
-          <div className="card">
+          <Surface className="card">
             <p>asdf</p>
-            <Surface className="card bg-green-400">
-              <div className="bg-inherit p-2">
-                <p className="bg-transparent">Text in here</p>
-              </div>
+            <Surface className="card bg-green-400 ">
+              <p>Text in here</p>
             </Surface>
-          </div>
+          </Surface>
           <p>Text in here</p>
         </Surface>
         <Surface className="card">
@@ -85,9 +85,12 @@ function Home() {
           type="datetime-local"
           showValidity={true}
         />
+        <h2 className="bg-inherit">
+          <span className="loader"></span>
+        </h2>
 
-        <div className="w-full surface grid grid-cols-2 gap-8 mx-4 my-4 border-2 p-2 card">
-          <div className="surface card">
+        <Surface className="w-full surface grid grid-cols-2 gap-8 card">
+          <Surface className="card">
             <p>Text in sadfasdfasdf</p>
             <InputCheckbox
               state={toggleState}
@@ -95,7 +98,7 @@ function Home() {
               id="checkbox-9"
               type={'checkbox'}
             />
-          </div>
+          </Surface>
           <button className="button-primary">button here!</button>
           <InputCheckbox
             state={toggleState}
@@ -103,7 +106,7 @@ function Home() {
             id="checkbox-4"
             type={'checkbox'}
           />
-        </div>
+        </Surface>
         <InputToggle
           state={toggleState}
           setState={setToggleState}
@@ -112,7 +115,7 @@ function Home() {
         />
       </Surface>
 
-      <div className="surface mx-4 my-4 p-4 rounded-2xl">
+      <Surface className="card mx-4">
         <p>More text</p>
         <InputToggle
           state={toggleState}
@@ -121,7 +124,7 @@ function Home() {
           type={'checkbox'}
           showValidity={true}
         />
-      </div>
+      </Surface>
 
       <button
         className="button-primary"
@@ -148,7 +151,7 @@ function Home() {
         <p>not logged in</p>
       )}
 
-      <div className="surface card m-8">
+      <Surface className="surface card m-8">
         <h1>
           <InputCheckbox
             state={toggleState}
@@ -203,7 +206,7 @@ function Home() {
         <button className="button-secondary" disabled={true}>
           hello there
         </button>
-      </div>
+      </Surface>
     </div>
   );
 }
