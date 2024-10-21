@@ -1,6 +1,16 @@
 import { useEffect, useRef } from 'react';
 import { SurfaceContextValue } from '../types';
-import { useSurfaceContext } from '../contexts/Surface';
+import { SurfaceContext } from '../contexts/Surface';
+
+function getNextSurface(
+  surface: SurfaceContextValue,
+  overrideMode: SurfaceContextValue['mode']
+): SurfaceContextValue {
+  return {
+    level: surface.level + 1,
+    mode: overrideMode ? overrideMode : surface.mode === 'a' ? 'b' : 'a',
+  };
+}
 
 function useSurface(
   surface: SurfaceContextValue
@@ -18,4 +28,4 @@ function useSurface(
   return ref;
 }
 
-export { useSurface };
+export { useSurface, getNextSurface };

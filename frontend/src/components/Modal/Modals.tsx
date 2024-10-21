@@ -40,8 +40,12 @@ function Modals({ activeModal, overlayStyle = {} }: Props) {
           <>
             {activeModal.component !== null && (
               <div className="absolute h-full w-full flex flex-col justify-center items-center p-2">
-                <Surface className="card" style={activeModal.contentStyle}>
-                  <div ref={ref}>
+                <Surface>
+                  <div
+                    ref={ref}
+                    className="card"
+                    style={activeModal.contentStyle}
+                  >
                     {activeModal.includeExitButton && (
                       <div className="flex flex-row justify-end">
                         <button>

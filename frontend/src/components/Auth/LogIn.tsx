@@ -13,6 +13,9 @@ import { IoPersonAddSharp } from 'react-icons/io5';
 import { IoMail } from 'react-icons/io5';
 import { useLogInWithGoogle } from './LogInWithGoogle';
 import { InputCheckbox } from '../Form/InputCheckbox';
+import { Surface } from '../Utils/Surface';
+import ButtonSubmit from '../Utils/Button/ButtonSubmit';
+import Button2 from '../Utils/Button/Button2';
 
 const API_ENDPOINT = '/auth/login/password/';
 const API_METHOD = 'post';
@@ -171,7 +174,7 @@ function LogIn() {
                 <p>{logInContext.error}</p>
               </div>
             )}
-            <button type="submit" disabled={!logInContext.valid}>
+            <Surface as="button" type="submit" disabled={!logInContext.valid}>
               <span className="leading-none mb-0">
                 {logInContext.loading ? (
                   <span className="loader-secondary"></span>
@@ -179,7 +182,7 @@ function LogIn() {
                   'Login'
                 )}
               </span>
-            </button>
+            </Surface>
           </form>
           <div className="flex flex-row items-center space-x-2 my-2">
             <div className="surface flex-1 border-t-[1px]" />
@@ -188,27 +191,29 @@ function LogIn() {
           </div>
 
           <div className="space-y-1">
-            <button
-              className="button-secondary w-full relative"
+            <Surface
+              as="button"
+              className="button2 w-full relative"
               onClick={() => {
                 authModalsContext.setActiveModalType('signUp');
               }}
             >
               <p className="text-center mb-0 ">Sign Up</p>
               <IoPersonAddSharp className="absolute left-4 top-1/2 transform -translate-y-1/2" />
-            </button>
+            </Surface>
 
-            <button
-              className="button-secondary w-full relative"
+            <Surface
+              as="button"
+              className="button2 w-full relative"
               onClick={() => {
                 authModalsContext.setActiveModalType('logInWithEmail');
               }}
             >
               <p className="text-center mb-0 ">Login with email</p>
               <IoMail className="absolute left-4 top-1/2 transform -translate-y-1/2" />
-            </button>
-            <button
-              className="button-secondary w-full relative"
+            </Surface>
+            <Button2
+              className="w-full relative"
               onClick={() => {
                 logInWithGoogle();
               }}
@@ -220,7 +225,7 @@ function LogIn() {
                 className="absolute left-4 top-1/2 transform -translate-y-1/2"
                 style={{ width: '1rem', height: '1rem' }}
               />
-            </button>
+            </Button2>
           </div>
         </div>
       </div>

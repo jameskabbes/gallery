@@ -10,8 +10,9 @@ import { InputDatetimeLocal } from '../components/Form/InputDatetimeLocal';
 import { InputToggle } from '../components/Form/InputToggle';
 import { InputText } from '../components/Form/InputText';
 import { Surface } from '../components/Utils/Surface';
-import tailwindConfig from '../../tailwind.config';
-import colors from 'tailwindcss/colors';
+import Button1 from '../components/Utils/Button/Button1';
+import Button2 from '../components/Utils/Button/Button2';
+import Button from '../components/Utils/Button/Button';
 
 const API_PATH = '/home/page/';
 const API_METHOD = 'get';
@@ -48,30 +49,18 @@ function Home() {
   );
 
   return (
-    <div>
-      <Surface className="grid grid-cols-2 gap-8 m-4 card">
-        <Surface className="card">
-          <p>Text in here</p>
+    <Surface>
+      <div className="grid grid-cols-2 gap-8 m-4 card">
+        <Surface>
+          <div className="card">
+            <p>Text in here</p>
+          </div>
         </Surface>
-        <Surface className="card">
-          <Surface className="card">
-            <p>asdf</p>
-            <Surface className="card bg-green-400 ">
-              <p>Text in here</p>
-            </Surface>
-          </Surface>
-          <p>Text in here</p>
+        <Surface>
+          <div className="card">
+            <p>Text in here</p>
+          </div>
         </Surface>
-        <Surface className="card">
-          <p>Text in here</p>
-        </Surface>
-        <Surface className="card">
-          <p>Text in here</p>
-        </Surface>
-        <Surface className="card">
-          <p>Text in here</p>
-        </Surface>
-        <button className="button-primary">button here!</button>
         <InputText
           state={textState}
           setState={setTextState}
@@ -85,11 +74,34 @@ function Home() {
           type="datetime-local"
           showValidity={true}
         />
-        <h2 className="bg-inherit">
-          <span className="loader"></span>
-        </h2>
+        <Button1>Button1</Button1>
+        <Button2>Button2</Button2>
+
+        {/* <div className="flex flex-row">
+          <h4 className="mb-0">
+            <Surface className="p-2 border-2 rounded-full flex flex-row">
+              <Surface className="loader1"></Surface>
+            </Surface>
+          </h4>
+          <div className="flex-1"></div>
+        </div> */}
+      </div>
+    </Surface>
+  );
+
+  /* <Surface className="bg-green-500  dark:bg-green-500 p-4">
+          <p>sadfasdasf</p>
+        </Surface>
+
+        <h4>
+          <Surface className="loader2"></Surface>
+        </h4>
 
         <Surface className="w-full surface grid grid-cols-2 gap-8 card">
+          <h2>
+            <Surface className="loader1"></Surface>
+          </h2>
+
           <Surface className="card">
             <p>Text in sadfasdfasdf</p>
             <InputCheckbox
@@ -99,7 +111,9 @@ function Home() {
               type={'checkbox'}
             />
           </Surface>
-          <button className="button-primary">button here!</button>
+          <Button1>another button here</Button1>
+          <Button2>another button here</Button2>
+          <Button1>another button here</Button1>
           <InputCheckbox
             state={toggleState}
             setState={setToggleState}
@@ -126,8 +140,7 @@ function Home() {
         />
       </Surface>
 
-      <button
-        className="button-primary"
+      <Button1
         onClick={() => {
           let toastId = toastContext.makePending({ message: 'making toast' });
           const toastTypes = ['error', 'info', 'success'] as const;
@@ -143,7 +156,7 @@ function Home() {
         }}
       >
         Add Random Toast
-      </button>
+      </Button1>
 
       {authContext.state.user ? (
         <p>Logged in as {authContext.state.user.email}</p>
@@ -151,7 +164,6 @@ function Home() {
         <p>not logged in</p>
       )}
 
-      <Surface className="surface card m-8">
         <h1>
           <InputCheckbox
             state={toggleState}
@@ -198,17 +210,14 @@ function Home() {
         <h4>h4</h4>
         <h5>h5</h5>
         <h6>h6</h6>
-        <button className="button-primary">hello there</button>
-        <button className="button-primary" disabled={true}>
+        <button className="button1">hello there</button>
+        <button className="button1" disabled={true}>
           hello there
         </button>
         <button className="button-secondary">hello there</button>
         <button className="button-secondary" disabled={true}>
           hello there
-        </button>
-      </Surface>
-    </div>
-  );
+        </button> */
 }
 
 export { Home };

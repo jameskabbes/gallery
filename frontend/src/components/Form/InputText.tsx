@@ -44,26 +44,28 @@ function InputText({
   }
 
   return (
-    <Surface className="flex flex-row items-center space-x-2 input-text-container">
-      <Input
-        state={state}
-        setState={setState}
-        value={state.value}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-          setState({
-            ...state,
-            value: e.target.value,
-          });
-        }}
-        isValid={isValidWrapper}
-        {...rest}
-      />
-      <div className="flex-1">
-        {showValidity && (
-          <span title={state.error || ''}>
-            <CheckOrX status={state.status} />
-          </span>
-        )}
+    <Surface>
+      <div className="flex flex-row items-center space-x-2 input-text-container">
+        <Input
+          state={state}
+          setState={setState}
+          value={state.value}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            setState({
+              ...state,
+              value: e.target.value,
+            });
+          }}
+          isValid={isValidWrapper}
+          {...rest}
+        />
+        <div className="flex-1">
+          {showValidity && (
+            <span title={state.error || ''}>
+              <CheckOrX status={state.status} />
+            </span>
+          )}
+        </div>
       </div>
     </Surface>
   );

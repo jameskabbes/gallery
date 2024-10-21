@@ -16,6 +16,7 @@ import { isEmailAvailable } from '../../services/api/isEmailAvailable';
 import { isPasswordValid } from '../../services/api/isPasswordValid';
 import { InputText } from '../Form/InputText';
 import { IoWarning } from 'react-icons/io5';
+import { Surface } from '../Utils/Surface';
 
 const API_ENDPOINT = '/auth/signup/';
 const API_METHOD = 'post';
@@ -121,7 +122,7 @@ function SignUp() {
         <div className="flex-1">
           <form onSubmit={handleLogin} className="flex flex-col space-y-2">
             <header>Sign Up</header>
-            <div>
+            <section>
               <label htmlFor="sign-up-email">Email</label>
               <InputText
                 state={signUpContext.email}
@@ -140,8 +141,8 @@ function SignUp() {
                 isAvailable={isEmailAvailable}
                 isValid={isEmailValid}
               />
-            </div>
-            <div>
+            </section>
+            <section>
               <label htmlFor="sign-up-password">Password</label>
               <InputText
                 state={signUpContext.password}
@@ -159,8 +160,8 @@ function SignUp() {
                 checkAvailability={false}
                 isValid={isPasswordValid}
               />
-            </div>
-            <div>
+            </section>
+            <section>
               <label htmlFor="sign-up-confirmPassword">Confirm Password</label>
               <InputText
                 state={signUpContext.confirmPassword}
@@ -177,24 +178,25 @@ function SignUp() {
                 type="password"
                 checkAvailability={false}
               />
-            </div>
-            <div className="mt-8"></div>
-            {signUpContext.error && (
-              <div className="flex flex-row justify-center space-x-2">
-                <p className="rounded-full p-1 text-light leading-none bg-error-500">
-                  <span>
-                    <IoWarning
-                      style={{
-                        animation: 'scaleUp 0.2s ease-in-out',
-                      }}
-                    />
-                  </span>
-                </p>
-                <p>{signUpContext.error}</p>
-              </div>
-            )}
+            </section>
+            <section className="mt-8">
+              {signUpContext.error && (
+                <div className="flex flex-row justify-center space-x-2">
+                  <p className="rounded-full p-1 text-light leading-none bg-error-500">
+                    <span>
+                      <IoWarning
+                        style={{
+                          animation: 'scaleUp 0.2s ease-in-out',
+                        }}
+                      />
+                    </span>
+                  </p>
+                  <p>{signUpContext.error}</p>
+                </div>
+              )}
+            </section>
 
-            <button type="submit" disabled={!signUpContext.valid}>
+            <Surface as="button" type="submit" disabled={!signUpContext.valid}>
               <span className="mb-0 leading-none">
                 {signUpContext.loading ? (
                   <span className="loader-secondary"></span>
@@ -202,7 +204,7 @@ function SignUp() {
                   'Sign Up'
                 )}
               </span>
-            </button>
+            </Surface>
           </form>
           {/* <GoogleLogin onSuccess={() => {}}></GoogleLogin> */}
           <div className="flex flex-row justify-center mt-2">

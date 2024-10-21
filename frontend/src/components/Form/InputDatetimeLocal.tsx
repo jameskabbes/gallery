@@ -32,38 +32,40 @@ function InputDatetimeLocal({
   }, [state.value]);
 
   return (
-    <Surface className="flex flex-row items-center space-x-2 input-datetime-local-container">
-      <Input
-        state={state}
-        setState={setState}
-        value={dateString}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-          const dateString = e.target.value;
+    <Surface>
+      <div className="flex flex-row items-center space-x-2 input-datetime-local-container">
+        <Input
+          state={state}
+          setState={setState}
+          value={dateString}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            const dateString = e.target.value;
 
-          const checkValidReturn = isDatetimeValid(dateString);
+            const checkValidReturn = isDatetimeValid(dateString);
 
-          if (checkValidReturn.valid) {
-            setState({
-              ...state,
-              value: new Date(dateString),
-            });
-          } else {
-            setState({
-              ...state,
-              value: null,
-              status: 'invalid',
-              error: checkValidReturn.message,
-            });
-          }
-        }}
-        {...rest}
-      />
-      <div className="flex-1">
-        {showValidity && showValidity == true && (
-          <span title={state.error || ''}>
-            <CheckOrX status={state.status} />
-          </span>
-        )}
+            if (checkValidReturn.valid) {
+              setState({
+                ...state,
+                value: new Date(dateString),
+              });
+            } else {
+              setState({
+                ...state,
+                value: null,
+                status: 'invalid',
+                error: checkValidReturn.message,
+              });
+            }
+          }}
+          {...rest}
+        />
+        <div className="flex-1">
+          {showValidity && showValidity == true && (
+            <span title={state.error || ''}>
+              <CheckOrX status={state.status} />
+            </span>
+          )}
+        </div>
       </div>
     </Surface>
   );

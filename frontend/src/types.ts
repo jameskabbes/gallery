@@ -229,8 +229,15 @@ interface ConfirmationModal {
 
 interface SurfaceContextValue {
   level: number;
-  mode: 'even' | 'odd';
+  mode: 'a' | 'b';
 }
+
+// Define a generic props interface for any HTML element
+type UtilPatternProps<T extends keyof JSX.IntrinsicElements> =
+  React.ComponentProps<T> & {
+    children: React.ReactNode;
+    className?: string;
+  };
 
 export {
   ExtractResponseTypes,
@@ -264,4 +271,5 @@ export {
   EscapeKeyContext,
   ConfirmationModal,
   SurfaceContextValue,
+  UtilPatternProps,
 };

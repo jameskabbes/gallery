@@ -4,36 +4,11 @@
 
 /* Base Layer */
 @layer base {
-  .mode-a-bg-color {
-    @apply bg-a-bg-light dark:bg-a-bg-dark;
+  [data-surface-mode='a'] {
+    @apply bg-a-bg-light dark:bg-a-bg-dark border-a-border-light dark:border-a-border-dark text-a-text-light dark:text-a-text-dark;
   }
-  .mode-a-border-color {
-    @apply border-a-border-light dark:border-a-border-dark;
-  }
-  .mode-a-text-color {
-    @apply text-a-text-light dark:text-a-text-dark;
-  }
-  .mode-a {
-    @apply mode-a-bg-color mode-a-border-color mode-a-text-color;
-  }
-  .mode-b-bg-color {
-    @apply bg-b-bg-light dark:bg-b-bg-dark;
-  }
-  .mode-b-border-color {
-    @apply border-b-border-light dark:border-b-border-dark;
-  }
-  .mode-b-text-color {
-    @apply text-b-text-light dark:text-b-text-dark;
-  }
-  .mode-b {
-    @apply mode-b-bg-color mode-b-border-color mode-b-text-color;
-  }
-
-  [data-surface-mode='even'] {
-    @apply mode-a;
-  }
-  [data-surface-mode='odd'] {
-    @apply mode-b;
+  [data-surface-mode='b'] {
+    @apply bg-b-bg-light dark:bg-b-bg-dark border-b-border-light dark:border-b-border-dark text-b-text-light dark:text-b-text-dark;
   }
 
   .bg-color-primary {
@@ -101,21 +76,30 @@
 
 @layer components {
   .loader-base {
-    @apply inline-block rounded-full;
+    @apply block rounded-full;
     border-width: 0.15em;
+    border-style: solid;
     height: 1em;
     width: 1em;
     box-sizing: border-box;
-    vertical-align: top;
     animation: rotation 1s ease-in-out infinite;
   }
-
-  .loader {
-    @apply loader-base border-t-primary-light dark:border-t-primary-dark;
+  .loader1,
+  .loader2 {
+    @apply loader-base;
   }
 
-  .loader-secondary {
-    /* @apply loader-base border-primary border-t-light dark:border-t-dark; */
+  [data-surface-mode='a'].loader1 {
+    @apply border-b-bg-light dark:border-b-bg-dark border-t-primary-light dark:border-t-primary-dark bg-b-bg-light dark:bg-b-bg-dark;
+  }
+  [data-surface-mode='b'].loader1 {
+    @apply border-a-bg-light dark:border-a-bg-dark border-t-primary-light dark:border-t-primary-dark bg-a-bg-light dark:bg-a-bg-dark;
+  }
+  [data-surface-mode='a'].loader2 {
+    @apply border-b-bg-light dark:border-b-bg-dark border-t-dark dark:border-t-light bg-b-bg-light dark:bg-b-bg-dark;
+  }
+  [data-surface-mode='b'].loader2 {
+    @apply border-a-bg-light dark:border-a-bg-dark border-t-dark dark:border-t-light bg-a-bg-light dark:bg-a-bg-dark;
   }
 
   .card {
@@ -123,28 +107,13 @@
   }
 
   .button-base {
-    @apply rounded-xl p-2  hover:border-color-invert;
+    @apply rounded-xl p-2;
   }
-
   .button-base:active {
     @apply transform scale-95;
   }
-
-  .button-disabled {
-    @apply bg-opacity-40 text-opacity-40;
-    pointer-events: none;
-  }
-
   .button-base:disabled {
-    @apply button-disabled;
-  }
-
-  .button-primary {
-    @apply button-base bg-color-primary  text-light-lighter;
-  }
-
-  .button-secondary {
-    @apply button-base border-[1px];
+    @apply opacity-50 pointer-events-none;
   }
 }
 
@@ -224,7 +193,7 @@ form button[type='submit'] {
 }
 
 button[type='submit'] {
-  @apply button-primary flex flex-row justify-center p-4 rounded-3xl mb-0;
+  @apply flex flex-row justify-center p-4 rounded-3xl mb-0;
 }
 
 .input-text-container,

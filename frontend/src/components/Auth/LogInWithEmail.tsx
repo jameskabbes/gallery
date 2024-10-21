@@ -12,6 +12,7 @@ import { LogInWithEmailContext as LogInWithEmailContextType } from '../../types'
 import { isEmailValid } from '../../services/api/isEmailValid';
 import { InputText } from '../Form/InputText';
 import { InputState } from '../../types';
+import { Surface } from '../Utils/Surface';
 
 const API_ENDPOINT = '/auth/login/email-magic-link/';
 const API_METHOD = 'post';
@@ -91,7 +92,11 @@ function LogInWithEmail() {
               If an account with this email exists, we will send a login link to
               your email.
             </span>
-            <button type="submit" disabled={!logInWithEmailContext.valid}>
+            <Surface
+              as="button"
+              type="submit"
+              disabled={!logInWithEmailContext.valid}
+            >
               <span className="mb-0 leading-none">
                 {loading ? (
                   <span className="loader-secondary"></span>
@@ -99,7 +104,7 @@ function LogInWithEmail() {
                   'Send Email'
                 )}
               </span>
-            </button>
+            </Surface>
           </form>
           <h6
             className="cursor-pointer underline text-center mt-2"
@@ -126,9 +131,9 @@ function LogInWithEmail() {
               Check your inbox for a secure login link.
             </p>
           </section>
-          <button type="submit" ref={okayButtonRef}>
+          <Surface as="button" type="submit" ref={okayButtonRef}>
             Okay!
-          </button>
+          </Surface>
         </form>
       ) : null}
     </div>

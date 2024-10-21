@@ -10,6 +10,7 @@ import { IoWarning } from 'react-icons/io5';
 import { Toast } from '../../types';
 import './Toast.css';
 import tailwindConfig from '../../../tailwind.config';
+import { Surface } from '../Utils/Surface';
 
 const IconMapping: Map<Toast['type'], React.ReactNode> = new Map([
   ['success', <IoCheckmark />],
@@ -52,7 +53,7 @@ function Toast() {
 
           return (
             <CSSTransition key={toastId} classNames="toast" timeout={timeouts}>
-              <div
+              <Surface
                 id={toastId}
                 className="card flex flex-row items-center space-x-1 m-2"
                 style={{ height: `${height}px` }}
@@ -73,7 +74,7 @@ function Toast() {
                   <span>{IconMapping.get(toast.type)}</span>
                 </p>
                 <p>{toast.message}</p>
-              </div>
+              </Surface>
             </CSSTransition>
           );
         })}
