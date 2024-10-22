@@ -821,11 +821,11 @@ async def get_pages_profile(authorization: typing.Annotated[GetAuthorizationRetu
         get_authorization(raise_exceptions=True))]) -> GetProfilePageResponse:
 
     with Session(c.db_engine) as session:
-        user = models.User.get_one_by_id(session, authorization.user.id)
+        user = await models.User.get_one_by_id(session, authorization.user.id)
         if user is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND,
                                 detail=models.User.not_found_message())
-        # convert user to models.UserPrivate
+
         return GetProfilePageResponse(
             **get_auth(authorization).model_dump(),
             user=models.UserPrivate.model_validate(user)
