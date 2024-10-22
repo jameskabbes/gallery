@@ -195,26 +195,26 @@ function LogIn() {
                 authModalsContext.setActiveModalType('signUp');
               }}
             >
-              <p className="text-center mb-0 ">Sign Up</p>
+              <h6 className="text-center mb-0 ">Sign Up</h6>
               <IoPersonAddSharp className="absolute left-4 top-1/2 transform -translate-y-1/2" />
             </Button2>
 
             <Button2
               className="w-full relative"
               onClick={() => {
-                authModalsContext.setActiveModalType('signUp');
+                authModalsContext.setActiveModalType('logInWithEmail');
               }}
             >
-              <p className="text-center mb-0 ">Login with email</p>
+              <h6 className="text-center mb-0 ">Login with email</h6>
               <IoMail className="absolute left-4 top-1/2 transform -translate-y-1/2" />
             </Button2>
             <Button2
               className="w-full relative"
               onClick={() => {
-                authModalsContext.setActiveModalType('signUp');
+                logInWithGoogle();
               }}
             >
-              <p className="text-center mb-0 ">Login with Google</p>
+              <h6 className="text-center mb-0 ">Login with Google</h6>
               <img
                 src="/google_g_logo.svg"
                 alt="google_logo"

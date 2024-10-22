@@ -2,7 +2,7 @@ import React from 'react';
 import { IoClose } from 'react-icons/io5';
 import { IoCheckmark } from 'react-icons/io5';
 import { InputStatus } from '../../types';
-import { Surface } from '../Utils/Surface';
+import { Loader2 } from '../Utils/Loader';
 
 function CheckOrX({ status }: { status: InputStatus }) {
   switch (status) {
@@ -11,7 +11,7 @@ function CheckOrX({ status }: { status: InputStatus }) {
     case 'invalid':
       return <IoClose className="text-red-500" />;
     case 'loading':
-      return <Surface className="loader1 mb-0"></Surface>;
+      return <Loader2 />;
   }
 }
 

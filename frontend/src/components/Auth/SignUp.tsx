@@ -17,6 +17,7 @@ import { isPasswordValid } from '../../services/api/isPasswordValid';
 import { InputText } from '../Form/InputText';
 import { IoWarning } from 'react-icons/io5';
 import { Surface } from '../Utils/Surface';
+import { ButtonSubmit } from '../Utils/Button';
 
 const API_ENDPOINT = '/auth/signup/';
 const API_METHOD = 'post';
@@ -195,16 +196,15 @@ function SignUp() {
                 </div>
               )}
             </section>
-
-            <Surface as="button" type="submit" disabled={!signUpContext.valid}>
-              <span className="mb-0 leading-none">
+            <ButtonSubmit disabled={!signUpContext.valid}>
+              <span className="leading-none mb-0">
                 {signUpContext.loading ? (
                   <span className="loader-secondary"></span>
                 ) : (
                   'Sign Up'
                 )}
               </span>
-            </Surface>
+            </ButtonSubmit>
           </form>
           {/* <GoogleLogin onSuccess={() => {}}></GoogleLogin> */}
           <div className="flex flex-row justify-center mt-2">
