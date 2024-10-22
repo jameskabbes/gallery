@@ -187,7 +187,7 @@ form .input-checkbox-container {
 }
 
 form button[type='submit'] {
-  @apply h4;
+  @apply h3;
 }
 
 .input-text-container,

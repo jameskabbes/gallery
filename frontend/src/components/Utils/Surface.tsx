@@ -1,20 +1,9 @@
-import React, {
-  ElementType,
-  ComponentPropsWithRef,
-  useMemo,
-  forwardRef,
-  isValidElement,
-  cloneElement,
-} from 'react';
+import React from 'react';
 import {
-  useSurface,
-  getNextSurface,
   useSurfaceProvider,
   UseSurfaceProviderProps,
 } from '../../utils/useSurface';
 import { SurfaceContext } from '../../contexts/Surface';
-import { SurfaceContextValue } from '../../types';
-
 import combineRefs from '../../utils/combineRefs';
 
 interface Props extends UseSurfaceProviderProps {

@@ -18,9 +18,8 @@ import {
   ButtonSubmit,
 } from '../components/Utils/Button';
 
-import Card from '../components/Utils/Card/Card';
-import Loader1 from '../components/Utils/Loader/Loader1';
-import Loader2 from '../components/Utils/Loader/Loader2';
+import { Card1 } from '../components/Utils/Card';
+import { Loader1, Loader2 } from '../components/Utils/Loader';
 
 function Styles() {
   let deviceContext = useContext(DeviceContext);
@@ -44,7 +43,7 @@ function Styles() {
       </header>
       <div className="grid grid-cols-1 md:grid-cols-2">
         <section className="flex-1">
-          <Card className="m-4">
+          <Card1 className="m-2">
             <h2>Buttons</h2>
             <div className="flex flex-row space-x-2">
               <div className="flex-1 flex flex-col space-y-4">
@@ -60,8 +59,8 @@ function Styles() {
                 <ButtonSubmit disabled={true}>ButtonSubmit</ButtonSubmit>
               </div>
             </div>
-          </Card>
-          <Card className="flex flex-col space-y-2 m-4">
+          </Card1>
+          <Card1 className="flex flex-col space-y-2 m-2">
             <h2>Loaders</h2>
             <div className="flex flex-col border-inherit space-y-2">
               <div className="flex flex-row justify-around">
@@ -88,10 +87,10 @@ function Styles() {
                 </div>
               </Surface>
             </div>
-          </Card>
+          </Card1>
         </section>
         <section className="flex-1 flex-col">
-          <Card className="flex flex-col space-y-2 m-4">
+          <Card1 className="flex flex-col space-y-2 m-2">
             <form
               action="submit
             "
@@ -139,8 +138,8 @@ function Styles() {
                 />
               </section>
             </form>
-          </Card>
-          <Card className="flex flex-col space-y-2 m-4">
+          </Card1>
+          <Card1 className="flex flex-col space-y-2 m-2">
             <h2>Toast</h2>
 
             <Button1
@@ -164,7 +163,7 @@ function Styles() {
             >
               Add Random Toast
             </Button1>
-          </Card>
+          </Card1>
         </section>
       </div>
     </div>
