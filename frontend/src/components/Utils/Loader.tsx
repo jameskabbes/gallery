@@ -6,8 +6,8 @@ const createStyledLoader = createStyledSurfaceComponentCreator<
   React.HTMLAttributes<HTMLSpanElement>
 >('span');
 
-const Loader1 = createStyledLoader('loader-base loader1');
-const Loader2 = createStyledLoader('loader-base loader2');
-const Loader3 = createStyledLoader('loader-base loader3');
+const Loader1 = createStyledLoader('loader1');
+const Loader2 = createStyledLoader('loader2');
+const Loader3 = createStyledLoader('loader3');
 
 export { Loader1, Loader2, Loader3, createStyledLoader };

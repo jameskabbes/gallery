@@ -81,7 +81,7 @@ export default {
         warning: colors.yellow,
       },
       fontFamily: {
-        sans: ['Roboto', 'system-ui', 'sans-serif'],
+        sans: ['Noto Sans', 'system-ui', 'sans-serif'],
         serif: ['Merriweather', 'serif'],
         mono: ['Roboto Mono', 'monospace'],
       },

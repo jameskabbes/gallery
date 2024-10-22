@@ -14,7 +14,7 @@ import { IoMail } from 'react-icons/io5';
 import { useLogInWithGoogle } from './LogInWithGoogle';
 import { InputCheckbox } from '../Form/InputCheckbox';
 import { Button2, ButtonSubmit } from '../Utils/Button';
-import { Loader1, Loader2, Loader3 } from '../Utils/Loader';
+import { Loader3 } from '../Utils/Loader';
 
 const API_ENDPOINT = '/auth/login/password/';
 const API_METHOD = 'post';

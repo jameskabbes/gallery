@@ -6,7 +6,6 @@ import { callApi } from '../../utils/Api';
 import openapi_schema from '../../../../openapi_schema.json';
 
 import { SignUpContext } from '../../contexts/SignUp';
-import { SignUpContext as SignUpContextType } from '../../types';
 import { AuthContext } from '../../contexts/Auth';
 import { AuthModalsContext } from '../../contexts/AuthModals';
 import { ToastContext } from '../../contexts/Toast';

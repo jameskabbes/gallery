@@ -19,7 +19,7 @@ import {
 } from '../components/Utils/Button';
 
 import { Card1 } from '../components/Utils/Card';
-import { Loader1, Loader2, Loader3 } from '../components/Utils/Loader';
+import { Loader1, Loader2 } from '../components/Utils/Loader';
 
 function Styles() {
   let deviceContext = useContext(DeviceContext);
@@ -39,7 +39,7 @@ function Styles() {
   return (
     <div>
       <header>
-        <h1>Styles</h1>
+        <h1>Design tokens</h1>
       </header>
       <div className="grid grid-cols-1 md:grid-cols-2">
         <section className="flex-1">
@@ -66,7 +66,6 @@ function Styles() {
               <div className="flex flex-row justify-around">
                 <h4>Loader1</h4>
                 <h4>Loader2</h4>
-                <h4>Loader3</h4>
               </div>
 
               <div className="flex flex-row justify-around border-inherit border-2 rounded-lg p-2">
@@ -76,9 +75,6 @@ function Styles() {
                 <h1 className="mb-0">
                   <Loader2 />
                 </h1>
-                <h1 className="mb-0 bg-primary-light dark:bg-primary-dark">
-                  <Loader3 />
-                </h1>
               </div>
               <Surface>
                 <div className="flex flex-row justify-around border-2 rounded-lg p-2">
@@ -87,9 +83,6 @@ function Styles() {
                   </h1>
                   <h1 className="mb-0">
                     <Loader2 />
-                  </h1>
-                  <h1 className="mb-0 bg-primary-light dark:bg-primary-dark">
-                    <Loader3 />
                   </h1>
                 </div>
               </Surface>
@@ -115,6 +108,11 @@ function Styles() {
                   type={'text'}
                   minLength={1}
                   checkValidity={true}
+                  isAvailable={async (value) => {
+                    await new Promise((resolve) => setTimeout(resolve, 50));
+                    return true;
+                  }}
+                  checkAvailability={true}
                 />
               </section>
               <section className="space-y-2">
@@ -181,6 +179,16 @@ function Styles() {
             >
               Add Random Toast
             </Button1>
+          </Card1>
+          <Card1 className="flex flex-col space-y-2 m-2">
+            <h2 className="mb-12">Headings</h2>
+            <h1>Heading 1</h1>
+            <h2>Heading 2</h2>
+            <h3>Heading 3</h3>
+            <h4>Heading 4</h4>
+            <h5>Heading 5</h5>
+            <h6>Heading 6</h6>
+            <p>Paragraph</p>
           </Card1>
         </section>
       </div>
