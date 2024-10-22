@@ -7,6 +7,7 @@ import { UpdatePassword } from './UpdatePassword';
 import { UpdateUser } from './UpdateUser';
 import { AuthModalsContext } from '../../contexts/AuthModals';
 import { UpdateUsername } from './UpdateUsername';
+import { Button1 } from '../Utils/Button';
 
 const API_PATH = '/profile/page/';
 const API_METHOD = 'get';
@@ -31,6 +32,8 @@ function Profile() {
     true
   );
 
+  console.log(apiData, loading, response);
+
   if (loading || response.status == 200) {
     const data = apiData as ResponseTypesByStatus['200'];
 
@@ -50,13 +53,14 @@ function Profile() {
     );
   } else {
     return (
-      <div className="flex-grow flex flex-col items-center justify-center">
-        <button
-          className="button-primary"
-          onClick={() => authModalsContext.toggleModal('logIn')}
-        >
-          <p>Login to continue</p>
-        </button>
+      <div className="h-full w-full flex flex-col justify-center items-center">
+        <div className="flex-row justify-center">
+          <Button1
+            onClick={() => authModalsContext.setActiveModalType('logIn')}
+          >
+            Login to continue
+          </Button1>
+        </div>
       </div>
     );
   }

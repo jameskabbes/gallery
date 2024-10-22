@@ -8,5 +8,6 @@ const createStyledLoader = createStyledSurfaceComponentCreator<
 
 const Loader1 = createStyledLoader('loader-base loader1');
 const Loader2 = createStyledLoader('loader-base loader2');
+const Loader3 = createStyledLoader('loader-base loader3');
 
-export { Loader1, Loader2, createStyledLoader };
+export { Loader1, Loader2, Loader3, createStyledLoader };

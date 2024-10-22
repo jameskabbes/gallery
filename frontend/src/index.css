@@ -33,13 +33,15 @@
     @apply text-light dark:text-dark;
   }
 
+  #root,
   body,
-  html {
+  html,
+  #app {
     height: 100%;
   }
 
-  .App {
-    @apply font-sans min-h-screen;
+  #app {
+    @apply font-sans flex flex-col;
   }
 
   h1,
@@ -99,6 +101,12 @@
   }
   [data-surface-mode='b'].loader2 {
     @apply border-a-bg-light dark:border-a-bg-dark border-t-dark dark:border-t-light bg-a-bg-light dark:bg-a-bg-dark;
+  }
+  [data-surface-mode='a'].loader3 {
+    @apply border-primary-light dark:border-primary-dark bg-primary-light dark:bg-primary-dark border-t-a-border-light dark:border-t-a-border-dark;
+  }
+  [data-surface-mode='b'].loader3 {
+    @apply border-primary-light dark:border-primary-dark bg-primary-light dark:bg-primary-dark border-t-b-border-light dark:border-t-b-border-dark;
   }
 
   .button-base {
@@ -187,7 +195,7 @@ form .input-checkbox-container {
 }
 
 form button[type='submit'] {
-  @apply h3;
+  @apply h4;
 }
 
 .input-text-container,

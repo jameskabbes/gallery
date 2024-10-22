@@ -19,7 +19,7 @@ import {
 } from '../components/Utils/Button';
 
 import { Card1 } from '../components/Utils/Card';
-import { Loader1, Loader2 } from '../components/Utils/Loader';
+import { Loader1, Loader2, Loader3 } from '../components/Utils/Loader';
 
 function Styles() {
   let deviceContext = useContext(DeviceContext);
@@ -66,6 +66,7 @@ function Styles() {
               <div className="flex flex-row justify-around">
                 <h4>Loader1</h4>
                 <h4>Loader2</h4>
+                <h4>Loader3</h4>
               </div>
 
               <div className="flex flex-row justify-around border-inherit border-2 rounded-lg p-2">
@@ -74,6 +75,9 @@ function Styles() {
                 </h1>
                 <h1 className="mb-0">
                   <Loader2 />
+                </h1>
+                <h1 className="mb-0 bg-primary-light dark:bg-primary-dark">
+                  <Loader3 />
                 </h1>
               </div>
               <Surface>
@@ -84,6 +88,9 @@ function Styles() {
                   <h1 className="mb-0">
                     <Loader2 />
                   </h1>
+                  <h1 className="mb-0 bg-primary-light dark:bg-primary-dark">
+                    <Loader3 />
+                  </h1>
                 </div>
               </Surface>
             </div>
@@ -92,8 +99,10 @@ function Styles() {
         <section className="flex-1 flex-col">
           <Card1 className="flex flex-col space-y-2 m-2">
             <form
-              action="submit
-            "
+              action="submit"
+              onSubmit={(e) => {
+                e.preventDefault();
+              }}
               className="flex flex-col space-y-6"
             >
               <header>Form Title</header>
@@ -104,6 +113,8 @@ function Styles() {
                   setState={setTextState}
                   id={'text-input-1'}
                   type={'text'}
+                  minLength={1}
+                  checkValidity={true}
                 />
               </section>
               <section className="space-y-2">
@@ -137,6 +148,13 @@ function Styles() {
                   showValidity={true}
                 />
               </section>
+              <ButtonSubmit
+                disabled={
+                  toggleState.status != 'valid' || textState.status != 'valid'
+                }
+              >
+                Submit
+              </ButtonSubmit>
             </form>
           </Card1>
           <Card1 className="flex flex-col space-y-2 m-2">

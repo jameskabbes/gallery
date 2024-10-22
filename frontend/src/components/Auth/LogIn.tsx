@@ -14,6 +14,7 @@ import { IoMail } from 'react-icons/io5';
 import { useLogInWithGoogle } from './LogInWithGoogle';
 import { InputCheckbox } from '../Form/InputCheckbox';
 import { Button2, ButtonSubmit } from '../Utils/Button';
+import { Loader1, Loader2, Loader3 } from '../Utils/Loader';
 
 const API_ENDPOINT = '/auth/login/password/';
 const API_METHOD = 'post';
@@ -173,13 +174,11 @@ function LogIn() {
               </div>
             )}
             <ButtonSubmit disabled={!logInContext.valid}>
-              <span className="leading-none mb-0">
-                {logInContext.loading ? (
-                  <span className="loader-secondary"></span>
-                ) : (
-                  'Login'
-                )}
-              </span>
+              {logInContext.loading ? (
+                <Loader3 />
+              ) : (
+                <span className="leading-none">Login</span>
+              )}
             </ButtonSubmit>
           </form>
           <div className="flex flex-row items-center space-x-2 my-2">

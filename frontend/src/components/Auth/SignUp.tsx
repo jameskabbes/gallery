@@ -16,8 +16,8 @@ import { isEmailAvailable } from '../../services/api/isEmailAvailable';
 import { isPasswordValid } from '../../services/api/isPasswordValid';
 import { InputText } from '../Form/InputText';
 import { IoWarning } from 'react-icons/io5';
-import { Surface } from '../Utils/Surface';
 import { ButtonSubmit } from '../Utils/Button';
+import { Loader3 } from '../Utils/Loader';
 
 const API_ENDPOINT = '/auth/signup/';
 const API_METHOD = 'post';
@@ -197,13 +197,11 @@ function SignUp() {
               )}
             </section>
             <ButtonSubmit disabled={!signUpContext.valid}>
-              <span className="leading-none mb-0">
-                {signUpContext.loading ? (
-                  <span className="loader-secondary"></span>
-                ) : (
-                  'Sign Up'
-                )}
-              </span>
+              {signUpContext.loading ? (
+                <Loader3 />
+              ) : (
+                <span className="leading-none">Login</span>
+              )}
             </ButtonSubmit>
           </form>
           {/* <GoogleLogin onSuccess={() => {}}></GoogleLogin> */}

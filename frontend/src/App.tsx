@@ -20,7 +20,7 @@ function App(): JSX.Element {
   return (
     <ApplicationContextProvider>
       <Surface>
-        <main className="App">
+        <main id="app">
           <Toast />
           <AuthModals />
           <GlobalModals />
