@@ -232,13 +232,6 @@ interface SurfaceContextValue {
   mode: 'a' | 'b';
 }
 
-// Define a generic props interface for any HTML element
-type UtilPatternProps<T extends keyof JSX.IntrinsicElements> =
-  React.ComponentProps<T> & {
-    children?: React.ReactNode;
-    className?: string;
-  };
-
 export {
   ExtractResponseTypes,
   CallApiProps,
@@ -271,5 +264,4 @@ export {
   EscapeKeyContext,
   ConfirmationModal,
   SurfaceContextValue,
-  UtilPatternProps,
 };

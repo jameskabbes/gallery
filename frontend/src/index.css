@@ -104,8 +104,11 @@
   .button-base {
     @apply rounded-xl p-2;
   }
-  .button-base:active {
+  .button-base:hover {
     @apply transform scale-95;
+  }
+  .button-base:active {
+    @apply transform scale-90;
   }
   .button-base:disabled {
     @apply opacity-50 pointer-events-none;

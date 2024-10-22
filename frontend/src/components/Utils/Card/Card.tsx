@@ -1,18 +1,23 @@
-import React from 'react';
-import { UtilPatternProps } from '../../../types';
+import React, { forwardRef } from 'react';
 import { Surface } from '../Surface';
 
-type CardProps = UtilPatternProps<'div'>;
+type CardProps = React.HTMLAttributes<HTMLDivElement>;
 
-function Card({ children, className = '', ...rest }: CardProps) {
-  return (
-    <Surface>
-      <div className={`rounded-2xl border-[1px] p-2 ${className}`} {...rest}>
-        {children}
-      </div>
-    </Surface>
-  );
-}
+const Card = forwardRef<HTMLDivElement, CardProps>(
+  ({ children, className = '', ...rest }, ref) => {
+    return (
+      <Surface>
+        <div
+          ref={ref}
+          className={`rounded-2xl border-[1px] p-2 ${className}`}
+          {...rest}
+        >
+          {children}
+        </div>
+      </Surface>
+    );
+  }
+);
 
 export default Card;
 export { CardProps };

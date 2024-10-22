@@ -11,11 +11,13 @@ import { InputToggle } from '../components/Form/InputToggle';
 import { InputText } from '../components/Form/InputText';
 import { Surface } from '../components/Utils/Surface';
 
-import Button from '../components/Utils/Button/Button';
-import Button1 from '../components/Utils/Button/Button1';
-import Button2 from '../components/Utils/Button/Button2';
-import Button3 from '../components/Utils/Button/Button3';
-import ButtonSubmit from '../components/Utils/Button/ButtonSubmit';
+import {
+  Button1,
+  Button2,
+  Button3,
+  ButtonSubmit,
+} from '../components/Utils/Button';
+
 import Card from '../components/Utils/Card/Card';
 import Loader1 from '../components/Utils/Loader/Loader1';
 import Loader2 from '../components/Utils/Loader/Loader2';
@@ -42,14 +44,22 @@ function Styles() {
       </header>
       <div className="grid grid-cols-1 md:grid-cols-2">
         <section className="flex-1">
-          <Card className="flex flex-col space-y-2 m-4">
+          <Card className="m-4">
             <h2>Buttons</h2>
-
-            <Button>Button</Button>
-            <Button1>Button1</Button1>
-            <Button2>Button2</Button2>
-            <Button3>Button3</Button3>
-            <ButtonSubmit>ButtonSubmit</ButtonSubmit>
+            <div className="flex flex-row space-x-2">
+              <div className="flex-1 flex flex-col space-y-4">
+                <Button1>Button1</Button1>
+                <Button2>Button2</Button2>
+                <Button3>Button3</Button3>
+                <ButtonSubmit>ButtonSubmit</ButtonSubmit>
+              </div>
+              <div className="flex-1 flex flex-col space-y-4">
+                <Button1 disabled={true}>Button1</Button1>
+                <Button2 disabled={true}>Button2</Button2>
+                <Button3 disabled={true}>Button3</Button3>
+                <ButtonSubmit disabled={true}>ButtonSubmit</ButtonSubmit>
+              </div>
+            </div>
           </Card>
           <Card className="flex flex-col space-y-2 m-4">
             <h2>Loaders</h2>
@@ -82,20 +92,53 @@ function Styles() {
         </section>
         <section className="flex-1 flex-col">
           <Card className="flex flex-col space-y-2 m-4">
-            <h2>Forms</h2>
-            <InputText
-              state={textState}
-              setState={setTextState}
-              id={'text-input-1'}
-              type={'text'}
-            />
-            <InputDatetimeLocal
-              state={dateState}
-              setState={setDateState}
-              id={'datetime-local'}
-              type="datetime-local"
-              showValidity={true}
-            />
+            <form
+              action="submit
+            "
+              className="flex flex-col space-y-6"
+            >
+              <header>Form Title</header>
+              <section className="space-y-2">
+                <label htmlFor="text-input-1">Text Input</label>
+                <InputText
+                  state={textState}
+                  setState={setTextState}
+                  id={'text-input-1'}
+                  type={'text'}
+                />
+              </section>
+              <section className="space-y-2">
+                <label htmlFor="datetime-local">Datetime Local Input</label>
+                <InputDatetimeLocal
+                  state={dateState}
+                  setState={setDateState}
+                  id={'datetime-local'}
+                  type="datetime-local"
+                  showValidity={true}
+                />
+              </section>
+
+              <section className="space-y-2">
+                <label htmlFor="toggle-1">Toggle Input</label>
+                <InputToggle
+                  state={toggleState}
+                  setState={setToggleState}
+                  id={'toggle-1'}
+                  type={'checkbox'}
+                  showValidity={true}
+                />
+              </section>
+              <section className="space-y-2">
+                <label htmlFor="checkbox-1">Checkbox Input</label>
+                <InputCheckbox
+                  state={toggleState}
+                  setState={setToggleState}
+                  id={'checkbox-1'}
+                  type={'checkbox'}
+                  showValidity={true}
+                />
+              </section>
+            </form>
           </Card>
           <Card className="flex flex-col space-y-2 m-4">
             <h2>Toast</h2>

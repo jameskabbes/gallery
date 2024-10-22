@@ -1,8 +1,7 @@
 import React from 'react';
-import { UtilPatternProps } from '../../../types';
 import { Surface } from '../Surface';
 
-type LoaderProps = UtilPatternProps<'span'>;
+type LoaderProps = React.HTMLAttributes<HTMLSpanElement>;
 
 function Loader({ children, className = '', ...rest }: LoaderProps) {
   return (

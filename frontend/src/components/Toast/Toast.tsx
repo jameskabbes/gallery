@@ -10,14 +10,14 @@ import { IoWarning } from 'react-icons/io5';
 import { Toast } from '../../types';
 import './Toast.css';
 import tailwindConfig from '../../../tailwind.config';
-import { Surface } from '../Utils/Surface';
 import Card from '../Utils/Card/Card';
+import Loader2 from '../Utils/Loader/Loader2';
 
 const IconMapping: Map<Toast['type'], React.ReactNode> = new Map([
   ['success', <IoCheckmark />],
   ['info', <IoAlert />],
   ['error', <IoWarning />],
-  ['pending', <span className="loader"></span>],
+  ['pending', <Loader2 />],
 ]);
 
 const height = 60;
