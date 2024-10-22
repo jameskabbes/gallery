@@ -235,7 +235,7 @@ interface SurfaceContextValue {
 // Define a generic props interface for any HTML element
 type UtilPatternProps<T extends keyof JSX.IntrinsicElements> =
   React.ComponentProps<T> & {
-    children: React.ReactNode;
+    children?: React.ReactNode;
     className?: string;
   };
 

@@ -12,6 +12,7 @@ import { GlobalModals } from './components/GlobalModals';
 import { Gallery } from './components/Gallery/pages/Gallery';
 import { VerifyMagicLink } from './components/Auth/VerifyMagicLink';
 import { Surface } from './components/Utils/Surface';
+import Styles from './pages/Styles';
 
 import config from '../../config.json';
 
@@ -29,6 +30,7 @@ function App(): JSX.Element {
               <Route path="/" element={<Home />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/styles" element={<Styles />} />
               <Route path="/settings/:selection" element={<Settings />} />
               <Route path="/galleries/:gallery_id" element={<Gallery />} />
               <Route path="/404" element={<p>404</p>} />
