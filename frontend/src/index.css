@@ -62,7 +62,7 @@
 
   h1,
   .h1 {
-    @apply mb-4 text-5xl md:text-6xl font-semibold tracking-wider;
+    @apply mb-4 text-5xl md:text-6xl font-semibold;
   }
 
   h2,
