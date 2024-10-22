@@ -29,6 +29,9 @@
   .border-color-invert {
     @apply border-dark dark:border-light;
   }
+  .text-color-invert {
+    @apply text-light dark:text-dark;
+  }
 
   body,
   html {
@@ -84,10 +87,6 @@
     box-sizing: border-box;
     animation: rotation 1s ease-in-out infinite;
   }
-  .loader1,
-  .loader2 {
-    @apply loader-base;
-  }
 
   [data-surface-mode='a'].loader1 {
     @apply border-b-bg-light dark:border-b-bg-dark border-t-primary-light dark:border-t-primary-dark bg-b-bg-light dark:bg-b-bg-dark;
@@ -100,10 +99,6 @@
   }
   [data-surface-mode='b'].loader2 {
     @apply border-a-bg-light dark:border-a-bg-dark border-t-dark dark:border-t-light bg-a-bg-light dark:bg-a-bg-dark;
-  }
-
-  .card {
-    @apply rounded-2xl border-[1px] p-2;
   }
 
   .button-base {
@@ -190,10 +185,6 @@ form .input-checkbox-container {
 
 form button[type='submit'] {
   @apply h4;
-}
-
-button[type='submit'] {
-  @apply flex flex-row justify-center p-4 rounded-3xl mb-0;
 }
 
 .input-text-container,

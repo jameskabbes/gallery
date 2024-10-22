@@ -1,18 +1,18 @@
 import React from 'react';
-import { UtilPatternProps } from '../../../types';
+import Button, { ButtonProps } from './Button';
 
 function Button1({
   children,
   className = '',
   ...rest
-}: UtilPatternProps<'button'>) {
+}: ButtonProps) {
   return (
-    <button
+    <Button
       className={`button-base bg-primary-light dark:bg-primary-dark  text-light-lighter ${className}`}
       {...rest}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 

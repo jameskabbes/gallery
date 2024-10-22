@@ -1,12 +1,12 @@
 import React from 'react';
-import { ButtonProps } from './Button';
 import Button1 from './Button1';
+import { ButtonProps } from './Button';
 
-function ButtonSubmit({ children }: ButtonProps) {
+function ButtonSubmit({ children, className = '', ...rest }: ButtonProps) {
   return (
     <Button1
       type="submit"
-      className="bg-primary-light dark:bg-primary-dark text-light-lighter"
+      className="flex flex-row justify-center p-4 rounded-3xl mb-0"
     >
       {children}
     </Button1>
