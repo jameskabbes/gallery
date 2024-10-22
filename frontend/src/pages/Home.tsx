@@ -12,7 +12,6 @@ import { InputText } from '../components/Form/InputText';
 import { Surface } from '../components/Utils/Surface';
 import Button1 from '../components/Utils/Button/Button1';
 import Button2 from '../components/Utils/Button/Button2';
-import Button from '../components/Utils/Button/Button';
 
 const API_PATH = '/home/page/';
 const API_METHOD = 'get';
@@ -75,7 +74,9 @@ function Home() {
           showValidity={true}
         />
         <Button1>Button1</Button1>
-        <Button2>Button2</Button2>
+        <Button2>
+          <p>Button2</p>
+        </Button2>
 
         {/* <div className="flex flex-row">
           <h4 className="mb-0">

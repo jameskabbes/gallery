@@ -6,8 +6,4 @@ const SurfaceContext = createContext<SurfaceContextValue>({
   mode: 'b',
 });
 
-function useSurfaceContext() {
-  return useContext(SurfaceContext);
-}
-
-export { SurfaceContext, useSurfaceContext };
+export { SurfaceContext };

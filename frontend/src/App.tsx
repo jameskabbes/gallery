@@ -18,27 +18,29 @@ import config from '../../config.json';
 function App(): JSX.Element {
   return (
     <ApplicationContextProvider>
-      <Surface className="App">
-        <Toast />
-        <AuthModals />
-        <GlobalModals />
-        <BrowserRouter>
-          <Header />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/settings/:selection" element={<Settings />} />
-            <Route path="/galleries/:gallery_id" element={<Gallery />} />
-            <Route path="/404" element={<p>404</p>} />
-            <Route path="*" element={<Navigate to="/404" />} />
-            <Route
-              path={`${config.magic_link_frontend_url}`}
-              element={<VerifyMagicLink />}
-            />
-          </Routes>
-          <Footer />
-        </BrowserRouter>
+      <Surface>
+        <main className="App">
+          <Toast />
+          <AuthModals />
+          <GlobalModals />
+          <BrowserRouter>
+            <Header />
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/settings/:selection" element={<Settings />} />
+              <Route path="/galleries/:gallery_id" element={<Gallery />} />
+              <Route path="/404" element={<p>404</p>} />
+              <Route path="*" element={<Navigate to="/404" />} />
+              <Route
+                path={`${config.magic_link_frontend_url}`}
+                element={<VerifyMagicLink />}
+              />
+            </Routes>
+            <Footer />
+          </BrowserRouter>
+        </main>
       </Surface>
     </ApplicationContextProvider>
   );

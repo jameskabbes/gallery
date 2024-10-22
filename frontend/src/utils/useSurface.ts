@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useContext, useEffect, useRef, RefObject, useMemo } from 'react';
 import { SurfaceContextValue } from '../types';
 import { SurfaceContext } from '../contexts/Surface';
 
@@ -12,10 +12,10 @@ function getNextSurface(
   };
 }
 
-function useSurface(
+function useSurface<T extends HTMLElement>(
   surface: SurfaceContextValue
-): React.RefObject<HTMLDivElement> {
-  const ref = useRef<HTMLDivElement>(null);
+): RefObject<T> {
+  const ref = useRef<T>(null);
   useEffect(() => {
     const element = ref.current;
     if (!element) {
@@ -28,4 +28,31 @@ function useSurface(
   return ref;
 }
 
-export { useSurface, getNextSurface };
+interface UseSurfaceProviderProps {
+  overrideMode?: SurfaceContextValue['mode'] | null;
+}
+
+function useSurfaceProvider<T extends HTMLElement>({
+  overrideMode = null,
+}: UseSurfaceProviderProps) {
+  const parentSurface = useContext(SurfaceContext);
+  const surface = getNextSurface(parentSurface, overrideMode);
+  const surfaceRef = useSurface<T>(surface);
+
+  const surfaceContextValue = useMemo<SurfaceContextValue>(
+    () => surface,
+    [surface]
+  );
+
+  return {
+    surfaceContextValue,
+    surfaceRef,
+  };
+}
+
+export {
+  useSurface,
+  useSurfaceProvider,
+  getNextSurface,
+  UseSurfaceProviderProps,
+};

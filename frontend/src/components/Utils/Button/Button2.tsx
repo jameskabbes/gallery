@@ -1,13 +1,17 @@
 import React from 'react';
-import Button, { ButtonProps } from './Button';
 import { Surface } from '../Surface';
+import { UtilPatternProps } from '../../../types';
 
-function Button2({ children, className = '', ...rest }: ButtonProps) {
+function Button2({
+  children,
+  className = '',
+  ...rest
+}: UtilPatternProps<'button'>) {
   return (
     <Surface>
-      <Button className={'border-[1px] ' + className} {...rest}>
+      <button className={'button-base border-[1px] ' + className} {...rest}>
         {children}
-      </Button>
+      </button>
     </Surface>
   );
 }
