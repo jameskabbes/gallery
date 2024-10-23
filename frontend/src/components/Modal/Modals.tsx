@@ -6,6 +6,7 @@ import { useEscapeKey } from '../../contexts/EscapeKey';
 import { useClickOutside } from '../../utils/useClickOutside';
 import { IoClose } from 'react-icons/io5';
 import { Card1 } from '../Utils/Card';
+import siteConfig from '../../../siteConfig.json';
 
 const timeouts = {
   enter: 200,
@@ -30,7 +31,10 @@ function Modals({ activeModal, overlayStyle = {} }: Props) {
       classNames="modal"
       unmountOnExit
     >
-      <TransitionGroup className="modal-overlay relative" style={overlayStyle}>
+      <TransitionGroup
+        className="modal-overlay relative"
+        style={{ zIndex: siteConfig.zIndex.modalOverlay, ...overlayStyle }}
+      >
         <CSSTransition
           in={activeModal.component !== null}
           key={activeModal.key || 'modal-content'}
@@ -40,7 +44,14 @@ function Modals({ activeModal, overlayStyle = {} }: Props) {
           <>
             {activeModal.component !== null && (
               <div className="absolute h-full w-full flex flex-col justify-center items-center p-2">
-                <Card1 ref={ref} style={activeModal.contentStyle} className="">
+                <Card1
+                  ref={ref}
+                  style={{
+                    zIndex: siteConfig.zIndex.modalContent,
+                    ...activeModal.contentStyle,
+                  }}
+                  className=""
+                >
                   {activeModal.includeExitButton && (
                     <div className="flex flex-row justify-end">
                       <button>

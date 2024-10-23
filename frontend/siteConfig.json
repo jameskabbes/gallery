@@ -1,1 +1,7 @@
-{}
+{
+  "zIndex": {
+    "modalOverlay": 99,
+    "modalContent": 101,
+    "toast": 100
+  }
+}

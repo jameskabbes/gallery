@@ -12,6 +12,7 @@ import './Toast.css';
 import tailwindConfig from '../../../tailwind.config';
 import { Card1 } from '../Utils/Card';
 import { Loader2 } from '../Utils/Loader';
+import siteConfig from '../../../siteConfig.json';
 
 const IconMapping: Map<Toast['type'], React.ReactNode> = new Map([
   ['success', <IoCheckmark />],
@@ -37,7 +38,10 @@ function Toast() {
   return (
     <div
       id="toast-container"
-      className="fixed bottom-4 right-4 flex flex-col space-y-2 w-80"
+      className="fixed bottom-4 right-4 flex flex-col space-y-2 w-80 z-50"
+      style={{
+        zIndex: siteConfig.zIndex.toast,
+      }}
     >
       <TransitionGroup>
         {Array.from(toastContext.state.toasts.keys()).map((toastId) => {
@@ -56,7 +60,7 @@ function Toast() {
             <CSSTransition key={toastId} classNames="toast" timeout={timeouts}>
               <Card1
                 id={`toast-${toastId}`}
-                className="card flex flex-row items-center space-x-1 m-2"
+                className="card flex flex-row items-center space-x-1 m-2 shadow-xl"
                 style={{ height: `${height}px` }}
                 onClick={() => {
                   toastContext.dispatch({ type: 'REMOVE', payload: toastId });

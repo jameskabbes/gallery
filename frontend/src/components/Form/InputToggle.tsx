@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 import { CheckOrX } from './CheckOrX';
-import { InputState } from '../../types';
-import { BaseInputProps, Input, InputProps } from './Input';
-
 import { InputCheckboxProps, InputCheckbox } from './InputCheckbox';
-import tailwindConfig from '../../../tailwind.config';
 import { Surface } from '../Utils/Surface';
 
 interface InputToggleProps extends InputCheckboxProps {}
@@ -21,7 +17,7 @@ function InputToggle({
       <Surface>
         <div
           onClick={() => setState({ ...state, value: !state.value })}
-          className="rounded-full p-1 surface border-[1px] "
+          className="input-toggle-container rounded-full p-1 surface border-[1px] "
           style={{ height: '1.5rem', width: '3rem', position: 'relative' }}
         >
           <div

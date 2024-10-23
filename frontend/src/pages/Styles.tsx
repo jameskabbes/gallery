@@ -19,7 +19,8 @@ import {
 } from '../components/Utils/Button';
 
 import { Card1 } from '../components/Utils/Card';
-import { Loader1, Loader2 } from '../components/Utils/Loader';
+import { Loader1, Loader2, Loader3 } from '../components/Utils/Loader';
+import { InputRadio } from '../components/Form/InputRadio';
 
 function Styles() {
   let deviceContext = useContext(DeviceContext);
@@ -29,11 +30,19 @@ function Styles() {
   const [toggleState, setToggleState] = useState<InputState<boolean>>({
     ...defaultInputState<boolean>(false),
   });
+  const [checkboxState, setCheckboxState] = useState<InputState<boolean>>({
+    ...defaultInputState<boolean>(false),
+  });
   const [textState, setTextState] = useState<InputState<string>>({
     ...defaultInputState<string>(''),
   });
   const [dateState, setDateState] = useState<InputState<Date>>({
     ...defaultInputState<Date>(new Date()),
+  });
+  const [radioState, setRadioState] = useState<
+    InputState<'Option 1' | 'Option 2' | 'Option 3'>
+  >({
+    ...defaultInputState<'Option 1' | 'Option 2' | 'Option 3'>('Option 1'),
   });
 
   return (
@@ -66,6 +75,7 @@ function Styles() {
               <div className="flex flex-row justify-around">
                 <h4>Loader1</h4>
                 <h4>Loader2</h4>
+                <h4>Loader3</h4>
               </div>
 
               <div className="flex flex-row justify-around border-inherit border-2 rounded-lg p-2">
@@ -75,6 +85,9 @@ function Styles() {
                 <h1 className="mb-0">
                   <Loader2 />
                 </h1>
+                <h1 className="mb-0 bg-gray-500">
+                  <Loader3 />
+                </h1>
               </div>
               <Surface>
                 <div className="flex flex-row justify-around border-2 rounded-lg p-2">
@@ -83,6 +96,9 @@ function Styles() {
                   </h1>
                   <h1 className="mb-0">
                     <Loader2 />
+                  </h1>
+                  <h1 className="mb-0 bg-gray-500">
+                    <Loader3 />
                   </h1>
                 </div>
               </Surface>
@@ -99,8 +115,8 @@ function Styles() {
               className="flex flex-col space-y-6"
             >
               <header>Form Title</header>
-              <section className="space-y-2">
-                <label htmlFor="text-input-1">Text Input</label>
+              <label>
+                <span>Text Input</span>
                 <InputText
                   state={textState}
                   setState={setTextState}
@@ -114,9 +130,9 @@ function Styles() {
                   }}
                   checkAvailability={true}
                 />
-              </section>
-              <section className="space-y-2">
-                <label htmlFor="datetime-local">Datetime Local Input</label>
+              </label>
+              <label>
+                <span>Datetime Local Input</span>
                 <InputDatetimeLocal
                   state={dateState}
                   setState={setDateState}
@@ -124,10 +140,10 @@ function Styles() {
                   type="datetime-local"
                   showValidity={true}
                 />
-              </section>
+              </label>
 
-              <section className="space-y-2">
-                <label htmlFor="toggle-1">Toggle Input</label>
+              <label>
+                <span>Toggle Input</span>
                 <InputToggle
                   state={toggleState}
                   setState={setToggleState}
@@ -135,17 +151,46 @@ function Styles() {
                   type={'checkbox'}
                   showValidity={true}
                 />
-              </section>
-              <section className="space-y-2">
-                <label htmlFor="checkbox-1">Checkbox Input</label>
+              </label>
+              <label>
+                <span>Checkbox Input</span>
                 <InputCheckbox
-                  state={toggleState}
-                  setState={setToggleState}
+                  state={checkboxState}
+                  setState={setCheckboxState}
                   id={'checkbox-1'}
                   type={'checkbox'}
                   showValidity={true}
                 />
-              </section>
+              </label>
+              <fieldset>
+                <label>
+                  <InputRadio
+                    value={'Option 1'}
+                    checked={radioState.value === 'Option 1'}
+                    setState={setRadioState}
+                  >
+                    <span>Option 1</span>
+                  </InputRadio>
+                </label>
+                <label>
+                  <InputRadio
+                    value={'Option 2'}
+                    checked={radioState.value === 'Option 2'}
+                    setState={setRadioState}
+                  >
+                    <span>Option 2</span>
+                  </InputRadio>
+                </label>
+                <label>
+                  <InputRadio
+                    value={'Option 3'}
+                    checked={radioState.value === 'Option 3'}
+                    setState={setRadioState}
+                  >
+                    <span>Option 3</span>
+                  </InputRadio>
+                </label>
+              </fieldset>
               <ButtonSubmit
                 disabled={
                   toggleState.status != 'valid' || textState.status != 'valid'

@@ -9,7 +9,8 @@ const localStoragePreference: DarkModeContextType['preference'] =
   ) as DarkModeContextType['preference']) || 'system';
 
 const DarkModeContext = createContext<DarkModeContextType>({
-  state: false,
+  state: null,
+  systemState: null,
   preference: localStoragePreference,
   setPreference: (preference: DarkModeContextType['preference']) => {},
 });
@@ -70,7 +71,9 @@ function DarkModeContextProvider({ children }: Props) {
   }, [preference, systemState]);
 
   return (
-    <DarkModeContext.Provider value={{ state, preference, setPreference }}>
+    <DarkModeContext.Provider
+      value={{ state, systemState, preference, setPreference }}
+    >
       {children}
     </DarkModeContext.Provider>
   );

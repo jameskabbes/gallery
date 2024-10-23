@@ -145,7 +145,6 @@
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.8); /* Semi-transparent black */
-    z-index: 1000; /* Ensure it is above other content */
   }
 }
 
@@ -176,18 +175,8 @@ form header {
   @apply h2 text-center;
 }
 
-form section {
-}
-
 form label {
-  @apply h4;
-}
-
-form .input-text-container,
-form .input-datetime-local-container,
-form .input-toggle-container,
-form .input-checkbox-container {
-  @apply h4;
+  @apply h5 mb-0;
 }
 
 form button[type='submit'] {
@@ -196,19 +185,22 @@ form button[type='submit'] {
 
 .input-text-container,
 .input-datetime-local-container {
-  @apply rounded-xl border-[1px] py-1 px-2 focus-within:border-color-primary;
-  transition: border-color 0.2s;
-}
-
-.input-checkbox-container,
-.input-toggle-container {
-  @apply focus-within:border-color-primary;
+  @apply rounded-xl border-[1px] py-1 px-2;
   transition: border-color 0.2s;
 }
 
 .input-text-container input,
 .input-datetime-local-container input {
   @apply w-full bg-inherit focus:outline-none;
+}
+
+.input-text-container,
+.input-datetime-local-container,
+.input-checkbox-container,
+.input-radio-container,
+.input-toggle-container {
+  @apply focus-within:border-color-primary hover:border-color-primary;
+  transition: border-color 0.2s;
 }
 
 @keyframes rotation {

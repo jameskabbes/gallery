@@ -74,9 +74,8 @@ function Menu() {
           >
             <ul className="flex flex-col space-y-1 m-2">
               {menuItems.map((item, index) => (
-                <Surface keepParentMode={true}>
+                <Surface keepParentMode={true} key={index}>
                   <li
-                    key={index}
                     className="flex flex-row p-2 cursor-pointer surface-hover rounded-sm"
                     onClick={item.onClick}
                   >

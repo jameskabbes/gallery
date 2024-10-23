@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-
 import { CheckOrX } from './CheckOrX';
-import { InputState } from '../../types';
-import { BaseInputProps, Input, InputProps } from './Input';
 import { Surface } from '../Utils/Surface';
+import { BaseInputProps, Input, InputProps } from './Input';
 
 type T = boolean;
 
@@ -21,7 +19,7 @@ function InputCheckbox({
     <div className="flex flex-row items-center space-x-2">
       <Surface>
         <div
-          className="input-checkbox-container hover:border-color-primary"
+          className="input-checkbox-container"
           onClick={() => setState((prev) => ({ ...prev, value: !prev.value }))}
           style={{
             borderRadius: '0.25em',
@@ -32,28 +30,30 @@ function InputCheckbox({
             padding: '0.1em',
           }}
         >
-          <Input
-            state={state}
-            setState={setState}
-            checked={state.value}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              let newValue: InputCheckboxProps['state']['value'] =
-                e.target.checked;
-              setState({
-                ...state,
-                value: newValue,
-              });
-            }}
-            className="opacity-0 absolute"
-            {...rest}
-          />
           <div
-            className={`h-full w-full ${state.value && 'bg-color-primary'} `}
+            className={`h-full w-full${state.value ? ' bg-color-primary' : ''}`}
             style={{
               transition: '0.1s',
               borderRadius: '0.125em',
             }}
-          ></div>
+          >
+            <Input
+              state={state}
+              setState={setState}
+              checked={state.value}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                let newValue: InputCheckboxProps['state']['value'] =
+                  e.target.checked;
+                setState({
+                  ...state,
+                  value: newValue,
+                });
+              }}
+              className="opacity-0 absolute"
+              type={'checkbox'}
+              {...rest}
+            />
+          </div>
         </div>
       </Surface>
       {showValidity && (

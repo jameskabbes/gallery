@@ -56,6 +56,7 @@ const defaultInputState = <T>(defaultValue: T): InputState<T> => ({
 
 interface DarkModeContext {
   state: boolean;
+  systemState: boolean;
   preference: 'light' | 'dark' | 'system';
   setPreference: (preference: 'light' | 'dark' | 'system') => void;
 }
