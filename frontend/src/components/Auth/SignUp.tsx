@@ -16,7 +16,7 @@ import { isPasswordValid } from '../../services/api/isPasswordValid';
 import { InputText } from '../Form/InputText';
 import { IoWarning } from 'react-icons/io5';
 import { ButtonSubmit } from '../Utils/Button';
-import { Loader3 } from '../Utils/Loader';
+import { Loader1, Loader3 } from '../Utils/Loader';
 
 const API_ENDPOINT = '/auth/signup/';
 const API_METHOD = 'post';
@@ -49,12 +49,14 @@ function SignUp() {
     signUpContext.setValid(
       signUpContext.email.status === 'valid' &&
         signUpContext.password.status === 'valid' &&
-        signUpContext.confirmPassword.status === 'valid'
+        signUpContext.confirmPassword.status === 'valid' &&
+        !signUpContext.loading
     );
   }, [
     signUpContext.email,
     signUpContext.password,
     signUpContext.confirmPassword,
+    signUpContext.loading,
   ]);
 
   useEffect(() => {
@@ -105,7 +107,7 @@ function SignUp() {
         const apiData = data as ResponseTypesByStatus['200'];
         authContext.updateFromApiResponse(apiData);
         toastContext.make({
-          message: 'Created new user: ' + apiData.auth.user.username,
+          message: 'Created new user',
           type: 'success',
         });
         authModalsContext.setActiveModalType(null);
@@ -122,86 +124,87 @@ function SignUp() {
         <div className="flex-1">
           <form onSubmit={handleLogin} className="flex flex-col space-y-2">
             <header>Sign Up</header>
-            <section>
-              <label htmlFor="sign-up-email">Email</label>
-              <InputText
-                state={signUpContext.email}
-                setState={signUpContext.setEmail}
-                id="sign-up-email"
-                minLength={
-                  openapi_schema.components.schemas.UserCreateAdmin.properties
-                    .email.minLength
-                }
-                maxLength={
-                  openapi_schema.components.schemas.UserCreateAdmin.properties
-                    .email.maxLength
-                }
-                type="email"
-                checkAvailability={true}
-                isAvailable={isEmailAvailable}
-                isValid={isEmailValid}
-              />
-            </section>
-            <section>
-              <label htmlFor="sign-up-password">Password</label>
-              <InputText
-                state={signUpContext.password}
-                setState={signUpContext.setPassword}
-                id="sign-up-password"
-                minLength={
-                  openapi_schema.components.schemas.UserCreateAdmin.properties
-                    .password.anyOf[0].minLength
-                }
-                maxLength={
-                  openapi_schema.components.schemas.UserCreateAdmin.properties
-                    .password.anyOf[0].maxLength
-                }
-                type="password"
-                checkAvailability={false}
-                isValid={isPasswordValid}
-              />
-            </section>
-            <section>
-              <label htmlFor="sign-up-confirmPassword">Confirm Password</label>
-              <InputText
-                state={signUpContext.confirmPassword}
-                setState={signUpContext.setConfirmPassword}
-                id="sign-up-confirmPassword"
-                minLength={
-                  openapi_schema.components.schemas.UserCreateAdmin.properties
-                    .password.anyOf[0].minLength
-                }
-                maxLength={
-                  openapi_schema.components.schemas.UserCreateAdmin.properties
-                    .password.anyOf[0].maxLength
-                }
-                type="password"
-                checkAvailability={false}
-              />
-            </section>
-            <section className="mt-8">
-              {signUpContext.error && (
-                <div className="flex flex-row justify-center space-x-2">
-                  <p className="rounded-full p-1 text-light leading-none bg-error-500">
-                    <span>
-                      <IoWarning
-                        style={{
-                          animation: 'scaleUp 0.2s ease-in-out',
-                        }}
-                      />
-                    </span>
-                  </p>
-                  <p>{signUpContext.error}</p>
-                </div>
-              )}
-            </section>
-            <ButtonSubmit disabled={!signUpContext.valid}>
+            <fieldset className="flex flex-col space-y-2">
+              <label>
+                <span>Email</span>
+                <InputText
+                  state={signUpContext.email}
+                  setState={signUpContext.setEmail}
+                  id="sign-up-email"
+                  minLength={
+                    openapi_schema.components.schemas.UserCreateAdmin.properties
+                      .email.minLength
+                  }
+                  maxLength={
+                    openapi_schema.components.schemas.UserCreateAdmin.properties
+                      .email.maxLength
+                  }
+                  type="email"
+                  checkAvailability={true}
+                  isAvailable={isEmailAvailable}
+                  isValid={isEmailValid}
+                />
+              </label>
+              <label>
+                <span>Password</span>
+                <InputText
+                  state={signUpContext.password}
+                  setState={signUpContext.setPassword}
+                  id="sign-up-password"
+                  minLength={
+                    openapi_schema.components.schemas.UserCreateAdmin.properties
+                      .password.anyOf[0].minLength
+                  }
+                  maxLength={
+                    openapi_schema.components.schemas.UserCreateAdmin.properties
+                      .password.anyOf[0].maxLength
+                  }
+                  type="password"
+                  checkAvailability={false}
+                  isValid={isPasswordValid}
+                />
+              </label>
+              <label>
+                <span>Confirm Password</span>
+                <InputText
+                  state={signUpContext.confirmPassword}
+                  setState={signUpContext.setConfirmPassword}
+                  id="sign-up-confirmPassword"
+                  minLength={
+                    openapi_schema.components.schemas.UserCreateAdmin.properties
+                      .password.anyOf[0].minLength
+                  }
+                  maxLength={
+                    openapi_schema.components.schemas.UserCreateAdmin.properties
+                      .password.anyOf[0].maxLength
+                  }
+                  type="password"
+                  checkAvailability={false}
+                />
+              </label>
+            </fieldset>
+
+            <div className="h-[2em] flex flex-col justify-center">
               {signUpContext.loading ? (
-                <Loader3 />
-              ) : (
-                <span className="leading-none">Login</span>
-              )}
-            </ButtonSubmit>
+                <div className="flex flex-row justify-center items-center space-x-2">
+                  <Loader1 />
+                  <span className="mb-0">signing up</span>
+                </div>
+              ) : signUpContext.error ? (
+                <div className="flex flex-row justify-center items-center space-x-2">
+                  <span className="rounded-full p-1 text-light leading-none bg-error-500">
+                    <IoWarning
+                      style={{
+                        animation: 'scaleUp 0.2s ease-in-out',
+                      }}
+                    />
+                  </span>
+                  <span>{signUpContext.error}</span>
+                </div>
+              ) : null}
+            </div>
+
+            <ButtonSubmit disabled={!signUpContext.valid}>Sign Up</ButtonSubmit>
           </form>
           {/* <GoogleLogin onSuccess={() => {}}></GoogleLogin> */}
           <div className="flex flex-row justify-center mt-2">

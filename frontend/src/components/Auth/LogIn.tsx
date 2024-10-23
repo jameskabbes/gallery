@@ -14,7 +14,7 @@ import { IoMail } from 'react-icons/io5';
 import { useLogInWithGoogle } from './LogInWithGoogle';
 import { InputCheckbox } from '../Form/InputCheckbox';
 import { Button2, ButtonSubmit } from '../Utils/Button';
-import { Loader3 } from '../Utils/Loader';
+import { Loader1, Loader2 } from '../Utils/Loader';
 
 const API_ENDPOINT = '/auth/login/password/';
 const API_METHOD = 'post';
@@ -46,9 +46,14 @@ function LogIn() {
   useEffect(() => {
     logInContext.setValid(
       logInContext.username.status === 'valid' &&
-        logInContext.password.status === 'valid'
+        logInContext.password.status === 'valid' &&
+        !logInContext.loading
     );
-  }, [logInContext.username.status, logInContext.password.status]);
+  }, [
+    logInContext.username.status,
+    logInContext.password.status,
+    logInContext.loading,
+  ]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -100,54 +105,52 @@ function LogIn() {
         <div className="flex-1">
           <form onSubmit={handleLogin} className="flex flex-col space-y-6">
             <header>Login</header>
-            <section className="space-y-2">
-              <label htmlFor="login-username">Username or Email</label>
-              <InputText
-                state={logInContext.username}
-                setState={logInContext.setUsername}
-                id="login-username"
-                minLength={1}
-                maxLength={Math.max(
-                  openapi_schema.components.schemas.UserCreateAdmin.properties
-                    .email.maxLength,
-                  openapi_schema.components.schemas.User.properties.username
-                    .maxLength
-                )}
-                type="text"
-                checkAvailability={false}
-              />
-            </section>
-            <section className="space-y-2">
-              <label htmlFor="login-password">Password</label>
-              <InputText
-                state={logInContext.password}
-                setState={logInContext.setPassword}
-                id="login-password"
-                minLength={
-                  openapi_schema.components.schemas.UserCreateAdmin.properties
-                    .password.anyOf[0].minLength
-                }
-                maxLength={
-                  openapi_schema.components.schemas.UserCreateAdmin.properties
-                    .password.anyOf[0].maxLength
-                }
-                type="password"
-                checkAvailability={false}
-              />
-            </section>
-            <section>
+            <fieldset className="flex flex-col space-y-4">
+              <label className="space-y-2">
+                <span>Username or Email</span>
+                <InputText
+                  state={logInContext.username}
+                  setState={logInContext.setUsername}
+                  id="login-username"
+                  minLength={1}
+                  maxLength={Math.max(
+                    openapi_schema.components.schemas.UserCreateAdmin.properties
+                      .email.maxLength,
+                    openapi_schema.components.schemas.User.properties.username
+                      .maxLength
+                  )}
+                  type="text"
+                  checkAvailability={false}
+                />
+              </label>
+              <label className="space-y-2">
+                <span>Password</span>
+                <InputText
+                  state={logInContext.password}
+                  setState={logInContext.setPassword}
+                  id="login-password"
+                  minLength={
+                    openapi_schema.components.schemas.UserCreateAdmin.properties
+                      .password.anyOf[0].minLength
+                  }
+                  maxLength={
+                    openapi_schema.components.schemas.UserCreateAdmin.properties
+                      .password.anyOf[0].maxLength
+                  }
+                  type="password"
+                  checkAvailability={false}
+                />
+              </label>
               <div className="flex flex-row justify-between items-center">
-                <div className="flex flex-row items-center space-x-2">
+                <label className="flex flex-row items-center space-x-2 mb-0">
+                  <span>Remember me</span>
                   <InputCheckbox
                     state={logInContext.staySignedIn}
                     setState={logInContext.setStaySignedIn}
                     type="checkbox"
                     id="login-stay-signed-in"
                   />
-                  <label htmlFor="login-stay-signed-in" className="mb-0">
-                    Remember me
-                  </label>
-                </div>
+                </label>
                 <span
                   onClick={() =>
                     authModalsContext.setActiveModalType('logInWithEmail')
@@ -157,29 +160,29 @@ function LogIn() {
                   Forgot Password?
                 </span>
               </div>
-            </section>
+            </fieldset>
 
-            {logInContext.error && (
-              <div className="flex flex-row justify-center space-x-2">
-                <p className="rounded-full p-1 text-light leading-none bg-error-500">
-                  <span>
+            <div className="h-[2em] flex flex-col justify-center">
+              {logInContext.loading ? (
+                <div className="flex flex-row justify-center items-center space-x-2">
+                  <Loader1 />
+                  <span className="mb-0">logging in</span>
+                </div>
+              ) : logInContext.error ? (
+                <div className="flex flex-row justify-center items-center space-x-2">
+                  <span className="rounded-full p-1 text-light leading-none bg-error-500">
                     <IoWarning
                       style={{
                         animation: 'scaleUp 0.2s ease-in-out',
                       }}
                     />
                   </span>
-                </p>
-                <p>{logInContext.error}</p>
-              </div>
-            )}
-            <ButtonSubmit disabled={!logInContext.valid}>
-              {logInContext.loading ? (
-                <Loader3 />
-              ) : (
-                <span className="leading-none">Login</span>
-              )}
-            </ButtonSubmit>
+                  <span>{logInContext.error}</span>
+                </div>
+              ) : null}
+            </div>
+
+            <ButtonSubmit disabled={!logInContext.valid}>Login</ButtonSubmit>
           </form>
           <div className="flex flex-row items-center space-x-2 my-2">
             <div className="surface flex-1 border-t-[1px]" />

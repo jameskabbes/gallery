@@ -7,12 +7,8 @@ import openapi_schema from '../../../../openapi_schema.json';
 import { AuthModalsContext } from '../../contexts/AuthModals';
 import { LogInWithEmailContext } from '../../contexts/LogInWithEmail';
 
-import { LogInWithEmailContext as LogInWithEmailContextType } from '../../types';
-
 import { isEmailValid } from '../../services/api/isEmailValid';
 import { InputText } from '../Form/InputText';
-import { InputState } from '../../types';
-import { Surface } from '../Utils/Surface';
 import { ButtonSubmit } from '../Utils/Button';
 
 const API_ENDPOINT = '/auth/login/email-magic-link/';
@@ -71,36 +67,32 @@ function LogInWithEmail() {
         <div className="flex flex-col">
           <form onSubmit={handleSubmit} className="flex flex-col space-y-6">
             <header>Send Email</header>
-            <section className="space-y-2">
-              <label htmlFor="email">Email</label>
-              <InputText
-                state={logInWithEmailContext.email}
-                setState={logInWithEmailContext.setEmail}
-                id="login-with-email-email"
-                minLength={
-                  openapi_schema.components.schemas.User.properties.email
-                    .minLength
-                }
-                maxLength={
-                  openapi_schema.components.schemas.User.properties.email
-                    .maxLength
-                }
-                type="email"
-                isValid={isEmailValid}
-              />
-            </section>
+            <fieldset className="flex flex-col space-y-6">
+              <section className="space-y-2">
+                <label htmlFor="email">Email</label>
+                <InputText
+                  state={logInWithEmailContext.email}
+                  setState={logInWithEmailContext.setEmail}
+                  id="login-with-email-email"
+                  minLength={
+                    openapi_schema.components.schemas.User.properties.email
+                      .minLength
+                  }
+                  maxLength={
+                    openapi_schema.components.schemas.User.properties.email
+                      .maxLength
+                  }
+                  type="email"
+                  isValid={isEmailValid}
+                />
+              </section>
+            </fieldset>
             <span className="text-center mx-10">
               If an account with this email exists, we will send a login link to
               your email.
             </span>
             <ButtonSubmit disabled={!logInWithEmailContext.valid}>
-              <span className="leading-none mb-0">
-                {logInWithEmailContext.loading ? (
-                  <span className="loader-secondary"></span>
-                ) : (
-                  'Send Email'
-                )}
-              </span>
+              Send Email
             </ButtonSubmit>
           </form>
           <h6
