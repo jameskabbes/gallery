@@ -17,7 +17,7 @@ function InputToggle({
       <Surface>
         <div
           onClick={() => setState({ ...state, value: !state.value })}
-          className="input-toggle-container rounded-full p-1 surface border-[1px] "
+          className="inline-block input-toggle-container rounded-full p-1 surface border-[1px]"
           style={{ height: '1.5rem', width: '3rem', position: 'relative' }}
         >
           <div

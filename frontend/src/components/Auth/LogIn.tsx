@@ -106,8 +106,8 @@ function LogIn() {
           <form onSubmit={handleLogin} className="flex flex-col space-y-6">
             <header>Login</header>
             <fieldset className="flex flex-col space-y-4">
-              <label className="space-y-2">
-                <span>Username or Email</span>
+              <section className="space-y-2">
+                <label htmlFor="login-username">Username or Email</label>
                 <InputText
                   state={logInContext.username}
                   setState={logInContext.setUsername}
@@ -122,9 +122,20 @@ function LogIn() {
                   type="text"
                   checkAvailability={false}
                 />
-              </label>
-              <label className="space-y-2">
-                <span>Password</span>
+              </section>
+              <section className="space-y-2">
+                <div className="flex flex-row items-center justify-between">
+                  <label htmlFor="login-password">Password</label>
+                  <span
+                    onClick={() =>
+                      authModalsContext.setActiveModalType('logInWithEmail')
+                    }
+                    className="underline cursor-pointer"
+                  >
+                    Forgot Password?
+                  </span>
+                </div>
+
                 <InputText
                   state={logInContext.password}
                   setState={logInContext.setPassword}
@@ -140,26 +151,16 @@ function LogIn() {
                   type="password"
                   checkAvailability={false}
                 />
-              </label>
-              <div className="flex flex-row justify-between items-center">
-                <label className="flex flex-row items-center space-x-2 mb-0">
-                  <span>Remember me</span>
-                  <InputCheckbox
-                    state={logInContext.staySignedIn}
-                    setState={logInContext.setStaySignedIn}
-                    type="checkbox"
-                    id="login-stay-signed-in"
-                  />
-                </label>
-                <span
-                  onClick={() =>
-                    authModalsContext.setActiveModalType('logInWithEmail')
-                  }
-                  className="underline cursor-pointer"
-                >
-                  Forgot Password?
-                </span>
-              </div>
+              </section>
+              <section className="flex flex-row items-center space-x-2">
+                <label htmlFor="login-stay-signed-in">Remember Me</label>
+                <InputCheckbox
+                  state={logInContext.staySignedIn}
+                  setState={logInContext.setStaySignedIn}
+                  type="checkbox"
+                  id="login-stay-signed-in"
+                />
+              </section>
             </fieldset>
 
             <div className="h-[2em] flex flex-col justify-center">

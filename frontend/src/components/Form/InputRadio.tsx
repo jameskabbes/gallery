@@ -7,6 +7,7 @@ interface InputRadioProps<T extends string> {
   value: T;
   checked: boolean;
   children: React.ReactNode;
+  id;
 }
 
 function InputRadio<T extends string>({
@@ -14,6 +15,7 @@ function InputRadio<T extends string>({
   value,
   checked,
   children,
+  id,
 }: InputRadioProps<T>) {
   return (
     <div className="flex flex-row items-center space-x-2">
@@ -37,6 +39,7 @@ function InputRadio<T extends string>({
                 setState((prev) => ({ ...prev, value: value }));
               }
             }}
+            id={id}
             className="opacity-0 absolute"
           />
 

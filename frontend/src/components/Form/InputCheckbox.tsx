@@ -19,8 +19,10 @@ function InputCheckbox({
     <div className="flex flex-row items-center space-x-2">
       <Surface>
         <div
-          className="input-checkbox-container"
-          onClick={() => setState((prev) => ({ ...prev, value: !prev.value }))}
+          className="relative input-checkbox-container"
+          onClick={() => {
+            setState((prev) => ({ ...prev, value: !prev.value }));
+          }}
           style={{
             borderRadius: '0.25em',
             borderWidth: '0.0625em',
@@ -31,29 +33,28 @@ function InputCheckbox({
           }}
         >
           <div
-            className={`h-full w-full${state.value ? ' bg-color-primary' : ''}`}
+            className={`h-full ${state.value ? ' bg-color-primary' : ''}`}
             style={{
               transition: '0.1s',
               borderRadius: '0.125em',
             }}
-          >
-            <Input
-              state={state}
-              setState={setState}
-              checked={state.value}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                let newValue: InputCheckboxProps['state']['value'] =
-                  e.target.checked;
-                setState({
-                  ...state,
-                  value: newValue,
-                });
-              }}
-              className="opacity-0 absolute"
-              type={'checkbox'}
-              {...rest}
-            />
-          </div>
+          ></div>
+          <Input
+            state={state}
+            setState={setState}
+            checked={state.value}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              let newValue: InputCheckboxProps['state']['value'] =
+                e.target.checked;
+              setState({
+                ...state,
+                value: newValue,
+              });
+            }}
+            className="opacity-0 absolute top-0 left-0"
+            type={'checkbox'}
+            {...rest}
+          />
         </div>
       </Surface>
       {showValidity && (

@@ -122,11 +122,11 @@ function SignUp() {
     <div id="sign-up">
       <div className="flex">
         <div className="flex-1">
-          <form onSubmit={handleLogin} className="flex flex-col space-y-2">
+          <form onSubmit={handleLogin} className="flex flex-col space-y-6">
             <header>Sign Up</header>
-            <fieldset className="flex flex-col space-y-2">
-              <label>
-                <span>Email</span>
+            <fieldset className="flex flex-col space-y-4">
+              <section className="space-y-2">
+                <label htmlFor="sign-up-email">Email</label>
                 <InputText
                   state={signUpContext.email}
                   setState={signUpContext.setEmail}
@@ -144,9 +144,9 @@ function SignUp() {
                   isAvailable={isEmailAvailable}
                   isValid={isEmailValid}
                 />
-              </label>
-              <label>
-                <span>Password</span>
+              </section>
+              <section className="space-y-2">
+                <label htmlFor="sign-up-password">Password</label>
                 <InputText
                   state={signUpContext.password}
                   setState={signUpContext.setPassword}
@@ -163,9 +163,11 @@ function SignUp() {
                   checkAvailability={false}
                   isValid={isPasswordValid}
                 />
-              </label>
-              <label>
-                <span>Confirm Password</span>
+              </section>
+              <section className="space-y-2">
+                <label htmlFor="sign-up-confirmPassword">
+                  Confirm Password
+                </label>
                 <InputText
                   state={signUpContext.confirmPassword}
                   setState={signUpContext.setConfirmPassword}
@@ -181,7 +183,7 @@ function SignUp() {
                   type="password"
                   checkAvailability={false}
                 />
-              </label>
+              </section>
             </fieldset>
 
             <div className="h-[2em] flex flex-col justify-center">
@@ -206,7 +208,6 @@ function SignUp() {
 
             <ButtonSubmit disabled={!signUpContext.valid}>Sign Up</ButtonSubmit>
           </form>
-          {/* <GoogleLogin onSuccess={() => {}}></GoogleLogin> */}
           <div className="flex flex-row justify-center mt-2">
             <h6
               className="cursor-pointer underline mb-0"

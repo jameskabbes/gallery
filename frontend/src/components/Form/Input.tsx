@@ -21,6 +21,7 @@ interface BaseInputProps<T> {
   checked?: boolean;
   children?: React.ReactNode;
   style?: React.CSSProperties;
+  disabled?: boolean;
 }
 
 interface InputProps<T> extends BaseInputProps<T> {

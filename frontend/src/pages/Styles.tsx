@@ -115,81 +115,86 @@ function Styles() {
               className="flex flex-col space-y-6"
             >
               <header>Form Title</header>
-              <label>
-                <span>Text Input</span>
-                <InputText
-                  state={textState}
-                  setState={setTextState}
-                  id={'text-input-1'}
-                  type={'text'}
-                  minLength={1}
-                  checkValidity={true}
-                  isAvailable={async (value) => {
-                    await new Promise((resolve) => setTimeout(resolve, 50));
-                    return true;
-                  }}
-                  checkAvailability={true}
-                />
-              </label>
-              <label>
-                <span>Datetime Local Input</span>
-                <InputDatetimeLocal
-                  state={dateState}
-                  setState={setDateState}
-                  id={'datetime-local'}
-                  type="datetime-local"
-                  showValidity={true}
-                />
-              </label>
-
-              <label>
-                <span>Toggle Input</span>
-                <InputToggle
-                  state={toggleState}
-                  setState={setToggleState}
-                  id={'toggle-1'}
-                  type={'checkbox'}
-                  showValidity={true}
-                />
-              </label>
-              <label>
-                <span>Checkbox Input</span>
-                <InputCheckbox
-                  state={checkboxState}
-                  setState={setCheckboxState}
-                  id={'checkbox-1'}
-                  type={'checkbox'}
-                  showValidity={true}
-                />
-              </label>
               <fieldset>
-                <label>
-                  <InputRadio
-                    value={'Option 1'}
-                    checked={radioState.value === 'Option 1'}
-                    setState={setRadioState}
-                  >
-                    <span>Option 1</span>
-                  </InputRadio>
-                </label>
-                <label>
-                  <InputRadio
-                    value={'Option 2'}
-                    checked={radioState.value === 'Option 2'}
-                    setState={setRadioState}
-                  >
-                    <span>Option 2</span>
-                  </InputRadio>
-                </label>
-                <label>
-                  <InputRadio
-                    value={'Option 3'}
-                    checked={radioState.value === 'Option 3'}
-                    setState={setRadioState}
-                  >
-                    <span>Option 3</span>
-                  </InputRadio>
-                </label>
+                <section>
+                  <label htmlFor="text-input-1">Text Input</label>
+                  <InputText
+                    state={textState}
+                    setState={setTextState}
+                    id={'text-input-1'}
+                    type={'text'}
+                    minLength={1}
+                    checkValidity={true}
+                    isAvailable={async (value) => {
+                      await new Promise((resolve) => setTimeout(resolve, 50));
+                      return true;
+                    }}
+                    checkAvailability={true}
+                  />
+                </section>
+                <section>
+                  <label htmlFor="datetime-local-input-1">
+                    Datetime Local Input
+                  </label>
+                  <InputDatetimeLocal
+                    state={dateState}
+                    setState={setDateState}
+                    id={'datetime-local-input-1'}
+                    type="datetime-local"
+                    showValidity={true}
+                  />
+                </section>
+                <section>
+                  <label htmlFor="toggle-input-1">Toggle Input</label>
+                  <InputToggle
+                    state={toggleState}
+                    setState={setToggleState}
+                    id="toggle-input-1"
+                    type={'checkbox'}
+                  />
+                </section>
+                <section>
+                  <label htmlFor="checkbox-1">checkbox 1</label>
+                  <InputCheckbox
+                    state={checkboxState}
+                    setState={setCheckboxState}
+                    id={'checkbox-1'}
+                    type={'checkbox'}
+                    showValidity={true}
+                  />
+                </section>
+                <fieldset>
+                  <section>
+                    <InputRadio
+                      value={'Option 1'}
+                      checked={radioState.value === 'Option 1'}
+                      setState={setRadioState}
+                      id={'radio-input-1'}
+                    >
+                      <label htmlFor="radio-input-1">Option 1</label>
+                    </InputRadio>
+                  </section>
+                  <section>
+                    <InputRadio
+                      value={'Option 2'}
+                      checked={radioState.value === 'Option 2'}
+                      setState={setRadioState}
+                      id={'radio-input-2'}
+                    >
+                      <label htmlFor="radio-input-2">Option 2</label>
+                    </InputRadio>
+                  </section>
+                  <section>
+                    <InputRadio
+                      value={'Option 3'}
+                      checked={radioState.value === 'Option 3'}
+                      setState={setRadioState}
+                      id={'radio-input-3'}
+                    >
+                      <label htmlFor="radio-input-3">Option 3</label>
+                    </InputRadio>
+                  </section>
+                </fieldset>
               </fieldset>
               <ButtonSubmit
                 disabled={
