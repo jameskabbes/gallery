@@ -8,6 +8,7 @@ import { AuthModalsContext } from '../contexts/AuthModals';
 import { ToastContext } from '../contexts/Toast';
 import { AuthContext } from '../contexts/Auth';
 import { logOut } from './Auth/logOut';
+import { Surface } from './Utils/Surface';
 
 function Menu() {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
@@ -66,24 +67,26 @@ function Menu() {
         <IoMenuSharp />
       </h6>
       {isMenuVisible && (
-        <div
-          className="surface absolute right-0 mt-2 w-48 border-2 rounded-xl shadow-2xl"
-          ref={menuRef}
-        >
-          <ul className="flex flex-col">
-            <ul className="flex flex-col">
+        <Surface>
+          <div
+            className="absolute right-0 mt-2 border-[1px] rounded-xl shadow-2xl"
+            ref={menuRef}
+          >
+            <ul className="flex flex-col space-y-1 m-2">
               {menuItems.map((item, index) => (
-                <li
-                  key={index}
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                  onClick={item.onClick}
-                >
-                  {item.element}
-                </li>
+                <Surface keepParentMode={true}>
+                  <li
+                    key={index}
+                    className="flex flex-row p-2 cursor-pointer surface-hover rounded-sm"
+                    onClick={item.onClick}
+                  >
+                    {item.element}
+                  </li>
+                </Surface>
               ))}
             </ul>
-          </ul>
-        </div>
+          </div>
+        </Surface>
       )}
     </div>
   );

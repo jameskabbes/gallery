@@ -1,18 +1,23 @@
 import React from 'react';
 import {
   useSurfaceProvider,
-  UseSurfaceProviderProps,
+  OverrideParentSurfaceProps,
 } from '../../utils/useSurface';
 import { SurfaceContext } from '../../contexts/Surface';
 import combineRefs from '../../utils/combineRefs';
 
-interface Props extends UseSurfaceProviderProps {
+interface Props extends OverrideParentSurfaceProps {
   children: React.ReactElement<any> & React.RefAttributes<any>; // Include ref attributes
 }
 
-function Surface({ overrideMode = null, children }: Props) {
+function Surface({
+  overrideMode = null,
+  keepParentMode = false,
+  children,
+}: Props) {
   const { surfaceContextValue, surfaceRef } = useSurfaceProvider({
     overrideMode,
+    keepParentMode,
   });
 
   if (!React.isValidElement(children)) {

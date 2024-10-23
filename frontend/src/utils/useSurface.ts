@@ -2,13 +2,28 @@ import { useContext, useEffect, useRef, RefObject, useMemo } from 'react';
 import { SurfaceContextValue } from '../types';
 import { SurfaceContext } from '../contexts/Surface';
 
+interface OverrideParentSurfaceProps {
+  overrideMode?: SurfaceContextValue['mode'] | null;
+  keepParentMode?: boolean;
+}
+
 function getNextSurface(
   surface: SurfaceContextValue,
-  overrideMode: SurfaceContextValue['mode']
+  overrideParentSurfaceProps: OverrideParentSurfaceProps
 ): SurfaceContextValue {
+  let mode: SurfaceContextValue['mode'];
+
+  if (overrideParentSurfaceProps.overrideMode) {
+    mode = overrideParentSurfaceProps.overrideMode;
+  } else if (overrideParentSurfaceProps.keepParentMode) {
+    mode = surface.mode;
+  } else {
+    mode = surface.mode === 'a' ? 'b' : 'a';
+  }
+
   return {
     level: surface.level + 1,
-    mode: overrideMode ? overrideMode : surface.mode === 'a' ? 'b' : 'a',
+    mode: mode,
   };
 }
 
@@ -28,15 +43,11 @@ function useSurface<T extends HTMLElement>(
   return ref;
 }
 
-interface UseSurfaceProviderProps {
-  overrideMode?: SurfaceContextValue['mode'] | null;
-}
-
-function useSurfaceProvider<T extends HTMLElement>({
-  overrideMode = null,
-}: UseSurfaceProviderProps) {
+function useSurfaceProvider<T extends HTMLElement>(
+  overrideParentSurfaceProps: OverrideParentSurfaceProps
+) {
   const parentSurface = useContext(SurfaceContext);
-  const surface = getNextSurface(parentSurface, overrideMode);
+  const surface = getNextSurface(parentSurface, overrideParentSurfaceProps);
   const surfaceRef = useSurface<T>(surface);
 
   const surfaceContextValue = useMemo<SurfaceContextValue>(
@@ -54,5 +65,5 @@ export {
   useSurface,
   useSurfaceProvider,
   getNextSurface,
-  UseSurfaceProviderProps,
+  OverrideParentSurfaceProps,
 };
