@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Modal } from '../../types';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import './Modal.css';
@@ -7,6 +7,7 @@ import { useClickOutside } from '../../utils/useClickOutside';
 import { IoClose } from 'react-icons/io5';
 import { Card1 } from '../Utils/Card';
 import siteConfig from '../../../siteConfig.json';
+import { Surface } from '../Utils/Surface';
 
 const timeouts = {
   enter: 200,
@@ -19,10 +20,12 @@ interface Props {
 }
 
 function Modals({ activeModal, overlayStyle = {} }: Props) {
-  const ref = useRef(null);
-
+  const [ref, setRef] = useState<HTMLElement | null>(null);
+  const refCallback = (node: HTMLElement | null) => {
+    setRef(node);
+  };
   useEscapeKey(() => activeModal.onExit());
-  useClickOutside(ref, () => activeModal.onExit());
+  useClickOutside({ current: ref }, () => activeModal.onExit());
 
   return (
     <CSSTransition
@@ -41,33 +44,29 @@ function Modals({ activeModal, overlayStyle = {} }: Props) {
           timeout={timeouts}
           classNames="modal"
         >
-          <>
-            {activeModal.component !== null && (
-              <div className="absolute h-full w-full flex flex-col justify-center items-center p-2">
-                <Card1
-                  style={{
-                    zIndex: siteConfig.zIndex.modalContent,
-                    ...activeModal.contentStyle,
-                  }}
-                  ref={ref}
-                >
-                  {activeModal.includeExitButton && (
-                    <div className="flex flex-row justify-end">
-                      <button>
-                        <p>
-                          <IoClose
-                            onClick={() => activeModal.onExit()}
-                            className="cursor-pointer"
-                          />
-                        </p>
-                      </button>
-                    </div>
-                  )}
-                  {activeModal.component}
-                </Card1>
-              </div>
-            )}
-          </>
+          <div className="absolute h-full w-full flex flex-col justify-center items-center p-2">
+            <Card1
+              style={{
+                zIndex: siteConfig.zIndex.modalContent,
+                ...activeModal.contentStyle,
+              }}
+              ref={refCallback}
+            >
+              {activeModal.includeExitButton && (
+                <div className="flex flex-row justify-end">
+                  <button>
+                    <p>
+                      <IoClose
+                        onClick={() => activeModal.onExit()}
+                        className="cursor-pointer"
+                      />
+                    </p>
+                  </button>
+                </div>
+              )}
+              {activeModal.component}
+            </Card1>
+          </div>
         </CSSTransition>
       </TransitionGroup>
     </CSSTransition>
