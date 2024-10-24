@@ -1,5 +1,5 @@
 import React, { useContext, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { callApi, useApiCall } from '../../utils/Api';
 import { paths, operations, components } from '../../openapi_schema';
@@ -84,7 +84,13 @@ function VerifyMagicLink() {
     });
   }, [loading]);
 
-  return null;
+  return (
+    <div className="flex flex-row justify-center mt-12">
+      <Link to="/">
+        <Button1>Home</Button1>
+      </Link>
+    </div>
+  );
 }
 
 export { VerifyMagicLink };
