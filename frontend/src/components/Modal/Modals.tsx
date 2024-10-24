@@ -43,9 +43,11 @@ function Modals({ activeModal, overlayStyle = {} }: Props) {
         >
           <>
             {activeModal.component !== null && (
-              <div className="absolute h-full w-full flex flex-col justify-center items-center p-2">
+              <div
+                className="absolute h-full w-full flex flex-col justify-center items-center p-2"
+                ref={ref}
+              >
                 <Card1
-                  ref={ref}
                   style={{
                     zIndex: siteConfig.zIndex.modalContent,
                     ...activeModal.contentStyle,

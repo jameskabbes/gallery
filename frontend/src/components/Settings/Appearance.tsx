@@ -9,7 +9,7 @@ import {
   defaultInputState,
   InputState,
 } from '../../types';
-import { InputRadio } from '../Form/InputRadio';
+// import { InputRadio } from '../Form/InputRadio';
 
 interface ThemeOption {
   value: DarkModeContextType['preference'];
@@ -57,7 +57,7 @@ function DarkModeToggle() {
         <fieldset name="theme">
           {themeOptions.map((option) => (
             <label key={option.value}>
-              <InputRadio
+              {/* <InputRadio
                 value={option.value}
                 checked={theme.value === option.value}
                 setState={setTheme}
@@ -66,7 +66,7 @@ function DarkModeToggle() {
                   {option.icon}
                   {option.label}
                 </div>
-              </InputRadio>
+              </InputRadio> */}
             </label>
           ))}
         </fieldset>

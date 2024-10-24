@@ -69,31 +69,31 @@
 
   h1,
   .h1 {
-    @apply mb-4 text-5xl md:text-6xl font-semibold;
+    @apply text-5xl md:text-6xl font-semibold;
   }
 
   h2,
   .h2 {
-    @apply mb-4 text-3xl md:text-4xl font-bold leading-snug tracking-wide;
+    @apply text-3xl md:text-4xl font-bold;
   }
 
   h3,
   .h3 {
-    @apply mb-3 text-2xl md:text-3xl font-semibold;
+    @apply text-2xl md:text-3xl font-semibold;
   }
 
   h4,
   .h4 {
-    @apply mb-3 text-xl md:text-2xl;
+    @apply text-xl md:text-2xl;
   }
 
   h5,
   .h5 {
-    @apply mb-2 text-lg md:text-xl;
+    @apply text-lg md:text-xl;
   }
   h6,
   .h6 {
-    @apply mb-1 text-base md:text-lg;
+    @apply text-base md:text-lg;
   }
 
   p,
@@ -199,7 +199,7 @@ form button[type='submit'] {
 .input-checkbox-container,
 .input-radio-container,
 .input-toggle-container {
-  @apply focus-within:border-color-primary hover:border-color-primary h5;
+  @apply focus-within:border-color-primary hover:border-color-primary;
   transition: border-color 0.2s;
 }
 

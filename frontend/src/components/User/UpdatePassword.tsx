@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { InputText } from '../Form/InputText';
+import { InputText } from '../Form/InputTextBase';
 import { InputState, defaultInputState } from '../../types';
 import openapi_schema from '../../../../openapi_schema.json';
 import { AuthContext } from '../../contexts/Auth';

@@ -20,7 +20,9 @@ import {
 
 import { Card1 } from '../components/Utils/Card';
 import { Loader1, Loader2, Loader3 } from '../components/Utils/Loader';
-import { InputRadio } from '../components/Form/InputRadio';
+
+import { Checkbox1 } from '../components/Utils/Checkbox';
+import { RadioButton1 } from '../components/Utils/RadioButton';
 
 function Styles() {
   let deviceContext = useContext(DeviceContext);
@@ -28,9 +30,6 @@ function Styles() {
   const authContext = useContext(AuthContext);
 
   const [toggleState, setToggleState] = useState<InputState<boolean>>({
-    ...defaultInputState<boolean>(false),
-  });
-  const [checkboxState, setCheckboxState] = useState<InputState<boolean>>({
     ...defaultInputState<boolean>(false),
   });
   const [textState, setTextState] = useState<InputState<string>>({
@@ -79,10 +78,10 @@ function Styles() {
               </div>
 
               <div className="flex flex-row justify-around border-inherit border-2 rounded-lg p-2">
-                <h1 className="mb-0">
+                <h1>
                   <Loader1 />
                 </h1>
-                <h1 className="mb-0">
+                <h1>
                   <Loader2 />
                 </h1>
                 <h1 className="mb-0 bg-gray-500">
@@ -91,10 +90,10 @@ function Styles() {
               </div>
               <Surface>
                 <div className="flex flex-row justify-around border-2 rounded-lg p-2">
-                  <h1 className="mb-0">
+                  <h1>
                     <Loader1 />
                   </h1>
-                  <h1 className="mb-0">
+                  <h1>
                     <Loader2 />
                   </h1>
                   <h1 className="mb-0 bg-gray-500">
@@ -144,26 +143,144 @@ function Styles() {
                     showValidity={true}
                   />
                 </section>
-                <section>
-                  <label htmlFor="toggle-input-1">Toggle Input</label>
-                  <InputToggle
-                    state={toggleState}
-                    setState={setToggleState}
-                    id="toggle-input-1"
-                    type={'checkbox'}
-                  />
+                <section className="flex flex-row items-end space-x-4">
+                  <h1>
+                    <InputToggle
+                      state={toggleState}
+                      setState={setToggleState}
+                      id="toggle-input-1"
+                      type={'checkbox'}
+                    />
+                  </h1>
+                  <h2>
+                    <InputToggle
+                      state={toggleState}
+                      setState={setToggleState}
+                      id="toggle-input-2"
+                      type={'checkbox'}
+                    />
+                  </h2>
+                  <h3>
+                    <InputToggle
+                      state={toggleState}
+                      setState={setToggleState}
+                      id="toggle-input-3"
+                      type={'checkbox'}
+                    />
+                  </h3>
+                  <h4>
+                    <InputToggle
+                      state={toggleState}
+                      setState={setToggleState}
+                      id="toggle-input-4"
+                      type={'checkbox'}
+                    />
+                  </h4>
+                  <h5>
+                    <InputToggle
+                      state={toggleState}
+                      setState={setToggleState}
+                      id="toggle-input-5"
+                      type={'checkbox'}
+                    />
+                  </h5>
+                  <h6>
+                    <InputToggle
+                      state={toggleState}
+                      setState={setToggleState}
+                      id="toggle-input-6"
+                      type={'checkbox'}
+                    />
+                  </h6>
+                  <span className="p mb-0">
+                    <InputToggle
+                      state={toggleState}
+                      setState={setToggleState}
+                      id="toggle-input-7"
+                      type={'checkbox'}
+                    />
+                  </span>
+                  <span>
+                    <InputToggle
+                      state={toggleState}
+                      setState={setToggleState}
+                      id="toggle-input-8"
+                      type={'checkbox'}
+                    />
+                  </span>
+                </section>
+                <section className="flex flex-row items-end space-x-4">
+                  <h1>
+                    <InputCheckbox
+                      state={toggleState}
+                      setState={setToggleState}
+                      id="checkbox-input-1"
+                      type="checkbox"
+                    />
+                  </h1>
+                  <h2>
+                    <InputCheckbox
+                      state={toggleState}
+                      setState={setToggleState}
+                      id="checkbox-input-2"
+                      type="checkbox"
+                    />
+                  </h2>
+                  <h3>
+                    <InputCheckbox
+                      state={toggleState}
+                      setState={setToggleState}
+                      id="checkbox-input-3"
+                      type="checkbox"
+                    />
+                  </h3>
+                  <h4>
+                    <InputCheckbox
+                      state={toggleState}
+                      setState={setToggleState}
+                      id="checkbox-input-4"
+                      type="checkbox"
+                    />
+                  </h4>
+                  <h5>
+                    <InputCheckbox
+                      state={toggleState}
+                      setState={setToggleState}
+                      id="checkbox-input-5"
+                      type="checkbox"
+                    />
+                  </h5>
+                  <h6>
+                    <InputCheckbox
+                      state={toggleState}
+                      setState={setToggleState}
+                      id="checkbox-input-6"
+                      type="checkbox"
+                    />
+                  </h6>
+                  <span className="p mb-0">
+                    <InputCheckbox
+                      state={toggleState}
+                      setState={setToggleState}
+                      id="checkbox-input-8"
+                      type="checkbox"
+                    />
+                  </span>
+                  <span>
+                    <InputCheckbox
+                      state={toggleState}
+                      setState={setToggleState}
+                      id="checkbox-input-8"
+                      type="checkbox"
+                    />
+                  </span>
                 </section>
                 <section>
-                  <label htmlFor="checkbox-1">checkbox 1</label>
-                  <InputCheckbox
-                    state={checkboxState}
-                    setState={setCheckboxState}
-                    id={'checkbox-1'}
-                    type={'checkbox'}
-                    showValidity={true}
-                  />
+                  <h1>
+                    <RadioButton1 state={toggleState.value} />
+                  </h1>
                 </section>
-                <fieldset>
+                {/* <fieldset>
                   <section>
                     <InputRadio
                       value={'Option 1'}
@@ -194,7 +311,7 @@ function Styles() {
                       <label htmlFor="radio-input-3">Option 3</label>
                     </InputRadio>
                   </section>
-                </fieldset>
+                </fieldset> */}
               </fieldset>
               <ButtonSubmit
                 disabled={

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { InputText } from '../Form/InputText';
+import { InputText } from '../Form/InputTextBase';
 import { ValidityCheckReturn } from '../Form/Input';
 import { InputState, defaultInputState } from '../../types';
 import { paths, operations, components } from '../../openapi_schema';

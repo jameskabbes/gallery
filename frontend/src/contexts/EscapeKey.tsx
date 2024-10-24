@@ -6,9 +6,9 @@ import React, {
   useRef,
 } from 'react';
 
-import { EscapeKeyContext } from '../types';
+import { EscapeKeyContext as EscapeKeyContextType } from '../types';
 
-const EscapeKeyContext = createContext<EscapeKeyContext>({
+const EscapeKeyContext = createContext<EscapeKeyContextType>({
   addCallback: () => {},
   removeCallback: () => {},
 });

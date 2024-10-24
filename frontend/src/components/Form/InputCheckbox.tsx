@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { InputCheckboxBase, InputCheckboxBaseProps } from './InputCheckboxBase';
+import { Checkbox1 } from '../Utils/Checkbox';
 import { CheckOrX } from './CheckOrX';
-import { Surface } from '../Utils/Surface';
-import { BaseInputProps, Input, InputProps } from './Input';
 
-type T = boolean;
-
-interface InputCheckboxProps extends BaseInputProps<T> {
+interface InputCheckboxProps extends InputCheckboxBaseProps {
   showValidity?: boolean;
 }
 
@@ -16,47 +14,18 @@ function InputCheckbox({
   ...rest
 }: InputCheckboxProps) {
   return (
-    <div className="flex flex-row items-center space-x-2">
-      <Surface>
-        <div
-          className="relative input-checkbox-container"
-          onClick={() => {
-            setState((prev) => ({ ...prev, value: !prev.value }));
-          }}
-          style={{
-            borderRadius: '0.25em',
-            borderWidth: '0.0625em',
-            width: '1em',
-            height: '1em',
-            margin: '0',
-            padding: '0.1em',
-          }}
-        >
-          <div
-            className={`h-full ${state.value ? ' bg-color-primary' : ''}`}
-            style={{
-              transition: '0.1s',
-              borderRadius: '0.125em',
-            }}
-          ></div>
-          <Input
-            state={state}
-            setState={setState}
-            checked={state.value}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              let newValue: InputCheckboxProps['state']['value'] =
-                e.target.checked;
-              setState({
-                ...state,
-                value: newValue,
-              });
-            }}
-            className="opacity-0 absolute top-0 left-0"
-            type={'checkbox'}
-            {...rest}
-          />
-        </div>
-      </Surface>
+    <div className="relative flex flex-row items-center space-x-2">
+      <Checkbox1
+        state={state.value}
+        onClick={() => setState((prev) => ({ ...prev, value: !prev.value }))}
+      >
+        <InputCheckboxBase
+          state={state}
+          setState={setState}
+          {...rest}
+          className="absolute inset-0 opacity-0"
+        />
+      </Checkbox1>
       {showValidity && (
         <span title={state.error || ''}>
           <CheckOrX status={state.status} />
