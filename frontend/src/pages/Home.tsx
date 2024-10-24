@@ -1,8 +1,10 @@
 import React, { useEffect, useContext, useState } from 'react';
 import { DeviceContext } from '../contexts/Device';
 import { paths, operations, components } from '../openapi_schema';
-import { defaultInputState, ExtractResponseTypes, InputState } from '../types';
+import { ExtractResponseTypes } from '../types';
 import { useApiCall } from '../utils/Api';
+import { Button1 } from '../components/Utils/Button';
+import { AuthModalsContext } from '../contexts/AuthModals';
 
 const API_PATH = '/home/page/';
 const API_METHOD = 'get';
@@ -12,7 +14,13 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 >;
 
 function Home() {
-  return <p>Home</p>;
+  const authModalsContext = useContext(AuthModalsContext);
+
+  return (
+    <Button1 onClick={() => authModalsContext.setActiveModalType('logIn')}>
+      Login
+    </Button1>
+  );
 }
 
 export { Home };

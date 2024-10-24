@@ -141,8 +141,10 @@ function SignUp() {
                   }
                   type="email"
                   checkAvailability={true}
+                  checkValidity={true}
                   isAvailable={isEmailAvailable}
                   isValid={isEmailValid}
+                  showStatus={true}
                 />
               </section>
               <section className="space-y-2">
@@ -160,8 +162,9 @@ function SignUp() {
                       .password.anyOf[0].maxLength
                   }
                   type="password"
-                  checkAvailability={false}
                   isValid={isPasswordValid}
+                  checkValidity={true}
+                  showStatus={true}
                 />
               </section>
               <section className="space-y-2">
@@ -181,7 +184,8 @@ function SignUp() {
                       .password.anyOf[0].maxLength
                   }
                   type="password"
-                  checkAvailability={false}
+                  checkValidity={true}
+                  showStatus={true}
                 />
               </section>
             </fieldset>

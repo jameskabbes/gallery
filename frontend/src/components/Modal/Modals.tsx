@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { Modal } from '../../types';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import './Modal.css';
@@ -7,6 +7,7 @@ import { useClickOutside } from '../../utils/useClickOutside';
 import { IoClose } from 'react-icons/io5';
 import { Card1 } from '../Utils/Card';
 import siteConfig from '../../../siteConfig.json';
+import { act } from 'react-dom/test-utils';
 
 const timeouts = {
   enter: 200,
@@ -22,7 +23,14 @@ function Modals({ activeModal, overlayStyle = {} }: Props) {
   const ref = useRef(null);
 
   useEscapeKey(() => activeModal.onExit());
-  useClickOutside(ref, () => activeModal.onExit());
+
+  const handleClickOutside = useCallback(() => {
+    if (activeModal.component !== null) {
+      activeModal.onExit();
+    }
+  }, [activeModal]);
+
+  useClickOutside(ref, handleClickOutside);
 
   return (
     <CSSTransition
@@ -43,16 +51,13 @@ function Modals({ activeModal, overlayStyle = {} }: Props) {
         >
           <>
             {activeModal.component !== null && (
-              <div
-                className="absolute h-full w-full flex flex-col justify-center items-center p-2"
-                ref={ref}
-              >
+              <div className="absolute h-full w-full flex flex-col justify-center items-center p-2">
                 <Card1
                   style={{
                     zIndex: siteConfig.zIndex.modalContent,
                     ...activeModal.contentStyle,
                   }}
-                  className=""
+                  ref={ref}
                 >
                   {activeModal.includeExitButton && (
                     <div className="flex flex-row justify-end">

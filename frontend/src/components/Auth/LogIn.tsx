@@ -120,7 +120,8 @@ function LogIn() {
                       .maxLength
                   )}
                   type="text"
-                  checkAvailability={false}
+                  checkValidity={true}
+                  showStatus={true}
                 />
               </section>
               <section className="space-y-2">
@@ -149,7 +150,8 @@ function LogIn() {
                       .password.anyOf[0].maxLength
                   }
                   type="password"
-                  checkAvailability={false}
+                  checkValidity={true}
+                  showStatus={true}
                 />
               </section>
               <section className="flex flex-row items-center space-x-2">

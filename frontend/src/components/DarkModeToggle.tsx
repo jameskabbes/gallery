@@ -8,7 +8,6 @@ function DarkModeToggle() {
 
   return (
     <button
-      className="button-icon"
       onClick={() => {
         // current state is dark mode
         if (darkModeContext.state) {

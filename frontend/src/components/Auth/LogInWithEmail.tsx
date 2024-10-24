@@ -83,6 +83,8 @@ function LogInWithEmail() {
                       .maxLength
                   }
                   type="email"
+                  checkValidity={true}
+                  showStatus={true}
                   isValid={isEmailValid}
                 />
               </section>

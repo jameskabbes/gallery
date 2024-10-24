@@ -63,9 +63,9 @@ function Menu() {
 
   return (
     <div className="relative" ref={menuRef}>
-      <h6 className="mb-0" onClick={toggleMenu}>
+      <button onClick={toggleMenu} className="flex flex-row items-center">
         <IoMenuSharp />
-      </h6>
+      </button>
       {isMenuVisible && (
         <Surface>
           <div
