@@ -258,11 +258,11 @@ function Styles() {
                       type="checkbox"
                     />
                   </h6>
-                  <span className="p mb-0">
+                  <span>
                     <InputCheckbox
                       state={toggleState}
                       setState={setToggleState}
-                      id="checkbox-input-8"
+                      id="checkbox-input-7"
                       type="checkbox"
                     />
                   </span>

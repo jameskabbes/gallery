@@ -40,15 +40,19 @@ function InputDatetimeLocal({
           value={dateString}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             const dateString = e.target.value;
+            console.log(dateString);
+            setDateString(dateString);
 
             const checkValidReturn = isDatetimeValid(dateString);
-
+            console.log(checkValidReturn);
             if (checkValidReturn.valid) {
+              console.log('setting valid');
               setState({
                 ...state,
                 value: new Date(dateString),
               });
             } else {
+              console.log('setting invalid');
               setState({
                 ...state,
                 value: null,

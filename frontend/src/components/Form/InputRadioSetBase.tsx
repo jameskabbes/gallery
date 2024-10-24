@@ -1,10 +1,5 @@
 import React from 'react';
-import { Surface } from '../Utils/Surface';
 import { BaseInputProps } from './Input';
-
-function InputRadio() {
-  return <p>sadf</p>;
-}
 
 interface InputRadioSetProps<T> extends BaseInputProps<T> {
   name?: string;
