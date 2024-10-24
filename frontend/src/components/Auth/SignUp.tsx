@@ -13,7 +13,7 @@ import { ToastContext } from '../../contexts/Toast';
 import { isEmailValid } from '../../services/api/isEmailValid';
 import { isEmailAvailable } from '../../services/api/isEmailAvailable';
 import { isPasswordValid } from '../../services/api/isPasswordValid';
-import { InputText } from '../Form/InputText';
+import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { IoWarning } from 'react-icons/io5';
 import { ButtonSubmit } from '../Utils/Button';
 import { Loader1, Loader3 } from '../Utils/Loader';
@@ -127,7 +127,7 @@ function SignUp() {
             <fieldset className="flex flex-col space-y-4">
               <section className="space-y-2">
                 <label htmlFor="sign-up-email">Email</label>
-                <InputText
+                <ValidatedInputString
                   state={signUpContext.email}
                   setState={signUpContext.setEmail}
                   id="sign-up-email"
@@ -147,7 +147,7 @@ function SignUp() {
               </section>
               <section className="space-y-2">
                 <label htmlFor="sign-up-password">Password</label>
-                <InputText
+                <ValidatedInputString
                   state={signUpContext.password}
                   setState={signUpContext.setPassword}
                   id="sign-up-password"
@@ -168,7 +168,7 @@ function SignUp() {
                 <label htmlFor="sign-up-confirmPassword">
                   Confirm Password
                 </label>
-                <InputText
+                <ValidatedInputString
                   state={signUpContext.confirmPassword}
                   setState={signUpContext.setConfirmPassword}
                   id="sign-up-confirmPassword"

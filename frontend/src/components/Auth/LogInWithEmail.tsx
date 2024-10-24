@@ -8,7 +8,7 @@ import { AuthModalsContext } from '../../contexts/AuthModals';
 import { LogInWithEmailContext } from '../../contexts/LogInWithEmail';
 
 import { isEmailValid } from '../../services/api/isEmailValid';
-import { InputText } from '../Form/InputText';
+import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { ButtonSubmit } from '../Utils/Button';
 
 const API_ENDPOINT = '/auth/login/email-magic-link/';
@@ -70,7 +70,7 @@ function LogInWithEmail() {
             <fieldset className="flex flex-col space-y-6">
               <section className="space-y-2">
                 <label htmlFor="email">Email</label>
-                <InputText
+                <ValidatedInputString
                   state={logInWithEmailContext.email}
                   setState={logInWithEmailContext.setEmail}
                   id="login-with-email-email"

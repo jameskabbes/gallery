@@ -2,7 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../../contexts/Auth';
 import { paths, operations, components } from '../../openapi_schema';
 import openapi_schema from '../../../../openapi_schema.json';
-import { InputText } from '../Form/InputText';
+import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { LogInContext } from '../../contexts/LogIn';
 import { ToastContext } from '../../contexts/Toast';
 import { AuthModalsContext } from '../../contexts/AuthModals';
@@ -12,7 +12,7 @@ import { IoWarning } from 'react-icons/io5';
 import { IoPersonAddSharp } from 'react-icons/io5';
 import { IoMail } from 'react-icons/io5';
 import { useLogInWithGoogle } from './LogInWithGoogle';
-import { InputCheckbox } from '../Form/InputCheckbox';
+import { ValidatedInputCheckbox } from '../Form/ValidatedInputCheckbox';
 import { Button2, ButtonSubmit } from '../Utils/Button';
 import { Loader1, Loader2 } from '../Utils/Loader';
 
@@ -108,7 +108,7 @@ function LogIn() {
             <fieldset className="flex flex-col space-y-4">
               <section className="space-y-2">
                 <label htmlFor="login-username">Username or Email</label>
-                <InputText
+                <ValidatedInputString
                   state={logInContext.username}
                   setState={logInContext.setUsername}
                   id="login-username"
@@ -136,7 +136,7 @@ function LogIn() {
                   </span>
                 </div>
 
-                <InputText
+                <ValidatedInputString
                   state={logInContext.password}
                   setState={logInContext.setPassword}
                   id="login-password"
@@ -154,10 +154,9 @@ function LogIn() {
               </section>
               <section className="flex flex-row items-center space-x-2">
                 <label htmlFor="login-stay-signed-in">Remember Me</label>
-                <InputCheckbox
+                <ValidatedInputCheckbox
                   state={logInContext.staySignedIn}
                   setState={logInContext.setStaySignedIn}
-                  type="checkbox"
                   id="login-stay-signed-in"
                 />
               </section>

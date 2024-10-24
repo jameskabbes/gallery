@@ -1,11 +1,11 @@
 import React, { useContext, useEffect, useState } from 'react';
 import {
   CallApiProps,
-  InputState,
+  ValidatedInputState,
   ToastContext,
   ExtractResponseTypes,
   AuthContext,
-  defaultInputState,
+  defaultValidatedInputState,
 } from '../../types';
 import { useApiCall } from '../../utils/Api';
 import { paths, operations, components } from '../../openapi_schema';
@@ -26,12 +26,11 @@ import { CiClock2 } from 'react-icons/ci';
 import { IoHourglassOutline } from 'react-icons/io5';
 import { IoChevronForwardOutline } from 'react-icons/io5';
 import { IoChevronDownOutline } from 'react-icons/io5';
-import { Input } from '../Form/Input';
-import { InputText } from '../Form/InputText';
+import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { isDatetimeValid } from '../../services/isDatetimeValid';
 
 import openapi_schema from '../../../../openapi_schema.json';
-import { InputDatetimeLocal } from '../Form/InputDatetimeLocal';
+import { ValidatedInputDatetimeLocal } from '../Form/ValidatedInputDatetimeLocal';
 
 const API_ENDPOINT = '/api-keys/';
 const API_METHOD = 'get';
@@ -81,11 +80,11 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
   }, [apiData, response]);
 
   function AddAPIKey() {
-    const [name, setName] = useState<InputState<string>>({
-      ...defaultInputState<string>(''),
+    const [name, setName] = useState<ValidatedInputState<string>>({
+      ...defaultValidatedInputState<string>(''),
     });
-    const [expiry, setExpiry] = useState<InputStateAny<Date>>({
-      ...defaultInputState<Date>(
+    const [expiry, setExpiry] = useState<ValidatedInputState<Date>>({
+      ...defaultValidatedInputState<Date>(
         new Date(new Date().setMonth(new Date().getMonth() + 1))
       ),
     });
@@ -164,11 +163,9 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
           <span className="title">Add API Key</span>
           <div>
             <label htmlFor="api-key-name">Name</label>
-            <InputText
+            <ValidatedInputString
               state={name}
-              setState={(state: InputState<string>) => {
-                setName(state);
-              }}
+              setState={setName}
               id="api-key-name"
               type="text"
               minLength={
@@ -184,7 +181,7 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
           </div>
           <div>
             <label htmlFor="api-key-expiry">Expiry</label>
-            <InputDatetimeLocal
+            <ValidatedInputDatetimeLocal
               state={expiry}
               setState={setExpiry}
               id="api-key-expiry"

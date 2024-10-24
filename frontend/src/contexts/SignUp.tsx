@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useReducer, createContext } from 'react';
 import {
   SignUpContext as SignUpContextType,
-  defaultInputState,
+  defaultValidatedInputState,
 } from '../types';
 
 const SignUpContext = createContext<SignUpContextType>({
@@ -25,15 +25,17 @@ interface Props {
 
 function SignUpContextProvider({ children }: Props) {
   const [email, setEmail] = useState<SignUpContextType['email']>({
-    ...defaultInputState<SignUpContextType['email']['value']>(''),
+    ...defaultValidatedInputState<SignUpContextType['email']['value']>(''),
   });
   const [password, setPassword] = useState<SignUpContextType['password']>({
-    ...defaultInputState<SignUpContextType['password']['value']>(''),
+    ...defaultValidatedInputState<SignUpContextType['password']['value']>(''),
   });
   const [confirmPassword, setConfirmPassword] = useState<
     SignUpContextType['confirmPassword']
   >({
-    ...defaultInputState<SignUpContextType['confirmPassword']['value']>(''),
+    ...defaultValidatedInputState<
+      SignUpContextType['confirmPassword']['value']
+    >(''),
   });
   const [valid, setValid] = useState<SignUpContextType['valid']>(false);
   const [loading, setLoading] = useState<SignUpContextType['loading']>(false);

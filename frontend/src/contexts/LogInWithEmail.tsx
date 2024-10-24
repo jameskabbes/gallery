@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useReducer, createContext } from 'react';
 import {
   LogInWithEmailContext as LogInWithEmailContextType,
-  defaultInputState,
+  defaultValidatedInputState,
 } from '../types';
 
 const LogInWithEmailContext = createContext<LogInWithEmailContextType>({
@@ -21,7 +21,9 @@ interface Props {
 
 function LogInWithEmailContextProvider({ children }: Props) {
   const [email, setEmail] = useState<LogInWithEmailContextType['email']>({
-    ...defaultInputState<LogInWithEmailContextType['email']['value']>(''),
+    ...defaultValidatedInputState<LogInWithEmailContextType['email']['value']>(
+      ''
+    ),
   });
   const [screen, setScreen] =
     useState<LogInWithEmailContextType['screen']>('email');

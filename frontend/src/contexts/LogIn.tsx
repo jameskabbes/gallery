@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useReducer, createContext } from 'react';
 import {
   LogInContext as LogInContextType,
-  defaultInputState,
-  InputState,
+  ValidatedInputState,
+  defaultValidatedInputState,
 } from '../types';
 
 const LogInContext = createContext<LogInContextType>({
@@ -26,15 +26,17 @@ interface Props {
 
 function LogInContextProvider({ children }: Props) {
   const [username, setUsername] = useState<LogInContextType['username']>({
-    ...defaultInputState<LogInContextType['username']['value']>(''),
+    ...defaultValidatedInputState<LogInContextType['username']['value']>(''),
   });
   const [password, setPassword] = useState<LogInContextType['password']>({
-    ...defaultInputState<LogInContextType['username']['value']>(''),
+    ...defaultValidatedInputState<LogInContextType['username']['value']>(''),
   });
   const [staySignedIn, setStaySignedIn] = useState<
     LogInContextType['staySignedIn']
   >({
-    ...defaultInputState<LogInContextType['staySignedIn']['value']>(false),
+    ...defaultValidatedInputState<LogInContextType['staySignedIn']['value']>(
+      false
+    ),
   });
   const [valid, setValid] = useState<LogInContextType['valid']>(false);
   const [loading, setLoading] = useState<LogInContextType['loading']>(false);

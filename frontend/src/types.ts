@@ -38,17 +38,15 @@ type ExtractResponseTypes<T> = {
     : never;
 };
 
-type InputStatus = 'valid' | 'invalid' | 'loading';
-
-type InputValue = string | number | readonly string[];
-
-interface InputState<T> {
+interface ValidatedInputState<T> {
   value: T;
-  status: InputStatus;
+  status: 'valid' | 'invalid' | 'loading';
   error: string | null;
 }
 
-const defaultInputState = <T>(defaultValue: T): InputState<T> => ({
+const defaultValidatedInputState = <T>(
+  defaultValue: T
+): ValidatedInputState<T> => ({
   value: defaultValue,
   status: 'valid',
   error: null,
@@ -71,11 +69,11 @@ interface AuthModalsContext {
 }
 
 interface LogInContext {
-  username: InputState<string>;
+  username: ValidatedInputState<string>;
   setUsername: React.Dispatch<React.SetStateAction<LogInContext['username']>>;
-  password: InputState<string>;
+  password: ValidatedInputState<string>;
   setPassword: React.Dispatch<React.SetStateAction<LogInContext['password']>>;
-  staySignedIn: InputState<boolean>;
+  staySignedIn: ValidatedInputState<boolean>;
   setStaySignedIn: React.Dispatch<
     React.SetStateAction<LogInContext['staySignedIn']>
   >;
@@ -88,7 +86,7 @@ interface LogInContext {
 }
 
 interface LogInWithEmailContext {
-  email: InputState<string>;
+  email: ValidatedInputState<string>;
   setEmail: React.Dispatch<
     React.SetStateAction<LogInWithEmailContext['email']>
   >;
@@ -107,11 +105,11 @@ interface LogInWithEmailContext {
 }
 
 interface SignUpContext {
-  email: InputState<string>;
+  email: ValidatedInputState<string>;
   setEmail: React.Dispatch<React.SetStateAction<SignUpContext['email']>>;
-  password: InputState<string>;
+  password: ValidatedInputState<string>;
   setPassword: React.Dispatch<React.SetStateAction<SignUpContext['password']>>;
-  confirmPassword: InputState<string>;
+  confirmPassword: ValidatedInputState<string>;
   setConfirmPassword: React.Dispatch<
     React.SetStateAction<SignUpContext['confirmPassword']>
   >;
@@ -239,10 +237,8 @@ export {
   CallApiReturn,
   UseApiCallReturn,
   DarkModeContext,
-  defaultInputState,
-  InputState,
-  InputValue,
-  InputStatus,
+  ValidatedInputState,
+  defaultValidatedInputState,
   SignUpContext,
   LogInContext,
   LogInWithEmailContext,

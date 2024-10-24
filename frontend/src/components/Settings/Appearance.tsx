@@ -6,8 +6,7 @@ import { IoMoonOutline } from 'react-icons/io5';
 import { IoSettingsOutline } from 'react-icons/io5';
 import {
   DarkModeContext as DarkModeContextType,
-  defaultInputState,
-  InputState,
+  defaultValidatedInputState,
 } from '../../types';
 // import { InputRadio } from '../Form/InputRadio';
 
@@ -39,40 +38,42 @@ function DarkModeToggle() {
     { value: 'dark', icon: <IoMoonOutline />, label: <span>Dark</span> },
   ];
 
-  type ThemeOptionValue = ThemeOption['value'];
-  const [theme, setTheme] = useState<InputState<ThemeOptionValue>>({
-    ...defaultInputState<ThemeOptionValue>(darkModeContext.preference),
-  });
+  return null;
 
-  useEffect(() => {
-    darkModeContext.setPreference(theme.value);
-  }, [theme.value]);
+  // type ThemeOptionValue = ThemeOption['value'];
+  // const [theme, setTheme] = useState<InputState<ThemeOptionValue>>({
+  //   ...defaultInputState<ThemeOptionValue>(darkModeContext.preference),
+  // });
 
-  return (
-    <>
-      <h2>Theme</h2>
-      {/* make a radio selector */}
+  // useEffect(() => {
+  //   darkModeContext.setPreference(theme.value);
+  // }, [theme.value]);
 
-      <form className="flex flex-col">
-        <fieldset name="theme">
-          {themeOptions.map((option) => (
-            <label key={option.value}>
-              {/* <InputRadio
-                value={option.value}
-                checked={theme.value === option.value}
-                setState={setTheme}
-              >
-                <div className="flex flex-row items-center space-x-2">
-                  {option.icon}
-                  {option.label}
-                </div>
-              </InputRadio> */}
-            </label>
-          ))}
-        </fieldset>
-      </form>
-    </>
-  );
+  // return (
+  //   <>
+  //     <h2>Theme</h2>
+  //     {/* make a radio selector */}
+
+  //     <form className="flex flex-col">
+  //       <fieldset name="theme">
+  //         {themeOptions.map((option) => (
+  //           <label key={option.value}>
+  //             {/* <InputRadio
+  //               value={option.value}
+  //               checked={theme.value === option.value}
+  //               setState={setTheme}
+  //             >
+  //               <div className="flex flex-row items-center space-x-2">
+  //                 {option.icon}
+  //                 {option.label}
+  //               </div>
+  //             </InputRadio> */}
+  //           </label>
+  //         ))}
+  //       </fieldset>
+  //     </form>
+  //   </>
+  // );
 }
 
 function Appearance() {

@@ -1,33 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { CheckOrX } from './CheckOrX';
-import { Surface } from '../Utils/Surface';
-import { BaseInputProps, Input, InputProps } from './Input';
-import { Checkbox1 } from '../Utils/Checkbox';
 
-type T = boolean;
+type InputCheckboxBaseInputProps = Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  'type' | 'onChange'
+>;
 
-interface InputCheckboxBaseProps extends BaseInputProps<T> {}
+interface InputCheckboxBaseProps extends InputCheckboxBaseInputProps {
+  checked: InputCheckboxBaseInputProps['checked'];
+  setChecked: (checked: InputCheckboxBaseInputProps['checked']) => void;
+}
 
-function InputCheckboxBase({
-  state,
-  setState,
-  ...rest
-}: InputCheckboxBaseProps) {
+function InputCheckboxBase({ setChecked, ...rest }: InputCheckboxBaseProps) {
   return (
-    <Input
-      state={state}
-      setState={setState}
-      checked={state.value}
+    <input
+      type="checkbox"
       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-        setState({
-          ...state,
-          value: e.target.checked,
-        });
+        setChecked(e.target.checked);
       }}
-      type={'checkbox'}
       {...rest}
     />
   );
 }
 
-export { InputCheckboxBase, InputCheckboxBaseProps };
+export { InputCheckboxBase, InputCheckboxBaseInputProps };

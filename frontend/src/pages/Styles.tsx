@@ -1,14 +1,18 @@
 import React, { useEffect, useContext, useState } from 'react';
 import { DeviceContext } from '../contexts/Device';
 import { paths, operations, components } from '../openapi_schema';
-import { defaultInputState, ExtractResponseTypes, InputState } from '../types';
+import {
+  defaultValidatedInputState,
+  ExtractResponseTypes,
+  ValidatedInputState,
+} from '../types';
 import { useApiCall } from '../utils/Api';
 import { ToastContext } from '../contexts/Toast';
 import { AuthContext } from '../contexts/Auth';
-import { InputCheckbox } from '../components/Form/InputCheckbox';
-import { InputDatetimeLocal } from '../components/Form/InputDatetimeLocal';
-import { InputToggle } from '../components/Form/InputToggle';
-import { InputText } from '../components/Form/InputText';
+import { ValidatedInputCheckbox } from '../components/Form/ValidatedInputCheckbox';
+import { ValidatedInputDatetimeLocal } from '../components/Form/ValidatedInputDatetimeLocal';
+import { ValidatedInputToggle } from '../components/Form/ValidatedInputToggle';
+import { ValidatedInputString } from '../components/Form/ValidatedInputString';
 import { Surface } from '../components/Utils/Surface';
 
 import {
@@ -29,19 +33,21 @@ function Styles() {
   let toastContext = useContext(ToastContext);
   const authContext = useContext(AuthContext);
 
-  const [toggleState, setToggleState] = useState<InputState<boolean>>({
-    ...defaultInputState<boolean>(false),
+  const [toggleState, setToggleState] = useState<ValidatedInputState<boolean>>({
+    ...defaultValidatedInputState<boolean>(false),
   });
-  const [textState, setTextState] = useState<InputState<string>>({
-    ...defaultInputState<string>(''),
+  const [textState, setTextState] = useState<ValidatedInputState<string>>({
+    ...defaultValidatedInputState<string>(''),
   });
-  const [dateState, setDateState] = useState<InputState<Date>>({
-    ...defaultInputState<Date>(new Date()),
+  const [dateState, setDateState] = useState<ValidatedInputState<Date>>({
+    ...defaultValidatedInputState<Date>(new Date()),
   });
   const [radioState, setRadioState] = useState<
-    InputState<'Option 1' | 'Option 2' | 'Option 3'>
+    ValidatedInputState<'Option 1' | 'Option 2' | 'Option 3'>
   >({
-    ...defaultInputState<'Option 1' | 'Option 2' | 'Option 3'>('Option 1'),
+    ...defaultValidatedInputState<'Option 1' | 'Option 2' | 'Option 3'>(
+      'Option 1'
+    ),
   });
 
   return (
@@ -117,7 +123,7 @@ function Styles() {
               <fieldset>
                 <section>
                   <label htmlFor="text-input-1">Text Input</label>
-                  <InputText
+                  <ValidatedInputString
                     state={textState}
                     setState={setTextState}
                     id={'text-input-1'}
@@ -129,149 +135,135 @@ function Styles() {
                       return true;
                     }}
                     checkAvailability={true}
+                    showStatus={true}
                   />
                 </section>
                 <section>
                   <label htmlFor="datetime-local-input-1">
                     Datetime Local Input
                   </label>
-                  <InputDatetimeLocal
+                  <ValidatedInputDatetimeLocal
                     state={dateState}
                     setState={setDateState}
                     id={'datetime-local-input-1'}
                     type="datetime-local"
-                    showValidity={true}
                   />
                 </section>
                 <section className="flex flex-row items-end space-x-4">
                   <h1>
-                    <InputToggle
+                    <ValidatedInputToggle
                       state={toggleState}
                       setState={setToggleState}
                       id="toggle-input-1"
-                      type={'checkbox'}
+                      showStatus={true}
                     />
                   </h1>
                   <h2>
-                    <InputToggle
+                    <ValidatedInputToggle
                       state={toggleState}
                       setState={setToggleState}
                       id="toggle-input-2"
-                      type={'checkbox'}
                     />
                   </h2>
                   <h3>
-                    <InputToggle
+                    <ValidatedInputToggle
                       state={toggleState}
                       setState={setToggleState}
                       id="toggle-input-3"
-                      type={'checkbox'}
                     />
                   </h3>
                   <h4>
-                    <InputToggle
+                    <ValidatedInputToggle
                       state={toggleState}
                       setState={setToggleState}
                       id="toggle-input-4"
-                      type={'checkbox'}
                     />
                   </h4>
                   <h5>
-                    <InputToggle
+                    <ValidatedInputToggle
                       state={toggleState}
                       setState={setToggleState}
                       id="toggle-input-5"
-                      type={'checkbox'}
                     />
                   </h5>
                   <h6>
-                    <InputToggle
+                    <ValidatedInputToggle
                       state={toggleState}
                       setState={setToggleState}
                       id="toggle-input-6"
-                      type={'checkbox'}
                     />
                   </h6>
                   <span className="p mb-0">
-                    <InputToggle
+                    <ValidatedInputToggle
                       state={toggleState}
                       setState={setToggleState}
                       id="toggle-input-7"
-                      type={'checkbox'}
                     />
                   </span>
                   <span>
-                    <InputToggle
+                    <ValidatedInputToggle
                       state={toggleState}
                       setState={setToggleState}
                       id="toggle-input-8"
-                      type={'checkbox'}
                     />
                   </span>
                 </section>
                 <section className="flex flex-row items-end space-x-4">
                   <h1>
-                    <InputCheckbox
+                    <ValidatedInputCheckbox
                       state={toggleState}
                       setState={setToggleState}
                       id="checkbox-input-1"
-                      type="checkbox"
+                      showStatus={true}
                     />
                   </h1>
                   <h2>
-                    <InputCheckbox
+                    <ValidatedInputCheckbox
                       state={toggleState}
                       setState={setToggleState}
                       id="checkbox-input-2"
-                      type="checkbox"
                     />
                   </h2>
                   <h3>
-                    <InputCheckbox
+                    <ValidatedInputCheckbox
                       state={toggleState}
                       setState={setToggleState}
                       id="checkbox-input-3"
-                      type="checkbox"
                     />
                   </h3>
                   <h4>
-                    <InputCheckbox
+                    <ValidatedInputCheckbox
                       state={toggleState}
                       setState={setToggleState}
                       id="checkbox-input-4"
-                      type="checkbox"
                     />
                   </h4>
                   <h5>
-                    <InputCheckbox
+                    <ValidatedInputCheckbox
                       state={toggleState}
                       setState={setToggleState}
                       id="checkbox-input-5"
-                      type="checkbox"
                     />
                   </h5>
                   <h6>
-                    <InputCheckbox
+                    <ValidatedInputCheckbox
                       state={toggleState}
                       setState={setToggleState}
                       id="checkbox-input-6"
-                      type="checkbox"
                     />
                   </h6>
                   <span>
-                    <InputCheckbox
+                    <ValidatedInputCheckbox
                       state={toggleState}
                       setState={setToggleState}
                       id="checkbox-input-7"
-                      type="checkbox"
                     />
                   </span>
                   <span>
-                    <InputCheckbox
+                    <ValidatedInputCheckbox
                       state={toggleState}
                       setState={setToggleState}
                       id="checkbox-input-8"
-                      type="checkbox"
                     />
                   </span>
                 </section>
