@@ -7,7 +7,6 @@ import { useClickOutside } from '../../utils/useClickOutside';
 import { IoClose } from 'react-icons/io5';
 import { Card1 } from '../Utils/Card';
 import siteConfig from '../../../siteConfig.json';
-import { act } from 'react-dom/test-utils';
 
 const timeouts = {
   enter: 200,
@@ -23,14 +22,7 @@ function Modals({ activeModal, overlayStyle = {} }: Props) {
   const ref = useRef(null);
 
   useEscapeKey(() => activeModal.onExit());
-
-  const handleClickOutside = useCallback(() => {
-    if (activeModal.component !== null) {
-      activeModal.onExit();
-    }
-  }, [activeModal]);
-
-  useClickOutside(ref, handleClickOutside);
+  useClickOutside(ref, () => activeModal.onExit());
 
   return (
     <CSSTransition
