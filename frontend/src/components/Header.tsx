@@ -19,7 +19,7 @@ function Header(): JSX.Element {
             </Link>
             <div className="flex flex-row items-center space-x-2">
               <DarkModeToggle />
-              {/* <Menu /> */}
+              <Menu />
             </div>
           </div>
         </h6>

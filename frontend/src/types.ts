@@ -90,6 +90,10 @@ interface LogInWithEmailContext {
   setEmail: React.Dispatch<
     React.SetStateAction<LogInWithEmailContext['email']>
   >;
+  staySignedIn: ValidatedInputState<boolean>;
+  setStaySignedIn: React.Dispatch<
+    React.SetStateAction<LogInWithEmailContext['staySignedIn']>
+  >;
   screen: 'email' | 'sent';
   setScreen: React.Dispatch<
     React.SetStateAction<LogInWithEmailContext['screen']>
@@ -112,6 +116,10 @@ interface SignUpContext {
   confirmPassword: ValidatedInputState<string>;
   setConfirmPassword: React.Dispatch<
     React.SetStateAction<SignUpContext['confirmPassword']>
+  >;
+  staySignedIn: ValidatedInputState<boolean>;
+  setStaySignedIn: React.Dispatch<
+    React.SetStateAction<SignUpContext['staySignedIn']>
   >;
   valid: boolean;
   setValid: React.Dispatch<React.SetStateAction<SignUpContext['valid']>>;

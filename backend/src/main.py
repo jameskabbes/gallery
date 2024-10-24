@@ -19,6 +19,7 @@ from sqlalchemy import and_
 from pydantic import BaseModel
 import datetime
 from functools import wraps
+from urllib.parse import urlencode
 
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -338,6 +339,7 @@ async def sign_up(
 
 class LoginWithEmailMagicLinkRequest(BaseModel):
     email: models.UserTypes.email
+    stay_signed_in: bool = False
 
 
 async def send_magic_link_to_email(model: LoginWithEmailMagicLinkRequest):
@@ -351,9 +353,16 @@ async def send_magic_link_to_email(model: LoginWithEmailMagicLinkRequest):
                 user_id=user.id, lifespan=c.authentication['magic_link_expiry_timedelta']).create()
             await user_access_token.add_to_db(session)
 
+            link_data = {
+                'access_token': jwt_encode(user_access_token.export_to_jwt()),
+                'stay_signed_in': model.stay_signed_in
+            }
+
             print('beep boop beep... sending email')
             print('http://localhost:3000' +
-                  c.root_config['magic_link_frontend_url'] + '?access_token=' + jwt_encode(user_access_token.export_to_jwt()))
+                  c.root_config['magic_link_frontend_url'] +
+                  '?' + urlencode(link_data)
+                  )
 
     # still need to fill this function in!
 
@@ -364,13 +373,19 @@ async def login_with_email_magic_link(model: LoginWithEmailMagicLinkRequest, bac
     return DetailOnlyResponse(detail='If an account with this email exists, a login link has been sent.')
 
 
-class VerifyMagicLinkRequest(GetAuthReturn):
+class VerifyMagicLinkRequest(BaseModel):
+    stay_signed_in: bool = False
+
+
+class VerifyMagicLinkResponse(GetAuthReturn):
     pass
 
 
 @ app.post('/auth/verify-magic-link/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
-async def verify_magic_link(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(permitted_auth_credential_types={'access_token'},
-                                                                                                              raise_exceptions=True, override_lifetime=c.authentication['magic_link_expiry_timedelta']))], response: Response) -> VerifyMagicLinkRequest:
+async def verify_magic_link(model: VerifyMagicLinkRequest, authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(permitted_auth_credential_types={'access_token'},
+                                                                                                                                             raise_exceptions=True, override_lifetime=c.authentication['magic_link_expiry_timedelta']))], response: Response) -> VerifyMagicLinkResponse:
+    import time
+    time.sleep(3)
 
     with Session(c.db_engine) as session:
 
@@ -378,13 +393,14 @@ async def verify_magic_link(authorization: typing.Annotated[GetAuthorizationRetu
             user_id=authorization.user.id, lifespan=c.authentication['default_expiry_timedelta']).create()
         await user_access_token.add_to_db(session)
         set_access_token_cookie(jwt_encode(
-            user_access_token.export_to_jwt()), response)
+            user_access_token.export_to_jwt()), response, model.stay_signed_in
+        )
 
         # one time link, delete the auth_credential
         await models.UserAccessToken.delete_one_by_id(
             session, authorization.auth_credential.id)
 
-        return VerifyMagicLinkRequest(
+        return VerifyMagicLinkResponse(
             auth=GetAuthBaseReturn(
                 user=models.UserPrivate.model_validate(authorization.user),
                 scopes=set(
@@ -428,7 +444,7 @@ async def login_with_google(request_token: GoogleAuthRequest, response: Response
         set_access_token_cookie(jwt_encode(
             user_access_token.export_to_jwt()), response)
 
-        return VerifyMagicLinkRequest(
+        return VerifyMagicLinkResponse(
             auth=GetAuthBaseReturn(
                 user=models.UserPrivate.model_validate(user),
                 scopes=set(

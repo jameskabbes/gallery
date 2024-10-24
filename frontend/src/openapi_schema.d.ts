@@ -298,6 +298,11 @@ export interface components {
        * Format: email
        */
       email: string;
+      /**
+       * Stay Signed In
+       * @default false
+       */
+      stay_signed_in?: boolean;
     };
     /** NotFoundResponse */
     NotFoundResponse: {
@@ -423,6 +428,14 @@ export interface components {
     };
     /** VerifyMagicLinkRequest */
     VerifyMagicLinkRequest: {
+      /**
+       * Stay Signed In
+       * @default false
+       */
+      stay_signed_in?: boolean;
+    };
+    /** VerifyMagicLinkResponse */
+    VerifyMagicLinkResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
     };
   };
@@ -552,17 +565,28 @@ export interface operations {
   };
   /** Verify Magic Link */
   verify_magic_link_auth_verify_magic_link__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["VerifyMagicLinkRequest"];
+      };
+    };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["VerifyMagicLinkRequest"];
+          "application/json": components["schemas"]["VerifyMagicLinkResponse"];
         };
       };
       /** @description Invalid token */
       401: {
         content: {
           "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };

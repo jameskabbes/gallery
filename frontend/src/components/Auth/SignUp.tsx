@@ -14,6 +14,7 @@ import { isEmailValid } from '../../services/api/isEmailValid';
 import { isEmailAvailable } from '../../services/api/isEmailAvailable';
 import { isPasswordValid } from '../../services/api/isPasswordValid';
 import { ValidatedInputString } from '../Form/ValidatedInputString';
+import { ValidatedInputCheckbox } from '../Form/ValidatedInputCheckbox';
 import { IoWarning } from 'react-icons/io5';
 import { ButtonSubmit } from '../Utils/Button';
 import { Loader1, Loader3 } from '../Utils/Loader';
@@ -96,6 +97,7 @@ function SignUp() {
         body: new URLSearchParams({
           email: signUpContext.email.value,
           password: signUpContext.password.value,
+          stay_signed_in: signUpContext.staySignedIn.value.toString(),
         }).toString(),
         overwriteHeaders: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -187,6 +189,14 @@ function SignUp() {
                   checkValidity={true}
                   showStatus={true}
                 />
+              </section>
+              <section className="flex flex-row items-center justify-center space-x-2">
+                <ValidatedInputCheckbox
+                  state={signUpContext.staySignedIn}
+                  setState={signUpContext.setStaySignedIn}
+                  id="sign-up-stay-signed-in"
+                />
+                <label htmlFor="login-stay-signed-in">Remember Me</label>
               </section>
             </fieldset>
 

@@ -6,21 +6,29 @@ import { useApiCall } from '../utils/Api';
 import { Button1 } from '../components/Utils/Button';
 import { AuthModalsContext } from '../contexts/AuthModals';
 
-const API_PATH = '/home/page/';
+const API_ENDPOINT = '/home/page/';
 const API_METHOD = 'get';
 
 type ResponseTypesByStatus = ExtractResponseTypes<
-  paths[typeof API_PATH][typeof API_METHOD]['responses']
+  paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
 function Home() {
   const authModalsContext = useContext(AuthModalsContext);
 
-  return (
-    <Button1 onClick={() => authModalsContext.setActiveModalType('logIn')}>
-      Login
-    </Button1>
+  const {
+    data: apiData,
+    loading,
+    response,
+  } = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>(
+    {
+      endpoint: API_ENDPOINT,
+      method: API_METHOD,
+    },
+    true
   );
+
+  return <p>Hello</p>;
 }
 
 export { Home };

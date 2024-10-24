@@ -23,7 +23,7 @@ function App(): JSX.Element {
         <main id="app">
           <Toast />
           <AuthModals />
-          {/* <GlobalModals /> */}
+          <GlobalModals />
           <BrowserRouter>
             <Header />
             <Routes>

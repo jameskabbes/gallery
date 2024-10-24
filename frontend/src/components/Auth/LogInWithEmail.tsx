@@ -10,6 +10,7 @@ import { LogInWithEmailContext } from '../../contexts/LogInWithEmail';
 import { isEmailValid } from '../../services/api/isEmailValid';
 import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { ButtonSubmit } from '../Utils/Button';
+import { ValidatedInputCheckbox } from '../Form/ValidatedInputCheckbox';
 
 const API_ENDPOINT = '/auth/login/email-magic-link/';
 const API_METHOD = 'post';
@@ -45,7 +46,10 @@ function LogInWithEmail() {
       >({
         endpoint: API_ENDPOINT,
         method: API_METHOD,
-        data: { email: logInWithEmailContext.email.value },
+        data: {
+          email: logInWithEmailContext.email.value,
+          stay_signed_in: logInWithEmailContext.staySignedIn.value,
+        },
       });
 
       setLoading(false);
@@ -87,6 +91,16 @@ function LogInWithEmail() {
                   showStatus={true}
                   isValid={isEmailValid}
                 />
+              </section>
+              <section className="flex flex-row items-center justify-center space-x-2">
+                <ValidatedInputCheckbox
+                  state={logInWithEmailContext.staySignedIn}
+                  setState={logInWithEmailContext.setStaySignedIn}
+                  id="login-with-email-stay-signed-in"
+                />
+                <label htmlFor="login-with-email-stay-signed-in">
+                  Remember Me
+                </label>
               </section>
             </fieldset>
             <span className="text-center mx-10">

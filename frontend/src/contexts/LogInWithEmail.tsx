@@ -7,6 +7,8 @@ import {
 const LogInWithEmailContext = createContext<LogInWithEmailContextType>({
   email: null,
   setEmail: () => {},
+  staySignedIn: null,
+  setStaySignedIn: () => {},
   screen: 'email',
   setScreen: () => {},
   valid: false,
@@ -25,6 +27,14 @@ function LogInWithEmailContextProvider({ children }: Props) {
       ''
     ),
   });
+  const [staySignedIn, setStaySignedIn] = useState<
+    LogInWithEmailContextType['staySignedIn']
+  >({
+    ...defaultValidatedInputState<
+      LogInWithEmailContextType['staySignedIn']['value']
+    >(false),
+  });
+
   const [screen, setScreen] =
     useState<LogInWithEmailContextType['screen']>('email');
   const [valid, setValid] = useState<LogInWithEmailContextType['valid']>(false);
@@ -36,6 +46,8 @@ function LogInWithEmailContextProvider({ children }: Props) {
       value={{
         email,
         setEmail,
+        staySignedIn,
+        setStaySignedIn,
         screen,
         setScreen,
         valid,

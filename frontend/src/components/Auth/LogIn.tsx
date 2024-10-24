@@ -154,13 +154,13 @@ function LogIn() {
                   showStatus={true}
                 />
               </section>
-              <section className="flex flex-row items-center space-x-2">
-                <label htmlFor="login-stay-signed-in">Remember Me</label>
+              <section className="flex flex-row items-center justify-center space-x-2">
                 <ValidatedInputCheckbox
                   state={logInContext.staySignedIn}
                   setState={logInContext.setStaySignedIn}
                   id="login-stay-signed-in"
                 />
+                <label htmlFor="login-stay-signed-in">Remember Me</label>
               </section>
             </fieldset>
 

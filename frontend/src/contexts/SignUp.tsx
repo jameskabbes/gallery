@@ -11,6 +11,8 @@ const SignUpContext = createContext<SignUpContextType>({
   setPassword: () => {},
   confirmPassword: null,
   setConfirmPassword: () => {},
+  staySignedIn: null,
+  setStaySignedIn: () => {},
   valid: false,
   setValid: () => {},
   loading: false,
@@ -37,6 +39,14 @@ function SignUpContextProvider({ children }: Props) {
       SignUpContextType['confirmPassword']['value']
     >(''),
   });
+  const [staySignedIn, setStaySignedIn] = useState<
+    SignUpContextType['staySignedIn']
+  >({
+    ...defaultValidatedInputState<SignUpContextType['staySignedIn']['value']>(
+      false
+    ),
+  });
+
   const [valid, setValid] = useState<SignUpContextType['valid']>(false);
   const [loading, setLoading] = useState<SignUpContextType['loading']>(false);
   const [error, setError] = useState<SignUpContextType['error']>(null);
@@ -50,6 +60,8 @@ function SignUpContextProvider({ children }: Props) {
         setPassword,
         confirmPassword,
         setConfirmPassword,
+        staySignedIn,
+        setStaySignedIn,
         valid,
         setValid,
         loading,

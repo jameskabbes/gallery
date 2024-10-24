@@ -111,16 +111,16 @@ function Styles() {
           </Card1>
         </section>
         <section className="flex-1 flex-col">
-          <Card1 className="flex flex-col space-y-2 m-2">
+          <Card1 className="flex flex-col space-y-2 m-2 overflow-x-auto">
             <form
               action="submit"
               onSubmit={(e) => {
                 e.preventDefault();
               }}
-              className="flex flex-col space-y-6"
+              className="flex flex-col space-y-4"
             >
               <header>Form Title</header>
-              <fieldset>
+              <fieldset className="space-y-4">
                 <section>
                   <label htmlFor="text-input-1">Text Input</label>
                   <ValidatedInputString
@@ -149,7 +149,7 @@ function Styles() {
                     type="datetime-local"
                   />
                 </section>
-                <section className="flex flex-row items-end space-x-4">
+                <section className="flex flex-row items-end space-x-4 flex-wrap">
                   <h1>
                     <ValidatedInputToggle
                       state={toggleState}
@@ -208,7 +208,7 @@ function Styles() {
                     />
                   </span>
                 </section>
-                <section className="flex flex-row items-end space-x-4">
+                <section className="flex flex-row items-end space-x-4 flex-wrap">
                   <h1>
                     <ValidatedInputCheckbox
                       state={toggleState}
@@ -272,38 +272,6 @@ function Styles() {
                     <RadioButton1 state={toggleState.value} />
                   </h1>
                 </section>
-                {/* <fieldset>
-                  <section>
-                    <InputRadio
-                      value={'Option 1'}
-                      checked={radioState.value === 'Option 1'}
-                      setState={setRadioState}
-                      id={'radio-input-1'}
-                    >
-                      <label htmlFor="radio-input-1">Option 1</label>
-                    </InputRadio>
-                  </section>
-                  <section>
-                    <InputRadio
-                      value={'Option 2'}
-                      checked={radioState.value === 'Option 2'}
-                      setState={setRadioState}
-                      id={'radio-input-2'}
-                    >
-                      <label htmlFor="radio-input-2">Option 2</label>
-                    </InputRadio>
-                  </section>
-                  <section>
-                    <InputRadio
-                      value={'Option 3'}
-                      checked={radioState.value === 'Option 3'}
-                      setState={setRadioState}
-                      id={'radio-input-3'}
-                    >
-                      <label htmlFor="radio-input-3">Option 3</label>
-                    </InputRadio>
-                  </section>
-                </fieldset> */}
               </fieldset>
               <ButtonSubmit
                 disabled={
