@@ -1,15 +1,21 @@
 import React, { useContext } from 'react';
 import { GlobalModalsContext } from '../contexts/GlobalModals';
-import { ConfirmationModal as ConfirmationModalType } from '../types';
+import { ConfirmationModal as ConfirmationModalType, Modal } from '../types';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 
 function useConfirmationModal() {
   const globalModalsContext = useContext(GlobalModalsContext);
 
-  function checkConfirmation(modalProps: ConfirmationModalType) {
+  const defaultContentStyle = { maxWidth: '400px', width: '100%' };
+
+  function checkConfirmation(
+    confirmationModalProps: ConfirmationModalType,
+    modalProps: Partial<Omit<Modal, 'component'>> = {}
+  ) {
     globalModalsContext.setModal({
-      component: <ConfirmationModal {...modalProps} />,
-      key: 'confirmation-modal',
+      component: <ConfirmationModal {...confirmationModalProps} />,
+      contentStyle: defaultContentStyle,
+      ...modalProps,
     });
   }
 
