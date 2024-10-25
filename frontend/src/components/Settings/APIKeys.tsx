@@ -27,10 +27,11 @@ import { IoHourglassOutline } from 'react-icons/io5';
 import { IoChevronForwardOutline } from 'react-icons/io5';
 import { IoChevronDownOutline } from 'react-icons/io5';
 import { ValidatedInputString } from '../Form/ValidatedInputString';
-import { isDatetimeValid } from '../../services/isDatetimeValid';
 
 import openapi_schema from '../../../../openapi_schema.json';
 import { ValidatedInputDatetimeLocal } from '../Form/ValidatedInputDatetimeLocal';
+import { Button1, Button2, ButtonSubmit } from '../Utils/Button';
+import { Card1 } from '../Utils/Card';
 
 const API_ENDPOINT = '/api-keys/';
 const API_METHOD = 'get';
@@ -122,9 +123,6 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
         [tempID]: tempAPIKey,
       }));
 
-      // wait for two seoncd
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
       const { data, response } = await postAPIKey({
         expiry: new Date(expiry['value']).toISOString(),
         name: name['value'],
@@ -159,39 +157,38 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
 
     return (
       <div id="add-api-key">
-        <form onSubmit={addAPIKey} className="flex flex-col space-y-2">
-          <span className="title">Add API Key</span>
-          <div>
-            <label htmlFor="api-key-name">Name</label>
-            <ValidatedInputString
-              state={name}
-              setState={setName}
-              id="api-key-name"
-              type="text"
-              minLength={
-                openapi_schema.components.schemas.APIKeyCreate.properties.name
-                  .minLength
-              }
-              maxLength={
-                openapi_schema.components.schemas.APIKeyCreate.properties.name
-                  .maxLength
-              }
-              required={true}
-            />
-          </div>
-          <div>
-            <label htmlFor="api-key-expiry">Expiry</label>
-            <ValidatedInputDatetimeLocal
-              state={expiry}
-              setState={setExpiry}
-              id="api-key-expiry"
-              required={true}
-            />
-          </div>
-
-          <button type="submit" disabled={!valid}>
-            <span className="leading-none mb-0">Add API Key</span>
-          </button>
+        <form onSubmit={addAPIKey} className="flex flex-col space-y-4">
+          <header>Add API Key</header>
+          <fieldset className="flex flex-col space-y-4">
+            <section>
+              <label htmlFor="api-key-name">Name</label>
+              <ValidatedInputString
+                state={name}
+                setState={setName}
+                id="api-key-name"
+                type="text"
+                minLength={
+                  openapi_schema.components.schemas.APIKeyCreate.properties.name
+                    .minLength
+                }
+                maxLength={
+                  openapi_schema.components.schemas.APIKeyCreate.properties.name
+                    .maxLength
+                }
+                required={true}
+              />
+            </section>
+            <section>
+              <label htmlFor="api-key-expiry">Expiry</label>
+              <ValidatedInputDatetimeLocal
+                state={expiry}
+                setState={setExpiry}
+                id="api-key-expiry"
+                required={true}
+              />
+            </section>
+          </fieldset>
+          <ButtonSubmit disabled={!valid}>Add API Key</ButtonSubmit>
         </form>
       </div>
     );
@@ -201,7 +198,7 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
     const [isEditing, setIsEditing] = useState(false);
 
     return (
-      <div key={apiKey.id} className="button-tertiary">
+      <Card1 key={apiKey.id}>
         <div className="flex flex-row items-center space-x-2">
           <div className="flex flex-col">
             <button onClick={() => setIsEditing((prev) => !prev)}>
@@ -213,10 +210,12 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
             </button>
           </div>
           <div className="flex flex-col flex-1">
-            <h4>{apiKey.name}</h4>
-            <p className="flex flex-row items-center space-x-2">
-              <CiClock2 />
-              <span>
+            <h3 className="mb-4">{apiKey.name}</h3>
+            <div className="flex flex-row items-center space-x-2">
+              <p>
+                <CiClock2 />
+              </p>
+              <p>
                 Issued:{' '}
                 {new Date(apiKey.issued).toLocaleString('en-US', {
                   year: 'numeric',
@@ -225,11 +224,13 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
                   hour: 'numeric',
                   minute: 'numeric',
                 })}
-              </span>
-            </p>
-            <p className="flex flex-row items-center space-x-2">
-              <IoHourglassOutline />
-              <span>
+              </p>
+            </div>
+            <div className="flex flex-row items-center space-x-2">
+              <p>
+                <IoHourglassOutline />
+              </p>
+              <p>
                 Expires:{' '}
                 {new Date(apiKey.expiry).toLocaleString('en-US', {
                   year: 'numeric',
@@ -238,29 +239,33 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
                   hour: 'numeric',
                   minute: 'numeric',
                 })}
-              </span>
-            </p>
+              </p>
+            </div>
           </div>
           <div className="flex flex-col">
-            <button
+            <Button2
               onClick={() => {
-                checkConfirmation({
-                  title: 'Delete API Key?',
-                  confirmText: 'Delete',
-                  message: `Are you sure you want to delete the API Key ${apiKey.name}?`,
-                  onConfirm: () => {
-                    handleDeleteAPIKey(apiKey.id);
-                    globalModalsContext.setModal(null);
+                checkConfirmation(
+                  {
+                    title: 'Delete API Key?',
+                    confirmText: 'Delete',
+                    message: `Are you sure you want to delete the API Key ${apiKey.name}?`,
+                    onConfirm: () => {
+                      handleDeleteAPIKey(apiKey.id);
+                      globalModalsContext.setModal(null);
+                    },
+                    onCancel: () => {
+                      globalModalsContext.setModal(null);
+                    },
                   },
-                  onCancel: () => {
-                    globalModalsContext.setModal(null);
-                  },
-                });
+                  {
+                    key: 'delete-api-key',
+                  }
+                );
               }}
-              className="button-tertiary"
             >
               <span className="text-error-500">Delete</span>
-            </button>
+            </Button2>
           </div>
         </div>
         {isEditing && (
@@ -268,7 +273,7 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
             <p>Editing...</p>
           </div>
         )}
-      </div>
+      </Card1>
     );
   }
 
@@ -308,8 +313,7 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
         <>
           <div className="flex flex-row justify-between p-1">
             <h2>API Keys</h2>
-            <button
-              className="button-primary"
+            <Button1
               onClick={() => {
                 globalModalsContext.setModal({
                   component: <AddAPIKey />,
@@ -318,15 +322,13 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
               }}
             >
               Add Key
-            </button>
+            </Button1>
           </div>
-          <div className="p-2">
-            {Object.keys(apiKeys).map((key) => (
-              <div key={apiKeys[key].id}>
-                <APIKeyRow apiKey={apiKeys[key]} />
-              </div>
-            ))}
-          </div>
+          {Object.keys(apiKeys).map((key) => (
+            <div key={apiKeys[key].id}>
+              <APIKeyRow apiKey={apiKeys[key]} />
+            </div>
+          ))}
         </>
       )}
     </>
