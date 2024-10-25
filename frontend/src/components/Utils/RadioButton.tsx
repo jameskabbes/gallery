@@ -27,9 +27,7 @@ function RadioButton1({ children, state, ...rest }: CheckboxProps) {
   return (
     <RadioButtonBase {...rest}>
       <div
-        className={`h-full w-full rounded-full ${
-          state && 'bg-primary-light dark:bg-primary-light'
-        } `}
+        className={`h-full w-full rounded-full ${state && 'bg-color-primary'} `}
         style={{
           transition: '0.1s',
         }}
