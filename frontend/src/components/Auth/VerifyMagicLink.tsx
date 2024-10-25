@@ -1,16 +1,12 @@
 import React, { useContext, useEffect } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { callApi, useApiCall } from '../../utils/Api';
 import { paths, operations, components } from '../../openapi_schema';
 import { ExtractResponseTypes } from '../../types';
 import { GlobalModalsContext } from '../../contexts/GlobalModals';
 import { Loader1 } from '../Utils/Loader';
-import { Card1 } from '../Utils/Card';
-import load from 'openapi-typescript/dist/load.js';
 import { IoWarning } from 'react-icons/io5';
 import { IoCheckmark } from 'react-icons/io5';
-import { Button1 } from '../Utils/Button';
 
 const API_ENDPOINT = '/auth/verify-magic-link/';
 const API_METHOD = 'post';
@@ -54,7 +50,7 @@ function VerifyMagicLink() {
     } else {
       if (response.status === 200) {
         Icon = () => <IoCheckmark className="text-green-500" />;
-        message = 'Magic link verified';
+        message = 'Magic link verified. You can close this tab';
       } else {
         Icon = () => <IoWarning className="text-red-500" />;
         message = 'Could not verify magic link';
@@ -84,13 +80,7 @@ function VerifyMagicLink() {
     });
   }, [loading]);
 
-  return (
-    <div className="flex flex-row justify-center mt-12">
-      <Link to="/">
-        <Button1>Home</Button1>
-      </Link>
-    </div>
-  );
+  return null;
 }
 
 export { VerifyMagicLink };

@@ -28,6 +28,13 @@ import { Loader1, Loader2, Loader3 } from '../components/Utils/Loader';
 import { Checkbox1 } from '../components/Utils/Checkbox';
 import { RadioButton1 } from '../components/Utils/RadioButton';
 
+const API_ENDPOINT = '/styles/page/';
+const API_METHOD = 'get';
+
+type ResponseTypesByStatus = ExtractResponseTypes<
+  paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
+>;
+
 function Styles() {
   let deviceContext = useContext(DeviceContext);
   let toastContext = useContext(ToastContext);
@@ -49,6 +56,16 @@ function Styles() {
       'Option 1'
     ),
   });
+
+  const { data, loading, response } = useApiCall<
+    ResponseTypesByStatus[keyof ResponseTypesByStatus]
+  >(
+    {
+      endpoint: API_ENDPOINT,
+      method: API_METHOD,
+    },
+    true
+  );
 
   return (
     <div>

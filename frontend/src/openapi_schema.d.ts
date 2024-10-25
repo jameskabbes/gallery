@@ -121,6 +121,10 @@ export interface paths {
     /** Get Settings Page */
     get: operations["get_settings_page_settings_page__get"];
   };
+  "/styles/page/": {
+    /** Get Styles Page */
+    get: operations["get_styles_page_styles_page__get"];
+  };
 }
 
 export type webhooks = Record<string, never>;
@@ -266,6 +270,10 @@ export interface components {
     };
     /** GetSettingsPageResponse */
     GetSettingsPageResponse: {
+      auth: components["schemas"]["GetAuthBaseReturn"];
+    };
+    /** GetStylesPageResponse */
+    GetStylesPageResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
     };
     /** GoogleAuthRequest */
@@ -1166,6 +1174,17 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["GetSettingsPageResponse"];
+        };
+      };
+    };
+  };
+  /** Get Styles Page */
+  get_styles_page_styles_page__get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["GetStylesPageResponse"];
         };
       };
     };

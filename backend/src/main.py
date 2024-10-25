@@ -871,6 +871,17 @@ async def get_settings_page(authorization: typing.Annotated[GetAuthorizationRetu
     )
 
 
+class GetStylesPageResponse(GetAuthReturn):
+    pass
+
+
+@app.get('/styles/page/')
+async def get_styles_page(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=False))]) -> GetStylesPageResponse:
+    return GetStylesPageResponse(
+        **get_auth(authorization).model_dump()
+    )
+
+
 # class GetGalleryPageResponse(AuthResponse):
 #     gallery: models.Gallery
 #     gallery_permission: models.GalleryPermission | None = None
