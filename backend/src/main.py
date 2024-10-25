@@ -384,9 +384,6 @@ class VerifyMagicLinkResponse(GetAuthReturn):
 @ app.post('/auth/verify-magic-link/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
 async def verify_magic_link(model: VerifyMagicLinkRequest, authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(permitted_auth_credential_types={'access_token'},
                                                                                                                                              raise_exceptions=True, override_lifetime=c.authentication['magic_link_expiry_timedelta']))], response: Response) -> VerifyMagicLinkResponse:
-    import time
-    time.sleep(3)
-
     with Session(c.db_engine) as session:
 
         user_access_token = await models.UserAccessTokenCreateAdmin(
