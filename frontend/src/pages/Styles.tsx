@@ -163,7 +163,6 @@ function Styles() {
                     state={dateState}
                     setState={setDateState}
                     id={'datetime-local-input-1'}
-                    type="datetime-local"
                   />
                 </section>
                 <section className="flex flex-row items-end space-x-4 flex-wrap">
