@@ -9,6 +9,7 @@ import { ToastContext } from '../contexts/Toast';
 import { AuthContext } from '../contexts/Auth';
 import { logOut } from './Auth/logOut';
 import { Surface } from './Utils/Surface';
+import { useConfirmationModal } from '../utils/useConfirmationModal';
 
 function Menu() {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
@@ -17,6 +18,7 @@ function Menu() {
   const authModalsContext = useContext(AuthModalsContext);
   const toastContext = useContext(ToastContext);
   useClickOutside(menuRef, () => setIsMenuVisible(false));
+  const { checkConfirmation } = useConfirmationModal();
 
   const toggleMenu = () => {
     setIsMenuVisible(!isMenuVisible);
@@ -35,8 +37,15 @@ function Menu() {
         {
           element: <span>Log Out</span>,
           onClick: () => {
-            setIsMenuVisible(false);
-            logOut(authContext, toastContext);
+            checkConfirmation({
+              title: 'Log Out?',
+              confirm: 'Log Out',
+              message: 'Are you sure you want to log out?',
+              onConfirm: () => {
+                setIsMenuVisible(false);
+                logOut(authContext, toastContext);
+              },
+            });
           },
         },
       ]

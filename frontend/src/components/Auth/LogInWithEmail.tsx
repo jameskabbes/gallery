@@ -11,6 +11,7 @@ import { isEmailValid } from '../../services/api/isEmailValid';
 import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { ButtonSubmit } from '../Utils/Button';
 import { ValidatedInputCheckbox } from '../Form/ValidatedInputCheckbox';
+import { ConfirmationModal } from '../ConfirmationModal';
 
 const API_ENDPOINT = '/auth/login/email-magic-link/';
 const API_METHOD = 'post';

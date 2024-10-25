@@ -248,15 +248,12 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
                 checkConfirmation(
                   {
                     title: 'Delete API Key?',
-                    confirmText: 'Delete',
+                    confirm: 'Delete',
                     message: `Are you sure you want to delete the API Key ${apiKey.name}?`,
                     onConfirm: () => {
                       handleDeleteAPIKey(apiKey.id);
-                      globalModalsContext.setModal(null);
                     },
-                    onCancel: () => {
-                      globalModalsContext.setModal(null);
-                    },
+                    onCancel: () => {},
                   },
                   {
                     key: 'delete-api-key',

@@ -9,11 +9,29 @@ function useConfirmationModal() {
   const defaultContentStyle = { maxWidth: '400px', width: '100%' };
 
   function checkConfirmation(
-    confirmationModalProps: ConfirmationModalType,
+    {
+      onCancel = () => {},
+      onConfirm = () => {},
+      ...restConfirmationModalProps
+    }: ConfirmationModalType,
     modalProps: Partial<Omit<Modal, 'component'>> = {}
   ) {
     globalModalsContext.setModal({
-      component: <ConfirmationModal {...confirmationModalProps} />,
+      component: (
+        <ConfirmationModal
+          {...{
+            onCancel: () => {
+              onCancel();
+              globalModalsContext.setModal(null);
+            },
+            onConfirm: () => {
+              onConfirm();
+              globalModalsContext.setModal(null);
+            },
+            ...restConfirmationModalProps,
+          }}
+        />
+      ),
       contentStyle: defaultContentStyle,
       ...modalProps,
     });

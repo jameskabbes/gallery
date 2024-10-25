@@ -7,6 +7,7 @@ import {
   AuthContext,
   ToastContext,
 } from '../../types';
+import { useConfirmationModal } from '../../utils/useConfirmationModal';
 
 const API_ENDPOINT = '/auth/logout/';
 const API_METHOD = 'post';

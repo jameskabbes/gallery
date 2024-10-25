@@ -1,4 +1,4 @@
-import React, { useContext, useRef } from 'react';
+import React, { useContext, useRef, useEffect } from 'react';
 import { ConfirmationModal as ConfirmationModalType } from '../types';
 import { Button1, Button2 } from '../components/Utils/Button';
 
@@ -7,32 +7,42 @@ function ConfirmationModal({
   message,
   onConfirm = () => {},
   onCancel = () => {},
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
+  confirm = 'Confirm',
+  cancel = 'Cancel',
+  showCancel = true,
 }: ConfirmationModalType): JSX.Element {
+  const confirmButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    confirmButtonRef.current?.focus();
+  }, [confirmButtonRef.current]);
+
   return (
-    <div className="w-[300] flex flex-col space-y-4">
-      <h3>{title}</h3>
+    <form className="flex flex-col">
+      <header>{title}</header>
       <p>{message}</p>
       <div className="flex flex-row justify-center space-x-2">
-        <Button2
-          className="flex-1"
-          onClick={() => {
-            onCancel();
-          }}
-        >
-          {cancelText}
-        </Button2>
+        {showCancel && (
+          <Button2
+            className="flex-1"
+            onClick={() => {
+              onCancel();
+            }}
+          >
+            {cancel}
+          </Button2>
+        )}
         <Button1
+          ref={confirmButtonRef}
           className="flex-1"
           onClick={() => {
             onConfirm();
           }}
         >
-          {confirmText}
+          {confirm}
         </Button1>
       </div>
-    </div>
+    </form>
   );
 }
 
