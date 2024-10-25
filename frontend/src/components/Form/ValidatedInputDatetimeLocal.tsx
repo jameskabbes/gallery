@@ -13,7 +13,7 @@ type T = Date;
 
 interface ValidatedInputDatetimeLocalProps
   extends UseValidatedInputProps<T>,
-    InputTextBaseInputProps {
+    Omit<InputTextBaseInputProps, 'type'> {
   showStatus?: boolean;
 }
 
@@ -75,6 +75,7 @@ function ValidatedInputDatetimeLocal({
               });
             }
           }}
+          type="datetime-local"
           {...rest}
         />
         <div className="flex-1">
