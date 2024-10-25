@@ -11,6 +11,8 @@ import {
   deleteUserAccessToken,
   ResponseTypesByStatus as DeleteUserAccessTokenResponseTypes,
 } from '../../services/api/deleteUserAccessToken';
+import { Card1 } from '../Utils/Card';
+import { Button1 } from '../Utils/Button';
 
 const API_ENDPOINT = '/user-access-tokens/';
 const API_METHOD = 'get';
@@ -98,7 +100,7 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
           {Object.keys(userAccessTokens).map((key) => {
             const session = userAccessTokens[key];
             return (
-              <div
+              <Card1
                 key={key}
                 className="flex flex-row justify-between items-center button-tertiary m-2"
               >
@@ -110,15 +112,14 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
                     day: 'numeric',
                   })}
                 </p>
-                <button
+                <Button1
                   onClick={() => {
                     handleDeleteSession(key);
                   }}
-                  className="button-primary"
                 >
                   Sign Out
-                </button>
-              </div>
+                </Button1>
+              </Card1>
             );
           })}
         </div>
