@@ -1,5 +1,6 @@
 import React, { useContext, useRef } from 'react';
 import { ConfirmationModal as ConfirmationModalType } from '../types';
+import { Button1, Button2 } from '../components/Utils/Button';
 
 function ConfirmationModal({
   title,
@@ -10,26 +11,26 @@ function ConfirmationModal({
   cancelText = 'Cancel',
 }: ConfirmationModalType): JSX.Element {
   return (
-    <div className="max-w-[300]">
+    <div className="w-[300] flex flex-col space-y-4">
       <h3>{title}</h3>
       <p>{message}</p>
       <div className="flex flex-row justify-center space-x-2">
-        <button
-          className="button-secondary"
+        <Button2
+          className="flex-1"
           onClick={() => {
             onCancel();
           }}
         >
           {cancelText}
-        </button>
-        <button
-          className="button-primary"
+        </Button2>
+        <Button1
+          className="flex-1"
           onClick={() => {
             onConfirm();
           }}
         >
           {confirmText}
-        </button>
+        </Button1>
       </div>
     </div>
   );
