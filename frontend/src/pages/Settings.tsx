@@ -1,19 +1,20 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { AuthContext } from '../../contexts/Auth';
-import { ToastContext } from '../../contexts/Toast';
-import { Appearance } from './Appearance';
-import { UserAccessTokens } from './UserAccessTokens';
-import { paths, operations, components } from '../../openapi_schema';
-import { ExtractResponseTypes } from '../../types';
-import { useApiCall } from '../../utils/Api';
-import { Profile } from './Profile';
+import { AuthContext } from '../contexts/Auth';
+import { ToastContext } from '../contexts/Toast';
+import { Appearance } from '../components/Settings/Appearance';
+import { UserAccessTokens } from '../components/Settings/UserAccessTokens';
+import { paths, operations, components } from '../openapi_schema';
+import { ExtractResponseTypes } from '../types';
+import { useApiCall } from '../utils/Api';
+import { Profile } from '../components/Settings/Profile';
 
 import { IoBrush } from 'react-icons/io5';
 import { IoRadioOutline } from 'react-icons/io5';
 import { IoPersonOutline } from 'react-icons/io5';
 import { IoKeyOutline } from 'react-icons/io5';
-import { APIKeys } from './APIKeys';
+import { APIKeys } from '../components/Settings/APIKeys';
+import { Card1 } from '../components/Utils/Card';
 
 const API_ENDPOINT = '/settings/page/';
 const API_METHOD = 'get';
@@ -85,10 +86,9 @@ function Settings(): JSX.Element {
     useParams<{ selection: string }>().selection as SelectionComponentKeys
   );
 
-  // navigate based on what the selection is
   useEffect(() => {
     if (!loading) {
-      navigate(`/settings/${selection}`);
+      navigate(`/settings/#${selection}`);
     }
   }, [selection, loading]);
 
@@ -118,6 +118,10 @@ function Settings(): JSX.Element {
           {Object.keys(selectionComponentMapping).map(
             (key: SelectionComponentKeys) => {
               if (authContext.state.user || !loggedInComponentKeys.has(key)) {
+                {
+                  selectionComponentMapping[key].component;
+                }
+
                 return (
                   <button
                     key={key}
@@ -134,13 +138,27 @@ function Settings(): JSX.Element {
             }
           )}
         </div>
-        <div className="flex flex-col flex-1 p-1">
+        <div className="flex flex-col flex-1 space-y-4">
+          {Object.keys(selectionComponentMapping).map(
+            (key: SelectionComponentKeys) => {
+              if (authContext.state.user || !loggedInComponentKeys.has(key)) {
+                return (
+                  <Card1 key={key} id={key}>
+                    {selectionComponentMapping[key].component}
+                  </Card1>
+                );
+              }
+            }
+          )}
+        </div>
+
+        {/* <div className="flex flex-col flex-1 p-1">
           {loading ? (
             <span className="loader-secondary"></span>
           ) : selection in selectionComponentMapping ? (
             selectionComponentMapping[selection].component
           ) : null}
-        </div>
+        </div> */}
       </div>
     </>
   );
