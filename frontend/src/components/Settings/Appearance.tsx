@@ -34,14 +34,6 @@ function DarkModeToggle() {
     { value: 'dark', icon: <IoMoonOutline />, label: <span>Dark</span> },
   ];
 
-  const [theme, setTheme] = useState<DarkModeContextType['preference']>(
-    darkModeContext.preference
-  );
-
-  useEffect(() => {
-    darkModeContext.setPreference(theme);
-  }, [theme]);
-
   return (
     <>
       <h2>Theme</h2>
@@ -51,15 +43,15 @@ function DarkModeToggle() {
           {themeOptions.map((option) => (
             <div
               className="flex flex-row space-x-4 items-center"
-              onClick={() => setTheme(option.value)}
-              key={'theme-' + option.value}
+              onClick={() => darkModeContext.setPreference(option.value)}
+              key={option.value}
             >
-              <RadioButton1 state={theme === option.value}>
+              <RadioButton1 state={darkModeContext.preference === option.value}>
                 <input
                   type="radio"
                   value={option.value}
-                  checked={theme === option.value}
-                  onChange={() => setTheme(option.value)}
+                  checked={darkModeContext.preference === option.value}
+                  onChange={() => darkModeContext.setPreference(option.value)}
                   className="opacity-0 absolute h-0 w-0"
                 />
               </RadioButton1>

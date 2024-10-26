@@ -7,18 +7,12 @@ function ConfirmationModal({
   message,
   onConfirm = () => {},
   onCancel = () => {},
-  confirm = 'Confirm',
-  cancel = 'Cancel',
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
   showCancel = true,
 }: ConfirmationModalType): JSX.Element {
-  const confirmButtonRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    confirmButtonRef.current?.focus();
-  }, [confirmButtonRef.current]);
-
   return (
-    <form className="flex flex-col">
+    <form className="flex flex-col space-y-8">
       <header>{title}</header>
       <p>{message}</p>
       <div className="flex flex-row justify-center space-x-2">
@@ -29,17 +23,17 @@ function ConfirmationModal({
               onCancel();
             }}
           >
-            {cancel}
+            {cancelText}
           </Button2>
         )}
         <Button1
-          ref={confirmButtonRef}
           className="flex-1"
-          onClick={() => {
+          onClick={(e) => {
+            e.preventDefault();
             onConfirm();
           }}
         >
-          {confirm}
+          {confirmText}
         </Button1>
       </div>
     </form>

@@ -7,7 +7,7 @@ const createStyledButton = createStyledSurfaceComponentCreator<
 >('button');
 
 const Button1 = createStyledButton(
-  'button-base bg-primary-light dark:bg-primary-dark text-light-lighter'
+  'button-base bg-color-primary text-light-lighter'
 );
 const Button2 = createStyledButton('button-base border-[1px]');
 const Button3 = createStyledButton(
@@ -15,7 +15,7 @@ const Button3 = createStyledButton(
 );
 
 const ButtonSubmit = createStyledButton(
-  'button-base bg-primary-light dark:bg-primary-dark text-light-lighter flex flex-row justify-center p-4 rounded-3xl mb-0',
+  'button-base bg-color-primary text-light-lighter flex flex-row justify-center p-4 rounded-3xl mb-0',
   { type: 'submit' }
 );
 

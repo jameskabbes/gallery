@@ -24,6 +24,7 @@
     "react-icons": "^4.11.0",
     "react-router-dom": "^6.15.0",
     "react-svg": "^16.1.29",
+    "react-swipeable": "^7.0.1",
     "react-toastify": "^10.0.5",
     "react-transition-group": "^4.4.5",
     "serve": "^14.2.1",

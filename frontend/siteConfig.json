@@ -1,8 +1,9 @@
 {
   "zIndex": {
-    "modalOverlay": 99,
-    "modalContent": 101,
-    "toast": 100
+    "modalOverlay": 100,
+    "modalContent": 105,
+    "header": 95,
+    "toast": 90
   },
   "validatedInput": {
     "debounceTimeoutLength": 200

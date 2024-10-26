@@ -15,6 +15,7 @@ import { useLogInWithGoogle } from './LogInWithGoogle';
 import { ValidatedInputCheckbox } from '../Form/ValidatedInputCheckbox';
 import { Button2, ButtonSubmit } from '../Utils/Button';
 import { Loader1, Loader2 } from '../Utils/Loader';
+import { Surface } from '../Utils/Surface';
 
 const API_ENDPOINT = '/auth/login/password/';
 const API_METHOD = 'post';
@@ -186,11 +187,13 @@ function LogIn() {
 
             <ButtonSubmit disabled={!logInContext.valid}>Login</ButtonSubmit>
           </form>
-          <div className="flex flex-row items-center space-x-2 my-2">
-            <div className="surface flex-1 border-t-[1px]" />
-            <p>or</p>
-            <div className="surface flex-1 border-t-[1px]" />
-          </div>
+          <Surface keepParentMode={true}>
+            <div className="flex flex-row items-center space-x-2 my-2">
+              <div className="flex-1 border-inherit border-t-[1px]" />
+              <p>or</p>
+              <div className="flex-1 border-inherit border-t-[1px]" />
+            </div>
+          </Surface>
 
           <div className="space-y-1">
             <Button2

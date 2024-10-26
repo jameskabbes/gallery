@@ -111,6 +111,7 @@
     width: 1em;
     box-sizing: border-box;
     animation: rotation 1s ease-in-out infinite;
+    z-index: 1;
   }
 
   .loader1 {
@@ -166,6 +167,10 @@ button {
   transition: 0.1s;
 }
 
+#header {
+  @apply top-0 bg-opacity-50 border-b-[1px];
+}
+
 #mobile-footer {
   @apply fixed bottom-0 left-0 w-full transition-transform transform translate-y-full;
 }
@@ -186,7 +191,6 @@ form button[type='submit'] {
 .input-text-container,
 .input-datetime-local-container {
   @apply rounded-xl border-[1px] py-1 px-2;
-  transition: border-color 0.2s;
 }
 
 .input-text-container input,

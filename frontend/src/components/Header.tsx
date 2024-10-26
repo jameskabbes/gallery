@@ -1,14 +1,24 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { IoAperture } from 'react-icons/io5';
 import { Menu } from './Menu';
 import { Link } from 'react-router-dom';
 import { DarkModeToggle } from './DarkModeToggle';
 import { Surface } from './Utils/Surface';
+import { DeviceContext } from '../contexts/Device';
+import siteConfig from '../../siteConfig.json';
 
 function Header(): JSX.Element {
+  const deviceContext = useContext(DeviceContext);
+
   return (
     <Surface>
-      <header className="sticky top-0 surface bg-opacity-50 border-b-[1px]">
+      <header
+        id="header"
+        className="sticky"
+        style={{
+          zIndex: siteConfig.zIndex.header,
+        }}
+      >
         <h6>
           <div className="max-w-screen-2xl mx-auto flex flex-row justify-between items-center px-2 py-2">
             <Link to="/">

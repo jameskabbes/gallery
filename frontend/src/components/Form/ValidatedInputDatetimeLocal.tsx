@@ -25,6 +25,7 @@ function ValidatedInputDatetimeLocal({
   isValid,
   isAvailable,
   showStatus = true,
+  className = '',
   ...rest
 }: ValidatedInputDatetimeLocalProps) {
   useValidatedInput<T>({
@@ -52,7 +53,7 @@ function ValidatedInputDatetimeLocal({
 
   return (
     <Surface>
-      <div className="flex flex-row items-center space-x-2 input-datetime-local-container">
+      <div className="flex flex-row items-center justify-between space-x-2 input-datetime-local-container">
         <InputTextBase
           value={dateString}
           setValue={(value: string) => {
@@ -76,9 +77,10 @@ function ValidatedInputDatetimeLocal({
             }
           }}
           type="datetime-local"
+          className={'dark:[color-scheme:dark]' + className}
           {...rest}
         />
-        <div className="flex-1">
+        <div>
           {showStatus && (
             <span title={state.error || ''}>
               <CheckOrX status={state.status} />

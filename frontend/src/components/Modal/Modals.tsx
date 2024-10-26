@@ -7,7 +7,6 @@ import { useClickOutside } from '../../utils/useClickOutside';
 import { IoClose } from 'react-icons/io5';
 import { Card1 } from '../Utils/Card';
 import siteConfig from '../../../siteConfig.json';
-import { Surface } from '../Utils/Surface';
 
 const timeouts = {
   enter: 200,
@@ -51,6 +50,7 @@ function Modals({ activeModal, overlayStyle = {} }: Props) {
                 ...activeModal.contentStyle,
               }}
               ref={refCallback}
+              className="overflow-auto"
             >
               {activeModal.includeExitButton && (
                 <div className="flex flex-row justify-end">

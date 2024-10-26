@@ -5,6 +5,7 @@ import { ExtractResponseTypes } from '../types';
 import { useApiCall } from '../utils/Api';
 import { Button1 } from '../components/Utils/Button';
 import { AuthModalsContext } from '../contexts/AuthModals';
+import { Link } from 'react-router-dom';
 
 const API_ENDPOINT = '/home/page/';
 const API_METHOD = 'get';
@@ -28,7 +29,11 @@ function Home() {
     true
   );
 
-  return <p>Hello</p>;
+  return (
+    <Link to="/styles/">
+      <Button1>Styles</Button1>
+    </Link>
+  );
 }
 
 export { Home };

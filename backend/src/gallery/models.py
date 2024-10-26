@@ -781,7 +781,6 @@ class APIKey(Table[APIKeyTypes.id], APIKeyIDBase, AuthCredential[APIKeyTypes.id]
 
 class APIKeyExport(TableExport[APIKey], AuthCredentialExport[APIKeyTypes.id]):
     _TABLE_MODEL: typing.ClassVar[typing.Type[APIKey]] = APIKey
-
     name: APIKeyTypes.name
 
 

@@ -230,8 +230,8 @@ interface ConfirmationModal {
   message: string;
   onConfirm: () => void;
   onCancel?: () => void;
-  confirm?: React.ReactNode;
-  cancel?: React.ReactNode;
+  confirmText?: string;
+  cancelText?: string;
   showCancel?: boolean;
 }
 

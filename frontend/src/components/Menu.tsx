@@ -39,7 +39,7 @@ function Menu() {
           onClick: () => {
             checkConfirmation({
               title: 'Log Out?',
-              confirm: 'Log Out',
+              confirmText: 'Log Out',
               message: 'Are you sure you want to log out?',
               onConfirm: () => {
                 setIsMenuVisible(false);

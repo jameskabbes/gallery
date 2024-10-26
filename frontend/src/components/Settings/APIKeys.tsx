@@ -176,6 +176,8 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
                     .maxLength
                 }
                 required={true}
+                checkValidity={true}
+                showStatus={true}
               />
             </section>
             <section>
@@ -185,6 +187,7 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
                 setState={setExpiry}
                 id="api-key-expiry"
                 required={true}
+                showStatus={true}
               />
             </section>
           </fieldset>
@@ -196,6 +199,33 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
 
   function APIKeyRow({ apiKey }: { apiKey: components['schemas']['APIKey'] }) {
     const [isEditing, setIsEditing] = useState(false);
+
+    async function handleDeleteAPIKey(apiKeyId: string) {
+      let toastId = toastContext.makePending({
+        message: `Deleting API Key ${apiKeys[apiKeyId].name}`,
+      });
+
+      const apiKeyToDelete = apiKeys[apiKeyId];
+      const newAPIKeys = { ...apiKeys };
+      delete newAPIKeys[apiKeyId];
+      setAPIKeys(newAPIKeys);
+
+      const { data, response } = await deleteAPIKey(apiKeyId);
+
+      if (response.status === 204) {
+        const apiData = data as DeleteAPIKeyResponseTypes['204'];
+        toastContext.update(toastId, {
+          message: `Deleted API Key ${apiKeyToDelete.name}`,
+          type: 'success',
+        });
+      } else {
+        toastContext.update(toastId, {
+          message: `Error deleting API Key ${apiKeyToDelete.name}`,
+          type: 'error',
+        });
+        setAPIKeys({ ...apiKeys, [apiKeyId]: apiKeyToDelete });
+      }
+    }
 
     return (
       <Card1 key={apiKey.id}>
@@ -248,7 +278,7 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
                 checkConfirmation(
                   {
                     title: 'Delete API Key?',
-                    confirm: 'Delete',
+                    confirmText: 'Delete',
                     message: `Are you sure you want to delete the API Key ${apiKey.name}?`,
                     onConfirm: () => {
                       handleDeleteAPIKey(apiKey.id);
@@ -272,34 +302,6 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
         )}
       </Card1>
     );
-  }
-
-  async function handleDeleteAPIKey(apiKeyId: string) {
-    let toastId = toastContext.makePending({
-      message: `Deleting API Key ${apiKeys[apiKeyId].name}...`,
-    });
-
-    const apiKeyToDelete = apiKeys[apiKeyId];
-
-    const newAPIKeys = { ...apiKeys };
-    delete newAPIKeys[apiKeyId];
-    setAPIKeys(newAPIKeys);
-
-    const { data, response } = await deleteAPIKey(apiKeyId);
-
-    if (response.status === 204) {
-      const apiData = data as DeleteAPIKeyResponseTypes['204'];
-      toastContext.update(toastId, {
-        message: `Deleted API Key ${apiKeyToDelete.name}`,
-        type: 'success',
-      });
-    } else {
-      toastContext.update(toastId, {
-        message: `Error deleting API Key ${apiKeyToDelete.name}`,
-        type: 'error',
-      });
-      setAPIKeys({ ...apiKeys, [apiKeyId]: apiKeyToDelete });
-    }
   }
 
   return (

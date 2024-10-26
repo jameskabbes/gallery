@@ -91,7 +91,7 @@ function Styles() {
               </div>
             </div>
           </Card1>
-          <Card1 className="flex flex-col space-y-2 m-2">
+          <Card1 className="flex flex-col space-y-2 m-2 ">
             <h2>Loaders</h2>
             <div className="flex flex-col border-inherit space-y-2">
               <div className="flex flex-row justify-around">

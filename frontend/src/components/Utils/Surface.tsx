@@ -8,6 +8,7 @@ import combineRefs from '../../utils/combineRefs';
 
 interface Props extends OverrideParentSurfaceProps {
   children: React.ReactElement<any> & React.RefAttributes<any>; // Include ref attributes
+  className?: string;
 }
 
 function Surface({

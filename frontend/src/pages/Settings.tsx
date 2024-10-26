@@ -111,9 +111,9 @@ function Settings(): JSX.Element {
   }, [authContext.state.user, selection, loading]);
 
   return (
-    <>
+    <div className="centered-page-content">
       <h1>Settings</h1>
-      <div className="flex flex-row w-full space-x-4">
+      <div className="flex flex-row space-x-4 w-full">
         <div className="flex flex-col p-2">
           {Object.keys(selectionComponentMapping).map(
             (key: SelectionComponentKeys) => {
@@ -138,12 +138,12 @@ function Settings(): JSX.Element {
             }
           )}
         </div>
-        <div className="flex flex-col flex-1 space-y-4">
+        <div className="flex flex-col space-y-4">
           {Object.keys(selectionComponentMapping).map(
             (key: SelectionComponentKeys) => {
               if (authContext.state.user || !loggedInComponentKeys.has(key)) {
                 return (
-                  <Card1 key={key} id={key}>
+                  <Card1 key={key} id={key} className="flex flex-row flex-1">
                     {selectionComponentMapping[key].component}
                   </Card1>
                 );
@@ -160,7 +160,7 @@ function Settings(): JSX.Element {
           ) : null}
         </div> */}
       </div>
-    </>
+    </div>
   );
 }
 
