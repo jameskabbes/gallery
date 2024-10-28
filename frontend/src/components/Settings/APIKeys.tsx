@@ -311,7 +311,6 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
       ) : (
         <>
           <div className="flex flex-row justify-between p-1">
-            <h2>API Keys</h2>
             <Button1
               onClick={() => {
                 globalModalsContext.setModal({

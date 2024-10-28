@@ -92,7 +92,6 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
 
   return (
     <>
-      <h2>Sessions</h2>
       {authContext.state.user === null ? (
         <p>Login to view your sessions.</p>
       ) : (

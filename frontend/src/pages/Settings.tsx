@@ -8,6 +8,7 @@ import { paths, operations, components } from '../openapi_schema';
 import { ExtractResponseTypes } from '../types';
 import { useApiCall } from '../utils/Api';
 import { Profile } from '../components/Settings/Profile';
+import { DeviceContext } from '../contexts/Device';
 
 import { IoBrush } from 'react-icons/io5';
 import { IoRadioOutline } from 'react-icons/io5';
@@ -26,6 +27,7 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 function Settings(): JSX.Element {
   const authContext = useContext(AuthContext);
   const toastContext = useContext(ToastContext);
+  const deviceContext = useContext(DeviceContext);
   const navigate = useNavigate();
 
   const {
@@ -111,9 +113,8 @@ function Settings(): JSX.Element {
   }, [authContext.state.user, selection, loading]);
 
   return (
-    <div className="centered-page-content">
-      <h1>Settings</h1>
-      <div className="flex flex-row space-x-4 w-full">
+    <div className="flex flex-row space-x-4 max-w-screen-2xl justify-center ">
+      {!deviceContext.isMobile && (
         <div className="flex flex-col p-2">
           {Object.keys(selectionComponentMapping).map(
             (key: SelectionComponentKeys) => {
@@ -138,27 +139,22 @@ function Settings(): JSX.Element {
             }
           )}
         </div>
-        <div className="flex flex-col space-y-4">
-          {Object.keys(selectionComponentMapping).map(
-            (key: SelectionComponentKeys) => {
-              if (authContext.state.user || !loggedInComponentKeys.has(key)) {
-                return (
-                  <Card1 key={key} id={key} className="flex flex-row flex-1">
+      )}
+      <div className="flex-1 flex-col space-y-4">
+        {Object.keys(selectionComponentMapping).map(
+          (key: SelectionComponentKeys) => {
+            if (authContext.state.user || !loggedInComponentKeys.has(key)) {
+              return (
+                <Card1 key={key} id={key} className="flex flex-col flex-1">
+                  <>
+                    <h2>{selectionComponentMapping[key].name}</h2>
                     {selectionComponentMapping[key].component}
-                  </Card1>
-                );
-              }
+                  </>
+                </Card1>
+              );
             }
-          )}
-        </div>
-
-        {/* <div className="flex flex-col flex-1 p-1">
-          {loading ? (
-            <span className="loader-secondary"></span>
-          ) : selection in selectionComponentMapping ? (
-            selectionComponentMapping[selection].component
-          ) : null}
-        </div> */}
+          }
+        )}
       </div>
     </div>
   );

@@ -19,7 +19,6 @@ interface Props {
 function Profile({ authContext, toastContext }: Props) {
   return (
     <div>
-      <h1>Profile</h1>
       {/* <UpdateUser user={authContext.state.user} />
       <UpdateUsername user={authContext.state.user} />
       <UpdatePassword /> */}

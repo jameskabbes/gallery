@@ -36,8 +36,6 @@ function DarkModeToggle() {
 
   return (
     <>
-      <h2>Theme</h2>
-
       <form className="flex flex-col">
         <fieldset name="theme">
           {themeOptions.map((option) => (
