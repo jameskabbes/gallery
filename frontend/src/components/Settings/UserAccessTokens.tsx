@@ -95,33 +95,38 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
       {authContext.state.user === null ? (
         <p>Login to view your sessions.</p>
       ) : (
-        <div>
-          {Object.keys(userAccessTokens).map((key) => {
-            const session = userAccessTokens[key];
-            return (
-              <Card1
-                key={key}
-                className="flex flex-row justify-between items-center button-tertiary m-2"
-              >
-                <p>
-                  Issued:{' '}
-                  {new Date(session.issued).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </p>
-                <Button1
-                  onClick={() => {
-                    handleDeleteSession(key);
-                  }}
+        <>
+          <h2 className="mb-4">Sessions</h2>
+          <div className="flex flex-col space-y-4">
+            {Object.keys(userAccessTokens).map((key) => {
+              const session = userAccessTokens[key];
+              return (
+                <Card1
+                  key={key}
+                  className="flex flex-row justify-between items-center"
                 >
-                  Sign Out
-                </Button1>
-              </Card1>
-            );
-          })}
-        </div>
+                  <p>
+                    Issued:{' '}
+                    {new Date(session.issued).toLocaleString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: 'numeric',
+                    })}
+                  </p>
+                  <Button1
+                    onClick={() => {
+                      handleDeleteSession(key);
+                    }}
+                  >
+                    Sign Out
+                  </Button1>
+                </Card1>
+              );
+            })}
+          </div>
+        </>
       )}
     </>
   );

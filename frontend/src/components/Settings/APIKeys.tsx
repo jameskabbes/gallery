@@ -307,10 +307,14 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
   return (
     <>
       {authContext.state.user === null ? (
-        <p>Login to view your API keys.</p>
+        <>
+          <h2>API Keys</h2>
+          <p>Login to view your API keys.</p>
+        </>
       ) : (
         <>
-          <div className="flex flex-row justify-between p-1">
+          <div className="flex flex-row justify-between mb-4">
+            <h2>API Keys</h2>
             <Button1
               onClick={() => {
                 globalModalsContext.setModal({
@@ -319,14 +323,16 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
                 });
               }}
             >
-              Add Key
+              Add API Key
             </Button1>
           </div>
-          {Object.keys(apiKeys).map((key) => (
-            <div key={apiKeys[key].id}>
-              <APIKeyRow apiKey={apiKeys[key]} />
-            </div>
-          ))}
+          <div className="flex flex-col space-y-4">
+            {Object.keys(apiKeys).map((key) => (
+              <div key={apiKeys[key].id}>
+                <APIKeyRow apiKey={apiKeys[key]} />
+              </div>
+            ))}
+          </div>
         </>
       )}
     </>

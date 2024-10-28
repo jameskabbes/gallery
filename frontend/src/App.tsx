@@ -29,6 +29,7 @@ function App(): JSX.Element {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/settings/:selection" element={<Settings />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/styles" element={<Styles />} />
               <Route path="/settings/" element={<Settings />} />

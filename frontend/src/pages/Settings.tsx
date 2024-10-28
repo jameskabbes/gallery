@@ -16,6 +16,7 @@ import { IoPersonOutline } from 'react-icons/io5';
 import { IoKeyOutline } from 'react-icons/io5';
 import { APIKeys } from '../components/Settings/APIKeys';
 import { Card1 } from '../components/Utils/Card';
+import { Surface } from '../components/Utils/Surface';
 
 const API_ENDPOINT = '/settings/page/';
 const API_METHOD = 'get';
@@ -27,7 +28,6 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 function Settings(): JSX.Element {
   const authContext = useContext(AuthContext);
   const toastContext = useContext(ToastContext);
-  const deviceContext = useContext(DeviceContext);
   const navigate = useNavigate();
 
   const {
@@ -89,8 +89,8 @@ function Settings(): JSX.Element {
   );
 
   useEffect(() => {
-    if (!loading) {
-      navigate(`/settings/#${selection}`);
+    if (!loading && selection in selectionComponentMapping) {
+      navigate(`/settings/${selection}`);
     }
   }, [selection, loading]);
 
@@ -113,49 +113,49 @@ function Settings(): JSX.Element {
   }, [authContext.state.user, selection, loading]);
 
   return (
-    <div className="flex flex-row space-x-4 max-w-screen-2xl justify-center ">
-      {!deviceContext.isMobile && (
-        <div className="flex flex-col p-2">
-          {Object.keys(selectionComponentMapping).map(
-            (key: SelectionComponentKeys) => {
-              if (authContext.state.user || !loggedInComponentKeys.has(key)) {
-                {
-                  selectionComponentMapping[key].component;
-                }
+    <div className="max-w-screen-2xl">
+      {loading || !selection ? (
+        'loading'
+      ) : (
+        <div>
+          <div className="flex flex-row space-x-4 overflow-x-auto">
+            {Object.keys(selectionComponentMapping).map(
+              (key: SelectionComponentKeys) => {
+                if (authContext.state.user || !loggedInComponentKeys.has(key)) {
+                  {
+                    selectionComponentMapping[key].component;
+                  }
 
-                return (
-                  <button
-                    key={key}
-                    onClick={() => setSelection(key)}
-                    className={selection === key ? 'bg-color-darker' : ''}
-                  >
-                    <div className="flex flex-row space-x-1 items-center">
-                      {selectionComponentMapping[key].icon}
-                      <span>{selectionComponentMapping[key].name}</span>
-                    </div>
-                  </button>
-                );
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setSelection(key)}
+                      className={`${
+                        selection === key ? 'border-color-primary' : ''
+                      } border-b-[1px] m-2 hover:border-color-primary`}
+                    >
+                      <h5>
+                        <div className="flex flex-row space-x-1 items-center">
+                          {selectionComponentMapping[key].icon}
+                          <span className="whitespace-nowrap">
+                            {selectionComponentMapping[key].name}
+                          </span>
+                        </div>
+                      </h5>
+                    </button>
+                  );
+                }
               }
-            }
-          )}
+            )}
+          </div>
+          <Surface>
+            <hr />
+          </Surface>
+          <div className="p-2">
+            {selectionComponentMapping[selection].component}
+          </div>
         </div>
       )}
-      <div className="flex-1 flex-col space-y-4">
-        {Object.keys(selectionComponentMapping).map(
-          (key: SelectionComponentKeys) => {
-            if (authContext.state.user || !loggedInComponentKeys.has(key)) {
-              return (
-                <Card1 key={key} id={key} className="flex flex-col flex-1">
-                  <>
-                    <h2>{selectionComponentMapping[key].name}</h2>
-                    {selectionComponentMapping[key].component}
-                  </>
-                </Card1>
-              );
-            }
-          }
-        )}
-      </div>
     </div>
   );
 }
