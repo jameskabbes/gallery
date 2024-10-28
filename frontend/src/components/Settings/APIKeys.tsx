@@ -33,7 +33,7 @@ import { ValidatedInputDatetimeLocal } from '../Form/ValidatedInputDatetimeLocal
 import { Button1, Button2, ButtonSubmit } from '../Utils/Button';
 import { Card1 } from '../Utils/Card';
 
-const API_ENDPOINT = '/api-keys/';
+const API_ENDPOINT = '/settings/api-keys/page/';
 const API_METHOD = 'get';
 
 type ResponseTypesByStatus = ExtractResponseTypes<
@@ -49,9 +49,12 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
   const globalModalsContext = useContext(GlobalModalsContext);
   const { checkConfirmation } = useConfirmationModal();
 
-  const [apiKeys, setAPIKeys] = useState<{
-    [key: string]: ResponseTypesByStatus['200'][number];
-  }>({});
+  const [apiKeys, setAPIKeys] = useState<
+    components['schemas']['PluralAPIKeysDict']
+  >({});
+  const [scopes, setScopes] = useState<
+    components['schemas']['PluralScopesDict']
+  >({});
 
   const loadingAPIKeyName = 'loading...';
 
@@ -69,14 +72,10 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
 
   useEffect(() => {
     if (apiData && response.status === 200) {
-      const apiKeysObject = (apiData as ResponseTypesByStatus['200']).reduce(
-        (acc, apiKey) => {
-          acc[apiKey.id] = apiKey;
-          return acc;
-        },
-        {} as { [key: string]: ResponseTypesByStatus['200'][number] }
-      );
-      setAPIKeys(apiKeysObject);
+      console.log(apiData);
+      const data = apiData as ResponseTypesByStatus['200'];
+      setAPIKeys(data.api_keys);
+      setScopes(data.scopes);
     }
   }, [apiData, response]);
 

@@ -121,6 +121,10 @@ export interface paths {
     /** Get Settings Page */
     get: operations["get_settings_page_settings_page__get"];
   };
+  "/settings/api-keys/page/": {
+    /** Get Settings Page */
+    get: operations["get_settings_page_settings_api_keys_page__get"];
+  };
   "/styles/page/": {
     /** Get Styles Page */
     get: operations["get_styles_page_styles_page__get"];
@@ -268,6 +272,12 @@ export interface components {
       auth: components["schemas"]["GetAuthBaseReturn"];
       user?: components["schemas"]["UserPrivate"] | null;
     };
+    /** GetSettingsAPIKeysPageResponse */
+    GetSettingsAPIKeysPageResponse: {
+      auth: components["schemas"]["GetAuthBaseReturn"];
+      api_keys: components["schemas"]["PluralAPIKeysDict"];
+      scopes: components["schemas"]["PluralScopesDict"];
+    };
     /** GetSettingsPageResponse */
     GetSettingsPageResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
@@ -316,6 +326,19 @@ export interface components {
     NotFoundResponse: {
       /** Detail */
       detail: string;
+    };
+    PluralAPIKeysDict: {
+      [key: string]: components["schemas"]["APIKey"];
+    };
+    PluralScopesDict: {
+      [key: string]: components["schemas"]["Scope"];
+    };
+    /** Scope */
+    Scope: {
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
     };
     /** @enum {string} */
     ScopeName: "admin" | "users.read" | "users.write";
@@ -1174,6 +1197,17 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["GetSettingsPageResponse"];
+        };
+      };
+    };
+  };
+  /** Get Settings Page */
+  get_settings_page_settings_api_keys_page__get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["GetSettingsAPIKeysPageResponse"];
         };
       };
     };

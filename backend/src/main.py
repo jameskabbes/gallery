@@ -868,6 +868,27 @@ async def get_settings_page(authorization: typing.Annotated[GetAuthorizationRetu
     )
 
 
+class GetSettingsAPIKeysPageResponse(GetAuthReturn):
+    api_keys: models.PluralAPIKeysDict
+    scopes: models.PluralScopesDict
+
+
+@ app.get('/settings/api-keys/page/')
+async def get_settings_page(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=True))]) -> GetSettingsAPIKeysPageResponse:
+
+    with Session(c.db_engine) as session:
+
+        user = await models.User.get(session, authorization.user.id)
+        api_keys = user.api_keys
+        scopes = await user.get_scopes()
+
+        return GetSettingsAPIKeysPageResponse(
+            **get_auth(authorization).model_dump(),
+            api_keys=models.APIKey.export_plural_to_dict(api_keys),
+            scopes=models.Scope.export_plural_to_dict(scopes)
+        )
+
+
 class GetStylesPageResponse(GetAuthReturn):
     pass
 

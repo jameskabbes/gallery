@@ -55,7 +55,6 @@ def validate_and_normalize_datetime(value: datetime_module.datetime, info: Valid
 class IDObject[IDType]:
 
     _ID_COLS: typing.ClassVar[list[str]] = ['id']
-    type PluralDict = dict[IDType, typing.Self]
 
     @ property
     def _id(self) -> IDType:
@@ -67,7 +66,7 @@ class IDObject[IDType]:
             return getattr(self, self._ID_COLS[0])
 
     @ classmethod
-    def export_plural_to_dict(cls, items: collections.abc.Iterable[typing.Self]) -> PluralDict:
+    def export_plural_to_dict(cls, items: collections.abc.Iterable[typing.Self]) -> dict[IDType, typing.Self]:
         return {item._id: item for item in items}
 
 
@@ -243,6 +242,9 @@ class UserRole(Table[UserRoleTypes.id], UserRoleIDBase, table=True):
         back_populates='user_role')
 
 
+type PluralUserRolesDict = dict[UserRoleTypes.id, UserRole]
+
+
 class UserRoleExport(TableExport[UserRole]):
     _TABLE_MODEL: typing.ClassVar[typing.Type[UserRole]] = UserRole
     id: UserRoleTypes.id
@@ -280,6 +282,7 @@ class UserRoleCreateAdmin(UserRoleCreate, TableCreateAdmin[UserRole]):
 #
 # User
 #
+
 
 class UserTypes:
     id = str
@@ -347,6 +350,9 @@ class User(Table[UserTypes.id], UserIDBase, table=True):
 
     async def get_scopes(self) -> list['Scope']:
         return [user_role_scope.scope for user_role_scope in self.user_role.user_role_scopes]
+
+
+type PluralUsersDict = dict[UserTypes.id, User]
 
 # Export Types
 
@@ -482,6 +488,9 @@ class Scope(Table[ScopeTypes.id], ScopeIDBase, table=True):
         back_populates='scope')
 
 
+type PluralScopesDict = dict[ScopeTypes.id, Scope]
+
+
 class ScopeExport(TableExport[Scope]):
     _TABLE_MODEL: typing.ClassVar[typing.Type[Scope]] = Scope
 
@@ -547,6 +556,9 @@ class UserRoleScope(Table[UserRoleScopeId], UserRoleScopeIDBase, table=True):
 
     user_role: UserRole = Relationship(back_populates='user_role_scopes')
     scope: Scope = Relationship(back_populates='user_role_scopes')
+
+
+type PluralUserRoleScopesDict = dict[UserRoleScopeId, UserRoleScope]
 
 
 class UserRoleScopeExport(TableExport[UserRoleScope], UserRoleScopeIDBase):
@@ -718,6 +730,10 @@ class UserAccessToken(Table[UserAccessTokenTypes.id], UserAccessTokenIDBase, Aut
         return await self.user.get_scopes()
 
 
+type PluralUserAccessTokensDict = dict[UserAccessTokenTypes.id,
+                                       UserAccessToken]
+
+
 class UserAccessTokenExport(TableExport[UserAccessToken], AuthCredentialExport[UserAccessTokenTypes.id]):
     _TABLE_MODEL: typing.ClassVar[typing.Type[UserAccessToken]
                                   ] = UserAccessToken
@@ -777,6 +793,9 @@ class APIKey(Table[APIKeyTypes.id], APIKeyIDBase, AuthCredential[APIKeyTypes.id]
 
     async def get_scopes(self) -> list[Scope]:
         return [api_key_scope.scope for api_key_scope in self.api_key_scopes]
+
+
+type PluralAPIKeysDict = dict[APIKeyTypes.id, APIKey]
 
 
 class APIKeyExport(TableExport[APIKey], AuthCredentialExport[APIKeyTypes.id]):
@@ -852,6 +871,9 @@ class APIKeyScope(Table[APIKeyScopeID], APIKeyScopeIDBase, table=True):
 
     api_key: APIKey = Relationship(back_populates='api_key_scopes')
     scope: Scope = Relationship(back_populates='api_key_scopes')
+
+
+type PluralAPIKeyScopesDict = dict[APIKeyScopeID, APIKeyScope]
 
 
 class APIKeyScopeExport(TableExport[APIKeyScope], APIKeyScopeIDBase):
