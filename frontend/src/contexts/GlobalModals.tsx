@@ -5,6 +5,7 @@ import { Modal, defaultModal } from '../types';
 
 const GlobalModalsContext = createContext<GlobalModalsContextType>({
   activeModal: { ...defaultModal },
+  clearModal: () => null,
   setModal: (modal) => null,
 });
 
@@ -25,10 +26,15 @@ function GlobalModalsContextProvider({ children }: Props) {
     });
   }
 
+  function clearModal() {
+    setActiveModal({ ...defaultModal });
+  }
+
   return (
     <GlobalModalsContext.Provider
       value={{
         activeModal,
+        clearModal,
         setModal,
       }}
     >

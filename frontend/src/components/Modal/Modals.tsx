@@ -44,28 +44,30 @@ function Modals({ activeModal, overlayStyle = {} }: Props) {
           classNames="modal"
         >
           <div className="absolute h-full w-full flex flex-col justify-center items-center p-2">
-            <Card1
-              style={{
-                zIndex: siteConfig.zIndex.modalContent,
-                ...activeModal.contentStyle,
-              }}
-              ref={refCallback}
-              className="overflow-auto"
-            >
-              {activeModal.includeExitButton && (
-                <div className="flex flex-row justify-end">
-                  <button>
-                    <p>
-                      <IoClose
-                        onClick={() => activeModal.onExit()}
-                        className="cursor-pointer"
-                      />
-                    </p>
-                  </button>
-                </div>
-              )}
-              {activeModal.component}
-            </Card1>
+            {activeModal.component && (
+              <Card1
+                style={{
+                  zIndex: siteConfig.zIndex.modalContent,
+                  ...activeModal.contentStyle,
+                }}
+                ref={refCallback}
+                className="overflow-auto"
+              >
+                {activeModal.includeExitButton && (
+                  <div className="flex flex-row justify-end">
+                    <button>
+                      <p>
+                        <IoClose
+                          onClick={() => activeModal.onExit()}
+                          className="cursor-pointer"
+                        />
+                      </p>
+                    </button>
+                  </div>
+                )}
+                {activeModal.component}
+              </Card1>
+            )}
           </div>
         </CSSTransition>
       </TransitionGroup>

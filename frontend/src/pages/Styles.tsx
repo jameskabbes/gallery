@@ -14,6 +14,7 @@ import { ValidatedInputDatetimeLocal } from '../components/Form/ValidatedInputDa
 import { ValidatedInputToggle } from '../components/Form/ValidatedInputToggle';
 import { ValidatedInputString } from '../components/Form/ValidatedInputString';
 import { Surface } from '../components/Utils/Surface';
+import { GlobalModalsContext } from '../contexts/GlobalModals';
 
 import {
   Button1,
@@ -27,6 +28,7 @@ import { Loader1, Loader2, Loader3 } from '../components/Utils/Loader';
 
 import { Checkbox1 } from '../components/Utils/Checkbox';
 import { RadioButton1 } from '../components/Utils/RadioButton';
+import { useConfirmationModal } from '../utils/useConfirmationModal';
 
 const API_ENDPOINT = '/styles/page/';
 const API_METHOD = 'get';
@@ -39,6 +41,8 @@ function Styles() {
   let deviceContext = useContext(DeviceContext);
   let toastContext = useContext(ToastContext);
   const authContext = useContext(AuthContext);
+  const globalModalsContext = useContext(GlobalModalsContext);
+  const { checkConfirmation } = useConfirmationModal();
 
   const [toggleState, setToggleState] = useState<ValidatedInputState<boolean>>({
     ...defaultValidatedInputState<boolean>(false),
@@ -66,6 +70,26 @@ function Styles() {
     },
     true
   );
+
+  function displayModal() {
+    const key = Math.random().toString();
+    globalModalsContext.setModal({
+      component: (
+        <div>
+          <h2>Modal</h2>
+          <p>Key: {key}</p>
+          <Button1
+            onClick={() => {
+              displayModal();
+            }}
+          >
+            Swap modal
+          </Button1>
+        </div>
+      ),
+      key: key,
+    });
+  }
 
   return (
     <div>
@@ -125,6 +149,16 @@ function Styles() {
                 </div>
               </Surface>
             </div>
+          </Card1>
+          <Card1 className="flex flex-col space-y-2 m-2 ">
+            <h2>Modals</h2>
+            <Button1
+              onClick={() => {
+                displayModal();
+              }}
+            >
+              Generate a Modal
+            </Button1>
           </Card1>
         </section>
         <section className="flex-1 flex-col">

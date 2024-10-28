@@ -147,6 +147,7 @@ const defaultModal: Modal = {
 
 interface GlobalModalsContext {
   activeModal: Modal | null;
+  clearModal: () => void;
   setModal: (modal: Partial<Modal>) => void;
 }
 

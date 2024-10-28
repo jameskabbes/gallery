@@ -6,7 +6,10 @@ import { ConfirmationModal } from '../components/ConfirmationModal';
 function useConfirmationModal() {
   const globalModalsContext = useContext(GlobalModalsContext);
 
-  const defaultContentStyle = { maxWidth: '400px', width: '100%' };
+  const defaultModalProps: Partial<Modal> = {
+    contentStyle: { maxWidth: '400px', width: '100%' },
+    key: 'confirmation-modal',
+  };
 
   function checkConfirmation(
     {
@@ -22,17 +25,17 @@ function useConfirmationModal() {
           {...{
             onCancel: () => {
               onCancel();
-              globalModalsContext.setModal(null);
+              globalModalsContext.clearModal();
             },
             onConfirm: () => {
               onConfirm();
-              globalModalsContext.setModal(null);
+              globalModalsContext.clearModal();
             },
             ...restConfirmationModalProps,
           }}
         />
       ),
-      contentStyle: defaultContentStyle,
+      ...defaultModalProps,
       ...modalProps,
     });
   }
