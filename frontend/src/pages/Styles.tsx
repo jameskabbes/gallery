@@ -29,6 +29,7 @@ import { Loader1, Loader2, Loader3 } from '../components/Utils/Loader';
 import { Checkbox1 } from '../components/Utils/Checkbox';
 import { RadioButton1 } from '../components/Utils/RadioButton';
 import { useConfirmationModal } from '../utils/useConfirmationModal';
+import { Toggle1 } from '../components/Utils/Toggle';
 
 const API_ENDPOINT = '/styles/page/';
 const API_METHOD = 'get';
@@ -256,6 +257,12 @@ function Styles() {
                       setState={setToggleState}
                       id="toggle-input-8"
                     />
+                  </span>
+                  <span>
+                    <Toggle1
+                      state={toggleState.value}
+                      disabled={true}
+                    ></Toggle1>
                   </span>
                 </section>
                 <section className="flex flex-row items-end space-x-4 flex-wrap">
