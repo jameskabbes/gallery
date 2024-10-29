@@ -417,6 +417,9 @@ class UserUpdateAdmin(UserUpdate, TableUpdateAdmin[User, UserTypes.id]):
         if self.password != None:
             exported['hashed_password'] = self.hash_password(self.password)
 
+        # need to do something with the user_role_id
+        # if the user role id is changed, also need to remove the scopes from API Keys or other auth credentials with outdated info
+
         user.sqlmodel_update(exported)
         user.add_to_db(session)
         return user
@@ -653,12 +656,10 @@ class AuthCredential[IDType](BaseModel, ABC):
     @field_validator('issued', 'expiry')
     @classmethod
     def validate_datetime(cls, value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime:
-        print('validating...')
         return validate_and_normalize_datetime(value, info)
 
     @field_serializer('issued', 'expiry')
     def serialize_datetime(value: datetime_module.datetime) -> datetime_module.datetime:
-        print('serializing...')
         return value.replace(tzinfo=datetime_module.timezone.utc)
 
     @abstractmethod
@@ -890,22 +891,6 @@ class APIKeyScopePrivate(APIKeyScopeExport):
 
 class APIKeyScopeImport(TableImport[APIKeyScope]):
     _TABLE_MODEL: typing.ClassVar[typing.Type[APIKeyScope]] = APIKeyScope
-
-
-class APIKeyScopeUpdate(APIKeyScopeImport, APIKeyScopeIDBase):
-    pass
-
-
-class APIKeyScopeUpdateAdmin(APIKeyScopeUpdate, TableUpdateAdmin[APIKeyScope, APIKeyScopeID]):
-    pass
-
-
-class APIKeyScopeCreate(APIKeyScopeImport):
-    pass
-
-
-class APIKeyScopeCreateAdmin(APIKeyScopeCreate, TableCreateAdmin[APIKeyScope]):
-    pass
 
 
 # # Gallery

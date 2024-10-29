@@ -64,3 +64,12 @@
 # Authorization: Bearer token
 
 
+# GET http://localhost:8087/settings/api-keys/page
+# Authorization: Bearer token
+
+
+# POST http://localhost:8087/api-keys/9fa3e6c4-b63d-4bb8-89de-43b61cd1dd76/scopes/2/
+# Authorization: Bearer token
+
+DELETE http://localhost:8087/api-keys/9fa3e6c4-b63d-4bb8-89de-43b61cd1dd76/scopes/2/
+Authorization: Bearer token

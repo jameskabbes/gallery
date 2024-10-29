@@ -720,6 +720,53 @@ async def delete_api_key(
                 status_code=status.HTTP_404_NOT_FOUND, detail=models.APIKey.not_found_message())
         return Response(status_code=204)
 
+
+@app.post('/api-keys/{api_key_id}/scopes/{scope_id}/', status_code=status.HTTP_204_NO_CONTENT)
+async def add_scope_to_api_key(
+    api_key_id: models.APIKeyTypes.id,
+    scope_id: models.ScopeTypes.id,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization())]
+):
+
+    with Session(c.db_engine) as session:
+        api_key = await models.APIKey.get(session, api_key_id)
+        if api_key.user_id != authorization.user.id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=models.APIKey.not_found_message())
+
+        user = await models.User.get(session, authorization.user.id)
+
+        # see if user is permitted to add this scope
+        user_role_scope = await models.UserRoleScope.get(session, (user.user_role_id, scope_id))
+
+        existing_api_key_scope = await models.APIKeyScope.get_one_by_id(session, (api_key_id, scope_id))
+        if existing_api_key_scope:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="Scope already exists for this API key")
+
+        api_key_scope = models.APIKeyScope(
+            api_key_id=api_key_id, scope_id=scope_id)
+        await api_key_scope.add_to_db(session)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@app.delete('/api-keys/{api_key_id}/scopes/{scope_id}/', status_code=status.HTTP_204_NO_CONTENT)
+async def remove_scope_from_api_key(
+    api_key_id: models.APIKeyTypes.id,
+    scope_id: models.ScopeTypes.id,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization())]
+):
+    with Session(c.db_engine) as session:
+        api_key = await models.APIKey.get(session, api_key_id)
+        if api_key.user_id != authorization.user.id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=models.APIKey.not_found_message())
+
+        if await models.APIKeyScope.delete(session, (api_key_id, scope_id)):
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+
     # # Gallery
     # async def get_gallery_available_params(
     #     name: models.GalleryTypes.name,
@@ -871,6 +918,7 @@ async def get_settings_page(authorization: typing.Annotated[GetAuthorizationRetu
 class GetSettingsAPIKeysPageResponse(GetAuthReturn):
     api_keys: models.PluralAPIKeysDict
     scopes: models.PluralScopesDict
+    api_key_scopes: dict[models.APIKeyTypes.id, list[models.ScopeTypes.id]]
 
 
 @ app.get('/settings/api-keys/page/')
@@ -880,12 +928,12 @@ async def get_settings_page(authorization: typing.Annotated[GetAuthorizationRetu
 
         user = await models.User.get(session, authorization.user.id)
         api_keys = user.api_keys
-        scopes = await user.get_scopes()
 
         return GetSettingsAPIKeysPageResponse(
             **get_auth(authorization).model_dump(),
             api_keys=models.APIKey.export_plural_to_dict(api_keys),
-            scopes=models.Scope.export_plural_to_dict(scopes)
+            scopes=models.Scope.export_plural_to_dict(await user.get_scopes()),
+            api_key_scopes={api_key.id: [scope.id for scope in await api_key.get_scopes()] for api_key in api_keys}
         )
 
 

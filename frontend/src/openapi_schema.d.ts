@@ -109,6 +109,12 @@ export interface paths {
     /** Patch Api Key */
     patch: operations["patch_api_key_api_keys__api_key_id___patch"];
   };
+  "/api-keys/{api_key_id}/scopes/{scope_id}/": {
+    /** Add Scope To Api Key */
+    post: operations["add_scope_to_api_key_api_keys__api_key_id__scopes__scope_id___post"];
+    /** Remove Scope From Api Key */
+    delete: operations["remove_scope_from_api_key_api_keys__api_key_id__scopes__scope_id___delete"];
+  };
   "/profile/page/": {
     /** Get Pages Profile */
     get: operations["get_pages_profile_profile_page__get"];
@@ -277,6 +283,10 @@ export interface components {
       auth: components["schemas"]["GetAuthBaseReturn"];
       api_keys: components["schemas"]["PluralAPIKeysDict"];
       scopes: components["schemas"]["PluralScopesDict"];
+      /** Api Key Scopes */
+      api_key_scopes: {
+        [key: string]: string[];
+      };
     };
     /** GetSettingsPageResponse */
     GetSettingsPageResponse: {
@@ -1159,6 +1169,48 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["APIKey"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Add Scope To Api Key */
+  add_scope_to_api_key_api_keys__api_key_id__scopes__scope_id___post: {
+    parameters: {
+      path: {
+        api_key_id: string;
+        scope_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      204: {
+        content: never;
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Remove Scope From Api Key */
+  remove_scope_from_api_key_api_keys__api_key_id__scopes__scope_id___delete: {
+    parameters: {
+      path: {
+        api_key_id: string;
+        scope_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      204: {
+        content: never;
       };
       /** @description Validation Error */
       422: {
