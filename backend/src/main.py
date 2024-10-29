@@ -191,8 +191,12 @@ def get_authorization(
 
         inner_response = await inner()
         if inner_response.exception and raise_exceptions:
+
+            print('inner exception!')
+
             exception_to_raise = auth.EXCEPTION_MAPPING[inner_response.exception]
             if remove_cookie_on_exception and exception_to_raise.status_code in {status.HTTP_400_BAD_REQUEST, status.HTTP_401_UNAUTHORIZED, status.HTTP_404_NOT_FOUND}:
+                print('deleting token cookie!')
                 delete_access_token_cookie(response)
 
             if raise_exceptions:
@@ -282,9 +286,6 @@ async def login(
     response: Response,
     stay_signed_in: bool = Form(c.authentication['stay_signed_in_default'])
 ) -> LoginResponse:
-
-    print(user)
-    print(stay_signed_in)
 
     with Session(c.db_engine) as session:
 
@@ -452,6 +453,7 @@ async def login_with_google(request_token: GoogleAuthRequest, response: Response
 
 
 def delete_access_token_cookie(response: Response):
+    print('deleting cookie!')
     response.delete_cookie(c.root_config['cookie_keys']['access_token'])
 
 

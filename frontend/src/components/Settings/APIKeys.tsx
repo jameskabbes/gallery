@@ -19,6 +19,9 @@ import {
   ResponseTypesByStatus as PostAPIKeyResponseTypes,
 } from '../../services/api/postAPIKey';
 
+import { postAPIKeyScope } from '../../services/api/postAPIKeyScope';
+import { deleteAPIKeyScope } from '../../services/api/deleteAPIKeyScope';
+
 import { GlobalModalsContext } from '../../contexts/GlobalModals';
 import { useConfirmationModal } from '../../utils/useConfirmationModal';
 
@@ -32,6 +35,8 @@ import openapi_schema from '../../../../openapi_schema.json';
 import { ValidatedInputDatetimeLocal } from '../Form/ValidatedInputDatetimeLocal';
 import { Button1, Button2, ButtonSubmit } from '../Utils/Button';
 import { Card1 } from '../Utils/Card';
+import { ValidatedInputToggle } from '../Form/ValidatedInputToggle';
+import { Toggle1 } from '../Utils/Toggle';
 
 const API_ENDPOINT = '/settings/api-keys/page/';
 const API_METHOD = 'get';
@@ -50,10 +55,13 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
   const { checkConfirmation } = useConfirmationModal();
 
   const [apiKeys, setAPIKeys] = useState<
-    components['schemas']['PluralAPIKeysDict']
+    ResponseTypesByStatus['200']['api_keys']
   >({});
-  const [scopes, setScopes] = useState<
-    components['schemas']['PluralScopesDict']
+  const [scopes, setScopes] = useState<ResponseTypesByStatus['200']['scopes']>(
+    {}
+  );
+  const [apiKeyScopes, setAPIKeyScopes] = useState<
+    ResponseTypesByStatus['200']['api_key_scopes']
   >({});
 
   const loadingAPIKeyName = 'loading...';
@@ -72,10 +80,10 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
 
   useEffect(() => {
     if (apiData && response.status === 200) {
-      console.log(apiData);
       const data = apiData as ResponseTypesByStatus['200'];
       setAPIKeys(data.api_keys);
       setScopes(data.scopes);
+      setAPIKeyScopes(data.api_key_scopes);
     }
   }, [apiData, response]);
 
@@ -104,13 +112,10 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
       });
 
       // make a random 16 character string
-      const tempID = Array.from(
-        { length: 16 },
-        () => Math.random().toString(36)[2]
-      ).join('');
+      const tempId = Math.random().toString();
 
       const tempAPIKey: PostAPIKeyResponseTypes['200'] = {
-        id: tempID,
+        id: tempId,
         user_id: authContext.state.user.id,
         issued: new Date().toISOString(),
         name: loadingAPIKeyName,
@@ -119,7 +124,7 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
 
       setAPIKeys((prevAPIKeys) => ({
         ...prevAPIKeys,
-        [tempID]: tempAPIKey,
+        [tempId]: tempAPIKey,
       }));
 
       const { data, response } = await postAPIKey({
@@ -136,7 +141,7 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
 
         setAPIKeys((prevAPIKeys) => {
           const newAPIKeys = { ...prevAPIKeys };
-          delete newAPIKeys[tempID];
+          delete newAPIKeys[tempId];
           newAPIKeys[apiData.id] = apiData;
           return newAPIKeys;
         });
@@ -148,7 +153,7 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
 
         setAPIKeys((prevAPIKeys) => {
           const newAPIKeys = { ...prevAPIKeys };
-          delete newAPIKeys[tempID];
+          delete newAPIKeys[tempId];
           return newAPIKeys;
         });
       }
@@ -196,6 +201,96 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
     );
   }
 
+  async function handleAddAPIKeyScope(
+    apiKeyId: components['schemas']['APIKey']['id'],
+    scopeId: components['schemas']['Scope']['id']
+  ) {
+    // let toastId = toastContext.makePending({
+    //   message: `Adding ${scopes[scopeId].name} to ${apiKeys[apiKeyId].name}`,
+    // });
+    const { data, response } = await postAPIKeyScope(apiKeyId, scopeId);
+    if (response.status === 204) {
+      // toastContext.update(toastId, {
+      //   message: `Added ${scopes[scopeId].name} to ${apiKeys[apiKeyId].name}`,
+      //   type: 'success',
+      // });
+      // setAPIKeyScopes((prev) => ({
+      //   ...prev,
+      //   [apiKeyId]: [...prev[apiKeyId], scopeId],
+      // }));
+    } else {
+      // toastContext.update(toastId, {
+      //   message: `Error adding ${scopes[scopeId].name} to ${apiKeys[apiKeyId].name}`,
+      //   type: 'error',
+      // });
+    }
+  }
+  async function handleDeleteAPIKeyScope(
+    apiKeyId: components['schemas']['APIKey']['id'],
+    scopeId: components['schemas']['Scope']['id']
+  ) {
+    // let toastId = toastContext.makePending({
+    //   message: `Removing ${scopes[scopeId].name} from ${apiKeys[apiKeyId].name}`,
+    // });
+
+    const { data, response } = await deleteAPIKeyScope(apiKeyId, scopeId);
+
+    if (response.status === 204) {
+      // toastContext.update(toastId, {
+      //   message: `Removed ${scopes[scopeId].name} from ${apiKeys[apiKeyId].name}`,
+      //   type: 'success',
+      // });
+      setAPIKeyScopes((prev) => ({
+        ...prev,
+        [apiKeyId]: prev[apiKeyId].filter((id) => id !== scopeId),
+      }));
+    } else {
+      // toastContext.update(toastId, {
+      //   message: `Error removing ${scopes[scopeId].name} from ${apiKeys[apiKeyId].name}`,
+      //   type: 'error',
+      // });
+    }
+  }
+
+  function APIKeyScopeRow({
+    apiKeyId,
+    scopeId,
+  }: {
+    apiKeyId: components['schemas']['APIKey']['id'];
+    scopeId: components['schemas']['Scope']['id'];
+  }) {
+    const [loading, setLoading] = useState<boolean>(false);
+    const [toggle, setToggle] = useState<boolean>(
+      apiKeyScopes[apiKeyId].includes(scopeId)
+    );
+
+    async function handleToggle() {
+      setLoading(true);
+      let toggleSnapshot = toggle;
+      setToggle((prev) => !prev);
+
+      if (toggleSnapshot) {
+        // was on, now turning off
+        handleDeleteAPIKeyScope(apiKeyId, scopeId);
+      } else {
+        // was off, now turning on
+        handleAddAPIKeyScope(apiKeyId, scopeId);
+      }
+
+      setLoading(false);
+    }
+
+    return (
+      <div
+        className="flex flex-row items-center space-x-1"
+        key={`${apiKeyId}-${scopeId}`}
+      >
+        <Toggle1 state={toggle} onClick={handleToggle} disabled={loading} />
+        <p>{scopes[scopeId].name}</p>
+      </div>
+    );
+  }
+
   function APIKeyRow({ apiKey }: { apiKey: components['schemas']['APIKey'] }) {
     const [isEditing, setIsEditing] = useState(false);
 
@@ -227,16 +322,16 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
     }
 
     return (
-      <Card1 key={apiKey.id}>
+      <Card1 key={apiKey.id} onClick={() => setIsEditing((prev) => !prev)}>
         <div className="flex flex-row items-center space-x-2">
           <div className="flex flex-col">
-            <button onClick={() => setIsEditing((prev) => !prev)}>
+            <span>
               {isEditing ? (
                 <IoChevronDownOutline />
               ) : (
                 <IoChevronForwardOutline />
               )}
-            </button>
+            </span>
           </div>
           <div className="flex flex-col flex-1">
             <h3 className="mb-4">{apiKey.name}</h3>
@@ -296,7 +391,14 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
         </div>
         {isEditing && (
           <div className="flex flex-col">
-            <p>Editing...</p>
+            {/* map through all scopes */}
+            {Object.keys(scopes).map((scopeId) => (
+              <APIKeyScopeRow
+                key={scopeId}
+                apiKeyId={apiKey.id}
+                scopeId={scopeId}
+              />
+            ))}
           </div>
         )}
       </Card1>
