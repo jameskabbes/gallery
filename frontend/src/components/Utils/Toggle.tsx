@@ -1,17 +1,17 @@
 import React, { forwardRef } from 'react';
 import { Surface } from './Surface';
 
-interface ToggleProps extends React.HTMLAttributes<HTMLDivElement> {
+interface ToggleProps extends React.HTMLAttributes<HTMLButtonElement> {
   state: boolean;
   disabled?: boolean;
 }
 
 function Toggle1Creator() {
-  return forwardRef<HTMLDivElement, ToggleProps>(
+  return forwardRef<HTMLButtonElement, ToggleProps>(
     ({ children, state, disabled = false, className = '', ...rest }, ref) => {
       return (
         <Surface>
-          <div
+          <button
             ref={ref}
             className={`inline-block input-toggle-container rounded-full relative ${
               disabled ? 'opacity-50 pointer-events-none' : ''
@@ -22,6 +22,7 @@ function Toggle1Creator() {
               height: '1em',
               padding: '0.15em',
             }}
+            disabled={disabled}
             {...rest}
           >
             <div
@@ -35,7 +36,7 @@ function Toggle1Creator() {
             >
               {children}
             </div>
-          </div>
+          </button>
         </Surface>
       );
     }
