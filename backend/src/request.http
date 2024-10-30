@@ -11,8 +11,8 @@
 # username=a@a.com&password=password
 
 # logout
-POST http://localhost:8087/auth/logout/
-Authorization: Bearer token
+# POST http://localhost:8087/auth/logout/
+# Authorization: Bearer token
 
 
 # see common auth status
@@ -69,13 +69,18 @@ Authorization: Bearer token
 
 # POST http://localhost:8087/api-keys/
 # Content-Type: application/json
-# Authorization: Bearer token
+# Authorization: Bearer 
 
 # {
 #     "name": "new api key"
 # }
 
-# GET http://localhost:8087/settings/api-keys/page
+
+
+# GET http://localhost:8087/auth/
+# Authorization: Bearer token
+
+# GET http://localhost:8087/profile/page/
 # Authorization: Bearer token
 
 
