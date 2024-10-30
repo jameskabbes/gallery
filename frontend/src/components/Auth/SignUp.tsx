@@ -10,9 +10,9 @@ import { AuthContext } from '../../contexts/Auth';
 import { AuthModalsContext } from '../../contexts/AuthModals';
 import { ToastContext } from '../../contexts/Toast';
 
-import { isEmailValid } from '../../services/api/isEmailValid';
+import { isEmailValid } from '../../services/isEmailValid';
 import { isEmailAvailable } from '../../services/api/isEmailAvailable';
-import { isPasswordValid } from '../../services/api/isPasswordValid';
+import { isPasswordValid } from '../../services/isPasswordValid';
 import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { ValidatedInputCheckbox } from '../Form/ValidatedInputCheckbox';
 import { IoWarning } from 'react-icons/io5';

@@ -70,13 +70,10 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
     data: apiData,
     loading,
     response,
-  } = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>(
-    {
-      endpoint: API_ENDPOINT,
-      method: API_METHOD,
-    },
-    true
-  );
+  } = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>({
+    endpoint: API_ENDPOINT,
+    method: API_METHOD,
+  });
 
   useEffect(() => {
     if (apiData && response.status === 200) {
@@ -127,7 +124,7 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
         [tempId]: tempAPIKey,
       }));
 
-      const { data, response } = await postAPIKey({
+      const { data, response } = await postAPIKey(authContext, {
         expiry: new Date(expiry['value']).toISOString(),
         name: name['value'],
       });
@@ -208,7 +205,11 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
     // let toastId = toastContext.makePending({
     //   message: `Adding ${scopes[scopeId].name} to ${apiKeys[apiKeyId].name}`,
     // });
-    const { data, response } = await postAPIKeyScope(apiKeyId, scopeId);
+    const { data, response } = await postAPIKeyScope(
+      authContext,
+      apiKeyId,
+      scopeId
+    );
     if (response.status === 204) {
       // toastContext.update(toastId, {
       //   message: `Added ${scopes[scopeId].name} to ${apiKeys[apiKeyId].name}`,
@@ -233,7 +234,11 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
     //   message: `Removing ${scopes[scopeId].name} from ${apiKeys[apiKeyId].name}`,
     // });
 
-    const { data, response } = await deleteAPIKeyScope(apiKeyId, scopeId);
+    const { data, response } = await deleteAPIKeyScope(
+      authContext,
+      apiKeyId,
+      scopeId
+    );
 
     if (response.status === 204) {
       // toastContext.update(toastId, {
@@ -304,7 +309,7 @@ function APIKeys({ authContext, toastContext }: Props): JSX.Element {
       delete newAPIKeys[apiKeyId];
       setAPIKeys(newAPIKeys);
 
-      const { data, response } = await deleteAPIKey(apiKeyId);
+      const { data, response } = await deleteAPIKey(authContext, apiKeyId);
 
       if (response.status === 204) {
         const apiData = data as DeleteAPIKeyResponseTypes['204'];

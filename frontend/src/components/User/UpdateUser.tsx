@@ -6,7 +6,7 @@ import { paths, operations, components } from '../../openapi_schema';
 import openapi_schema from '../../../../openapi_schema.json';
 import { AuthContext } from '../../contexts/Auth';
 import { ToastContext } from '../../contexts/Toast';
-import { isEmailValid } from '../../services/api/isEmailValid';
+import { isEmailValid } from '../../services/isEmailValid';
 import { isEmailAvailable } from '../../services/api/isEmailAvailable';
 import {
   patchUserFunc,

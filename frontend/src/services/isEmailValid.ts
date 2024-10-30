@@ -1,8 +1,7 @@
 import validator from 'validator';
-import openapi_schema from '../../../../openapi_schema.json';
-import { ValidityCheckReturn } from '../../components/Form/Input';
+import { ValidatedInputCheckValidityReturn } from '../utils/useValidatedInput';
 
-function isEmailValid(email: string): ValidityCheckReturn {
+function isEmailValid(email: string): ValidatedInputCheckValidityReturn {
   if (!validator.isEmail(email)) {
     return { valid: false, message: 'Invalid email' };
   } else {

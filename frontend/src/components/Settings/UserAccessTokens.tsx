@@ -35,13 +35,10 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
     data: apiData,
     loading,
     response,
-  } = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>(
-    {
-      endpoint: API_ENDPOINT,
-      method: API_METHOD,
-    },
-    true
-  );
+  } = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>({
+    endpoint: API_ENDPOINT,
+    method: API_METHOD,
+  });
 
   useEffect(() => {
     if (apiData && response.status === 200) {
@@ -70,7 +67,10 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
       return newUserAccessTokens;
     });
 
-    const { data, response } = await deleteUserAccessToken(sessionId);
+    const { data, response } = await deleteUserAccessToken(
+      authContext,
+      sessionId
+    );
 
     if (response.status === 204) {
       const apiData = data as DeleteUserAccessTokenResponseTypes['204'];

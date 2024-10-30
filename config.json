@@ -6,5 +6,8 @@
   "magic_link_frontend_url": "/magic-link",
   "cookie_keys": {
     "access_token": "access_token"
+  },
+  "header_keys": {
+    "auth_error": "x-auth-error"
   }
 }

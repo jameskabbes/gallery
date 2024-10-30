@@ -34,13 +34,10 @@ function Settings(): JSX.Element {
     data: apiData,
     loading,
     response,
-  } = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>(
-    {
-      endpoint: API_ENDPOINT,
-      method: API_METHOD,
-    },
-    true
-  );
+  } = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>({
+    endpoint: API_ENDPOINT,
+    method: API_METHOD,
+  });
 
   const selectionComponentMapping = {
     profile: {

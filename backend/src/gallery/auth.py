@@ -1,19 +1,21 @@
 from fastapi import HTTPException, status
 import typing
 
+AUTH_ERROR_HEADER = 'x-auth-error'
+
 
 def _bearer_cookie_exception(status_code: int, detail: str) -> HTTPException:
     return HTTPException(
         status_code=status_code,
         detail=detail,
-        headers={"WWW-Authenticate": "Bearer, Cookie"})
+        headers={"WWW-Authenticate": "Bearer, Cookie", AUTH_ERROR_HEADER: 'true'})
 
 
 def improper_format_exception() -> HTTPException:
     return HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Improper formatting of authorization header or cookie"
-    )
+        detail="Improper formatting of authorization header or cookie",
+        headers={"WWW-Authenticate": "Bearer, Cookie", AUTH_ERROR_HEADER: 'true'})
 
 
 def missing_required_claims_exception() -> HTTPException:
@@ -49,8 +51,8 @@ def credentials_exception() -> HTTPException:
 def invalid_authorization_type_exception() -> HTTPException:
     return HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Invalid authorization type"
-    )
+        detail="Invalid authorization type",
+        headers={"WWW-Authenticate": "Bearer, Cookie", AUTH_ERROR_HEADER: 'true'})
 
 
 type EXCEPTION = typing.Literal[
@@ -64,13 +66,13 @@ type EXCEPTION = typing.Literal[
 ]
 
 EXCEPTION_MAPPING: dict[EXCEPTION, HTTPException] = {
-    'improper_format': improper_format_exception(),
-    'missing_required_claims': missing_required_claims_exception(),
-    'authorization_expired': authorization_expired_exception(),
-    'user_not_found': user_not_found_exception(),
-    'not_permitted': not_permitted_exception(),
-    'credentials': credentials_exception(),
-    'invalid_authorization_type': invalid_authorization_type_exception()
+    'improper_format': improper_format_exception,
+    'missing_required_claims': missing_required_claims_exception,
+    'authorization_expired': authorization_expired_exception,
+    'user_not_found': user_not_found_exception,
+    'not_permitted': not_permitted_exception,
+    'credentials': credentials_exception,
+    'invalid_authorization_type': invalid_authorization_type_exception
 }
 
 # Scopes

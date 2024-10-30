@@ -6,9 +6,9 @@ import { CallApiProps, CallApiReturn, UseApiCallReturn } from '../types';
 
 //utility func to make API calls
 
-async function callApiBase<T>(
+async function callApiBase(
   resource: RequestInfo | URL,
-  options?: RequestInit,
+  options: RequestInit,
   backend: boolean = true
 ): Promise<Response> {
   if (backend) {
@@ -26,6 +26,7 @@ async function callApiBase<T>(
 async function callApi<TResponseData extends object, TRequestData = any>({
   endpoint,
   method,
+  authContext,
   data,
   overwriteHeaders = {},
   body,
@@ -49,12 +50,16 @@ async function callApi<TResponseData extends object, TRequestData = any>({
   } catch (error) {
     responseData = null;
   }
+
+  if (authContext && response.headers.has(config.header_keys['auth_error'])) {
+    authContext.logOut();
+  }
+
   return { data: responseData, response };
 }
 
 function useApiCall<TResponseData extends object, TRequestData = any>(
-  props: CallApiProps<TRequestData>,
-  updateAuth: boolean = true,
+  props: Omit<CallApiProps<TRequestData>, 'authContext'>,
   dependencies: any[] = []
 ): UseApiCallReturn<TResponseData> {
   const [data, setData] =
@@ -69,14 +74,13 @@ function useApiCall<TResponseData extends object, TRequestData = any>(
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const { data, response } = await callApi<TResponseData, TRequestData>(
-        props
-      );
+      const { data, response } = await callApi<TResponseData, TRequestData>({
+        ...props,
+        authContext: authContext,
+      });
       setResponse(response);
       setData(data);
-      if (updateAuth) {
-        authContext.updateFromApiResponse(data);
-      }
+      authContext.updateFromApiResponse(data);
       setLoading(false);
     };
 

@@ -12,6 +12,7 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 >;
 
 async function patchUserFunc(
+  authContext: AuthContext,
   formData: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
 ): Promise<CallApiReturn<ResponseTypesByStatus[keyof ResponseTypesByStatus]>> {
   const { data, response } = await callApi<
@@ -21,6 +22,7 @@ async function patchUserFunc(
     endpoint: API_ENDPOINT,
     method: API_METHOD,
     data: formData,
+    authContext,
   });
 
   return { data, response };

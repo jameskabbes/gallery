@@ -34,6 +34,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 c = get_client()
 
+assert c.root_config['header_keys']['auth_error'] == auth.AUTH_ERROR_HEADER
+
 
 def jwt_encode(payload: dict):
     return jwt.encode(payload, c.jwt_secret_key, algorithm=c.jwt_algorithm)
@@ -90,6 +92,43 @@ class ItemAvailableResponse(BaseModel):
     available: bool
 
 
+@app.exception_handler(HTTPException)
+async def custom_http_exception_handler(request: Request, exc: HTTPException):
+
+    response = JSONResponse(status_code=exc.status_code,
+                            content={"detail": exc.detail}, headers=exc.headers)
+
+    print(response.__dict__)
+    print(exc.headers)
+    print(exc.headers.get(auth.AUTH_ERROR_HEADER))
+
+    if exc.headers and exc.headers.get(auth.AUTH_ERROR_HEADER) != None:
+        print('deleting cookie')
+        delete_access_token_cookie(response)
+    return response
+
+
+def set_access_token_cookie(access_token: str, response: Response, stay_signed_in: bool):
+
+    kwargs = {}
+    if stay_signed_in:
+        kwargs['expires'] = datetime.datetime.now(
+            datetime.UTC) + c.authentication['default_expiry_timedelta']
+
+    response.set_cookie(
+        key=c.root_config['cookie_keys']['access_token'],
+        value=access_token,
+        httponly=True,
+        secure=True,
+        samesite="Lax",
+        **kwargs
+    )
+
+
+def delete_access_token_cookie(response: Response):
+    response.delete_cookie(c.root_config['cookie_keys']['access_token'])
+
+
 class GetAuthorizationReturn(BaseModel):
     isAuthorized: bool = False
     expiry: datetime.datetime | None = None
@@ -105,10 +144,9 @@ def get_authorization(
     permitted_auth_credential_types: set[models.AuthCredentialTypes.type] = set(
         key for key in models.AUTH_CREDENTIAL_MODEL_MAPPING),
     override_lifetime: datetime.timedelta | None = None,
-    remove_cookie_on_exception: bool = True,
 ) -> typing.Callable[[str], GetAuthorizationReturn]:
 
-    async def dependecy(auth_token: typing.Annotated[str | None, Depends(oauth2_scheme)], response: Response) -> GetAuthorizationReturn:
+    async def dependecy(response: Response, auth_token: typing.Annotated[str | None, Depends(oauth2_scheme)]) -> GetAuthorizationReturn:
         async def inner() -> GetAuthorizationReturn:
             # attempt to decode the jwt
 
@@ -177,8 +215,6 @@ def get_authorization(
                     scope.name for scope in scopes}
 
                 if not required_scopes.issubset(scope_names):
-                    if raise_exceptions:
-                        raise auth.not_permitted_exception()
                     return GetAuthorizationReturn(exception='not_permitted')
 
                 return GetAuthorizationReturn(
@@ -190,13 +226,12 @@ def get_authorization(
                 )
 
         inner_response = await inner()
-        if inner_response.exception and raise_exceptions:
+        if inner_response.exception:
 
-            print('inner exception!')
+            exception_to_raise = auth.EXCEPTION_MAPPING[inner_response.exception](
+            )
 
-            exception_to_raise = auth.EXCEPTION_MAPPING[inner_response.exception]
-            if remove_cookie_on_exception and exception_to_raise.status_code in {status.HTTP_400_BAD_REQUEST, status.HTTP_401_UNAUTHORIZED, status.HTTP_404_NOT_FOUND}:
-                print('deleting token cookie!')
+            if exception_to_raise.status_code in {status.HTTP_400_BAD_REQUEST, status.HTTP_401_UNAUTHORIZED, status.HTTP_404_NOT_FOUND}:
                 delete_access_token_cookie(response)
 
             if raise_exceptions:
@@ -240,23 +275,6 @@ async def authenticate_user_with_username_and_password(form_data: typing.Annotat
         if not user:
             raise auth.credentials_exception()
         return user
-
-
-def set_access_token_cookie(access_token: str, response: Response, stay_signed_in: bool):
-
-    kwargs = {}
-    if stay_signed_in:
-        kwargs['expires'] = datetime.datetime.now(
-            datetime.UTC) + c.authentication['default_expiry_timedelta']
-
-    response.set_cookie(
-        key=c.root_config['cookie_keys']['access_token'],
-        value=access_token,
-        httponly=True,
-        secure=True,
-        samesite="Lax",
-        **kwargs
-    )
 
 
 @ app.post('/token/')
@@ -384,7 +402,7 @@ class VerifyMagicLinkResponse(GetAuthReturn):
 
 @ app.post('/auth/verify-magic-link/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
 async def verify_magic_link(model: VerifyMagicLinkRequest, authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(permitted_auth_credential_types={'access_token'},
-                                                                                                                                             raise_exceptions=True, override_lifetime=c.authentication['magic_link_expiry_timedelta']))], response: Response) -> VerifyMagicLinkResponse:
+                                                                                                                                             override_lifetime=c.authentication['magic_link_expiry_timedelta']))], response: Response) -> VerifyMagicLinkResponse:
     with Session(c.db_engine) as session:
 
         user_access_token = await models.UserAccessTokenCreateAdmin(
@@ -452,11 +470,6 @@ async def login_with_google(request_token: GoogleAuthRequest, response: Response
         )
 
 
-def delete_access_token_cookie(response: Response):
-    print('deleting cookie!')
-    response.delete_cookie(c.root_config['cookie_keys']['access_token'])
-
-
 @ app.post('/auth/logout/')
 async def logout(response: Response, authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization(raise_exceptions=False, permitted_auth_credential_types={'access_token'}))]) -> DetailOnlyResponse:
@@ -477,7 +490,7 @@ async def logout(response: Response, authorization: typing.Annotated[GetAuthoriz
 async def get_user_by_id_admin(
     user_id: models.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=True, required_scopes={models.ScopeNames.ADMIN}))]
+        get_authorization(required_scopes={models.ScopeNames.ADMIN}))]
 ) -> models.User:
     with Session(c.db_engine) as session:
         return await models.User.get(session, user_id)
@@ -487,7 +500,7 @@ async def get_user_by_id_admin(
 async def post_user_admin(
     user_create: models.UserCreateAdmin,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=True, required_scopes={models.ScopeNames.ADMIN}))]
+        get_authorization(required_scopes={models.ScopeNames.ADMIN}))]
 ) -> models.User:
     with Session(c.db_engine) as session:
         return await user_create.post(session)
@@ -498,7 +511,7 @@ async def patch_user_admin(
     user_id: models.UserTypes.id,
     user_update_admin: models.UserUpdateAdmin,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=True, required_scopes={models.ScopeNames.ADMIN}))]
+        get_authorization(required_scopes={models.ScopeNames.ADMIN}))]
 ) -> models.User:
 
     if user_id != user_update_admin.id:
@@ -513,7 +526,7 @@ async def patch_user_admin(
 async def delete_user_admin(
     user_id: models.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=True, required_scopes={models.ScopeNames.ADMIN}))]
+        get_authorization(required_scopes={models.ScopeNames.ADMIN}))]
 ):
     with Session(c.db_engine) as session:
         if await models.User.delete(session, user_id):
@@ -575,7 +588,7 @@ async def delete_user(
 async def get_user_access_token_by_id_admin(
     user_access_token_id: models.UserAccessTokenTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=True, required_scopes={models.ScopeNames.ADMIN}))]
+        get_authorization(required_scopes={models.ScopeNames.ADMIN}))]
 ) -> models.UserAccessToken:
     with Session(c.db_engine) as session:
         return await models.UserAccessToken.get(session, user_access_token_id)
@@ -585,7 +598,7 @@ async def get_user_access_token_by_id_admin(
 async def post_user_access_token_admin(
     user_access_token_create_admin: models.UserAccessTokenCreateAdmin,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=True, required_scopes={models.ScopeNames.ADMIN}))]
+        get_authorization(required_scopes={models.ScopeNames.ADMIN}))]
 ) -> models.UserAccessToken:
     with Session(c.db_engine) as session:
         return user_access_token_create_admin.post(session)
@@ -596,7 +609,7 @@ async def patch_user_access_token_admin(
     user_access_token_id: models.UserAccessTokenTypes.id,
     user_access_token_update_admin: models.UserAccessTokenUpdateAdmin,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=True, required_scopes={models.ScopeNames.ADMIN}))]
+        get_authorization(required_scopes={models.ScopeNames.ADMIN}))]
 ) -> models.User:
 
     if user_access_token_id != user_access_token_update_admin._id:
@@ -611,7 +624,7 @@ async def patch_user_access_token_admin(
 async def delete_user_admin(
     user_access_token_id: models.UserAccessTokenTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=True, required_scopes={models.ScopeNames.ADMIN}))]
+        get_authorization(required_scopes={models.ScopeNames.ADMIN}))]
 ):
     with Session(c.db_engine) as session:
         if models.UserAccessToken.delete(session, user_access_token_id):
@@ -651,7 +664,7 @@ async def delete_user_access_token(
 async def get_api_key_by_id_admin(
     api_key_id: models.APIKeyTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=True, required_scopes={models.ScopeNames.ADMIN}))]
+        get_authorization(required_scopes={models.ScopeNames.ADMIN}))]
 ) -> models.APIKey:
     with Session(c.db_engine) as session:
         return await models.APIKey.get(session, api_key_id)
@@ -661,7 +674,7 @@ async def get_api_key_by_id_admin(
 async def post_api_key_admin(
     api_key_create_admin: models.APIKeyCreateAdmin,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=True, required_scopes={models.ScopeNames.ADMIN}))]
+        get_authorization(required_scopes={models.ScopeNames.ADMIN}))]
 ) -> models.APIKey:
     with Session(c.db_engine) as session:
         return await api_key_create_admin.post(session)
@@ -880,7 +893,7 @@ class GetProfilePageResponse(GetAuthReturn):
 
 @ app.get('/profile/page/')
 async def get_pages_profile(authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=True))]) -> GetProfilePageResponse:
+        get_authorization())]) -> GetProfilePageResponse:
 
     with Session(c.db_engine) as session:
         user = await models.User.get_one_by_id(session, authorization.user.id)
@@ -924,7 +937,8 @@ class GetSettingsAPIKeysPageResponse(GetAuthReturn):
 
 
 @ app.get('/settings/api-keys/page/')
-async def get_settings_page(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=True))]) -> GetSettingsAPIKeysPageResponse:
+async def get_settings_page(
+        authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> GetSettingsAPIKeysPageResponse:
 
     with Session(c.db_engine) as session:
 

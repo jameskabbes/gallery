@@ -7,7 +7,7 @@ import openapi_schema from '../../../../openapi_schema.json';
 import { AuthModalsContext } from '../../contexts/AuthModals';
 import { LogInWithEmailContext } from '../../contexts/LogInWithEmail';
 
-import { isEmailValid } from '../../services/api/isEmailValid';
+import { isEmailValid } from '../../services/isEmailValid';
 import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { ButtonSubmit } from '../Utils/Button';
 import { ValidatedInputCheckbox } from '../Form/ValidatedInputCheckbox';

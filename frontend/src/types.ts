@@ -4,6 +4,7 @@ import { paths, operations, components } from './openapi_schema';
 interface CallApiProps<T> {
   endpoint: string;
   method: RequestInit['method'];
+  authContext: AuthContext;
   data?: T;
   overwriteHeaders?: HeadersInit;
   body?: string;

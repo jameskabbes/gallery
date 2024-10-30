@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { callApi } from '../../utils/Api';
 import { paths, operations, components } from '../../openapi_schema';
-import { ExtractResponseTypes } from '../../types';
+import { AuthContext, ExtractResponseTypes } from '../../types';
 
 const API_ENDPOINT = '/users/available/username/{username}/';
 const API_METHOD = 'get';
@@ -11,6 +11,7 @@ type AllResponseTypes = ExtractResponseTypes<
 >;
 
 async function isUsernameAvailable(
+  authContext: AuthContext,
   username: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['username']
 ): Promise<AllResponseTypes['200']['available']> {
   const { data, response } = await callApi<
@@ -19,6 +20,7 @@ async function isUsernameAvailable(
   >({
     endpoint: API_ENDPOINT.replace('{username}', username),
     method: API_METHOD,
+    authContext,
   });
 
   if (response.status === 200) {

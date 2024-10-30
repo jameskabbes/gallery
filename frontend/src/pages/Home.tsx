@@ -21,13 +21,10 @@ function Home() {
     data: apiData,
     loading,
     response,
-  } = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>(
-    {
-      endpoint: API_ENDPOINT,
-      method: API_METHOD,
-    },
-    true
-  );
+  } = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>({
+    endpoint: API_ENDPOINT,
+    method: API_METHOD,
+  });
 
   return (
     <Link to="/styles/">

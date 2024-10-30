@@ -64,13 +64,10 @@ function Styles() {
 
   const { data, loading, response } = useApiCall<
     ResponseTypesByStatus[keyof ResponseTypesByStatus]
-  >(
-    {
-      endpoint: API_ENDPOINT,
-      method: API_METHOD,
-    },
-    true
-  );
+  >({
+    endpoint: API_ENDPOINT,
+    method: API_METHOD,
+  });
 
   function displayModal() {
     const key = Math.random().toString();
