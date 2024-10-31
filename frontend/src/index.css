@@ -20,6 +20,10 @@
 
 /* Base Layer */
 @layer base {
+  #app * {
+    @apply scrollbar-thin scrollbar-thumb-a-border-light dark:scrollbar-thumb-a-border-dark scrollbar-track-transparent;
+  }
+
   [data-surface-mode='a'] {
     @apply bg-a-bg-light dark:bg-a-bg-dark border-a-border-light dark:border-a-border-dark text-a-text-light dark:text-a-text-dark;
   }

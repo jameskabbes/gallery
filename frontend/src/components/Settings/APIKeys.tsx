@@ -42,6 +42,7 @@ import {
   ResponseTypesByStatus as GetAPIKeyJWTResponseTypes,
 } from '../../services/api/getAPIKeyJWT';
 import { toast } from 'react-toastify';
+import { Surface } from '../Utils/Surface';
 
 const API_ENDPOINT = '/settings/api-keys/page/';
 const API_METHOD = 'get';
@@ -228,12 +229,14 @@ function APIKeyCodeModal({ authContext, apiKey }: APIKeyCodeModalProps) {
 
   return (
     <div id="api-key-code" className="flex flex-col space-y-4">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-clip">
         <h3 className="break-words">{apiKey.name}</h3>
       </div>
-      <div className="overflow-auto">
-        <code>{jwt}</code>
-      </div>
+      <Card1>
+        <div>
+          <code className="break-words">{jwt}</code>
+        </div>
+      </Card1>
       <div className="h-[2rem] flex flex-col justify-center items-center">
         {copySuccess && <p>Copied to clipboard</p>}
       </div>
@@ -623,6 +626,7 @@ function APIKeys({ authContext, toastContext }: APIKeysProps): JSX.Element {
                       setAPIKeyScopes={setAPIKeyScopes}
                     />
                   ),
+                  className: 'max-w-[350px] w-full',
                   key: 'modal-make-api-key',
                 });
               }}

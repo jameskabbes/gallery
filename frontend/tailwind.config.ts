@@ -1,5 +1,6 @@
 import colors from 'tailwindcss/colors';
 import Color from 'color';
+import tailwindScrollbar from 'tailwind-scrollbar';
 
 const baseColors = {
   paynes_gray: '#4f5d75',
@@ -87,5 +88,5 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [tailwindScrollbar],
 };
