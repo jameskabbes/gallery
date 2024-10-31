@@ -18,16 +18,16 @@ function GlobalModalsContextProvider({ children }: Props) {
     GlobalModalsContextType['activeModal']
   >({ ...defaultModal });
 
+  function clearModal() {
+    setActiveModal({ ...defaultModal });
+  }
+
   function setModal(modal: Partial<Modal>) {
     setActiveModal({
       ...defaultModal,
-      onExit: () => setActiveModal({ ...defaultModal }),
+      onExit: clearModal,
       ...modal,
     });
-  }
-
-  function clearModal() {
-    setActiveModal({ ...defaultModal });
   }
 
   return (

@@ -37,6 +37,11 @@ import { ValidatedInputDatetimeLocal } from '../Form/ValidatedInputDatetimeLocal
 import { Button1, Button2, ButtonSubmit } from '../Utils/Button';
 import { Card1, CardButton } from '../Utils/Card';
 import { Toggle1 } from '../Utils/Toggle';
+import {
+  getAPIKeyJWT,
+  ResponseTypesByStatus as GetAPIKeyJWTResponseTypes,
+} from '../../services/api/getAPIKeyJWT';
+import { toast } from 'react-toastify';
 
 const API_ENDPOINT = '/settings/api-keys/page/';
 const API_METHOD = 'get';
@@ -188,6 +193,63 @@ function APIKeyScopeRow({
   );
 }
 
+interface APIKeyCodeModalProps {
+  authContext: AuthContextType;
+  apiKey: components['schemas']['APIKey'];
+}
+
+function APIKeyCodeModal({ authContext, apiKey }: APIKeyCodeModalProps) {
+  const [jwt, setJWT] = useState<string>('');
+  const [copySuccess, setCopySuccess] = useState<boolean>(false);
+
+  useEffect(() => {
+    handleGetAPIKeyJWT();
+  }, []);
+
+  async function handleGetAPIKeyJWT() {
+    const { data, response } = await getAPIKeyJWT(authContext, apiKey.id);
+
+    if (response.status === 200) {
+      const apiData = data as GetAPIKeyJWTResponseTypes['200'];
+      setJWT(apiData.jwt);
+    }
+  }
+
+  const handleCopyToClipboard = () => {
+    navigator.clipboard.writeText(jwt).then(
+      () => {
+        setCopySuccess(true);
+      },
+      (err) => {
+        console.error('Failed to copy text: ', err);
+      }
+    );
+  };
+
+  return (
+    <div id="api-key-code" className="flex flex-col space-y-4">
+      <div className="overflow-x-auto">
+        <h3 className="break-words">{apiKey.name}</h3>
+      </div>
+      <div className="overflow-auto">
+        <code>{jwt}</code>
+      </div>
+      <div className="h-[2rem] flex flex-col justify-center items-center">
+        {copySuccess && <p>Copied to clipboard</p>}
+      </div>
+      <div className="flex flex-row justify-center">
+        <Button1
+          onClick={(e) => {
+            handleCopyToClipboard();
+          }}
+        >
+          Copy Code
+        </Button1>
+      </div>
+    </div>
+  );
+}
+
 interface APIKeyRowProps {
   apiKeyId: components['schemas']['APIKey']['id'];
   apiKeys: TAPIKeys;
@@ -197,6 +259,7 @@ interface APIKeyRowProps {
   setAPIKeyScopes: TSetAPIKeyScopes;
   toastContext: ToastContextType;
   authContext: AuthContextType;
+  globalModalsContext: GlobalModalsContextType;
   checkConfirmation: ReturnType<
     typeof useConfirmationModal
   >['checkConfirmation'];
@@ -211,6 +274,7 @@ function APIKeyRow({
   setAPIKeyScopes,
   toastContext,
   authContext,
+  globalModalsContext,
   checkConfirmation,
 }: APIKeyRowProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -263,8 +327,10 @@ function APIKeyRow({
         <span>
           {isEditing ? <IoChevronDownOutline /> : <IoChevronForwardOutline />}
         </span>
-        <div className="flex flex-col flex-1">
-          <h3 className="mb-4 ml-4 text-left">{apiKeys[apiKeyId].name}</h3>
+        <div className="flex flex-col flex-1 overflow-x-auto">
+          <h3 className="mb-4 ml-4 text-left break-words">
+            <code>{apiKeys[apiKeyId].name}</code>
+          </h3>
           <div className="flex flex-row items-center space-x-2">
             <p>
               <CiClock2 />
@@ -296,27 +362,46 @@ function APIKeyRow({
             </p>
           </div>
         </div>
-        <Button2
-          onClick={(e) => {
-            e.stopPropagation();
-            checkConfirmation(
-              {
-                title: 'Delete API Key?',
-                confirmText: 'Delete',
-                message: `Are you sure you want to delete the API Key ${apiKeys[apiKeyId].name}?`,
-                onConfirm: () => {
-                  handleDeleteAPIKey(apiKeyId);
+        <div className="flex flex-col flex-shrink-0 space-y-2">
+          <Button1
+            className="flex-shrink-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              globalModalsContext.setModal({
+                component: (
+                  <APIKeyCodeModal
+                    authContext={authContext}
+                    apiKey={apiKeys[apiKeyId]}
+                  />
+                ),
+                className: 'max-w-[400px] w-full',
+              });
+            }}
+          >
+            View Key
+          </Button1>
+          <Button2
+            onClick={(e) => {
+              e.stopPropagation();
+              checkConfirmation(
+                {
+                  title: 'Delete API Key?',
+                  confirmText: 'Delete',
+                  message: `Are you sure you want to delete the API Key ${apiKeys[apiKeyId].name}?`,
+                  onConfirm: () => {
+                    handleDeleteAPIKey(apiKeyId);
+                  },
+                  onCancel: () => {},
                 },
-                onCancel: () => {},
-              },
-              {
-                key: 'delete-api-key',
-              }
-            );
-          }}
-        >
-          <span className="text-error-500">Delete</span>
-        </Button2>
+                {
+                  key: 'delete-api-key',
+                }
+              );
+            }}
+          >
+            <span className="text-error-500">Delete</span>
+          </Button2>
+        </div>
       </div>
       {isEditing && (
         <div className="flex flex-col">
@@ -557,6 +642,7 @@ function APIKeys({ authContext, toastContext }: APIKeysProps): JSX.Element {
                 setAPIKeyScopes={setAPIKeyScopes}
                 toastContext={toastContext}
                 authContext={authContext}
+                globalModalsContext={globalModalsContext}
                 checkConfirmation={checkConfirmation}
               />
             ))}

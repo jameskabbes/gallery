@@ -29,7 +29,8 @@ function AuthModals() {
           authModalsContext.setActiveModalType(null);
         },
         includeExitButton: true,
-        contentStyle: { maxWidth: '400px', width: '100%' },
+        className: 'max-w-[400px] w-full',
+        contentStyle: {},
         key: authModalsContext.activeModalType || 'auth-modal',
       }}
     />

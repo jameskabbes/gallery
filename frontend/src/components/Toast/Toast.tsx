@@ -38,7 +38,7 @@ function Toast() {
   return (
     <div
       id="toast-container"
-      className="fixed bottom-4 right-4 flex flex-col space-y-2 w-80 z-50"
+      className="fixed bottom-4 right-4 flex flex-col space-y-2 w-80"
       style={{
         zIndex: siteConfig.zIndex.toast,
       }}
@@ -60,7 +60,7 @@ function Toast() {
             <CSSTransition key={toastId} classNames="toast" timeout={timeouts}>
               <Card1
                 id={`toast-${toastId}`}
-                className="card flex flex-row items-center space-x-1 m-2 shadow-xl"
+                className="card flex flex-row items-center space-x-1 m-2 shadow-xl overflow-clip"
                 style={{ height: `${height}px` }}
                 onClick={() => {
                   toastContext.dispatch({ type: 'REMOVE', payload: toastId });

@@ -21,7 +21,7 @@ function ConfirmationModal({
   return (
     <form className="flex flex-col space-y-8">
       <header>{title}</header>
-      <p>{message}</p>
+      <p className="break-words">{message}</p>
       <div className="flex flex-row justify-center space-x-2">
         {showCancel && (
           <Button2

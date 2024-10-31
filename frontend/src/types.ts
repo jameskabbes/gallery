@@ -135,11 +135,13 @@ interface Modal {
   contentStyle: React.CSSProperties;
   includeExitButton: boolean;
   onExit: () => void;
+  className: string;
   key: string;
 }
 
 const defaultModal: Modal = {
   component: null,
+  className: '',
   onExit: () => null,
   includeExitButton: true,
   contentStyle: {},

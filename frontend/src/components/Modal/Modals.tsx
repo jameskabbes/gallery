@@ -51,7 +51,7 @@ function Modals({ activeModal, overlayStyle = {} }: Props) {
                   ...activeModal.contentStyle,
                 }}
                 ref={refCallback}
-                className="overflow-auto"
+                className={'overflow-y-auto ' + activeModal.className}
               >
                 {activeModal.includeExitButton && (
                   <div className="flex flex-row justify-end">
