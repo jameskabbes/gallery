@@ -109,6 +109,10 @@ export interface paths {
     /** Patch Api Key */
     patch: operations["patch_api_key_api_keys__api_key_id___patch"];
   };
+  "/api-keys/{api_key_id}/generate-jwt/": {
+    /** Get Api Key Jwt */
+    get: operations["get_api_key_jwt_api_keys__api_key_id__generate_jwt__get"];
+  };
   "/api-keys/{api_key_id}/scopes/{scope_id}/": {
     /** Add Scope To Api Key */
     post: operations["add_scope_to_api_key_api_keys__api_key_id__scopes__scope_id___post"];
@@ -179,6 +183,11 @@ export interface components {
       user_id: string;
       /** Name */
       name: string;
+    };
+    /** APIKeyJWTResponse */
+    APIKeyJWTResponse: {
+      /** Jwt */
+      jwt: string;
     };
     /** APIKeyUpdate */
     APIKeyUpdate: {
@@ -1168,6 +1177,34 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["APIKey"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get Api Key Jwt */
+  get_api_key_jwt_api_keys__api_key_id__generate_jwt__get: {
+    parameters: {
+      path: {
+        api_key_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["APIKeyJWTResponse"];
+        };
+      };
+      /** @description APIKey not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
         };
       };
       /** @description Validation Error */

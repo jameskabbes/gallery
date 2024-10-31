@@ -736,6 +736,27 @@ async def delete_api_key(
         return Response(status_code=204)
 
 
+class APIKeyJWTResponse(BaseModel):
+    jwt: str
+
+
+@app.get('/api-keys/{api_key_id}/generate-jwt/', responses={status.HTTP_404_NOT_FOUND: {"description": models.APIKey.not_found_message(), 'model': NotFoundResponse}})
+async def get_api_key_jwt(
+    api_key_id: models.APIKeyTypes.id,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization())]
+) -> APIKeyJWTResponse:
+    with Session(c.db_engine) as session:
+        api_key = await models.APIKey.get(session, api_key_id)
+        if api_key.user_id != authorization.user.id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=models.APIKey.not_found_message())
+
+        return APIKeyJWTResponse(
+            jwt=jwt_encode(api_key.export_to_jwt())
+        )
+
+
 @app.post('/api-keys/{api_key_id}/scopes/{scope_id}/', status_code=status.HTTP_204_NO_CONTENT)
 async def add_scope_to_api_key(
     api_key_id: models.APIKeyTypes.id,
