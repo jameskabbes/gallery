@@ -17,7 +17,7 @@
 
 # see common auth status
 # GET http://localhost:8087/auth/
-# Cookie: access_token=token
+# Authorization: Bearer token
 
 #get token from email magic link 
 # POST http://localhost:8087/auth/login/email-magic-link/
@@ -88,4 +88,7 @@
 # Authorization: Bearer token
 
 # DELETE http://localhost:8087/api-keys/9fa3e6c4-b63d-4bb8-89de-43b61cd1dd76/scopes/2/
+# Authorization: Bearer token
+
+# GET http://localhost:8087/api-keys/a2f7275e-75bf-4a1a-a7a1-67c8bce90781/generate-jwt/
 # Authorization: Bearer token
