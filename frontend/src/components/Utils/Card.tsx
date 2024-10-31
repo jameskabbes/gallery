@@ -6,6 +6,12 @@ const createStyledCard = createStyledSurfaceComponentCreator<
   React.HTMLAttributes<HTMLDivElement>
 >('div');
 
-const Card1 = createStyledCard('rounded-2xl border-[1px] p-2');
+const createStyledCardButton = createStyledSurfaceComponentCreator<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement>
+>('button');
 
-export { Card1, createStyledCard };
+const Card1 = createStyledCard('rounded-2xl border-[1px] p-2');
+const CardButton = createStyledCardButton('rounded-2xl border-[1px] p-2');
+
+export { Card1, CardButton, createStyledCard, createStyledCardButton };
