@@ -200,7 +200,7 @@ interface APIKeyCodeModalProps {
 }
 
 function APIKeyCodeModal({ authContext, apiKey }: APIKeyCodeModalProps) {
-  const [jwt, setJWT] = useState<string>('');
+  const [jwt, setJWT] = useState<string>('loading...');
   const [copySuccess, setCopySuccess] = useState<boolean>(false);
 
   useEffect(() => {
@@ -246,7 +246,7 @@ function APIKeyCodeModal({ authContext, apiKey }: APIKeyCodeModalProps) {
             handleCopyToClipboard();
           }}
         >
-          Copy Code
+          Copy API Key
         </Button1>
       </div>
     </div>

@@ -96,10 +96,12 @@ function Styles() {
       </header>
       <div className="grid grid-cols-1 md:grid-cols-2">
         <section className="flex-1">
-          <Card1 className="overflow-x-scroll m-2">
-            <p>
-              asdasdkjaksldjkalsjdkalsjdlkajsdklasjdaksljdlkasdjlkasjdkalsdjklasjkdalskjdlaksjdklasjdlkasjdlkasjdlkasjdlkasjdlkajskdljsa
-            </p>
+          <Card1 className="m-2">
+            <div className="overflow-x-scroll">
+              <p>
+                asdasdkjaksldjkalsjdkalsjdlkajsdklasjdaksljdlkasdjlkasjdkalsdjklasjkdalskjdlaksjdklasjdlkasjdlkasjdlkasjdlkasjdlkajskdljsa
+              </p>
+            </div>
           </Card1>
           <Card1 className="m-2">
             <h2>Buttons</h2>
