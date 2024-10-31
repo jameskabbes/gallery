@@ -124,9 +124,8 @@ function Settings(): JSX.Element {
                   }
 
                   return (
-                    <Surface keepParentMode={true}>
+                    <Surface keepParentMode={true} key={key}>
                       <button
-                        key={key}
                         onClick={() => setSelection(key)}
                         className={`${
                           selection === key ? 'border-color-primary' : ''

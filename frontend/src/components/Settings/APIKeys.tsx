@@ -249,7 +249,7 @@ function APIKeyRow({
   }
 
   return (
-    <CardButton
+    <Card1
       onClick={() =>
         setIsEditing((prev) => {
           if (apiKeys[apiKeyId].name !== loadingAPIKeyName) {
@@ -257,7 +257,7 @@ function APIKeyRow({
           }
         })
       }
-      className="flex flex-col"
+      className="flex flex-col cursor-pointer"
     >
       <div className="flex flex-row w-full items-center space-x-2">
         <span>
@@ -334,7 +334,7 @@ function APIKeyRow({
           ))}
         </div>
       )}
-    </CardButton>
+    </Card1>
   );
 }
 
@@ -392,9 +392,6 @@ function AddAPIKey({
       [tempId]: tempAPIKey,
     }));
     setAPIKeyScopes((prev) => ({ ...prev, [tempId]: [] }));
-
-    // wait 10 seconds
-    await new Promise((resolve) => setTimeout(resolve, 10000));
 
     const { data, response } = await postAPIKey(authContext, {
       expiry: new Date(expiry['value']).toISOString(),

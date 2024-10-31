@@ -11,6 +11,13 @@ function ConfirmationModal({
   cancelText = 'Cancel',
   showCancel = true,
 }: ConfirmationModalType): JSX.Element {
+  const confirmButtonRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (confirmButtonRef.current) {
+      confirmButtonRef.current.focus();
+    }
+  }, []);
+
   return (
     <form className="flex flex-col space-y-8">
       <header>{title}</header>
@@ -28,6 +35,7 @@ function ConfirmationModal({
         )}
         <Button1
           className="flex-1"
+          ref={confirmButtonRef}
           onClick={(e) => {
             e.preventDefault();
             onConfirm();
