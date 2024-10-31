@@ -124,22 +124,24 @@ function Settings(): JSX.Element {
                   }
 
                   return (
-                    <button
-                      key={key}
-                      onClick={() => setSelection(key)}
-                      className={`${
-                        selection === key ? 'border-color-primary' : ''
-                      } border-b-[1px] m-2 hover:border-color-primary`}
-                    >
-                      <h5>
-                        <div className="flex flex-row space-x-1 items-center">
-                          {selectionComponentMapping[key].icon}
-                          <span className="whitespace-nowrap">
-                            {selectionComponentMapping[key].name}
-                          </span>
-                        </div>
-                      </h5>
-                    </button>
+                    <Surface keepParentMode={true}>
+                      <button
+                        key={key}
+                        onClick={() => setSelection(key)}
+                        className={`${
+                          selection === key ? 'border-color-primary' : ''
+                        } border-b-[1px] m-2 hover:border-color-primary`}
+                      >
+                        <h5>
+                          <div className="flex flex-row space-x-1 items-center">
+                            {selectionComponentMapping[key].icon}
+                            <span className="whitespace-nowrap">
+                              {selectionComponentMapping[key].name}
+                            </span>
+                          </div>
+                        </h5>
+                      </button>
+                    </Surface>
                   );
                 }
               }
