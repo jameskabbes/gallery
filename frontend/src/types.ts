@@ -218,7 +218,7 @@ type AuthContextState = components['schemas']['GetAuthBaseReturn'];
 interface AuthContext {
   state: AuthContextState;
   setState: React.Dispatch<React.SetStateAction<AuthContextState>>;
-  logOut: () => void;
+  logOut: (toastId?: ToastId) => void;
   updateFromApiResponse: (data: any) => void;
 }
 

@@ -28,15 +28,12 @@ async function logOut(
   >({
     endpoint: API_ENDPOINT,
     method: API_METHOD,
+    authContext,
   });
 
   if (response.status === 200) {
     const apiData = data as ResponseTypesByStatus['200'];
-    authContext.logOut();
-    toastContext.update(toastId, {
-      message: apiData.detail,
-      type: 'success',
-    });
+    authContext.logOut(toastId);
   } else {
     toastContext.update(toastId, {
       message: 'Error logging out',

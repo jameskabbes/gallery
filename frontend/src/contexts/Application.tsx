@@ -13,27 +13,29 @@ import { LogInContextProvider } from './LogIn';
 
 const ApplicationContextProvider = ({ children }) => {
   return (
-    <EscapeKeyContextProvider>
-      <AuthContextProvider>
-        <DeviceContextProvider>
-          <GlobalModalsContextProvider>
-            <DarkModeContextProvider>
-              <LogInContextProvider>
-                <LogInWithGoogleProvider>
-                  <LogInWithEmailContextProvider>
-                    <SignUpContextProvider>
-                      <AuthModalsContextProvider>
-                        <ToastContextProvider>{children}</ToastContextProvider>
-                      </AuthModalsContextProvider>
-                    </SignUpContextProvider>
-                  </LogInWithEmailContextProvider>
-                </LogInWithGoogleProvider>
-              </LogInContextProvider>
-            </DarkModeContextProvider>
-          </GlobalModalsContextProvider>
-        </DeviceContextProvider>
-      </AuthContextProvider>
-    </EscapeKeyContextProvider>
+    <ToastContextProvider>
+      <EscapeKeyContextProvider>
+        <AuthContextProvider>
+          <DeviceContextProvider>
+            <GlobalModalsContextProvider>
+              <DarkModeContextProvider>
+                <LogInContextProvider>
+                  <LogInWithGoogleProvider>
+                    <LogInWithEmailContextProvider>
+                      <SignUpContextProvider>
+                        <AuthModalsContextProvider>
+                          {children}
+                        </AuthModalsContextProvider>
+                      </SignUpContextProvider>
+                    </LogInWithEmailContextProvider>
+                  </LogInWithGoogleProvider>
+                </LogInContextProvider>
+              </DarkModeContextProvider>
+            </GlobalModalsContextProvider>
+          </DeviceContextProvider>
+        </AuthContextProvider>
+      </EscapeKeyContextProvider>
+    </ToastContextProvider>
   );
 };
 

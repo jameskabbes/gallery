@@ -1,8 +1,12 @@
-import React, { useEffect, useState, useReducer, createContext } from 'react';
-import { AuthContextState, AuthContext as AuthContextType } from '../types';
+import React, { useEffect, useState, useContext, createContext } from 'react';
+import {
+  AuthContextState,
+  AuthContext as AuthContextType,
+  ToastId,
+} from '../types';
 import { paths, operations, components } from '../openapi_schema';
 import config from '../../../config.json';
-import { callApi } from '../utils/Api';
+import { ToastContext } from './Toast';
 
 const defaultState: AuthContextState = {
   user: null,
@@ -23,6 +27,7 @@ interface Props {
 
 function AuthContextProvider({ children }: Props) {
   const [state, setState] = useState<AuthContextState>(defaultState);
+  const toastContext = useContext(ToastContext);
 
   useEffect(() => {
     localStorage.setItem(config.auth_key, JSON.stringify(state));
@@ -44,8 +49,20 @@ function AuthContextProvider({ children }: Props) {
     };
   }, []);
 
-  function logOut() {
+  function logOut(toastId?: ToastId) {
     setState(defaultState);
+
+    if (toastId) {
+      toastContext.update(toastId, {
+        message: 'Logged out',
+        type: 'info',
+      });
+    } else {
+      toastContext.make({
+        message: 'Logged out',
+        type: 'info',
+      });
+    }
   }
 
   function updateFromApiResponse(data: any) {
