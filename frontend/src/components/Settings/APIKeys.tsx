@@ -35,7 +35,7 @@ import { ValidatedInputString } from '../Form/ValidatedInputString';
 import openapi_schema from '../../../../openapi_schema.json';
 import { ValidatedInputDatetimeLocal } from '../Form/ValidatedInputDatetimeLocal';
 import { Button1, Button2, ButtonSubmit } from '../Utils/Button';
-import { Card1 } from '../Utils/Card';
+import { Card1, CardButton } from '../Utils/Card';
 import { Toggle1 } from '../Utils/Toggle';
 
 const API_ENDPOINT = '/settings/api-keys/page/';
@@ -249,96 +249,92 @@ function APIKeyRow({
   }
 
   return (
-    <Card1 className="hover:border-color-primary ">
-      <button
-        onClick={() => setIsEditing((prev) => !prev)}
-        className="flex flex-col"
-      >
-        <div className="flex flex-row items-center space-x-2">
-          <div className="flex flex-col">
-            <span>
-              {isEditing ? (
-                <IoChevronDownOutline />
-              ) : (
-                <IoChevronForwardOutline />
-              )}
-            </span>
+    <CardButton
+      onClick={() =>
+        setIsEditing((prev) => {
+          if (apiKeys[apiKeyId].name !== loadingAPIKeyName) {
+            return !prev;
+          }
+        })
+      }
+      className="flex flex-col"
+    >
+      <div className="flex flex-row w-full items-center space-x-2">
+        <span>
+          {isEditing ? <IoChevronDownOutline /> : <IoChevronForwardOutline />}
+        </span>
+        <div className="flex flex-col flex-1">
+          <h3 className="mb-4 ml-4 text-left">{apiKeys[apiKeyId].name}</h3>
+          <div className="flex flex-row items-center space-x-2">
+            <p>
+              <CiClock2 />
+            </p>
+            <p>
+              Issued:{' '}
+              {new Date(apiKeys[apiKeyId].issued).toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+              })}
+            </p>
           </div>
-          <div className="flex flex-col flex-1">
-            <h3 className="mb-4">{apiKeys[apiKeyId].name}</h3>
-            <div className="flex flex-row items-center space-x-2">
-              <p>
-                <CiClock2 />
-              </p>
-              <p>
-                Issued:{' '}
-                {new Date(apiKeys[apiKeyId].issued).toLocaleString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: 'numeric',
-                  minute: 'numeric',
-                })}
-              </p>
-            </div>
-            <div className="flex flex-row items-center space-x-2">
-              <p>
-                <IoHourglassOutline />
-              </p>
-              <p>
-                Expires:{' '}
-                {new Date(apiKeys[apiKeyId].expiry).toLocaleString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: 'numeric',
-                  minute: 'numeric',
-                })}
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-col">
-            <Button2
-              onClick={(e) => {
-                e.stopPropagation();
-                checkConfirmation(
-                  {
-                    title: 'Delete API Key?',
-                    confirmText: 'Delete',
-                    message: `Are you sure you want to delete the API Key ${apiKeys[apiKeyId].name}?`,
-                    onConfirm: () => {
-                      handleDeleteAPIKey(apiKeyId);
-                    },
-                    onCancel: () => {},
-                  },
-                  {
-                    key: 'delete-api-key',
-                  }
-                );
-              }}
-            >
-              <span className="text-error-500">Delete</span>
-            </Button2>
+          <div className="flex flex-row items-center space-x-2">
+            <p>
+              <IoHourglassOutline />
+            </p>
+            <p>
+              Expires:{' '}
+              {new Date(apiKeys[apiKeyId].expiry).toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+              })}
+            </p>
           </div>
         </div>
-        {isEditing && (
-          <div className="flex flex-col">
-            {/* map through all scopes */}
-            {Object.keys(scopes).map((scopeId) => (
-              <APIKeyScopeRow
-                key={scopeId}
-                scope={scopes[scopeId]}
-                apiKey={apiKeys[apiKeyId]}
-                apiKeyScopes={apiKeyScopes}
-                setAPIKeyScopes={setAPIKeyScopes}
-                toastContext={toastContext}
-                authContext={authContext}
-              />
-            ))}
-          </div>
-        )}
-      </button>
-    </Card1>
+        <Button2
+          onClick={(e) => {
+            e.stopPropagation();
+            checkConfirmation(
+              {
+                title: 'Delete API Key?',
+                confirmText: 'Delete',
+                message: `Are you sure you want to delete the API Key ${apiKeys[apiKeyId].name}?`,
+                onConfirm: () => {
+                  handleDeleteAPIKey(apiKeyId);
+                },
+                onCancel: () => {},
+              },
+              {
+                key: 'delete-api-key',
+              }
+            );
+          }}
+        >
+          <span className="text-error-500">Delete</span>
+        </Button2>
+      </div>
+      {isEditing && (
+        <div className="flex flex-col">
+          {/* map through all scopes */}
+          {Object.keys(scopes).map((scopeId) => (
+            <APIKeyScopeRow
+              key={scopeId}
+              scope={scopes[scopeId]}
+              apiKey={apiKeys[apiKeyId]}
+              apiKeyScopes={apiKeyScopes}
+              setAPIKeyScopes={setAPIKeyScopes}
+              toastContext={toastContext}
+              authContext={authContext}
+            />
+          ))}
+        </div>
+      )}
+    </CardButton>
   );
 }
 
