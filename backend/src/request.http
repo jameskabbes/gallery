@@ -92,3 +92,10 @@
 
 # GET http://localhost:8087/api-keys/a2f7275e-75bf-4a1a-a7a1-67c8bce90781/generate-jwt/
 # Authorization: Bearer token
+
+# POST http://localhost:8087/galleries/
+# Authorization: Bearer token
+
+# {
+#     "name": "new gallery"
+# }
