@@ -5,11 +5,10 @@ import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { ApplicationContextProvider } from './contexts/Application';
 import { Toast } from './components/Toast/Toast';
-import { Profile } from './components/User/Profile';
+import { Galleries } from './pages/Galleries';
 import { Settings } from './pages/Settings';
 import { AuthModals } from './components/Auth/AuthModals';
 import { GlobalModals } from './components/GlobalModals';
-import { Gallery } from './components/Gallery/pages/Gallery';
 import { VerifyMagicLink } from './components/Auth/VerifyMagicLink';
 import { Surface } from './components/Utils/Surface';
 import Styles from './pages/Styles';
@@ -28,12 +27,11 @@ function App(): JSX.Element {
             <Header />
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/profile" element={<Profile />} />
+              <Route path="/galleries" element={<Galleries />} />
               <Route path="/settings/:selection" element={<Settings />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/styles" element={<Styles />} />
               <Route path="/settings/" element={<Settings />} />
-              <Route path="/galleries/:gallery_id" element={<Gallery />} />
               <Route path="/404" element={<p>404</p>} />
               <Route path="*" element={<Navigate to="/404" />} />
               <Route
