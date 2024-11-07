@@ -110,12 +110,12 @@ function Settings(): JSX.Element {
   }, [authContext.state.user, selection, loading]);
 
   return (
-    <div className="max-w-screen-2xl">
+    <div className="max-w-screen-2xl mx-auto w-full">
       {loading || !selection ? (
         'loading'
       ) : (
         <div>
-          <div className="flex flex-row space-x-4 overflow-x-auto">
+          <div className="flex flex-row overflow-x-auto ">
             {Object.keys(selectionComponentMapping).map(
               (key: SelectionComponentKeys) => {
                 if (authContext.state.user || !loggedInComponentKeys.has(key)) {
@@ -124,12 +124,12 @@ function Settings(): JSX.Element {
                   }
 
                   return (
-                    <Surface keepParentMode={true} key={key}>
+                    <Surface key={key}>
                       <button
                         onClick={() => setSelection(key)}
                         className={`${
                           selection === key ? 'border-color-primary' : ''
-                        } border-b-[1px] m-2 hover:border-color-primary`}
+                        } border-[1px] hover:border-color-primary py-1 px-2 mx-1 my-2 rounded-full `}
                       >
                         <h5>
                           <div className="flex flex-row space-x-1 items-center">
