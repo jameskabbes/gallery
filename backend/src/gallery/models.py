@@ -10,7 +10,7 @@ from sqlalchemy.types import DateTime
 from gallery import utils, auth
 from abc import ABC, abstractmethod
 import datetime as datetime_module
-from enum import Enum
+from enum import IntEnum, Enum
 import jwt
 import pydantic
 import collections.abc
@@ -18,32 +18,14 @@ import re
 #
 
 
-class PermissionLevel(Enum):
-    VIEWER = 'viewer'
-    EDITOR = 'editor'
-    OWNER = 'owner'
-
-    def __lt__(self, other):
-        order = ['viewer', 'editor', 'owner']
-        if self.__class__ is other.__class__:
-            return order.index(self.value) < order.index(other.value)
-        return NotImplemented
-
-    def __le__(self, other):
-        return self < other or self == other
-
-    def __gt__(self, other):
-        return not self <= other
-
-    def __ge__(self, other):
-        return not self < other
-
-
-class VisibilityLevel(Enum):
-    PUBLIC = 'public'
-    PRIVATE = 'private'
-
-#
+PermissionLevelID = int
+PermissionLevelName = typing.Literal['owner', 'editor', 'viewer']
+VisibilityLevelID = int
+VisibilityLevelName = typing.Literal['public', 'private']
+ScopeID = int
+ScopeName = typing.Literal['admin', 'users.read', 'users.write']
+UserRoleID = int
+UserRoleName = typing.Literal['admin', 'user']
 
 
 def validate_and_normalize_datetime(value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime:
@@ -75,6 +57,7 @@ class Table[IDType](SQLModel, IDObject[IDType]):
     @ classmethod
     def generate_id(cls) -> IDType:
         """Generate a new ID for the model"""
+
         if len(cls._ID_COLS) > 1:
             return tuple(str(uuid.uuid4()) for _ in range(len(cls._ID_COLS)))
         else:
@@ -111,11 +94,14 @@ class Table[IDType](SQLModel, IDObject[IDType]):
         resp = await cls._get_by_key_values(session, key_values)
         return resp.all()
 
-    @ classmethod
+    @classmethod
     async def _get_by_key_values(cls, session: Session, key_values: dict[str, typing.Any]):
-
-        conditions = [getattr(cls, key) == value for key,
-                      value in key_values.items()]
+        conditions = []
+        for key, value in key_values.items():
+            if isinstance(value, list):
+                conditions.append(getattr(cls, key).in_(value))
+            else:
+                conditions.append(getattr(cls, key) == value)
 
         query = select(cls).where(and_(*conditions))
         return session.exec(query)
@@ -202,81 +188,9 @@ class TableCreateAdmin[TTable: Table](TableImport[TTable]):
 
     async def create(self) -> TTable:
         return self._TABLE_MODEL(
-            **{key: value for key, value in zip(self._TABLE_MODEL._ID_COLS, self._TABLE_MODEL.generate_id())}
+            **{key: value for key, value in zip(self._TABLE_MODEL._ID_COLS, self._TABLE_MODEL.generate_id())},
             ** self.model_dump(),
         )
-
-#
-# UserRole
-#
-
-
-class UserRoles:
-    ADMIN = 'admin'
-    USER = 'user'
-
-
-USER_ROLE_MAPPING = {
-    UserRoles.ADMIN: '1',
-    UserRoles.USER: '2'
-}
-
-
-class UserRoleTypes:
-    id = str
-    name = typing.Annotated[str, StringConstraints(
-        min_length=1, to_lower=True)]
-
-
-class UserRoleIDBase(IDObject[UserRoleTypes.id]):
-    id: UserRoleTypes.id = Field(
-        primary_key=True, index=True, unique=True, const=True)
-
-
-class UserRole(Table[UserRoleTypes.id], UserRoleIDBase, table=True):
-    __tablename__ = 'user_role'
-    name: UserRoleTypes.name = Field(unique=True)
-
-    users: list['User'] = Relationship(back_populates='user_role')
-    user_role_scopes: list['UserRoleScope'] = Relationship(
-        back_populates='user_role')
-
-
-type PluralUserRolesDict = dict[UserRoleTypes.id, UserRole]
-
-
-class UserRoleExport(TableExport[UserRole]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[UserRole]] = UserRole
-    id: UserRoleTypes.id
-    name: UserRoleTypes.name
-
-
-class UserRolePublic(UserRoleExport):
-    pass
-
-
-class UserRolePrivate(UserRoleExport):
-    pass
-
-
-class UserRoleImport(TableImport[UserRole]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[UserRole]] = UserRole
-
-
-class UserRoleUpdate(UserRoleImport, UserRoleIDBase):
-    name: typing.Optional[UserRoleTypes.name]
-
-
-class UserRoleUpdateAdmin(UserRoleUpdate, TableUpdateAdmin[UserRole, UserRoleTypes.id]):
-    pass
-
-
-class UserRoleCreate(UserRoleImport):
-    name: UserRoleTypes.name
-
-
-class UserRoleCreateAdmin(UserRoleCreate, TableCreateAdmin[UserRole]):
-    pass
 
 
 #
@@ -293,7 +207,7 @@ class UserTypes:
     username = typing.Annotated[str, StringConstraints(
         min_length=3, max_length=20, pattern=re.compile(r'^[a-zA-Z0-9_.-]+$'), to_lower=True)]
     hashed_password = str
-    user_role_id = UserRoleTypes.id
+    user_role_id = UserRoleID
 
 
 class UserIDBase(IDObject[UserTypes.id]):
@@ -306,14 +220,14 @@ class User(Table[UserTypes.id], UserIDBase, table=True):
 
     email: UserTypes.email = Field(index=True, unique=True)
     username: UserTypes.username = Field(
-        index=True, unique=True, nullable=True, default=None)
-    hashed_password: UserTypes.hashed_password | None = Field(default=None)
-    user_role_id: UserTypes.user_role_id = Field(
-        foreign_key=UserRole.__tablename__ + '.' + UserRole._ID_COLS[0])
+        index=True, unique=True, nullable=True)
+    hashed_password: UserTypes.hashed_password | None = Field()
+    user_role_id: UserRoleID = Field()
 
-    user_role: UserRole = Relationship(back_populates='users')
     api_keys: list['APIKey'] = Relationship(back_populates='user')
     user_access_tokens: list['UserAccessToken'] = Relationship(
+        back_populates='user')
+    gallery_permissions: list['GalleryPermission'] = Relationship(
         back_populates='user')
 
     @ property
@@ -348,9 +262,6 @@ class User(Table[UserTypes.id], UserIDBase, table=True):
             return False
         return True
 
-    async def get_scopes(self) -> list['Scope']:
-        return [user_role_scope.scope for user_role_scope in self.user_role.user_role_scopes]
-
 
 type PluralUsersDict = dict[UserTypes.id, User]
 
@@ -370,6 +281,7 @@ class UserPublic(UserExport):
 
 class UserPrivate(UserExport):
     email: UserTypes.email
+    user_role_id: UserTypes.user_role_id
 
 
 # Import Types
@@ -431,8 +343,8 @@ class UserCreate(UserImport):
 
 
 class UserCreateAdmin(UserCreate, TableCreateAdmin[User]):
-    user_role_id: UserTypes.user_role_id = Field(
-        default=USER_ROLE_MAPPING[UserRoles.USER])
+    username: typing.Optional[UserTypes.username] = None
+    user_role_id: UserTypes.user_role_id
 
     async def post(self, session: Session) -> User:
         if not await self._TABLE_MODEL.is_email_available(session, self.email):
@@ -451,149 +363,6 @@ class UserCreateAdmin(UserCreate, TableCreateAdmin[User]):
             **self.model_dump(exclude=['password'])
         )
 
-
-#
-# Scope
-#
-
-
-type ScopeName = typing.Literal[
-    'admin',
-    'users.read',
-    'users.write'
-]
-
-
-class ScopeNames:
-    ADMIN: ScopeName = 'admin'
-    USERS_READ: ScopeName = 'users.read'
-    USERS_WRITE: ScopeName = 'users.write'
-
-
-class ScopeTypes:
-    id = str
-    name = ScopeName
-
-
-class ScopeIDBase(IDObject[ScopeTypes.id]):
-    id: ScopeTypes.id = Field(
-        primary_key=True, index=True, unique=True, const=True)
-
-
-class Scope(Table[ScopeTypes.id], ScopeIDBase, table=True):
-    __tablename__ = 'scope'
-
-    name: str = Field(unique=True)
-
-    user_role_scopes: list['UserRoleScope'] = Relationship(
-        back_populates='scope')
-    api_key_scopes: list['APIKeyScope'] = Relationship(
-        back_populates='scope')
-
-
-type PluralScopesDict = dict[ScopeTypes.id, Scope]
-
-
-class ScopeExport(TableExport[Scope]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[Scope]] = Scope
-
-    id: ScopeTypes.id
-    name: ScopeTypes.name
-
-
-class ScopePublic(ScopeExport):
-    pass
-
-
-class ScopePrivate(ScopeExport):
-    pass
-
-
-class ScopeImport(TableImport[Scope]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[Scope]] = Scope
-
-
-class ScopeUpdate(ScopeImport, ScopeIDBase):
-    name: typing.Optional[ScopeTypes.name] = None
-
-
-class ScopeUpdateAdmin(ScopeUpdate, TableUpdateAdmin[Scope, ScopeTypes.id]):
-    pass
-
-
-class ScopeCreate(ScopeImport):
-    name: ScopeTypes.name
-
-
-class ScopeCreateAdmin(ScopeCreate, TableCreateAdmin[Scope]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[Scope]] = Scope
-
-
-#
-# UserRoleScope
-#
-
-class UserRoleScopeTypes:
-    user_role_id = UserRoleTypes.id
-    scope_id = ScopeTypes.id
-
-
-type UserRoleScopeId = typing.Annotated[tuple[UserRoleScopeTypes.user_role_id,
-                                              UserRoleScopeTypes.scope_id], '(user_role_id, scope_id)']
-
-
-class UserRoleScopeIDBase(IDObject[UserRoleScopeId]):
-    _ID_COLS: typing.ClassVar[list[str]] = ['user_role_id', 'scope_id']
-
-    user_role_id: UserRoleTypes.id = Field(
-        primary_key=True, index=True, foreign_key=UserRole.__tablename__ + '.' + UserRole._ID_COLS[0])
-    scope_id: ScopeTypes.id = Field(
-        primary_key=True, index=True, foreign_key=Scope.__tablename__ + '.' + Scope._ID_COLS[0])
-
-
-class UserRoleScope(Table[UserRoleScopeId], UserRoleScopeIDBase, table=True):
-    __tablename__ = 'user_role_scope'
-    __table_args__ = (
-        PrimaryKeyConstraint('user_role_id', 'scope_id'),
-    )
-
-    user_role: UserRole = Relationship(back_populates='user_role_scopes')
-    scope: Scope = Relationship(back_populates='user_role_scopes')
-
-
-type PluralUserRoleScopesDict = dict[UserRoleScopeId, UserRoleScope]
-
-
-class UserRoleScopeExport(TableExport[UserRoleScope], UserRoleScopeIDBase):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[UserRoleScope]] = UserRoleScope
-
-
-class UserRoleScopePublic(UserRoleScopeExport):
-    pass
-
-
-class UserRoleScopePrivate(UserRoleScopeExport):
-    pass
-
-
-class UserRoleScopeImport(TableImport[UserRoleScope]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[UserRoleScope]] = UserRoleScope
-
-
-class UserRoleScopeUpdate(UserRoleScopeImport, UserRoleScopeIDBase):
-    pass
-
-
-class UserRoleScopeUpdateAdmin(UserRoleScopeUpdate, TableUpdateAdmin[UserRoleScope, UserRoleScopeId]):
-    pass
-
-
-class UserRoleScopeCreate(UserRoleScopeImport):
-    pass
-
-
-class UserRoleScopeCreateAdmin(UserRoleScopeCreate, TableCreateAdmin[UserRoleScope]):
-    pass
 
 #
 # AuthCredential
@@ -662,10 +431,6 @@ class AuthCredential[IDType](BaseModel, ABC):
     def serialize_datetime(value: datetime_module.datetime) -> datetime_module.datetime:
         return value.replace(tzinfo=datetime_module.timezone.utc)
 
-    @abstractmethod
-    async def get_scopes(self) -> list['Scope']:
-        return []
-
 
 class AuthCredentialExport[IDType](TableExport[AuthCredential[IDType]]):
     _TABLE_MODEL: typing.ClassVar[typing.Type[AuthCredential]] = AuthCredential
@@ -726,9 +491,6 @@ class UserAccessToken(Table[UserAccessTokenTypes.id], UserAccessTokenIDBase, Aut
     __tablename__ = 'user_access_token'
 
     user: User = Relationship(back_populates='user_access_tokens')
-
-    async def get_scopes(self) -> list['Scope']:
-        return await self.user.get_scopes()
 
 
 type PluralUserAccessTokensDict = dict[UserAccessTokenTypes.id,
@@ -792,8 +554,8 @@ class APIKey(Table[APIKeyTypes.id], APIKeyIDBase, AuthCredential[APIKeyTypes.id]
     api_key_scopes: list['APIKeyScope'] = Relationship(
         back_populates='api_key')
 
-    async def get_scopes(self) -> list[Scope]:
-        return [api_key_scope.scope for api_key_scope in self.api_key_scopes]
+    async def get_scope_ids(self) -> list[ScopeID]:
+        return [api_key_scope.scope_id for api_key_scope in self.api_key_scopes]
 
 
 type PluralAPIKeysDict = dict[APIKeyTypes.id, APIKey]
@@ -847,7 +609,7 @@ AUTH_CREDENTIAL_MODEL_MAPPING: dict[AuthCredentialTypes.type, AUTH_CREDENTIAL_MO
 
 class APIKeyScopeTypes:
     api_key_id = APIKeyTypes.id
-    scope_id = ScopeTypes.id
+    scope_id = ScopeID
 
 
 type APIKeyScopeID = typing.Annotated[tuple[APIKeyScopeTypes.api_key_id,
@@ -858,8 +620,7 @@ type APIKeyScopeID = typing.Annotated[tuple[APIKeyScopeTypes.api_key_id,
 class APIKeyScopeIDBase(IDObject[APIKeyScopeID]):
     api_key_id: APIKeyScopeTypes.api_key_id = Field(
         index=True, foreign_key=APIKey.__tablename__ + '.' + APIKey._ID_COLS[0])
-    scope_id: APIKeyScopeTypes.scope_id = Field(
-        index=True, foreign_key=Scope.__tablename__ + '.' + Scope._ID_COLS[0])
+    scope_id: APIKeyScopeTypes.scope_id = Field(index=True)
 
 
 class APIKeyScope(Table[APIKeyScopeID], APIKeyScopeIDBase, table=True):
@@ -867,11 +628,9 @@ class APIKeyScope(Table[APIKeyScopeID], APIKeyScopeIDBase, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('api_key_id', 'scope_id'),
     )
-
     _ID_COLS: typing.ClassVar[list[str]] = ['api_key_id', 'scope_id']
 
     api_key: APIKey = Relationship(back_populates='api_key_scopes')
-    scope: Scope = Relationship(back_populates='api_key_scopes')
 
 
 type PluralAPIKeyScopesDict = dict[APIKeyScopeID, APIKeyScope]
@@ -892,101 +651,201 @@ class APIKeyScopePrivate(APIKeyScopeExport):
 class APIKeyScopeImport(TableImport[APIKeyScope]):
     _TABLE_MODEL: typing.ClassVar[typing.Type[APIKeyScope]] = APIKeyScope
 
-
-# # Gallery
-
-
-# # class GalleryTypes:
-# #     id = str
-# #     name = typing.Annotated[str, StringConstraints(
-# #         min_length=1, max_length=256)]
-# #     visibility = VisibilityLevel
-# #     parent_id = str  # GalleryTypes.id
-# #     description = typing.Annotated[str, StringConstraints(
-# #         min_length=1, max_length=20000)]
-# #     date = datetime_module.date
+#
+# Gallery
+#
 
 
-# # class GalleryBase:
-# #     pass
+GalleryID = str
 
 
-# # class GalleryUpdate(BaseModel, GalleryBase):
-# #     name: typing.Optional[GalleryTypes.name] = None
-# #     visibility: typing.Optional[GalleryTypes.visibility] = None
-# #     parent_id: typing.Optional[GalleryTypes.parent_id] = None
-# #     description: typing.Optional[GalleryTypes.description] = None
-# #     date: typing.Optional[GalleryTypes.date] = None
+class GalleryTypes:
+    id = GalleryID
+    name = typing.Annotated[str, StringConstraints(
+        min_length=1, max_length=256)]
+    visibility_level = VisibilityLevelID
+    parent_id = GalleryID
+    description = typing.Annotated[str, StringConstraints(
+        min_length=0, max_length=20000)]
+    datetime = datetime_module.datetime
 
 
-# # class GalleryAvailable(BaseModel, GalleryBase):
-# #     name: GalleryTypes.name
-# #     parent_id: GalleryTypes.parent_id | None = None
-# #     date: GalleryTypes.date | None = None
-
-# #     class Config:
-# #         from_attributes = True
+class GalleryIDBase(IDObject[GalleryTypes.id]):
+    id: GalleryTypes.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
 
 
-# # class GalleryPublic(BaseModel, GalleryBase):
+class Gallery(Table[GalleryTypes.id], GalleryIDBase, table=True):
+    __tablename__ = 'gallery'
 
-# #     id: GalleryTypes.id
+    name: GalleryTypes.name = Field()
+    visibility_level: GalleryTypes.visibility_level = Field()
+    parent_id: GalleryTypes.parent_id = Field(nullable=True, index=True,
+                                              foreign_key=__tablename__ + '.id')
+    description: GalleryTypes.description = Field()
+    datetime: GalleryTypes.datetime | None = Field(nullable=True)
 
-# #     class Config:
-# #         from_attributes = True
+    parent: typing.Optional['Gallery'] = Relationship(
+        back_populates='children', sa_relationship_kwargs={'remote_side': 'Gallery.id'})
+    children: list['Gallery'] = Relationship(back_populates='parent')
+    gallery_permissions: list['GalleryPermission'] = Relationship(
+        back_populates='gallery')
+
+    @field_validator('datetime')
+    @classmethod
+    def validate_datetime(cls, value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime | None:
+        if value != None:
+            return validate_and_normalize_datetime(value, info)
+        return value
+
+    @field_serializer('datetime')
+    def serialize_datetime(value: datetime_module.datetime) -> datetime_module.datetime | None:
+        if value != None:
+            return value.replace(tzinfo=datetime_module.timezone.utc)
+        return value
+
+    # @classmethod
+    # async def is_available(cls, session: Session, gallery_available: GalleryAvailable) -> bool:
+
+    #     query = select(Gallery).where(
+    #         and_(
+    #             Gallery.name == gallery_available.name,
+    #             Gallery.parent_id == gallery_available.parent_id,
+    #             Gallery.date == gallery_available.date
+    #         )
+    #     )
+    #     return session.exec(query).first() is None
 
 
-# # class GalleryPrivate(BaseModel, GalleryBase):
+type PluralGalleriesDict = dict[GalleryTypes.id, Gallery]
 
-# #     id: GalleryTypes.id
-# #     name: GalleryTypes.name
-# #     parent_id: GalleryTypes.parent_id | None
-# #     description: GalleryTypes.description | None
-# #     datetime: GalleryTypes.date | None
-
-# #     class Config:
-# #         from_attributes = True
+# Export Types
 
 
-# # class Gallery(SQLModel, Table[GalleryTypes.id], GalleryBase, table=True):
-# #     __tablename__ = 'gallery'
-# #     id: GalleryTypes.id = Field(
-# #         primary_key=True, index=True)
-# #     name: GalleryTypes.name
-# #     visibility: GalleryTypes.visibility = Field(VisibilityLevel.PUBLIC)
-# #     parent_id: GalleryTypes.parent_id | None = Field(
-# #         default=None, foreign_key=__tablename__ + '.id')
-# #     description: GalleryTypes.name = Field(default='')
-# #     date: GalleryTypes.date | None = Field(default=None)
+class GalleryExport(TableExport[Gallery]):
+    _TABLE_MODEL: typing.ClassVar[typing.Type[Gallery]] = Gallery
 
-# #     @classmethod
-# #     async def is_available(cls, session: Session, gallery_available: GalleryAvailable) -> bool:
+    id: GalleryTypes.id
+    name: GalleryTypes.name
+    parent_id: GalleryTypes.parent_id | None
+    description: GalleryTypes.description
+    datetime: GalleryTypes.datetime
 
-# #         query = select(Gallery).where(
-# #             and_(
-# #                 Gallery.name == gallery_available.name,
-# #                 Gallery.parent_id == gallery_available.parent_id,
-# #                 Gallery.date == gallery_available.date
-# #             )
-# #         )
-# #         return session.exec(query).first() is None
-# # class GalleryCreate(IDObjectCreate[Gallery], GalleryBase):
-# #     name: GalleryTypes.name
-# #     visibility: typing.Optional[GalleryTypes.visibility] = VisibilityLevel.PUBLIC
-# #     parent_id: typing.Optional[GalleryTypes.parent_id] = None
-# #     description: typing.Optional[GalleryTypes.description] = ''
-# #     date: typing.Optional[GalleryTypes.date] = None
-# #     _IDObject_MODEL: typing.ClassVar[typing.Type[Gallery]] = Gallery
-# # class GalleryPermission(SQLModel, Table[typing.Annotated[tuple[str, str], '(gallery_id, user_id)']], table=True):
-# #     __tablename__ = 'gallery_permission'
-# #     __table_args__ = (
-# #         PrimaryKeyConstraint('gallery_id', 'user_id'),
-# #     )
-# #     _ID_COLS: typing.ClassVar[list[str]] = ['gallery_id', 'user_id']
-# #     gallery_id: GalleryTypes.id = Field(
-# #         primary_key=True, index=True, foreign_key=Gallery.__tablename__ + '.id')
-# #     user_id: UserTypes.id = Field(
-# #         primary_key=True, index=True, foreign_key=UserTable.__tablename__ + '.id')
-# #     permission_level: PermissionLevel
-# if __name__ == '__main__':
-#     print()
+
+class GalleryPublic(GalleryExport):
+    pass
+
+
+class GalleryPrivate(GalleryExport):
+    visibility_level: GalleryTypes.visibility_level
+
+
+# Import Types
+
+class GalleryImport(TableImport[Gallery]):
+    _TABLE_MODEL: typing.ClassVar[typing.Type[Gallery]] = Gallery
+
+
+class GalleryUpdate(GalleryImport, GalleryIDBase):
+    name: typing.Optional[GalleryTypes.name] = None
+    parent_id: typing.Optional[GalleryTypes.parent_id] = None
+    visibility_level: typing.Optional[GalleryTypes.visibility_level] = None
+    description: typing.Optional[GalleryTypes.description] = None
+    datetime: typing.Optional[GalleryTypes.datetime] = None
+
+
+class GalleryUpdateAdmin(GalleryUpdate, TableUpdateAdmin[Gallery, GalleryTypes.id]):
+    pass
+
+
+class GalleryCreate(GalleryImport):
+    name: GalleryTypes.name
+    visibility_level: typing.Optional[GalleryTypes.visibility_level]
+    parent_id: typing.Optional[GalleryTypes.parent_id] = None
+    description: typing.Optional[GalleryTypes.description] = ''
+    datetime: typing.Optional[GalleryTypes.datetime] = None
+
+
+class GalleryCreateAdmin(GalleryCreate, TableCreateAdmin[Gallery]):
+    pass
+
+#
+# GalleryPermission
+#
+
+
+class GalleryPermissionTypes:
+    gallery_id = GalleryTypes.id
+    user_id = UserTypes.id
+    permission_level = PermissionLevelID
+
+
+type GalleryPermissionID = typing.Annotated[tuple[GalleryPermissionTypes.gallery_id,
+                                                  GalleryPermissionTypes.user_id], '(gallery_id, user_id)']
+
+
+class GalleryPermissionIDBase(IDObject[GalleryPermissionID]):
+    _ID_COLS: typing.ClassVar[list[str]] = ['gallery_id', 'user_id']
+
+    gallery_id: GalleryPermissionTypes.gallery_id = Field(
+        primary_key=True, index=True, foreign_key=Gallery.__tablename__ + '.' + Gallery._ID_COLS[0])
+    user_id: GalleryPermissionTypes.user_id = Field(
+        primary_key=True, index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0])
+
+
+class GalleryPermission(Table[GalleryPermissionID], GalleryPermissionIDBase, table=True):
+    __tablename__ = 'gallery_permission'
+    __table_args__ = (
+        PrimaryKeyConstraint('gallery_id', 'user_id'),
+    )
+
+    permission_level: GalleryPermissionTypes.permission_level = Field()
+
+    gallery: Gallery = Relationship(back_populates='gallery_permissions')
+    user: User = Relationship(back_populates='gallery_permissions')
+
+
+type PluralGalleryPermissionsDict = dict[GalleryPermissionID,
+                                         GalleryPermission]
+
+
+class GalleryPermissionExport(TableExport[GalleryPermission]):
+    _TABLE_MODEL: typing.ClassVar[typing.Type[GalleryPermission]
+                                  ] = GalleryPermission
+
+    gallery_id: GalleryPermissionTypes.gallery_id
+    user_id: GalleryPermissionTypes.user_id
+    permission_level: GalleryPermissionTypes.permission_level
+
+
+class GalleryPermissionPublic(GalleryPermissionExport):
+    pass
+
+
+class GalleryPermissionPrivate(GalleryPermissionExport):
+    pass
+
+
+class GalleryPermissionImport(TableImport[GalleryPermission]):
+    _TABLE_MODEL: typing.ClassVar[typing.Type[GalleryPermission]
+                                  ] = GalleryPermission
+
+
+class GalleryPermissionUpdate(GalleryPermissionImport, GalleryPermissionIDBase):
+    permission_level: typing.Optional[GalleryPermissionTypes.permission_level] = None
+
+
+class GalleryPermissionUpdateAdmin(GalleryPermissionUpdate, TableUpdateAdmin[GalleryPermission, GalleryPermissionID]):
+    pass
+
+
+class GalleryPermissionCreate(GalleryPermissionImport):
+    pass
+
+
+class GalleryPermissionCreateAdmin(GalleryPermissionCreate, TableCreateAdmin[GalleryPermission]):
+    pass
+
+
+if __name__ == '__main__':
+    print()

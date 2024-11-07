@@ -9,5 +9,27 @@
   },
   "header_keys": {
     "auth_error": "x-auth-error"
+  },
+  "scope_name_mapping": {
+    "admin": 1,
+    "user.read": 2,
+    "user.write": 3
+  },
+  "visibility_level_name_mapping": {
+    "public": 1,
+    "private": 2
+  },
+  "permission_level_name_mapping": {
+    "owner": 10,
+    "editor": 5,
+    "viewer": 3
+  },
+  "user_role_name_mapping": {
+    "admin": 10,
+    "user": 5
+  },
+  "user_role_scopes": {
+    "admin": ["admin", "user.read", "user.write"],
+    "user": ["user.read", "user.write"]
   }
 }

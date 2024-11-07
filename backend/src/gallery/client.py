@@ -112,6 +112,7 @@ class Client:
     jwt_algorithm: str
     root_config: dict
     google_client: dict
+    user_role_id_scope_ids: dict[models.UserRoleID, set[models.ScopeID]]
 
     def __init__(self, config: Config = {}):
 
@@ -146,43 +147,16 @@ class Client:
         self.root_config = json.loads(
             pathlib.Path('../../config.json').read_text())
 
+        # user_role
+        self.user_role_id_scope_ids = {}
+        for scope_name in self.root_config['user_role_scopes']:
+            scope_id = self.root_config['user_role_name_mapping'][scope_name]
+            self.user_role_id_scope_ids[scope_id] = set([
+                self.root_config['scope_name_mapping'][_scope_name] for _scope_name in self.root_config['user_role_scopes'][scope_name]
+            ])
+
     def create_tables(self):
         SQLModel.metadata.create_all(self.db_engine)
-
-        with Session(self.db_engine) as session:
-
-            session.add_all(
-                [
-                    models.UserRole(id='1', name='admin'),
-                    models.UserRole(id='2', name='user')
-                ]
-            )
-            session.add_all(
-                [
-                    models.Scope(id='1', name='admin'),
-                    models.Scope(id='2', name='users.read'),
-                    models.Scope(id='3', name='users.write')
-                ]
-            )
-            session.add_all(
-                [
-                    # admin
-                    models.UserRoleScope(
-                        user_role_id='1', scope_id='1'),
-                    models.UserRoleScope(
-                        user_role_id='1', scope_id='2'),
-                    models.UserRoleScope(
-                        user_role_id='1', scope_id='3'),
-
-                    # user
-                    models.UserRoleScope(
-                        user_role_id='2', scope_id='2'),
-                    models.UserRoleScope(
-                        user_role_id='2', scope_id='3')
-                ]
-
-            )
-            session.commit()
 
     '''
         def sync_with_local(self):
