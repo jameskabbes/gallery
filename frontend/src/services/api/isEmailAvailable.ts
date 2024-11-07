@@ -11,7 +11,6 @@ type AllResponseTypes = ExtractResponseTypes<
 >;
 
 async function isEmailAvailable(
-  authContext: AuthContext,
   email: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['email']
 ): Promise<AllResponseTypes['200']['available']> {
   const { data, response } = await callApi<
@@ -20,7 +19,7 @@ async function isEmailAvailable(
   >({
     endpoint: API_ENDPOINT.replace('{email}', email),
     method: API_METHOD,
-    authContext,
+    authContext: null,
   });
 
   if (response.status === 200) {

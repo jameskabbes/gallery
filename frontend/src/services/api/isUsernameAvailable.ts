@@ -11,7 +11,6 @@ type AllResponseTypes = ExtractResponseTypes<
 >;
 
 async function isUsernameAvailable(
-  authContext: AuthContext,
   username: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['username']
 ): Promise<AllResponseTypes['200']['available']> {
   const { data, response } = await callApi<
@@ -20,7 +19,7 @@ async function isUsernameAvailable(
   >({
     endpoint: API_ENDPOINT.replace('{username}', username),
     method: API_METHOD,
-    authContext,
+    authContext: null,
   });
 
   if (response.status === 200) {

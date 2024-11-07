@@ -92,6 +92,7 @@ function SignUp() {
         ResponseTypesByStatus[keyof ResponseTypesByStatus],
         paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/x-www-form-urlencoded']
       >({
+        authContext: authContext,
         endpoint: API_ENDPOINT,
         method: API_METHOD,
         body: new URLSearchParams({
