@@ -43,6 +43,7 @@ import {
 } from '../../services/api/getAPIKeyJWT';
 import { toast } from 'react-toastify';
 import { Surface } from '../Utils/Surface';
+import config from '../../../../config.json';
 
 const API_ENDPOINT = '/settings/api-keys/page/';
 const API_METHOD = 'get';
@@ -60,7 +61,7 @@ type TSetAPIKeyScopes = React.Dispatch<React.SetStateAction<TAPIKeyScopes>>;
 const loadingAPIKeyName = 'loading...';
 
 async function handleAddAPIKeyScope(
-  scope: components['schemas']['Scope'],
+  scopeId: components['schemas'],
   apiKey: components['schemas']['APIKey'],
   setAPIKeyScopes: TSetAPIKeyScopes,
   toastContext: ToastContextType,
