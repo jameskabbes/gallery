@@ -119,6 +119,36 @@ export interface paths {
     /** Remove Scope From Api Key */
     delete: operations["remove_scope_from_api_key_api_keys__api_key_id__scopes__scope_id___delete"];
   };
+  "/admin/galleries/{gallery_id}": {
+    /** Get Gallery By Id Admin */
+    get: operations["get_gallery_by_id_admin_admin_galleries__gallery_id__get"];
+  };
+  "/admin/galleries/": {
+    /** Post Gallery Admin */
+    post: operations["post_gallery_admin_admin_galleries__post"];
+  };
+  "/admin/galleries/{gallery_id}/": {
+    /** Delete Gallery Admin */
+    delete: operations["delete_gallery_admin_admin_galleries__gallery_id___delete"];
+    /** Patch Gallery Admin */
+    patch: operations["patch_gallery_admin_admin_galleries__gallery_id___patch"];
+  };
+  "/galleries/": {
+    /** Get Galleries */
+    get: operations["get_galleries_galleries__get"];
+    /** Post Gallery */
+    post: operations["post_gallery_galleries__post"];
+  };
+  "/galleries/{gallery_id}": {
+    /** Get Gallery */
+    get: operations["get_gallery_galleries__gallery_id__get"];
+  };
+  "/galleries/{gallery_id}/": {
+    /** Delete Gallery */
+    delete: operations["delete_gallery_galleries__gallery_id___delete"];
+    /** Patch Gallery */
+    patch: operations["patch_gallery_galleries__gallery_id___patch"];
+  };
   "/profile/page/": {
     /** Get Pages Profile */
     get: operations["get_pages_profile_profile_page__get"];
@@ -138,6 +168,10 @@ export interface paths {
   "/styles/page/": {
     /** Get Styles Page */
     get: operations["get_styles_page_styles_page__get"];
+  };
+  "/galleries/page/": {
+    /** Get Galleries Page */
+    get: operations["get_galleries_page_galleries_page__get"];
   };
 }
 
@@ -266,17 +300,128 @@ export interface components {
       /** Detail */
       detail: string;
     };
+    /** Gallery */
+    Gallery: {
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
+      /** Visibility Level */
+      visibility_level: number;
+      /** Parent Id */
+      parent_id: string;
+      /** Description */
+      description: string;
+      /** Datetime */
+      datetime: string | null;
+    };
+    /** GalleryCreate */
+    GalleryCreate: {
+      /** Name */
+      name: string;
+      /** Visibility Level */
+      visibility_level: number | null;
+      /** Parent Id */
+      parent_id?: string | null;
+      /**
+       * Description
+       * @default
+       */
+      description?: string | null;
+      /** Datetime */
+      datetime?: string | null;
+    };
+    /** GalleryCreateAdmin */
+    GalleryCreateAdmin: {
+      /** Name */
+      name: string;
+      /** Visibility Level */
+      visibility_level: number | null;
+      /** Parent Id */
+      parent_id?: string | null;
+      /**
+       * Description
+       * @default
+       */
+      description?: string | null;
+      /** Datetime */
+      datetime?: string | null;
+    };
+    /** GalleryPermission */
+    GalleryPermission: {
+      /** Gallery Id */
+      gallery_id: string;
+      /** User Id */
+      user_id: string;
+      /** Permission Level */
+      permission_level: number;
+    };
+    /** GalleryPublic */
+    GalleryPublic: {
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
+      /** Parent Id */
+      parent_id: string | null;
+      /** Description */
+      description: string;
+      /**
+       * Datetime
+       * Format: date-time
+       */
+      datetime: string;
+    };
+    /** GalleryUpdate */
+    GalleryUpdate: {
+      /** Id */
+      id: string;
+      /** Name */
+      name?: string | null;
+      /** Parent Id */
+      parent_id?: string | null;
+      /** Visibility Level */
+      visibility_level?: number | null;
+      /** Description */
+      description?: string | null;
+      /** Datetime */
+      datetime?: string | null;
+    };
+    /** GalleryUpdateAdmin */
+    GalleryUpdateAdmin: {
+      /** Id */
+      id: string;
+      /** Name */
+      name?: string | null;
+      /** Parent Id */
+      parent_id?: string | null;
+      /** Visibility Level */
+      visibility_level?: number | null;
+      /** Description */
+      description?: string | null;
+      /** Datetime */
+      datetime?: string | null;
+    };
     /** GetAuthBaseReturn */
     GetAuthBaseReturn: {
-      user?: components["schemas"]["UserPrivate"] | null;
-      /** Scopes */
-      scopes?: components["schemas"]["ScopeName"][] | null;
+      user: components["schemas"]["UserPrivate"] | null;
+      /** Scope Ids */
+      scope_ids: number[] | null;
       /** Expiry */
-      expiry?: string | null;
+      expiry: string | null;
     };
     /** GetAuthReturn */
     GetAuthReturn: {
       auth: components["schemas"]["GetAuthBaseReturn"];
+    };
+    /** GetGalleriesPageResponse */
+    GetGalleriesPageResponse: {
+      auth: components["schemas"]["GetAuthBaseReturn"];
+      galleries: components["schemas"]["PluralGalleriesDict"];
+      /** Gallery Permissions */
+      gallery_permissions: {
+        [key: string]: components["schemas"]["GalleryPermission"];
+      };
     };
     /** GetHomePageResponse */
     GetHomePageResponse: {
@@ -291,10 +436,9 @@ export interface components {
     GetSettingsAPIKeysPageResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
       api_keys: components["schemas"]["PluralAPIKeysDict"];
-      scopes: components["schemas"]["PluralScopesDict"];
       /** Api Key Scopes */
       api_key_scopes: {
-        [key: string]: string[];
+        [key: string]: number[];
       };
     };
     /** GetSettingsPageResponse */
@@ -349,18 +493,9 @@ export interface components {
     PluralAPIKeysDict: {
       [key: string]: components["schemas"]["APIKey"];
     };
-    PluralScopesDict: {
-      [key: string]: components["schemas"]["Scope"];
+    PluralGalleriesDict: {
+      [key: string]: components["schemas"]["Gallery"];
     };
-    /** Scope */
-    Scope: {
-      /** Id */
-      id: string;
-      /** Name */
-      name: string;
-    };
-    /** @enum {string} */
-    ScopeName: "admin" | "users.read" | "users.write";
     /** SignupResponse */
     SignupResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
@@ -375,11 +510,11 @@ export interface components {
        */
       email: string;
       /** Username */
-      username?: string;
+      username: string;
       /** Hashed Password */
-      hashed_password?: string | null;
+      hashed_password: string | null;
       /** User Role Id */
-      user_role_id: string;
+      user_role_id: number;
     };
     /** UserAccessToken */
     UserAccessToken: {
@@ -425,11 +560,10 @@ export interface components {
       email: string;
       /** Password */
       password?: string | null;
-      /**
-       * User Role Id
-       * @default 2
-       */
-      user_role_id?: string;
+      /** Username */
+      username?: string | null;
+      /** User Role Id */
+      user_role_id: number;
     };
     /** UserPrivate */
     UserPrivate: {
@@ -442,6 +576,8 @@ export interface components {
        * Format: email
        */
       email: string;
+      /** User Role Id */
+      user_role_id: number;
     };
     /** UserUpdate */
     UserUpdate: {
@@ -465,7 +601,7 @@ export interface components {
       /** Username */
       username?: string | null;
       /** User Role Id */
-      user_role_id?: string | null;
+      user_role_id?: number | null;
     };
     /** ValidationError */
     ValidationError: {
@@ -1220,7 +1356,7 @@ export interface operations {
     parameters: {
       path: {
         api_key_id: string;
-        scope_id: string;
+        scope_id: number;
       };
     };
     responses: {
@@ -1241,13 +1377,260 @@ export interface operations {
     parameters: {
       path: {
         api_key_id: string;
-        scope_id: string;
+        scope_id: number;
       };
     };
     responses: {
       /** @description Successful Response */
       204: {
         content: never;
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get Gallery By Id Admin */
+  get_gallery_by_id_admin_admin_galleries__gallery_id__get: {
+    parameters: {
+      path: {
+        gallery_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["Gallery"];
+        };
+      };
+      /** @description Gallery not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Post Gallery Admin */
+  post_gallery_admin_admin_galleries__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GalleryCreateAdmin"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["Gallery"];
+        };
+      };
+      /** @description Gallery already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Delete Gallery Admin */
+  delete_gallery_admin_admin_galleries__gallery_id___delete: {
+    parameters: {
+      path: {
+        gallery_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      204: {
+        content: never;
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Patch Gallery Admin */
+  patch_gallery_admin_admin_galleries__gallery_id___patch: {
+    parameters: {
+      path: {
+        gallery_id: string;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GalleryUpdateAdmin"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["Gallery"];
+        };
+      };
+      /** @description Gallery not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get Galleries */
+  get_galleries_galleries__get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["PluralGalleriesDict"];
+        };
+      };
+    };
+  };
+  /** Post Gallery */
+  post_gallery_galleries__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GalleryCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["Gallery"];
+        };
+      };
+      /** @description Gallery already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get Gallery */
+  get_gallery_galleries__gallery_id__get: {
+    parameters: {
+      path: {
+        gallery_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["GalleryPublic"];
+        };
+      };
+      /** @description Gallery not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Delete Gallery */
+  delete_gallery_galleries__gallery_id___delete: {
+    parameters: {
+      path: {
+        gallery_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      204: {
+        content: never;
+      };
+      /** @description User does not have permission to delete this gallery */
+      403: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Gallery not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Patch Gallery */
+  patch_gallery_galleries__gallery_id___patch: {
+    parameters: {
+      path: {
+        gallery_id: string;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GalleryUpdate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["Gallery"];
+        };
+      };
+      /** @description User does not have permission to update this gallery */
+      403: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Gallery not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
       };
       /** @description Validation Error */
       422: {
@@ -1308,6 +1691,17 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["GetStylesPageResponse"];
+        };
+      };
+    };
+  };
+  /** Get Galleries Page */
+  get_galleries_page_galleries_page__get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["GetGalleriesPageResponse"];
         };
       };
     };
