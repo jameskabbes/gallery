@@ -13,12 +13,12 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 
 async function deleteApiKey(
   authContext: AuthContext,
-  api_key_id: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['api_key_id']
+  apiKeyId: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['api_key_id']
 ): Promise<CallApiReturn<ResponseTypesByStatus[keyof ResponseTypesByStatus]>> {
   const { data, response } = await callApi<
     ResponseTypesByStatus[keyof ResponseTypesByStatus]
   >({
-    endpoint: API_ENDPOINT.replace('{api_key_id}', api_key_id),
+    endpoint: API_ENDPOINT.replace('{api_key_id}', apiKeyId),
     method: API_METHOD,
     authContext,
   });

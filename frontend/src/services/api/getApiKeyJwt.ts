@@ -12,7 +12,7 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 
 async function getApiKeyJWT(
   authContext: AuthContext,
-  apiKeyId: components['schemas']['APIKey']['id']
+  apiKeyId: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['api_key_id']
 ): Promise<CallApiReturn<ResponseTypesByStatus[keyof ResponseTypesByStatus]>> {
   const { data, response } = await callApi<
     ResponseTypesByStatus[keyof ResponseTypesByStatus]

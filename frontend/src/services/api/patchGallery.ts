@@ -16,7 +16,7 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 
 async function patchAPIKey(
   authContext: AuthContext,
-  galleryId: components['schemas']['APIKey']['id'],
+  galleryId: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['gallery_id'],
   galleryUpdate: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
 ): Promise<CallApiReturn<ResponseTypesByStatus[keyof ResponseTypesByStatus]>> {
   const { data, response } = await callApi<

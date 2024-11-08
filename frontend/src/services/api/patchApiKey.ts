@@ -16,7 +16,7 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 
 async function patchApiKey(
   authContext: AuthContext,
-  apiKeyID: components['schemas']['APIKey']['id'],
+  apiKeyID: components['schemas']['ApiKey']['id'],
   apiKeyUpdate: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
 ): Promise<CallApiReturn<ResponseTypesByStatus[keyof ResponseTypesByStatus]>> {
   const { data, response } = await callApi<

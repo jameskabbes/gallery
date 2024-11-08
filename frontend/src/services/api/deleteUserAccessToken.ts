@@ -17,15 +17,12 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 
 async function deleteUserAccessToken(
   authContext: AuthContext,
-  user_access_token_id: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['user_access_token_id']
+  userAccessTokenId: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['user_access_token_id']
 ): Promise<CallApiReturn<ResponseTypesByStatus[keyof ResponseTypesByStatus]>> {
   const { data, response } = await callApi<
     ResponseTypesByStatus[keyof ResponseTypesByStatus]
   >({
-    endpoint: API_ENDPOINT.replace(
-      '{user_access_token_id}',
-      user_access_token_id
-    ),
+    endpoint: API_ENDPOINT.replace('{user_access_token_id}', userAccessTokenId),
     method: API_METHOD,
     authContext,
   });

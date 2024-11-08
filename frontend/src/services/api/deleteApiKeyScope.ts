@@ -17,16 +17,16 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 
 async function deleteApiKeyScope(
   authContext: AuthContext,
-  api_key_id: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['api_key_id'],
-  scope_id: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['scope_id']
+  apiKeyId: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['api_key_id'],
+  scopeId: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['scope_id']
 ): Promise<CallApiReturn<ResponseTypesByStatus[keyof ResponseTypesByStatus]>> {
   const { data, response } = await callApi<
     ResponseTypesByStatus[keyof ResponseTypesByStatus],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']
   >({
-    endpoint: API_ENDPOINT.replace('{api_key_id}', api_key_id).replace(
+    endpoint: API_ENDPOINT.replace('{api_key_id}', apiKeyId).replace(
       '{scope_id}',
-      scope_id
+      scopeId.toString()
     ),
     method: API_METHOD,
     authContext,
