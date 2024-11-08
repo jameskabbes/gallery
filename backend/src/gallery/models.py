@@ -44,12 +44,12 @@ def validate_and_normalize_datetime(value: datetime_module.datetime, info: Valid
     return value.astimezone(datetime_module.timezone.utc)
 
 
-class IDObject[IDType]:
+class IdObject[IdType]:
 
     _ID_COLS: typing.ClassVar[list[str]] = ['id']
 
     @ property
-    def _id(self) -> IDType:
+    def _id(self) -> IdType:
         """Return the ID of the model"""
 
         if len(self._ID_COLS) > 1:
@@ -58,14 +58,14 @@ class IDObject[IDType]:
             return getattr(self, self._ID_COLS[0])
 
     @ classmethod
-    def export_plural_to_dict(cls, items: collections.abc.Iterable[typing.Self]) -> dict[IDType, typing.Self]:
+    def export_plural_to_dict(cls, items: collections.abc.Iterable[typing.Self]) -> dict[IdType, typing.Self]:
         return {item._id: item for item in items}
 
 
-class Table[IDType](SQLModel, IDObject[IDType]):
+class Table[IdType](SQLModel, IdObject[IdType]):
 
     @ classmethod
-    def generate_id(cls) -> IDType:
+    def generate_id(cls) -> IdType:
         """Generate a new ID for the model"""
 
         if len(cls._ID_COLS) > 1:
@@ -78,7 +78,7 @@ class Table[IDType](SQLModel, IDObject[IDType]):
         return f'{cls.__name__} not found'
 
     @ classmethod
-    async def get_one_by_id(cls, session: Session, id: IDType) -> typing.Self | None:
+    async def get_one_by_id(cls, session: Session, id: IdType) -> typing.Self | None:
         """Get a model by its ID"""
 
         if len(cls._ID_COLS) > 1:
@@ -124,13 +124,13 @@ class Table[IDType](SQLModel, IDObject[IDType]):
         session.refresh(self)
 
     @ classmethod
-    async def delete_one_by_id(cls, session: Session, id: IDType) -> int:
+    async def delete_one_by_id(cls, session: Session, id: IdType) -> int:
         """Delete a model by its ID"""
 
         return await cls.delete_many_by_ids(session, [id])
 
     @ classmethod
-    async def delete_many_by_ids(cls, session: Session, ids: list[IDType]) -> int:
+    async def delete_many_by_ids(cls, session: Session, ids: list[IdType]) -> int:
         """Delete models by their IDs"""
 
         if len(cls._ID_COLS) > 1:
@@ -148,7 +148,7 @@ class Table[IDType](SQLModel, IDObject[IDType]):
         return True
 
     @ classmethod
-    async def get(cls, session: Session, id: IDType) -> typing.Self:
+    async def get(cls, session: Session, id: IdType) -> typing.Self:
         instance = await cls.get_one_by_id(session, id)
         if not instance:
             raise HTTPException(
@@ -156,7 +156,7 @@ class Table[IDType](SQLModel, IDObject[IDType]):
         return instance
 
     @ classmethod
-    async def delete(cls, session: Session, id: IDType) -> bool:
+    async def delete(cls, session: Session, id: IdType) -> bool:
         if await cls.delete_one_by_id(session, id) == 0:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
@@ -175,7 +175,7 @@ class TableImport[TTable: Table](BaseModel):
     _TABLE_MODEL: typing.ClassVar[typing.Type[TTable]] = Table
 
 
-class TableUpdateAdmin[TTable: Table, IDType](TableImport[TTable], IDObject[IDType]):
+class TableUpdateAdmin[TTable: Table, IdType](TableImport[TTable], IdObject[IdType]):
     _TABLE_MODEL: typing.ClassVar[typing.Type[TTable]] = Table
 
     async def patch(self, session: Session) -> TTable:
@@ -220,7 +220,7 @@ class UserTypes:
     user_role_id = UserRoleTypes.id
 
 
-class UserIDBase(IDObject[UserTypes.id]):
+class UserIDBase(IdObject[UserTypes.id]):
     id: UserTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
@@ -390,7 +390,7 @@ class AuthCredentialTypes:
     type = typing.Literal['access_token', 'api_key']
 
 
-class AuthCredential[IDType](BaseModel, ABC):
+class AuthCredential[IdType](BaseModel, ABC):
     user_id: UserTypes.id = Field(
         index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0], const=True)
     issued: AuthCredentialTypes.issued = Field(const=True)
@@ -399,7 +399,7 @@ class AuthCredential[IDType](BaseModel, ABC):
     type: typing.ClassVar[AuthCredentialTypes.type | None] = None
 
     class JWTExport(typing.TypedDict):
-        sub: IDType
+        sub: IdType
         exp: AuthCredentialTypes.expiry
         iat: AuthCredentialTypes.issued
         type: AuthCredentialTypes.type
@@ -412,7 +412,7 @@ class AuthCredential[IDType](BaseModel, ABC):
     }
 
     class JWTImport(typing.TypedDict):
-        id: IDType
+        id: IdType
         expiry: AuthCredentialTypes.expiry
         issued: AuthCredentialTypes.issued
         type: AuthCredentialTypes.type
@@ -442,7 +442,7 @@ class AuthCredential[IDType](BaseModel, ABC):
         return value.replace(tzinfo=datetime_module.timezone.utc)
 
 
-class AuthCredentialExport[IDType](TableExport[AuthCredential[IDType]]):
+class AuthCredentialExport[IdType](TableExport[AuthCredential[IdType]]):
     _TABLE_MODEL: typing.ClassVar[typing.Type[AuthCredential]] = AuthCredential
 
     user_id: UserTypes.id
@@ -450,7 +450,7 @@ class AuthCredentialExport[IDType](TableExport[AuthCredential[IDType]]):
     expiry: AuthCredentialTypes.expiry
 
 
-class AuthCredentialImport[IDType](TableImport[AuthCredential[IDType]]):
+class AuthCredentialImport[IdType](TableImport[AuthCredential[IdType]]):
     lifespan: typing.Optional[AuthCredentialTypes.lifespan] = None
     expiry: typing.Optional[AuthCredentialTypes.expiry] = None
 
@@ -469,7 +469,7 @@ class AuthCredentialImport[IDType](TableImport[AuthCredential[IDType]]):
             datetime_module.UTC) + self.lifespan
 
 
-class AuthCredentialCreateAdmin[TTable: Table, IDType](AuthCredentialImport[IDType], TableCreateAdmin[TTable]):
+class AuthCredentialCreateAdmin[TTable: Table, IdType](AuthCredentialImport[IdType], TableCreateAdmin[TTable]):
 
     user_id: UserTypes.id
 
@@ -491,7 +491,7 @@ class UserAccessTokenTypes(AuthCredentialTypes):
     id = str
 
 
-class UserAccessTokenIDBase(IDObject[UserAccessTokenTypes.id]):
+class UserAccessTokenIDBase(IdObject[UserAccessTokenTypes.id]):
     id: UserAccessTokenTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
@@ -549,7 +549,7 @@ class ApiKeyTypes(AuthCredentialTypes):
         min_length=1, max_length=256)]
 
 
-class ApiKeyIDBase(IDObject[ApiKeyTypes.id]):
+class ApiKeyIDBase(IdObject[ApiKeyTypes.id]):
     id: ApiKeyTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
@@ -627,7 +627,7 @@ type ApiKeyScopeID = typing.Annotated[tuple[ApiKeyScopeTypes.api_key_id,
                                       ]
 
 
-class ApiKeyScopeIDBase(IDObject[ApiKeyScopeID]):
+class ApiKeyScopeIDBase(IdObject[ApiKeyScopeID]):
     api_key_id: ApiKeyScopeTypes.api_key_id = Field(
         index=True, foreign_key=ApiKey.__tablename__ + '.' + ApiKey._ID_COLS[0])
     scope_id: ApiKeyScopeTypes.scope_id = Field(index=True)
@@ -680,7 +680,7 @@ class GalleryTypes:
     datetime = datetime_module.datetime
 
 
-class GalleryIDBase(IDObject[GalleryTypes.id]):
+class GalleryIDBase(IdObject[GalleryTypes.id]):
     id: GalleryTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
@@ -794,7 +794,7 @@ type GalleryPermissionID = typing.Annotated[tuple[GalleryPermissionTypes.gallery
                                                   GalleryPermissionTypes.user_id], '(gallery_id, user_id)']
 
 
-class GalleryPermissionIDBase(IDObject[GalleryPermissionID]):
+class GalleryPermissionIDBase(IdObject[GalleryPermissionID]):
     _ID_COLS: typing.ClassVar[list[str]] = ['gallery_id', 'user_id']
 
     gallery_id: GalleryPermissionTypes.gallery_id = Field(
