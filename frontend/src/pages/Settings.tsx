@@ -14,7 +14,7 @@ import { IoBrush } from 'react-icons/io5';
 import { IoRadioOutline } from 'react-icons/io5';
 import { IoPersonOutline } from 'react-icons/io5';
 import { IoKeyOutline } from 'react-icons/io5';
-import { APIKeys } from '../components/Settings/APIKeys';
+import { ApiKeys } from '../components/Settings/ApiKeys';
 import { Card1 } from '../components/Utils/Card';
 import { Surface } from '../components/Utils/Surface';
 
@@ -66,7 +66,7 @@ function Settings(): JSX.Element {
       icon: <IoKeyOutline />,
       name: 'API Keys',
       component: (
-        <APIKeys authContext={authContext} toastContext={toastContext} />
+        <ApiKeys authContext={authContext} toastContext={toastContext} />
       ),
     },
   };

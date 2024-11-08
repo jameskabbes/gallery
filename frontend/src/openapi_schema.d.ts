@@ -179,8 +179,8 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
-    /** APIKey */
-    APIKey: {
+    /** ApiKey */
+    ApiKey: {
       /** User Id */
       user_id: string;
       /**
@@ -198,8 +198,8 @@ export interface components {
       /** Name */
       name: string;
     };
-    /** APIKeyCreate */
-    APIKeyCreate: {
+    /** ApiKeyCreate */
+    ApiKeyCreate: {
       /** Lifespan */
       lifespan?: string | null;
       /** Expiry */
@@ -207,8 +207,8 @@ export interface components {
       /** Name */
       name: string;
     };
-    /** APIKeyCreateAdmin */
-    APIKeyCreateAdmin: {
+    /** ApiKeyCreateAdmin */
+    ApiKeyCreateAdmin: {
       /** Lifespan */
       lifespan?: string | null;
       /** Expiry */
@@ -218,13 +218,13 @@ export interface components {
       /** Name */
       name: string;
     };
-    /** APIKeyJWTResponse */
-    APIKeyJWTResponse: {
+    /** ApiKeyJWTResponse */
+    ApiKeyJWTResponse: {
       /** Jwt */
       jwt: string;
     };
-    /** APIKeyUpdate */
-    APIKeyUpdate: {
+    /** ApiKeyUpdate */
+    ApiKeyUpdate: {
       /** Id */
       id: string;
       /** Lifespan */
@@ -432,12 +432,12 @@ export interface components {
       auth: components["schemas"]["GetAuthBaseReturn"];
       user?: components["schemas"]["UserPrivate"] | null;
     };
-    /** GetSettingsAPIKeysPageResponse */
-    GetSettingsAPIKeysPageResponse: {
+    /** GetSettingsApiKeysPageResponse */
+    GetSettingsApiKeysPageResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
-      api_keys: components["schemas"]["PluralAPIKeysDict"];
-      /** Api Key Scopes */
-      api_key_scopes: {
+      api_keys: components["schemas"]["PluralApiKeysDict"];
+      /** Api Key Scope Ids */
+      api_key_scope_ids: {
         [key: string]: number[];
       };
     };
@@ -490,8 +490,8 @@ export interface components {
       /** Detail */
       detail: string;
     };
-    PluralAPIKeysDict: {
-      [key: string]: components["schemas"]["APIKey"];
+    PluralApiKeysDict: {
+      [key: string]: components["schemas"]["ApiKey"];
     };
     PluralGalleriesDict: {
       [key: string]: components["schemas"]["Gallery"];
@@ -1192,10 +1192,10 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["APIKey"];
+          "application/json": components["schemas"]["ApiKey"];
         };
       };
-      /** @description APIKey not found */
+      /** @description ApiKey not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
@@ -1213,14 +1213,14 @@ export interface operations {
   post_api_key_admin_admin_api_keys__post: {
     requestBody: {
       content: {
-        "application/json": components["schemas"]["APIKeyCreateAdmin"];
+        "application/json": components["schemas"]["ApiKeyCreateAdmin"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["APIKey"];
+          "application/json": components["schemas"]["ApiKey"];
         };
       };
       /** @description User already exists */
@@ -1243,7 +1243,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["APIKey"][];
+          "application/json": components["schemas"]["ApiKey"][];
         };
       };
       /** @description User not found */
@@ -1258,14 +1258,14 @@ export interface operations {
   post_api_key_api_keys__post: {
     requestBody: {
       content: {
-        "application/json": components["schemas"]["APIKeyCreate"];
+        "application/json": components["schemas"]["ApiKeyCreate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["APIKey"];
+          "application/json": components["schemas"]["ApiKey"];
         };
       };
       /** @description Validation Error */
@@ -1305,14 +1305,14 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": components["schemas"]["APIKeyUpdate"];
+        "application/json": components["schemas"]["ApiKeyUpdate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["APIKey"];
+          "application/json": components["schemas"]["ApiKey"];
         };
       };
       /** @description Validation Error */
@@ -1334,10 +1334,10 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["APIKeyJWTResponse"];
+          "application/json": components["schemas"]["ApiKeyJWTResponse"];
         };
       };
-      /** @description APIKey not found */
+      /** @description ApiKey not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
@@ -1679,7 +1679,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["GetSettingsAPIKeysPageResponse"];
+          "application/json": components["schemas"]["GetSettingsApiKeysPageResponse"];
         };
       };
     };

@@ -310,8 +310,6 @@ class UserUpdate(UserImport, UserIDBase):
 
 
 class UserUpdateAdmin(UserUpdate, TableUpdateAdmin[User, UserTypes.id]):
-    user_role_id: typing.Optional[UserTypes.user_role_id] = None
-
     async def patch(self, session: Session) -> User:
 
         user = await self._TABLE_MODEL.get_one_by_id(session, self.id)
@@ -338,9 +336,6 @@ class UserUpdateAdmin(UserUpdate, TableUpdateAdmin[User, UserTypes.id]):
 
         if self.password != None:
             exported['hashed_password'] = self.hash_password(self.password)
-
-        # need to do something with the user_role_id
-        # if the user role id is changed, also need to remove the scopes from API Keys or other auth credentials with outdated info
 
         user.sqlmodel_update(exported)
         user.add_to_db(session)

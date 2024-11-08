@@ -99,3 +99,7 @@
 # {
 #     "name": "new gallery"
 # }
+
+
+GET http://localhost:8087/settings/api-keys/page
+Authorization: Bearer token

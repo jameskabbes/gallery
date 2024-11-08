@@ -58,10 +58,10 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 
 type TApiKeys = ResponseTypesByStatus['200']['api_keys'];
 type TSetApiKeys = React.Dispatch<React.SetStateAction<TApiKeys>>;
-type TApiKeyScopeIDs = {
+type TApiKeyScopeIds = {
   [key: string]: Set<number>;
 };
-type TSetApiKeyScopes = React.Dispatch<React.SetStateAction<TApiKeyScopeIDs>>;
+type TSetApiKeyScopeIds = React.Dispatch<React.SetStateAction<TApiKeyScopeIds>>;
 type ScopeID = number;
 
 const loadingApiKeyName = 'loading...';
@@ -69,7 +69,7 @@ const loadingApiKeyName = 'loading...';
 async function handleAddApiKeyScope(
   scopeId: ScopeID,
   apiKey: components['schemas']['ApiKey'],
-  setApiKeyScopes: TSetApiKeyScopes,
+  setApiKeyScopeIds: TSetApiKeyScopeIds,
   toastContext: ToastContextType,
   authContext: AuthContextType
 ) {
@@ -77,6 +77,15 @@ async function handleAddApiKeyScope(
 
   let toastId = toastContext.makePending({
     message: `Adding ${scopeName} to ${apiKey.name}`,
+  });
+
+  setApiKeyScopeIds((prev) => {
+    const updatedSet = new Set(prev[apiKey.id]);
+    updatedSet.add(scopeId);
+    return {
+      ...prev,
+      [apiKey.id]: updatedSet,
+    };
   });
 
   const { data, response } = await postApiKeyScope(
@@ -89,14 +98,18 @@ async function handleAddApiKeyScope(
       message: `Added ${scopeName} to ${apiKey.name}`,
       type: 'success',
     });
-    setApiKeyScopes((prev) => ({
-      ...prev,
-      [apiKey.id]: [...prev[apiKey.id], scopeId],
-    }));
   } else {
     toastContext.update(toastId, {
       message: `Error adding ${scopeName} to ${apiKey.name}`,
       type: 'error',
+    });
+    setApiKeyScopeIds((prev) => {
+      const updatedSet = new Set(prev[apiKey.id]);
+      updatedSet.delete(scopeId);
+      return {
+        ...prev,
+        [apiKey.id]: updatedSet,
+      };
     });
   }
 }
@@ -104,7 +117,7 @@ async function handleAddApiKeyScope(
 async function handleDeleteApiKeyScope(
   scopeId: ScopeID,
   apiKey: components['schemas']['ApiKey'],
-  setApiKeyScopes: TSetApiKeyScopes,
+  setApiKeyScopeIds: TSetApiKeyScopeIds,
   toastContext: ToastContextType,
   authContext: AuthContextType
 ) {
@@ -112,6 +125,15 @@ async function handleDeleteApiKeyScope(
 
   let toastId = toastContext.makePending({
     message: `Removing ${scopeName} from ${apiKey.name}`,
+  });
+
+  setApiKeyScopeIds((prev) => {
+    const updatedSet = new Set(prev[apiKey.id]);
+    updatedSet.delete(scopeId);
+    return {
+      ...prev,
+      [apiKey.id]: updatedSet,
+    };
   });
 
   const { data, response } = await deleteApiKeyScope(
@@ -125,14 +147,18 @@ async function handleDeleteApiKeyScope(
       message: `Removed ${scopeName} from ${apiKey.name}`,
       type: 'success',
     });
-    setApiKeyScopes((prev) => ({
-      ...prev,
-      [apiKey.id]: prev[apiKey.id].filter((id) => id !== scopeId),
-    }));
   } else {
     toastContext.update(toastId, {
       message: `Error removing ${scopeName} from ${apiKey.name}`,
       type: 'error',
+    });
+    setApiKeyScopeIds((prev) => {
+      const updatedSet = new Set(prev[apiKey.id]);
+      updatedSet.add(scopeId);
+      return {
+        ...prev,
+        [apiKey.id]: updatedSet,
+      };
     });
   }
 }
@@ -140,8 +166,8 @@ async function handleDeleteApiKeyScope(
 interface ApiKeyScopeRowProps {
   scopeId: ScopeID;
   apiKey: components['schemas']['ApiKey'];
-  apiKeyScopes: TApiKeyScopes;
-  setApiKeyScopes: TSetApiKeyScopes;
+  apiKeyScopeIds: TApiKeyScopeIds;
+  setApiKeyScopeIds: TSetApiKeyScopeIds;
   toastContext: ToastContextType;
   authContext: AuthContextType;
 }
@@ -149,27 +175,22 @@ interface ApiKeyScopeRowProps {
 function ApiKeyScopeRow({
   scopeId,
   apiKey,
-  apiKeyScopes,
-  setApiKeyScopes,
+  apiKeyScopeIds,
+  setApiKeyScopeIds,
   toastContext,
   authContext,
 }: ApiKeyScopeRowProps) {
   const [loading, setLoading] = useState<boolean>(false);
-  const [toggle, setToggle] = useState<boolean>(
-    apiKeyScopes[apiKey.id].includes(scopeId)
-  );
 
   async function handleToggle() {
     setLoading(true);
-    let toggleSnapshot = toggle;
-    setToggle((prev) => !prev);
 
-    if (toggleSnapshot) {
+    if (apiKeyScopeIds[apiKey.id].has(scopeId)) {
       // was on, now turning off
       await handleDeleteApiKeyScope(
         scopeId,
         apiKey,
-        setApiKeyScopes,
+        setApiKeyScopeIds,
         toastContext,
         authContext
       );
@@ -178,7 +199,7 @@ function ApiKeyScopeRow({
       await handleAddApiKeyScope(
         scopeId,
         apiKey,
-        setApiKeyScopes,
+        setApiKeyScopeIds,
         toastContext,
         authContext
       );
@@ -196,7 +217,7 @@ function ApiKeyScopeRow({
           e.stopPropagation();
           handleToggle();
         }}
-        state={toggle}
+        state={apiKeyScopeIds[apiKey.id].has(scopeId)}
         disabled={loading}
       />
 
@@ -211,7 +232,7 @@ interface ApiKeyCodeModalProps {
 }
 
 function ApiKeyCodeModal({ authContext, apiKey }: ApiKeyCodeModalProps) {
-  const [jwt, setJWT] = useState<string>('loading...');
+  const [jwt, setJwt] = useState<string>('loading...');
   const [copySuccess, setCopySuccess] = useState<boolean>(false);
 
   useEffect(() => {
@@ -223,7 +244,7 @@ function ApiKeyCodeModal({ authContext, apiKey }: ApiKeyCodeModalProps) {
 
     if (response.status === 200) {
       const apiData = data as GetApiKeyJWTResponseTypes['200'];
-      setJWT(apiData.jwt);
+      setJwt(apiData.jwt);
     }
   }
 
@@ -268,8 +289,8 @@ interface ApiKeyRowProps {
   apiKeyId: components['schemas']['ApiKey']['id'];
   apiKeys: TApiKeys;
   setApiKeys: TSetApiKeys;
-  apiKeyScopes: TApiKeyScopes;
-  setApiKeyScopes: TSetApiKeyScopes;
+  apiKeyScopeIds: TApiKeyScopeIds;
+  setApiKeyScopeIds: TSetApiKeyScopeIds;
   toastContext: ToastContextType;
   authContext: AuthContextType;
   globalModalsContext: GlobalModalsContextType;
@@ -282,8 +303,8 @@ function ApiKeyRow({
   apiKeyId,
   apiKeys,
   setApiKeys,
-  apiKeyScopes,
-  setApiKeyScopes,
+  apiKeyScopeIds,
+  setApiKeyScopeIds,
   toastContext,
   authContext,
   globalModalsContext,
@@ -300,10 +321,10 @@ function ApiKeyRow({
     delete newApiKeys[apiKeyId];
     setApiKeys(newApiKeys);
 
-    const apiKeyScopesToDelete = apiKeyScopes[apiKeyId];
-    const newApiKeyScopes = { ...apiKeyScopes };
+    const apiKeyScopesToDelete = apiKeyScopeIds[apiKeyId];
+    const newApiKeyScopes = { ...apiKeyScopeIds };
     delete newApiKeyScopes[apiKeyId];
-    setApiKeyScopes(newApiKeyScopes);
+    setApiKeyScopeIds(newApiKeyScopes);
 
     const { data, response } = await deleteApiKey(authContext, apiKeyId);
 
@@ -319,7 +340,10 @@ function ApiKeyRow({
         type: 'error',
       });
       setApiKeys({ ...apiKeys, [apiKeyId]: apiKeyToDelete });
-      setApiKeyScopes({ ...apiKeyScopes, [apiKeyId]: apiKeyScopesToDelete });
+      setApiKeyScopeIds({
+        ...apiKeyScopeIds,
+        [apiKeyId]: apiKeyScopesToDelete,
+      });
     }
   }
 
@@ -424,9 +448,9 @@ function ApiKeyRow({
               key={user_role_scope}
               scopeId={config['scope_name_mapping'][user_role_scope]}
               apiKey={apiKeys[apiKeyId]}
-              apiKeyScopes={apiKeyScopes}
-              setApiKeyScopes={setApiKeyScopes}
+              apiKeyScopeIds={apiKeyScopeIds}
               toastContext={toastContext}
+              setApiKeyScopeIds={setApiKeyScopeIds}
               authContext={authContext}
             />
           ))}
@@ -441,7 +465,7 @@ interface AddApiKeyProps {
   toastContext: ToastContextType;
   globalModalsContext: GlobalModalsContextType;
   setApiKeys: TSetApiKeys;
-  setApiKeyScopes: TSetApiKeyScopes;
+  setApiKeyScopeIds: TSetApiKeyScopeIds;
 }
 
 function AddApiKey({
@@ -449,7 +473,7 @@ function AddApiKey({
   toastContext,
   globalModalsContext,
   setApiKeys,
-  setApiKeyScopes,
+  setApiKeyScopeIds,
 }: AddApiKeyProps) {
   const [name, setName] = useState<ValidatedInputState<string>>({
     ...defaultValidatedInputState<string>(''),
@@ -489,7 +513,7 @@ function AddApiKey({
       ...prevApiKeys,
       [tempId]: tempApiKey,
     }));
-    setApiKeyScopes((prev) => ({ ...prev, [tempId]: new Set() }));
+    setApiKeyScopeIds((prev) => ({ ...prev, [tempId]: new Set() }));
 
     const { data, response } = await postApiKey(authContext, {
       expiry: new Date(expiry['value']).toISOString(),
@@ -509,7 +533,7 @@ function AddApiKey({
         newApiKeys[apiData.id] = apiData;
         return newApiKeys;
       });
-      setApiKeyScopes((prev) => {
+      setApiKeyScopeIds((prev) => {
         const newApiKeyScopes = { ...prev };
         delete newApiKeyScopes[tempId];
         newApiKeyScopes[apiData.id] = new Set();
@@ -526,7 +550,7 @@ function AddApiKey({
         delete newApiKeys[tempId];
         return newApiKeys;
       });
-      setApiKeyScopes((prev) => {
+      setApiKeyScopeIds((prev) => {
         const newApiKeyScopes = { ...prev };
         delete newApiKeyScopes[tempId];
         return newApiKeyScopes;
@@ -586,7 +610,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
   const { checkConfirmation } = useConfirmationModal();
 
   const [apiKeys, setApiKeys] = useState<TApiKeys>({});
-  const [apiKeyScopeIDs, setApiKeyScopeIDs] = useState<TApiKeyScopeIDs>({});
+  const [apiKeyScopeIds, setApiKeyScopeIds] = useState<TApiKeyScopeIds>({});
 
   const {
     data: apiData,
@@ -602,11 +626,11 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
       const data = apiData as ResponseTypesByStatus['200'];
       setApiKeys(data.api_keys);
 
-      const transformedScopes: TApiKeyScopeIDs = {};
-      for (const key in data.api_key_scopes) {
-        transformedScopes[key] = new Set(data.api_key_scopes[key]);
+      const transformedScopes: TApiKeyScopeIds = {};
+      for (const key in data.api_key_scope_ids) {
+        transformedScopes[key] = new Set(data.api_key_scope_ids[key]);
       }
-      setApiKeyScopeIDs(transformedScopes);
+      setApiKeyScopeIds(transformedScopes);
     }
   }, [apiData, response]);
 
@@ -630,7 +654,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
                       toastContext={toastContext}
                       globalModalsContext={globalModalsContext}
                       setApiKeys={setApiKeys}
-                      setApiKeyScopeIDs={setApiKeyScopeIDs}
+                      setApiKeyScopeIds={setApiKeyScopeIds}
                     />
                   ),
                   className: 'max-w-[350px] w-full',
@@ -648,8 +672,8 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
                 apiKeyId={apiKeyId}
                 apiKeys={apiKeys}
                 setApiKeys={setApiKeys}
-                apiKeyScopeIDs={apiKeyScopeIDs}
-                setApiKeyScopeIDs={setApiKeyScopeIDs}
+                apiKeyScopeIds={apiKeyScopeIds}
+                setApiKeyScopeIds={setApiKeyScopeIds}
                 toastContext={toastContext}
                 authContext={authContext}
                 globalModalsContext={globalModalsContext}

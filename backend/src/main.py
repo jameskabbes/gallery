@@ -4,7 +4,7 @@ from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
-from fastapi.security import OAuth2, OAuth2PasswordRequestForm, OAuth2PasswordBearer, ApiKeyHeader
+from fastapi.security import OAuth2, OAuth2PasswordRequestForm, OAuth2PasswordBearer, APIKeyHeader
 from fastapi.security.utils import get_authorization_scheme_param
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import selectinload
@@ -780,7 +780,9 @@ async def add_scope_to_api_key(
         user = await models.User.get(session, authorization.user.id)
 
         # see if user is permitted to add this scope
-        user_role_scope = await models.UserRoleScope.get(session, (user.user_role_id, scope_id))
+        if scope_id not in c.user_role_id_scope_ids[user.user_role_id]:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Scope doesn't exist for this user")
 
         existing_api_key_scope = await models.ApiKeyScope.get_one_by_id(session, (api_key_id, scope_id))
         if existing_api_key_scope:
