@@ -13,15 +13,15 @@ import { paths, operations, components } from '../../openapi_schema';
 import {
   deleteApiKey,
   ResponseTypesByStatus as DeleteApiKeyResponseTypes,
-} from '../../services/api/deleteApiKey2';
+} from '../../services/api/deleteApiKey';
 
 import {
   postApiKey,
   ResponseTypesByStatus as PostApiKeyResponseTypes,
-} from '../../services/api/postApiKey2';
+} from '../../services/api/postApiKey';
 
-import { postApiKeyScope } from '../../services/api/postApiKeyScope2';
-import { deleteApiKeyScope } from '../../services/api/deleteApiKeyScope2';
+import { postApiKeyScope } from '../../services/api/postApiKeyScope';
+import { deleteApiKeyScope } from '../../services/api/deleteApiKeyScope';
 
 import { GlobalModalsContext } from '../../contexts/GlobalModals';
 import { useConfirmationModal } from '../../utils/useConfirmationModal';
@@ -40,7 +40,7 @@ import { Toggle1 } from '../Utils/Toggle';
 import {
   getApiKeyJWT,
   ResponseTypesByStatus as GetApiKeyJWTResponseTypes,
-} from '../../services/api/getApiKeyJWT2';
+} from '../../services/api/getApiKeyJwt';
 import { toast } from 'react-toastify';
 import { Surface } from '../Utils/Surface';
 import config from '../../../../config.json';
