@@ -234,7 +234,7 @@ class User(Table[UserTypes.id], UserIDBase, table=True):
     hashed_password: UserTypes.hashed_password | None = Field()
     user_role_id: UserTypes.user_role_id = Field()
 
-    api_keys: list['APIKey'] = Relationship(back_populates='user')
+    api_keys: list['ApiKey'] = Relationship(back_populates='user')
     user_access_tokens: list['UserAccessToken'] = Relationship(
         back_populates='user')
     gallery_permissions: list['GalleryPermission'] = Relationship(
@@ -540,126 +540,126 @@ class UserAccessTokenCreate(UserAccessTokenImport):
 class UserAccessTokenCreateAdmin(UserAccessTokenCreate, AuthCredentialCreateAdmin[UserAccessToken, UserAccessTokenTypes.id]):
     pass
 
-# # APIKey
+# # ApiKey
 
 
-class APIKeyTypes(AuthCredentialTypes):
+class ApiKeyTypes(AuthCredentialTypes):
     id = str
     name = typing.Annotated[str, StringConstraints(
         min_length=1, max_length=256)]
 
 
-class APIKeyIDBase(IDObject[APIKeyTypes.id]):
-    id: APIKeyTypes.id = Field(
+class ApiKeyIDBase(IDObject[ApiKeyTypes.id]):
+    id: ApiKeyTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
 
-class APIKey(Table[APIKeyTypes.id], APIKeyIDBase, AuthCredential[APIKeyTypes.id], table=True):
+class ApiKey(Table[ApiKeyTypes.id], ApiKeyIDBase, AuthCredential[ApiKeyTypes.id], table=True):
     __tablename__ = 'api_key'
 
-    name: APIKeyTypes.name = Field()
+    name: ApiKeyTypes.name = Field()
     type: typing.ClassVar[AuthCredentialTypes.type] = 'api_key'
 
     user: User = Relationship(back_populates='api_keys')
-    api_key_scopes: list['APIKeyScope'] = Relationship(
+    api_key_scopes: list['ApiKeyScope'] = Relationship(
         back_populates='api_key')
 
     async def get_scope_ids(self) -> list[ScopeTypes.id]:
         return [api_key_scope.scope_id for api_key_scope in self.api_key_scopes]
 
 
-type PluralAPIKeysDict = dict[APIKeyTypes.id, APIKey]
+type PluralApiKeysDict = dict[ApiKeyTypes.id, ApiKey]
 
 
-class APIKeyExport(TableExport[APIKey], AuthCredentialExport[APIKeyTypes.id]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[APIKey]] = APIKey
-    name: APIKeyTypes.name
+class ApiKeyExport(TableExport[ApiKey], AuthCredentialExport[ApiKeyTypes.id]):
+    _TABLE_MODEL: typing.ClassVar[typing.Type[ApiKey]] = ApiKey
+    name: ApiKeyTypes.name
 
 
-class APIKeyPublic(APIKeyExport):
+class ApiKeyPublic(ApiKeyExport):
     pass
 
 
-class APIKeyPrivate(APIKeyExport):
+class ApiKeyPrivate(ApiKeyExport):
     pass
 
 
-class APIKeyImport(AuthCredentialImport[APIKeyTypes.id]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[APIKey]] = APIKey
+class ApiKeyImport(AuthCredentialImport[ApiKeyTypes.id]):
+    _TABLE_MODEL: typing.ClassVar[typing.Type[ApiKey]] = ApiKey
 
 
-class APIKeyUpdate(APIKeyImport, APIKeyIDBase):
-    name: typing.Optional[APIKeyTypes.name] = None
+class ApiKeyUpdate(ApiKeyImport, ApiKeyIDBase):
+    name: typing.Optional[ApiKeyTypes.name] = None
 
 
-class APIKeyUpdateAdmin(APIKeyUpdate, TableUpdateAdmin[APIKey, APIKeyTypes.id]):
+class ApiKeyUpdateAdmin(ApiKeyUpdate, TableUpdateAdmin[ApiKey, ApiKeyTypes.id]):
     pass
 
 
-class APIKeyCreate(APIKeyImport):
-    name: APIKeyTypes.name
+class ApiKeyCreate(ApiKeyImport):
+    name: ApiKeyTypes.name
 
 
-class APIKeyCreateAdmin(APIKeyCreate, AuthCredentialCreateAdmin[APIKey, APIKeyTypes.id]):
+class ApiKeyCreateAdmin(ApiKeyCreate, AuthCredentialCreateAdmin[ApiKey, ApiKeyTypes.id]):
     pass
 
 
 # AuthCredentialTypes
 
-AUTH_CREDENTIAL_MODEL = typing.Union[UserAccessToken, APIKey]
+AUTH_CREDENTIAL_MODEL = typing.Union[UserAccessToken, ApiKey]
 AUTH_CREDENTIAL_MODEL_MAPPING: dict[AuthCredentialTypes.type, AUTH_CREDENTIAL_MODEL] = {
     'access_token': UserAccessToken,
-    'api_key': APIKey
+    'api_key': ApiKey
 }
 
 
 #
-# APIKeyScope
+# ApiKeyScope
 #
 
-class APIKeyScopeTypes:
-    api_key_id = APIKeyTypes.id
+class ApiKeyScopeTypes:
+    api_key_id = ApiKeyTypes.id
     scope_id = ScopeTypes.id
 
 
-type APIKeyScopeID = typing.Annotated[tuple[APIKeyScopeTypes.api_key_id,
-                                            APIKeyScopeTypes.scope_id], '(api_key_id, scope_id)'
+type ApiKeyScopeID = typing.Annotated[tuple[ApiKeyScopeTypes.api_key_id,
+                                            ApiKeyScopeTypes.scope_id], '(api_key_id, scope_id)'
                                       ]
 
 
-class APIKeyScopeIDBase(IDObject[APIKeyScopeID]):
-    api_key_id: APIKeyScopeTypes.api_key_id = Field(
-        index=True, foreign_key=APIKey.__tablename__ + '.' + APIKey._ID_COLS[0])
-    scope_id: APIKeyScopeTypes.scope_id = Field(index=True)
+class ApiKeyScopeIDBase(IDObject[ApiKeyScopeID]):
+    api_key_id: ApiKeyScopeTypes.api_key_id = Field(
+        index=True, foreign_key=ApiKey.__tablename__ + '.' + ApiKey._ID_COLS[0])
+    scope_id: ApiKeyScopeTypes.scope_id = Field(index=True)
 
 
-class APIKeyScope(Table[APIKeyScopeID], APIKeyScopeIDBase, table=True):
+class ApiKeyScope(Table[ApiKeyScopeID], ApiKeyScopeIDBase, table=True):
     __tablename__ = 'api_key_scope'
     __table_args__ = (
         PrimaryKeyConstraint('api_key_id', 'scope_id'),
     )
     _ID_COLS: typing.ClassVar[list[str]] = ['api_key_id', 'scope_id']
 
-    api_key: APIKey = Relationship(back_populates='api_key_scopes')
+    api_key: ApiKey = Relationship(back_populates='api_key_scopes')
 
 
-type PluralAPIKeyScopesDict = dict[APIKeyScopeID, APIKeyScope]
+type PluralApiKeyScopesDict = dict[ApiKeyScopeID, ApiKeyScope]
 
 
-class APIKeyScopeExport(TableExport[APIKeyScope], APIKeyScopeIDBase):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[APIKeyScope]] = APIKeyScope
+class ApiKeyScopeExport(TableExport[ApiKeyScope], ApiKeyScopeIDBase):
+    _TABLE_MODEL: typing.ClassVar[typing.Type[ApiKeyScope]] = ApiKeyScope
 
 
-class APIKeyScopePublic(APIKeyScopeExport):
+class ApiKeyScopePublic(ApiKeyScopeExport):
     pass
 
 
-class APIKeyScopePrivate(APIKeyScopeExport):
+class ApiKeyScopePrivate(ApiKeyScopeExport):
     pass
 
 
-class APIKeyScopeImport(TableImport[APIKeyScope]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[APIKeyScope]] = APIKeyScope
+class ApiKeyScopeImport(TableImport[ApiKeyScope]):
+    _TABLE_MODEL: typing.ClassVar[typing.Type[ApiKeyScope]] = ApiKeyScope
 
 #
 # Gallery

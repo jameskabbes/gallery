@@ -4,7 +4,7 @@ from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
-from fastapi.security import OAuth2, OAuth2PasswordRequestForm, OAuth2PasswordBearer, APIKeyHeader
+from fastapi.security import OAuth2, OAuth2PasswordRequestForm, OAuth2PasswordBearer, ApiKeyHeader
 from fastapi.security.utils import get_authorization_scheme_param
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import selectinload
@@ -211,7 +211,7 @@ def get_authorization(
                 if auth_credential.type == 'access_token':
                     scope_ids = c.user_role_id_scope_ids[user.user_role_id]
                 elif auth_credential.type == 'api_key':
-                    auth_credential: models.APIKey
+                    auth_credential: models.ApiKey
                     scope_ids = await auth_credential.get_scope_ids()
 
                 required_scope_ids = set(
@@ -666,42 +666,42 @@ async def delete_user_access_token(
 #
 
 
-@app.get('/admin/api-keys/{api_key_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.APIKey.not_found_message(), 'model': NotFoundResponse}})
+@app.get('/admin/api-keys/{api_key_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.ApiKey.not_found_message(), 'model': NotFoundResponse}})
 async def get_api_key_by_id_admin(
-    api_key_id: models.APIKeyTypes.id,
+    api_key_id: models.ApiKeyTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization(required_scopes={'admin'}))]
-) -> models.APIKey:
+) -> models.ApiKey:
     with Session(c.db_engine) as session:
-        return await models.APIKey.get(session, api_key_id)
+        return await models.ApiKey.get(session, api_key_id)
 
 
 @app.post('/admin/api-keys/', responses={status.HTTP_409_CONFLICT: {"description": 'User already exists', 'model': DetailOnlyResponse}})
 async def post_api_key_admin(
-    api_key_create_admin: models.APIKeyCreateAdmin,
+    api_key_create_admin: models.ApiKeyCreateAdmin,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization(required_scopes={'admin'}))]
-) -> models.APIKey:
+) -> models.ApiKey:
     with Session(c.db_engine) as session:
         return await api_key_create_admin.post(session)
 
 
 @ app.get('/api-keys/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
 async def get_api_keys(
-        authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> list[models.APIKey]:
+        authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> list[models.ApiKey]:
 
     with Session(c.db_engine) as session:
-        api_keys = await models.APIKey.get_all_by_key_values(
+        api_keys = await models.ApiKey.get_all_by_key_values(
             session, {'user_id': authorization.user.id})
         return api_keys
 
 
 @app.post('/api-keys/')
 async def post_api_key(
-        api_key_create: models.APIKeyCreate,
-        authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> models.APIKey:
+        api_key_create: models.ApiKeyCreate,
+        authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> models.ApiKey:
 
-    api_key_admin_create = models.APIKeyCreateAdmin(
+    api_key_admin_create = models.ApiKeyCreateAdmin(
         **api_key_create.model_dump(), user_id=authorization.user.id)
 
     with Session(c.db_engine) as session:
@@ -710,16 +710,16 @@ async def post_api_key(
 
 @app.patch('/api-keys/{api_key_id}/')
 async def patch_api_key(
-        api_key_id: models.APIKeyTypes.id,
-        api_key_update: models.APIKeyUpdate,
-        authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> models.APIKey:
+        api_key_id: models.ApiKeyTypes.id,
+        api_key_update: models.ApiKeyUpdate,
+        authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> models.ApiKey:
 
     with Session(c.db_engine) as session:
 
-        api_key = await models.APIKey.get(session, api_key_id)
+        api_key = await models.ApiKey.get(session, api_key_id)
         if api_key.user_id != authorization.user.id:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=models.APIKey.not_found_message())
+                status_code=status.HTTP_404_NOT_FOUND, detail=models.ApiKey.not_found_message())
 
         api_key.sqlmodel_update(api_key_update)
         await api_key.add_to_db(session)
@@ -728,66 +728,66 @@ async def patch_api_key(
 
 @ app.delete('/api-keys/{api_key_id}/', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_api_key(
-    api_key_id: models.APIKeyTypes.id,
+    api_key_id: models.ApiKeyTypes.id,
         authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]):
     with Session(c.db_engine) as session:
 
-        api_key = await models.APIKey.get(session, api_key_id)
+        api_key = await models.ApiKey.get(session, api_key_id)
         if api_key.user_id != authorization.user.id:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=models.APIKey.not_found_message())
-        if await models.APIKey.delete_one_by_id(session, api_key_id) == 0:
+                status_code=status.HTTP_404_NOT_FOUND, detail=models.ApiKey.not_found_message())
+        if await models.ApiKey.delete_one_by_id(session, api_key_id) == 0:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=models.APIKey.not_found_message())
+                status_code=status.HTTP_404_NOT_FOUND, detail=models.ApiKey.not_found_message())
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-class APIKeyJWTResponse(BaseModel):
+class ApiKeyJWTResponse(BaseModel):
     jwt: str
 
 
-@app.get('/api-keys/{api_key_id}/generate-jwt/', responses={status.HTTP_404_NOT_FOUND: {"description": models.APIKey.not_found_message(), 'model': NotFoundResponse}})
+@app.get('/api-keys/{api_key_id}/generate-jwt/', responses={status.HTTP_404_NOT_FOUND: {"description": models.ApiKey.not_found_message(), 'model': NotFoundResponse}})
 async def get_api_key_jwt(
-    api_key_id: models.APIKeyTypes.id,
+    api_key_id: models.ApiKeyTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())]
-) -> APIKeyJWTResponse:
+) -> ApiKeyJWTResponse:
     with Session(c.db_engine) as session:
-        api_key = await models.APIKey.get(session, api_key_id)
+        api_key = await models.ApiKey.get(session, api_key_id)
         if api_key.user_id != authorization.user.id:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=models.APIKey.not_found_message())
+                status_code=status.HTTP_404_NOT_FOUND, detail=models.ApiKey.not_found_message())
 
-        return APIKeyJWTResponse(
+        return ApiKeyJWTResponse(
             jwt=jwt_encode(api_key.export_to_jwt())
         )
 
 
 @app.post('/api-keys/{api_key_id}/scopes/{scope_id}/', status_code=status.HTTP_204_NO_CONTENT)
 async def add_scope_to_api_key(
-    api_key_id: models.APIKeyTypes.id,
+    api_key_id: models.ApiKeyTypes.id,
     scope_id: models.ScopeTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())]
 ):
 
     with Session(c.db_engine) as session:
-        api_key = await models.APIKey.get(session, api_key_id)
+        api_key = await models.ApiKey.get(session, api_key_id)
         if api_key.user_id != authorization.user.id:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=models.APIKey.not_found_message())
+                status_code=status.HTTP_404_NOT_FOUND, detail=models.ApiKey.not_found_message())
 
         user = await models.User.get(session, authorization.user.id)
 
         # see if user is permitted to add this scope
         user_role_scope = await models.UserRoleScope.get(session, (user.user_role_id, scope_id))
 
-        existing_api_key_scope = await models.APIKeyScope.get_one_by_id(session, (api_key_id, scope_id))
+        existing_api_key_scope = await models.ApiKeyScope.get_one_by_id(session, (api_key_id, scope_id))
         if existing_api_key_scope:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail="Scope already exists for this API key")
 
-        api_key_scope = models.APIKeyScope(
+        api_key_scope = models.ApiKeyScope(
             api_key_id=api_key_id, scope_id=scope_id)
         await api_key_scope.add_to_db(session)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -795,18 +795,18 @@ async def add_scope_to_api_key(
 
 @app.delete('/api-keys/{api_key_id}/scopes/{scope_id}/', status_code=status.HTTP_204_NO_CONTENT)
 async def remove_scope_from_api_key(
-    api_key_id: models.APIKeyTypes.id,
+    api_key_id: models.ApiKeyTypes.id,
     scope_id: models.ScopeTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())]
 ):
     with Session(c.db_engine) as session:
-        api_key = await models.APIKey.get(session, api_key_id)
+        api_key = await models.ApiKey.get(session, api_key_id)
         if api_key.user_id != authorization.user.id:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=models.APIKey.not_found_message())
+                status_code=status.HTTP_404_NOT_FOUND, detail=models.ApiKey.not_found_message())
 
-        if await models.APIKeyScope.delete(session, (api_key_id, scope_id)):
+        if await models.ApiKeyScope.delete(session, (api_key_id, scope_id)):
             return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 # galleries
@@ -1023,24 +1023,24 @@ async def get_settings_page(authorization: typing.Annotated[GetAuthorizationRetu
     )
 
 
-class GetSettingsAPIKeysPageResponse(GetAuthReturn):
-    api_keys: models.PluralAPIKeysDict
-    api_key_scopes: dict[models.APIKeyTypes.id, list[models.ScopeTypes.id]]
+class GetSettingsApiKeysPageResponse(GetAuthReturn):
+    api_keys: models.PluralApiKeysDict
+    api_key_scope_ids: dict[models.ApiKeyTypes.id, list[models.ScopeTypes.id]]
 
 
 @ app.get('/settings/api-keys/page/')
 async def get_settings_page(
-        authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> GetSettingsAPIKeysPageResponse:
+        authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> GetSettingsApiKeysPageResponse:
 
     with Session(c.db_engine) as session:
 
         user = await models.User.get(session, authorization.user.id)
         api_keys = user.api_keys
 
-        return GetSettingsAPIKeysPageResponse(
+        return GetSettingsApiKeysPageResponse(
             **get_auth(authorization).model_dump(),
-            api_keys=models.APIKey.export_plural_to_dict(api_keys),
-            api_key_scopes={
+            api_keys=models.ApiKey.export_plural_to_dict(api_keys),
+            api_key_scope_ids={
                 api_key.id: await api_key.get_scope_ids() for api_key in api_keys}
         )
 
