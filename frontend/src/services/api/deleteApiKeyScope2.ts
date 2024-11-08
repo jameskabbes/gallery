@@ -15,7 +15,7 @@ type ResponseTypesByStatus = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
-async function deleteAPIKeyScope(
+async function deleteApiKeyScope(
   authContext: AuthContext,
   api_key_id: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['api_key_id'],
   scope_id: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['scope_id']
@@ -35,4 +35,4 @@ async function deleteAPIKeyScope(
   return { data, response };
 }
 
-export { deleteAPIKeyScope, ResponseTypesByStatus };
+export { deleteApiKeyScope, ResponseTypesByStatus };

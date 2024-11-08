@@ -3,26 +3,28 @@ import { callApi } from '../../utils/Api';
 import { paths, operations, components } from '../../openapi_schema';
 import { AuthContext, CallApiReturn, ExtractResponseTypes } from '../../types';
 
-const API_ENDPOINT = '/api-keys/{api_key_id}/generate-jwt/';
-const API_METHOD = 'get';
+const API_ENDPOINT = '/api-keys/';
+const API_METHOD = 'post';
 
 type ResponseTypesByStatus = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
-async function getAPIKeyJWT(
+async function postApiKey(
   authContext: AuthContext,
-  apiKeyId: components['schemas']['APIKey']['id']
+  apiKeyCreate: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
 ): Promise<CallApiReturn<ResponseTypesByStatus[keyof ResponseTypesByStatus]>> {
   const { data, response } = await callApi<
-    ResponseTypesByStatus[keyof ResponseTypesByStatus]
+    ResponseTypesByStatus[keyof ResponseTypesByStatus],
+    paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >({
-    endpoint: API_ENDPOINT.replace('{api_key_id}', apiKeyId),
+    endpoint: API_ENDPOINT,
     method: API_METHOD,
+    data: apiKeyCreate,
     authContext: authContext,
   });
 
   return { data, response };
 }
 
-export { getAPIKeyJWT, ResponseTypesByStatus };
+export { postApiKey, ResponseTypesByStatus };
