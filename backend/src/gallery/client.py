@@ -112,7 +112,21 @@ class Client:
     jwt_algorithm: str
     root_config: dict
     google_client: dict
-    scope_id_to_scope_name: dict[models.ScopeTypes.id, models.ScopeTypes.name]
+
+    auth_key: str
+    header_keys: dict[str, str]
+    cookie_keys: dict[str, str]
+    magic_link_frontend_url: str
+
+    scope_name_mapping: dict[models.ScopeTypes.name, models.ScopeTypes.id]
+    scope_id_mapping: dict[models.ScopeTypes.id, models.ScopeTypes.name]
+    visibility_level_name_mapping: dict[models.VisibilityLevelTypes.name,
+                                        models.VisibilityLevelTypes.id]
+    permission_level_name_mapping: dict[models.PermissionLevelTypes.name,
+                                        models.PermissionLevelTypes.id]
+    user_role_name_mapping: dict[models.UserRoleTypes.name,
+                                 models.UserRoleTypes.id]
+
     user_role_id_scope_ids: dict[models.UserRoleTypes.id,
                                  set[models.ScopeTypes.id]]
 
@@ -149,19 +163,41 @@ class Client:
         self.root_config = json.loads(
             pathlib.Path('../../config.json').read_text())
 
+        # auth_key
+        self.auth_key = self.root_config['auth_key']
+
+        # header_keys
+        self.header_keys = self.root_config['header_keys']
+
+        # cookie_keys
+        self.cookie_keys = self.root_config['cookie_keys']
+
+        # magic_link_frontend_url
+        self.magic_link_frontend_url = self.root_config['magic_link_frontend_url']
+
+        # scope_name_mapping
+        self.scope_name_mapping = self.root_config['scope_name_mapping']
+
+        self.scope_id_mapping = {}
+        for scope_name in self.scope_name_mapping:
+            self.scope_id_mapping[self.scope_name_mapping[scope_name]] = scope_name
+
+        # visibility_level_name_mapping
+        self.visibility_level_name_mapping = self.root_config['visibility_level_name_mapping']
+
+        # permission_level_name_mapping
+        self.permission_level_name_mapping = self.root_config['permission_level_name_mapping']
+
+        # user_role_name_mapping
+        self.user_role_name_mapping = self.root_config['user_role_name_mapping']
+
         # user_role
         self.user_role_id_scope_ids = {}
         for scope_name in self.root_config['user_role_scopes']:
-            scope_id = self.root_config['user_role_name_mapping'][scope_name]
+            scope_id = self.user_role_name_mapping[scope_name]
             self.user_role_id_scope_ids[scope_id] = set([
-                self.root_config['scope_name_mapping'][_scope_name] for _scope_name in self.root_config['user_role_scopes'][scope_name]
+                self.scope_name_mapping[_scope_name] for _scope_name in self.root_config['user_role_scopes'][scope_name]
             ])
-
-        # scope id to scope name
-        self.scope_id_to_scope_name = {}
-        for scope_name in self.root_config['scope_name_mapping']:
-            self.scope_id_to_scope_name[self.root_config['scope_name_mapping']
-                                        [scope_name]] = scope_name
 
     def create_tables(self):
         SQLModel.metadata.create_all(self.db_engine)

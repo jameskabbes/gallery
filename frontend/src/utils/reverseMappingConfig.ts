@@ -10,6 +10,20 @@ const scopeIdToName = Object.entries(config.scope_name_mapping).reduce(
   {} as { [key: number]: string }
 );
 
+const visibilityLevelIdToName = Object.entries(
+  config.visibility_level_name_mapping
+).reduce((acc, [key, value]) => {
+  acc[value] = key;
+  return acc;
+}, {} as { [key: number]: string });
+
+const permissionLevelIdToName = Object.entries(
+  config.permission_level_name_mapping
+).reduce((acc, [key, value]) => {
+  acc[value] = key;
+  return acc;
+}, {} as { [key: number]: string });
+
 //
 const userRoleIdToName = Object.entries(config.user_role_name_mapping).reduce(
   (acc, [key, value]) => {
@@ -20,4 +34,9 @@ const userRoleIdToName = Object.entries(config.user_role_name_mapping).reduce(
 );
 
 // Export the reverse mapping
-export { scopeIdToName, userRoleIdToName };
+export {
+  scopeIdToName,
+  visibilityLevelIdToName,
+  permissionLevelIdToName,
+  userRoleIdToName,
+};

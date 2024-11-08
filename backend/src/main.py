@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 c = get_client()
 
-assert c.root_config['header_keys']['auth_error'] == auth.AUTH_ERROR_HEADER
+assert c.header_keys['auth_error'] == auth.AUTH_ERROR_HEADER
 
 
 def jwt_encode(payload: dict):
@@ -69,7 +69,7 @@ class OAuth2PasswordBearerMultiSource(OAuth2):
 
         # HTTP-only Cookie
         cookie_access_token = request.cookies.get(
-            c.root_config['cookie_keys']['access_token'])
+            c.cookie_keys['access_token'])
         if cookie_access_token:
             return cookie_access_token
 
@@ -111,7 +111,7 @@ def set_access_token_cookie(access_token: str, response: Response, stay_signed_i
             datetime.UTC) + c.authentication['default_expiry_timedelta']
 
     response.set_cookie(
-        key=c.root_config['cookie_keys']['access_token'],
+        key=c.cookie_keys['access_token'],
         value=access_token,
         httponly=True,
         secure=True,
@@ -121,7 +121,7 @@ def set_access_token_cookie(access_token: str, response: Response, stay_signed_i
 
 
 def delete_access_token_cookie(response: Response):
-    response.delete_cookie(c.root_config['cookie_keys']['access_token'])
+    response.delete_cookie(c.cookie_keys['access_token'])
 
 
 class GetAuthorizationReturn(BaseModel):
@@ -215,7 +215,7 @@ def get_authorization(
                     scope_ids = await auth_credential.get_scope_ids()
 
                 required_scope_ids = set(
-                    [c.root_config['scope_name_mapping'][scope_name]
+                    [c.scope_name_mapping[scope_name]
                         for scope_name in required_scopes]
                 )
 
@@ -253,7 +253,7 @@ class GetAuthBaseReturn(BaseModel):
     expiry: typing.Optional[models.AuthCredentialTypes.expiry]
 
 
-assert c.root_config['auth_key'] == 'auth'
+assert c.auth_key == 'auth'
 
 
 class GetAuthReturn(BaseModel):
@@ -341,7 +341,7 @@ async def sign_up(
 ) -> SignupResponse:
 
     user_create_admin = models.UserCreateAdmin(
-        email=email, password=password, user_role_id=c.root_config['user_role_name_mapping']['user'])
+        email=email, password=password, user_role_id=c.user_role_name_mapping['user'])
 
     with Session(c.db_engine) as session:
         user = await user_create_admin.post(session)
@@ -385,7 +385,7 @@ async def send_magic_link_to_email(model: LoginWithEmailMagicLinkRequest):
 
             print('beep boop beep... sending email')
             print('http://localhost:3000' +
-                  c.root_config['magic_link_frontend_url'] +
+                  c.magic_link_frontend_url +
                   '?' + urlencode(link_data)
                   )
 
@@ -789,9 +789,7 @@ async def add_scope_to_api_key(
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail="Scope already exists for this API key")
 
-        api_key_scope = models.ApiKeyScope(
-            api_key_id=api_key_id, scope_id=scope_id)
-        await api_key_scope.add_to_db(session)
+        await models.ApiKeyScopeCreateAdmin(api_key_id=api_key_id, scope_id=scope_id).post(session)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -890,7 +888,7 @@ async def get_gallery(
     with Session(c.db_engine) as session:
         gallery = await models.Gallery.get(session, gallery_id)
 
-        if gallery.visibility == models.VisibilityLevel.PRIVATE:
+        if gallery.visibility_level == c.visibility_level_name_mapping['private']:
             if authorization.exception:
                 raise HTTPException(status.HTTP_404_NOT_FOUND,
                                     detail=models.Gallery.not_found_message())
@@ -915,7 +913,10 @@ async def post_gallery(gallery_create: models.GalleryCreate,
         **gallery_create.model_dump())
 
     with Session(c.db_engine) as session:
-        return await gallery_create_admin.post(session)
+        gallery = await gallery_create_admin.post(session)
+        await models.GalleryPermissionCreateAdmin(gallery_id=gallery.id, user_id=authorization.user.id,
+                                                  permission_level=c.permission_level_name_mapping['owner']).post(session)
+        return gallery
 
 
 @ app.patch('/galleries/{gallery_id}/', responses={
@@ -978,6 +979,8 @@ async def delete_gallery(gallery_id: models.GalleryTypes.id,
             raise HTTPException(status.HTTP_404_NOT_FOUND,
                                 detail=models.Gallery.not_found_message())
         return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+#
 
 
 # Pages
@@ -1080,6 +1083,38 @@ async def get_galleries_page(authorization: typing.Annotated[GetAuthorizationRet
             galleries={gallery.id: gallery for gallery in galleries},
             gallery_permissions={
                 gallery_permission.gallery_id: gallery_permission for gallery_permission in gallery_permissions}
+        )
+
+
+class GetGalleryPageResponse(GetAuthReturn):
+    gallery: models.GalleryPublic
+
+
+@app.get('/galleries/{gallery_id}/page/', responses={status.HTTP_404_NOT_FOUND: {"description": models.Gallery.not_found_message(), 'model': NotFoundResponse}})
+async def get_gallery_page(
+    gallery_id: models.GalleryTypes.id,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization(raise_exceptions=False))]
+) -> GetGalleryPageResponse:
+
+    with Session(c.db_engine) as session:
+        gallery = await models.Gallery.get(session, gallery_id)
+
+        if gallery.visibility_level == c.visibility_level_name_mapping['private']:
+            if authorization.exception:
+                raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                    detail=models.Gallery.not_found_message())
+
+            gallery_permission = await models.GalleryPermission.get(
+                session, (gallery_id, authorization.user.id))
+
+            if not gallery_permission:
+                raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                    detail=models.Gallery.not_found_message())
+
+        return GetGalleryPageResponse(
+            **get_auth(authorization).model_dump(),
+            gallery=models.GalleryPublic.model_validate(gallery)
         )
 
 
