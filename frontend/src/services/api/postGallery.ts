@@ -11,7 +11,7 @@ type ResponseTypesByStatus = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
-async function deleteAPIKey(
+async function postGallery(
   authContext: AuthContext,
   galleryCreate: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
 ): Promise<CallApiReturn<ResponseTypesByStatus[keyof ResponseTypesByStatus]>> {
@@ -28,4 +28,4 @@ async function deleteAPIKey(
   return { data, response };
 }
 
-export { deleteAPIKey, ResponseTypesByStatus };
+export { postGallery, ResponseTypesByStatus };

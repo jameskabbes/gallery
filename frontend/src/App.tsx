@@ -13,6 +13,7 @@ import { VerifyMagicLink } from './components/Auth/VerifyMagicLink';
 import { Surface } from './components/Utils/Surface';
 import Styles from './pages/Styles';
 
+import siteConfig from '../siteConfig.json';
 import config from '../../config.json';
 
 function App(): JSX.Element {
@@ -27,7 +28,14 @@ function App(): JSX.Element {
             <Header />
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/galleries" element={<Galleries />} />
+              <Route
+                path={`${siteConfig.galleriesUrlBase}`}
+                element={<Galleries />}
+              />
+              <Route
+                path={`${siteConfig.galleriesUrlBase}/:galleryId`}
+                element={<Galleries />}
+              />
               <Route path="/settings/:selection" element={<Settings />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/styles" element={<Styles />} />
