@@ -51,7 +51,7 @@ function Galleries() {
       </Button1>
       <div className="flex flex-wrap">
         {Object.keys(apiData.galleries).map((galleryId) => (
-          <div className="p-2">
+          <div className="p-2" key={galleryId}>
             <GalleryCardButton
               gallery={apiData.galleries[galleryId]}
             ></GalleryCardButton>

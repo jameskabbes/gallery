@@ -702,7 +702,7 @@ class Gallery(Table[GalleryTypes.id], GalleryIDBase, table=True):
     parent_id: GalleryTypes.parent_id = Field(nullable=True, index=True,
                                               foreign_key=__tablename__ + '.id')
     description: GalleryTypes.description = Field()
-    datetime: GalleryTypes.datetime | None = Field(nullable=True)
+    datetime: GalleryTypes.datetime = Field(nullable=True)
 
     parent: typing.Optional['Gallery'] = Relationship(
         back_populates='children', sa_relationship_kwargs={'remote_side': 'Gallery.id'})
@@ -737,7 +737,7 @@ class GalleryExport(TableExport[Gallery]):
     name: GalleryTypes.name
     parent_id: GalleryTypes.parent_id | None
     description: GalleryTypes.description
-    datetime: GalleryTypes.datetime
+    datetime: GalleryTypes.datetime | None
 
 
 class GalleryPublic(GalleryExport):

@@ -14,7 +14,7 @@ type ResponseTypesByStatus = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
-function Galleries() {
+function Gallery() {
   const galleryId: components['schemas']['Gallery']['id'] =
     useParams().galleryId;
   const globalModalsContext = useContext(GlobalModalsContext);
@@ -31,9 +31,19 @@ function Galleries() {
 
   if (loading) {
     return <div>Loading...</div>;
+  } else {
+    if (response.status === 200) {
+      const data = apiData as ResponseTypesByStatus['200'];
+      return (
+        <div>
+          <h1>{data.gallery.name}</h1>
+          <p>{data.gallery.description}</p>
+        </div>
+      );
+    } else {
+      return <div>Gallery not found</div>;
+    }
   }
-
-  return <div></div>;
 }
 
-export { Galleries };
+export { Gallery };

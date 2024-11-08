@@ -6,6 +6,7 @@ import { Footer } from './components/Footer';
 import { ApplicationContextProvider } from './contexts/Application';
 import { Toast } from './components/Toast/Toast';
 import { Galleries } from './pages/Galleries';
+import { Gallery } from './pages/Gallery';
 import { Settings } from './pages/Settings';
 import { AuthModals } from './components/Auth/AuthModals';
 import { GlobalModals } from './components/GlobalModals';
@@ -34,7 +35,7 @@ function App(): JSX.Element {
               />
               <Route
                 path={`${siteConfig.galleriesUrlBase}/:galleryId`}
-                element={<Galleries />}
+                element={<Gallery />}
               />
               <Route path="/settings/:selection" element={<Settings />} />
               <Route path="/settings" element={<Settings />} />

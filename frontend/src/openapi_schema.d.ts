@@ -173,6 +173,10 @@ export interface paths {
     /** Get Galleries Page */
     get: operations["get_galleries_page_galleries_page__get"];
   };
+  "/galleries/{gallery_id}/page/": {
+    /** Get Gallery Page */
+    get: operations["get_gallery_page_galleries__gallery_id__page__get"];
+  };
 }
 
 export type webhooks = Record<string, never>;
@@ -423,6 +427,11 @@ export interface components {
         [key: string]: components["schemas"]["GalleryPermission"];
       };
     };
+    /** GetGalleryPageResponse */
+    GetGalleryPageResponse: {
+      auth: components["schemas"]["GetAuthBaseReturn"];
+      gallery: components["schemas"]["GalleryPublic"];
+    };
     /** GetHomePageResponse */
     GetHomePageResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
@@ -600,8 +609,6 @@ export interface components {
       password?: string | null;
       /** Username */
       username?: string | null;
-      /** User Role Id */
-      user_role_id?: number | null;
     };
     /** ValidationError */
     ValidationError: {
@@ -1702,6 +1709,34 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["GetGalleriesPageResponse"];
+        };
+      };
+    };
+  };
+  /** Get Gallery Page */
+  get_gallery_page_galleries__gallery_id__page__get: {
+    parameters: {
+      path: {
+        gallery_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["GetGalleryPageResponse"];
+        };
+      };
+      /** @description Gallery not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
