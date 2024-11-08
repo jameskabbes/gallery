@@ -18,14 +18,24 @@ import re
 #
 
 
-PermissionLevelID = int
-PermissionLevelName = typing.Literal['owner', 'editor', 'viewer']
-VisibilityLevelID = int
-VisibilityLevelName = typing.Literal['public', 'private']
-ScopeID = int
-ScopeName = typing.Literal['admin', 'users.read', 'users.write']
-UserRoleID = int
-UserRoleName = typing.Literal['admin', 'user']
+class PermissionLevelTypes:
+    id = int
+    name = typing.Literal['owner', 'editor', 'viewer']
+
+
+class VisibilityLevelTypes:
+    id = int
+    name = typing.Literal['public', 'private']
+
+
+class ScopeTypes:
+    id = int
+    name = typing.Literal['admin', 'users.read', 'users.write']
+
+
+class UserRoleTypes:
+    id = int
+    name = typing.Literal['admin', 'user']
 
 
 def validate_and_normalize_datetime(value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime:
@@ -207,7 +217,7 @@ class UserTypes:
     username = typing.Annotated[str, StringConstraints(
         min_length=3, max_length=20, pattern=re.compile(r'^[a-zA-Z0-9_.-]+$'), to_lower=True)]
     hashed_password = str
-    user_role_id = UserRoleID
+    user_role_id = UserRoleTypes.id
 
 
 class UserIDBase(IDObject[UserTypes.id]):
@@ -222,7 +232,7 @@ class User(Table[UserTypes.id], UserIDBase, table=True):
     username: UserTypes.username = Field(
         index=True, unique=True, nullable=True)
     hashed_password: UserTypes.hashed_password | None = Field()
-    user_role_id: UserRoleID = Field()
+    user_role_id: UserTypes.user_role_id = Field()
 
     api_keys: list['APIKey'] = Relationship(back_populates='user')
     user_access_tokens: list['UserAccessToken'] = Relationship(
@@ -554,7 +564,7 @@ class APIKey(Table[APIKeyTypes.id], APIKeyIDBase, AuthCredential[APIKeyTypes.id]
     api_key_scopes: list['APIKeyScope'] = Relationship(
         back_populates='api_key')
 
-    async def get_scope_ids(self) -> list[ScopeID]:
+    async def get_scope_ids(self) -> list[ScopeTypes.id]:
         return [api_key_scope.scope_id for api_key_scope in self.api_key_scopes]
 
 
@@ -609,7 +619,7 @@ AUTH_CREDENTIAL_MODEL_MAPPING: dict[AuthCredentialTypes.type, AUTH_CREDENTIAL_MO
 
 class APIKeyScopeTypes:
     api_key_id = APIKeyTypes.id
-    scope_id = ScopeID
+    scope_id = ScopeTypes.id
 
 
 type APIKeyScopeID = typing.Annotated[tuple[APIKeyScopeTypes.api_key_id,
@@ -663,7 +673,7 @@ class GalleryTypes:
     id = GalleryID
     name = typing.Annotated[str, StringConstraints(
         min_length=1, max_length=256)]
-    visibility_level = VisibilityLevelID
+    visibility_level = VisibilityLevelTypes.id
     parent_id = GalleryID
     description = typing.Annotated[str, StringConstraints(
         min_length=0, max_length=20000)]
@@ -777,7 +787,7 @@ class GalleryCreateAdmin(GalleryCreate, TableCreateAdmin[Gallery]):
 class GalleryPermissionTypes:
     gallery_id = GalleryTypes.id
     user_id = UserTypes.id
-    permission_level = PermissionLevelID
+    permission_level = PermissionLevelTypes.id
 
 
 type GalleryPermissionID = typing.Annotated[tuple[GalleryPermissionTypes.gallery_id,

@@ -129,12 +129,12 @@ class GetAuthorizationReturn(BaseModel):
     expiry: typing.Optional[datetime.datetime] = None
     exception: typing.Optional[auth.EXCEPTION] = None
     user: typing.Optional[models.UserPrivate] = None
-    scope_ids: typing.Optional[set[models.ScopeID]] = None
+    scope_ids: typing.Optional[set[models.ScopeTypes.id]] = None
     auth_credential: typing.Optional[models.AUTH_CREDENTIAL_MODEL] = None
 
 
 def get_authorization(
-    required_scopes: set[models.ScopeName] = set(),
+    required_scopes: set[models.ScopeTypes.name] = set(),
     raise_exceptions: bool = True,
     permitted_auth_credential_types: set[models.AuthCredentialTypes.type] = set(
         key for key in models.AUTH_CREDENTIAL_MODEL_MAPPING),
@@ -206,7 +206,7 @@ def get_authorization(
                     return GetAuthorizationReturn(exception='user_not_found')
 
                 # get the scopes for the user
-                scope_ids: set[models.ScopeID] = set()
+                scope_ids: set[models.ScopeTypes.id] = set()
 
                 if auth_credential.type == 'access_token':
                     scope_ids = c.user_role_id_scope_ids[user.user_role_id]
@@ -249,7 +249,7 @@ def get_authorization(
 
 class GetAuthBaseReturn(BaseModel):
     user: typing.Optional[models.UserPrivate]
-    scope_ids: typing.Optional[set[models.ScopeID]]
+    scope_ids: typing.Optional[set[models.ScopeTypes.id]]
     expiry: typing.Optional[models.AuthCredentialTypes.expiry]
 
 
@@ -766,7 +766,7 @@ async def get_api_key_jwt(
 @app.post('/api-keys/{api_key_id}/scopes/{scope_id}/', status_code=status.HTTP_204_NO_CONTENT)
 async def add_scope_to_api_key(
     api_key_id: models.APIKeyTypes.id,
-    scope_id: models.ScopeID,
+    scope_id: models.ScopeTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())]
 ):
@@ -796,7 +796,7 @@ async def add_scope_to_api_key(
 @app.delete('/api-keys/{api_key_id}/scopes/{scope_id}/', status_code=status.HTTP_204_NO_CONTENT)
 async def remove_scope_from_api_key(
     api_key_id: models.APIKeyTypes.id,
-    scope_id: models.ScopeID,
+    scope_id: models.ScopeTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())]
 ):
@@ -1025,7 +1025,7 @@ async def get_settings_page(authorization: typing.Annotated[GetAuthorizationRetu
 
 class GetSettingsAPIKeysPageResponse(GetAuthReturn):
     api_keys: models.PluralAPIKeysDict
-    api_key_scopes: dict[models.APIKeyTypes.id, list[models.ScopeID]]
+    api_key_scopes: dict[models.APIKeyTypes.id, list[models.ScopeTypes.id]]
 
 
 @ app.get('/settings/api-keys/page/')

@@ -44,6 +44,10 @@ import {
 import { toast } from 'react-toastify';
 import { Surface } from '../Utils/Surface';
 import config from '../../../../config.json';
+import {
+  scopeIdToName,
+  userRoleIdToName,
+} from '../../utils/reverseMappingConfig';
 
 const API_ENDPOINT = '/settings/api-keys/page/';
 const API_METHOD = 'get';
@@ -54,81 +58,85 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 
 type TAPIKeys = ResponseTypesByStatus['200']['api_keys'];
 type TSetAPIKeys = React.Dispatch<React.SetStateAction<TAPIKeys>>;
-type TScopes = ResponseTypesByStatus['200']['scopes'];
 type TAPIKeyScopes = ResponseTypesByStatus['200']['api_key_scopes'];
 type TSetAPIKeyScopes = React.Dispatch<React.SetStateAction<TAPIKeyScopes>>;
+type ScopeID = number;
 
 const loadingAPIKeyName = 'loading...';
 
 async function handleAddAPIKeyScope(
-  scopeId: components['schemas'],
+  scopeId: ScopeID,
   apiKey: components['schemas']['APIKey'],
   setAPIKeyScopes: TSetAPIKeyScopes,
   toastContext: ToastContextType,
   authContext: AuthContextType
 ) {
+  const scopeName = scopeIdToName[scopeId];
+
   let toastId = toastContext.makePending({
-    message: `Adding ${scope.name} to ${apiKey.name}`,
+    message: `Adding ${scopeName} to ${apiKey.name}`,
   });
 
   const { data, response } = await postAPIKeyScope(
     authContext,
     apiKey.id,
-    scope.id
+    scopeId
   );
   if (response.status === 204) {
     toastContext.update(toastId, {
-      message: `Added ${scope.name} to ${apiKey.name}`,
+      message: `Added ${scopeName} to ${apiKey.name}`,
       type: 'success',
     });
     setAPIKeyScopes((prev) => ({
       ...prev,
-      [apiKey.id]: [...prev[apiKey.id], scope.id],
+      [apiKey.id]: [...prev[apiKey.id], scopeId],
     }));
   } else {
     toastContext.update(toastId, {
-      message: `Error adding ${scope.name} to ${apiKey.name}`,
+      message: `Error adding ${scopeName} to ${apiKey.name}`,
       type: 'error',
     });
   }
 }
 
 async function handleDeleteAPIKeyScope(
-  scope: components['schemas']['Scope'],
+  scopeId: ScopeID,
   apiKey: components['schemas']['APIKey'],
   setAPIKeyScopes: TSetAPIKeyScopes,
   toastContext: ToastContextType,
   authContext: AuthContextType
 ) {
+  const scopeName = scopeIdToName[scopeId];
+
   let toastId = toastContext.makePending({
-    message: `Removing ${scope.name} from ${apiKey.name}`,
+    message: `Removing ${scopeName} from ${apiKey.name}`,
   });
 
   const { data, response } = await deleteAPIKeyScope(
     authContext,
     apiKey.id,
-    scope.id
+    scopeId
   );
 
   if (response.status === 204) {
     toastContext.update(toastId, {
-      message: `Removed ${scope.name} from ${apiKey.name}`,
+      message: `Removed ${scopeName} from ${apiKey.name}`,
       type: 'success',
     });
     setAPIKeyScopes((prev) => ({
       ...prev,
-      [apiKey.id]: prev[apiKey.id].filter((id) => id !== scope.id),
+      [apiKey.id]: prev[apiKey.id].filter((id) => id !== scopeId),
     }));
   } else {
     toastContext.update(toastId, {
-      message: `Error removing ${scope.name} from ${apiKey.name}`,
+      message: `Error removing ${scopeName} from ${apiKey.name}`,
       type: 'error',
     });
   }
 }
 
 interface APIKeyScopeRowProps {
-  scope: components['schemas']['Scope'];
+  scopeId: ScopeID;
   apiKey: components['schemas']['APIKey'];
   apiKeyScopes: TAPIKeyScopes;
   setAPIKeyScopes: TSetAPIKeyScopes;
@@ -137,7 +145,7 @@ interface APIKeyScopeRowProps {
 }
 
 function APIKeyScopeRow({
-  scope,
+  scopeId,
   apiKey,
   apiKeyScopes,
   setAPIKeyScopes,
@@ -146,7 +154,7 @@ function APIKeyScopeRow({
 }: APIKeyScopeRowProps) {
   const [loading, setLoading] = useState<boolean>(false);
   const [toggle, setToggle] = useState<boolean>(
-    apiKeyScopes[apiKey.id].includes(scope.id)
+    apiKeyScopes[apiKey.id].includes(scopeId)
   );
 
   async function handleToggle() {
@@ -157,7 +165,7 @@ function APIKeyScopeRow({
     if (toggleSnapshot) {
       // was on, now turning off
       await handleDeleteAPIKeyScope(
-        scope,
+        scopeId,
         apiKey,
         setAPIKeyScopes,
         toastContext,
@@ -166,7 +174,7 @@ function APIKeyScopeRow({
     } else {
       // was off, now turning on
       await handleAddAPIKeyScope(
-        scope,
+        scopeId,
         apiKey,
         setAPIKeyScopes,
         toastContext,
@@ -179,7 +187,7 @@ function APIKeyScopeRow({
   return (
     <div
       className="flex flex-row items-center space-x-1"
-      key={`${apiKey.id}-${scope.id}`}
+      key={`${apiKey.id}-${scopeId}`}
     >
       <Toggle1
         onClick={(e) => {
@@ -190,7 +198,7 @@ function APIKeyScopeRow({
         disabled={loading}
       />
 
-      <p>{scope.name}</p>
+      <p>{scopeIdToName[scopeId]}</p>
     </div>
   );
 }
@@ -258,7 +266,6 @@ interface APIKeyRowProps {
   apiKeyId: components['schemas']['APIKey']['id'];
   apiKeys: TAPIKeys;
   setAPIKeys: TSetAPIKeys;
-  scopes: TScopes;
   apiKeyScopes: TAPIKeyScopes;
   setAPIKeyScopes: TSetAPIKeyScopes;
   toastContext: ToastContextType;
@@ -273,7 +280,6 @@ function APIKeyRow({
   apiKeyId,
   apiKeys,
   setAPIKeys,
-  scopes,
   apiKeyScopes,
   setAPIKeyScopes,
   toastContext,
@@ -282,7 +288,6 @@ function APIKeyRow({
   checkConfirmation,
 }: APIKeyRowProps) {
   const [isEditing, setIsEditing] = useState(false);
-
   async function handleDeleteAPIKey(apiKeyId: string) {
     let toastId = toastContext.makePending({
       message: `Deleting API Key ${apiKeys[apiKeyId].name}`,
@@ -410,10 +415,12 @@ function APIKeyRow({
       {isEditing && (
         <div className="flex flex-col">
           {/* map through all scopes */}
-          {Object.keys(scopes).map((scopeId) => (
+          {config['user_role_scopes'][
+            userRoleIdToName[authContext.state.user.user_role_id]
+          ].map((user_role_scope) => (
             <APIKeyScopeRow
-              key={scopeId}
-              scope={scopes[scopeId]}
+              key={user_role_scope}
+              scopeId={config['scope_name_mapping'][user_role_scope]}
               apiKey={apiKeys[apiKeyId]}
               apiKeyScopes={apiKeyScopes}
               setAPIKeyScopes={setAPIKeyScopes}
@@ -579,9 +586,6 @@ function APIKeys({ authContext, toastContext }: APIKeysProps): JSX.Element {
   const [apiKeys, setAPIKeys] = useState<
     ResponseTypesByStatus['200']['api_keys']
   >({});
-  const [scopes, setScopes] = useState<ResponseTypesByStatus['200']['scopes']>(
-    {}
-  );
   const [apiKeyScopes, setAPIKeyScopes] = useState<
     ResponseTypesByStatus['200']['api_key_scopes']
   >({});
@@ -599,7 +603,6 @@ function APIKeys({ authContext, toastContext }: APIKeysProps): JSX.Element {
     if (apiData && response.status === 200) {
       const data = apiData as ResponseTypesByStatus['200'];
       setAPIKeys(data.api_keys);
-      setScopes(data.scopes);
       setAPIKeyScopes(data.api_key_scopes);
     }
   }, [apiData, response]);
@@ -642,7 +645,6 @@ function APIKeys({ authContext, toastContext }: APIKeysProps): JSX.Element {
                 apiKeyId={apiKeyId}
                 apiKeys={apiKeys}
                 setAPIKeys={setAPIKeys}
-                scopes={scopes}
                 apiKeyScopes={apiKeyScopes}
                 setAPIKeyScopes={setAPIKeyScopes}
                 toastContext={toastContext}

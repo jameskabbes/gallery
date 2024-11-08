@@ -20,13 +20,13 @@
     "private": 2
   },
   "permission_level_name_mapping": {
-    "owner": 10,
-    "editor": 5,
-    "viewer": 3
+    "owner": 3,
+    "editor": 2,
+    "viewer": 1
   },
   "user_role_name_mapping": {
-    "admin": 10,
-    "user": 5
+    "admin": 2,
+    "user": 1
   },
   "user_role_scopes": {
     "admin": ["admin", "user.read", "user.write"],

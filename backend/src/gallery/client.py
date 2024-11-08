@@ -112,7 +112,9 @@ class Client:
     jwt_algorithm: str
     root_config: dict
     google_client: dict
-    user_role_id_scope_ids: dict[models.UserRoleID, set[models.ScopeID]]
+    scope_id_to_scope_name: dict[models.ScopeTypes.id, models.ScopeTypes.name]
+    user_role_id_scope_ids: dict[models.UserRoleTypes.id,
+                                 set[models.ScopeTypes.id]]
 
     def __init__(self, config: Config = {}):
 
@@ -154,6 +156,12 @@ class Client:
             self.user_role_id_scope_ids[scope_id] = set([
                 self.root_config['scope_name_mapping'][_scope_name] for _scope_name in self.root_config['user_role_scopes'][scope_name]
             ])
+
+        # scope id to scope name
+        self.scope_id_to_scope_name = {}
+        for scope_name in self.root_config['scope_name_mapping']:
+            self.scope_id_to_scope_name[self.root_config['scope_name_mapping']
+                                        [scope_name]] = scope_name
 
     def create_tables(self):
         SQLModel.metadata.create_all(self.db_engine)
