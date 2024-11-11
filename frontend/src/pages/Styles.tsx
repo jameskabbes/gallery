@@ -6,7 +6,7 @@ import {
   ExtractResponseTypes,
   ValidatedInputState,
 } from '../types';
-import { useApiCall } from '../utils/Api';
+import { useApiCall } from '../utils/api';
 import { ToastContext } from '../contexts/Toast';
 import { AuthContext } from '../contexts/Auth';
 import { ValidatedInputCheckbox } from '../components/Form/ValidatedInputCheckbox';
@@ -62,9 +62,7 @@ function Styles() {
     ),
   });
 
-  const { data, loading, response } = useApiCall<
-    ResponseTypesByStatus[keyof ResponseTypesByStatus]
-  >({
+  const {} = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>({
     endpoint: API_ENDPOINT,
     method: API_METHOD,
   });

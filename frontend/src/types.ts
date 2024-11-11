@@ -1,32 +1,26 @@
 import React from 'react';
 import { paths, operations, components } from './openapi_schema';
+import {
+  AxiosProgressEvent,
+  AxiosRequestConfig,
+  AxiosResponse,
+  Method,
+} from 'axios';
 
-interface CallApiProps<T> {
+interface CallApiOptions<T> {
   endpoint: string;
-  method: RequestInit['method'];
-  authContext: AuthContext;
+  method: Method;
   data?: T;
-  overwriteHeaders?: HeadersInit;
-  body?: string;
-  backend?: boolean;
+  headers?: Record<string, string>;
+  onUploadProgress?: (progressEvent: AxiosProgressEvent) => void;
+  onDownloadProgress?: (progressEvent: AxiosProgressEvent) => void;
+  authContext?: AuthContext;
 }
 
-interface CallApiReturn<T> {
-  data: T | null;
-  response: Response | null;
-}
+type ApiResponse<T> = AxiosResponse<T>;
 
-interface UseApiCallReturn<T> {
-  data: T | null;
-  setData: React.Dispatch<React.SetStateAction<UseApiCallReturn<T>['data']>>;
+interface UseApiCallReturn<T> extends ApiResponse<T> {
   loading: boolean;
-  setLoading: React.Dispatch<
-    React.SetStateAction<UseApiCallReturn<T>['loading']>
-  >;
-  response: Response | null;
-  setResponse: React.Dispatch<
-    React.SetStateAction<UseApiCallReturn<T>['response']>
-  >;
 }
 
 type ExtractResponseTypes<T> = {
@@ -246,8 +240,8 @@ interface SurfaceContextValue {
 
 export {
   ExtractResponseTypes,
-  CallApiProps,
-  CallApiReturn,
+  CallApiOptions,
+  ApiResponse,
   UseApiCallReturn,
   DarkModeContext,
   ValidatedInputState,

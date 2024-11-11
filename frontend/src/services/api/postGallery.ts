@@ -1,22 +1,22 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { callApi } from '../../utils/Api';
+import { callApi } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
-import { CallApiReturn, ExtractResponseTypes, ToastContext } from '../../types';
+import { ApiResponse, ExtractResponseTypes } from '../../types';
 import { AuthContext } from '../../types';
 
 const API_ENDPOINT = '/galleries/';
 const API_METHOD = 'post';
 
-type ResponseTypesByStatus = ExtractResponseTypes<
+type PostGalleryResponses = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
 async function postGallery(
   authContext: AuthContext,
   galleryCreate: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
-): Promise<CallApiReturn<ResponseTypesByStatus[keyof ResponseTypesByStatus]>> {
-  const { data, response } = await callApi<
-    ResponseTypesByStatus[keyof ResponseTypesByStatus],
+): Promise<ApiResponse<PostGalleryResponses[keyof PostGalleryResponses]>> {
+  return await callApi<
+    PostGalleryResponses[keyof PostGalleryResponses],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >({
     endpoint: API_ENDPOINT,
@@ -24,8 +24,6 @@ async function postGallery(
     authContext,
     data: galleryCreate,
   });
-
-  return { data, response };
 }
 
-export { postGallery, ResponseTypesByStatus };
+export { postGallery, PostGalleryResponses };

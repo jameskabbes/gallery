@@ -1,21 +1,21 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { callApi } from '../../utils/Api';
+import { callApi } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
-import { AuthContext, CallApiReturn, ExtractResponseTypes } from '../../types';
+import { ApiResponse, AuthContext, ExtractResponseTypes } from '../../types';
 
 const API_ENDPOINT = '/api-keys/';
 const API_METHOD = 'post';
 
-type ResponseTypesByStatus = ExtractResponseTypes<
+type PostApiKeyResponses = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
 async function postApiKey(
   authContext: AuthContext,
   apiKeyCreate: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
-): Promise<CallApiReturn<ResponseTypesByStatus[keyof ResponseTypesByStatus]>> {
-  const { data, response } = await callApi<
-    ResponseTypesByStatus[keyof ResponseTypesByStatus],
+): Promise<ApiResponse<PostApiKeyResponses[keyof PostApiKeyResponses]>> {
+  return await callApi<
+    PostApiKeyResponses[keyof PostApiKeyResponses],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >({
     endpoint: API_ENDPOINT,
@@ -23,8 +23,6 @@ async function postApiKey(
     data: apiKeyCreate,
     authContext: authContext,
   });
-
-  return { data, response };
 }
 
-export { postApiKey, ResponseTypesByStatus };
+export { postApiKey, PostApiKeyResponses };

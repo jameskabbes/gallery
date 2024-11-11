@@ -1,134 +1,71 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-
 import { useState, useEffect, useContext } from 'react';
-import config from '../../../config.json';
-import siteConfig from '../../siteConfig.json';
+import { AxiosRequestConfig, AxiosResponse } from 'axios';
+import { apiClient } from './apiClient';
 import { AuthContext } from '../contexts/Auth';
-import { CallApiProps, CallApiReturn, UseApiCallReturn } from '../types';
-
-//utility func to make API calls
-
-async function callApiBase(
-  resource: string,
-  options: AxiosRequestConfig = {},
-  backend: boolean = true
-): Promise<AxiosResponse> {
-  if (backend) {
-    resource = `/${config.api_endpoint_base}${resource}`;
-  }
-  try {
-    const response = await axios({ url: resource, ...options });
-    return response;
-  } catch (error) {
-    console.error('API Call failed:', error);
-    throw error;
-  }
-}
-
-// async function callApi<TResponseData extends object, TRequestData = any>({
-//   endpoint,
-//   method,
-//   authContext,
-//   data,
-//   overwriteHeaders = {},
-//   body,
-//   backend = true,
-// }: CallApiProps<TRequestData>): Promise<CallApiReturn<TResponseData>> {
-//   const token = localStorage.getItem(siteConfig['access_token_key']);
-
-//   const headers: RequestInit['headers'] = {
-//     Authorization: token ? `Bearer ${token}` : '',
-//   };
-
-//   if (data && !body) {
-//     headers['Content-Type'] = 'application/json';
-//   }
-
-//   const init: RequestInit = {
-//     method: method.toUpperCase(),
-//     headers: { ...headers, ...overwriteHeaders },
-//     body: body ? body : data ? JSON.stringify(data) : null,
-//   };
-
-//   const response = await callApiBase(endpoint, init, backend);
-//   let responseData: CallApiReturn<TResponseData>['data'] = null;
-
-//   try {
-//     responseData = await response.json();
-//   } catch (error) {
-//     responseData = null;
-//   }
-
-//   if (authContext && response.headers.has(config.header_keys['auth_error'])) {
-//     authContext.logOut();
-//   }
-
-//   return { data: responseData, response };
-// }
+import { ApiResponse, CallApiOptions, UseApiCallReturn } from '../types';
+import config from '../../../config.json';
 
 async function callApi<TResponseData, TRequestData = any>({
   endpoint,
   method,
-  authContext,
   data,
-  overwriteHeaders = {},
-  body,
-  backend = true,
-}: CallApiProps<TRequestData>): Promise<CallApiReturn<TResponseData>> {
-  const token = localStorage.getItem(siteConfig['access_token_key']);
+  headers = {},
+  authContext = null,
+  onUploadProgress = null,
+  onDownloadProgress = null,
+}: CallApiOptions<TRequestData>): Promise<ApiResponse<TResponseData>> {
+  try {
+    // if user didn't set Content-Type, set it based on data type
+    if (!('Content-Type' in headers)) {
+      if (data instanceof FormData) {
+        headers['Content-Type'] = 'multipart/form-data';
+      } else if (typeof data === 'object' && !(data instanceof FormData)) {
+        headers['Content-Type'] = 'application/json';
+      }
+    }
+    const requestConfig: AxiosRequestConfig = {
+      url: endpoint,
+      method: method,
+      headers: headers,
+      data: data,
+      onUploadProgress: onUploadProgress,
+      onDownloadProgress: onDownloadProgress,
+    };
 
-  const headers: Record<string, string> = {
-    Authorization: token ? `Bearer ${token}` : '',
-    ...overwriteHeaders,
-  };
-
-  const options = {
-    method: method.toUpperCase(),
-    headers,
-    data: body || data,
-    url: endpoint,
-  };
-
-  const response = await callApiBase(endpoint, options, backend);
-  const responseData = response.data;
-
-  if (authContext && response.headers[config.header_keys['auth_error']]) {
-    authContext.logOut();
+    const response = await apiClient.request<TResponseData>(requestConfig);
+    if (authContext && response.headers[config.header_keys['auth_error']]) {
+      authContext.logOut();
+    }
+    return response;
+  } catch (error) {
+    throw error;
   }
-
-  return { data: responseData, response };
 }
 
 function useApiCall<TResponseData extends object, TRequestData = any>(
-  props: Omit<CallApiProps<TRequestData>, 'authContext'>,
+  props: Omit<CallApiOptions<TRequestData>, 'authContext'>,
   dependencies: any[] = []
 ): UseApiCallReturn<TResponseData> {
-  const [data, setData] =
-    useState<UseApiCallReturn<TResponseData>['data']>(null);
-  const [loading, setLoading] =
-    useState<UseApiCallReturn<TResponseData>['loading']>(true);
-  const [response, setResponse] =
-    useState<UseApiCallReturn<TResponseData>['response']>(null);
-
+  const [loading, setLoading] = useState<boolean>(true);
+  const [response, setResponse] = useState<AxiosResponse>(null);
   const authContext = useContext(AuthContext);
 
   useEffect(() => {
+    setLoading(true);
     const fetchData = async () => {
-      setLoading(true);
-      const { data, response } = await callApi<TResponseData, TRequestData>({
+      const response = await callApi<TResponseData, TRequestData>({
         ...props,
         authContext: authContext,
       });
       setResponse(response);
-      setData(data);
-      authContext.updateFromApiResponse(data);
       setLoading(false);
+      authContext.updateFromApiResponse(response.data);
     };
 
     fetchData();
   }, dependencies);
 
-  return { data, setData, loading, setLoading, response, setResponse };
+  return { ...response, loading };
 }
 
-export { callApiBase, callApi, useApiCall };
+export { callApi, useApiCall };

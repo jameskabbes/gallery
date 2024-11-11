@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { DeviceContext } from '../contexts/Device';
 import { paths, operations, components } from '../openapi_schema';
 import { defaultValidatedInputState, ExtractResponseTypes } from '../types';
-import { useApiCall } from '../utils/Api';
+import { useApiCall } from '../utils/api';
 import { GlobalModalsContext } from '../contexts/GlobalModals';
 import { AuthContext } from '../contexts/Auth';
 
@@ -20,11 +20,9 @@ function Gallery() {
   const globalModalsContext = useContext(GlobalModalsContext);
   const authContext = useContext(AuthContext);
 
-  const {
-    data: apiData,
-    loading,
-    response,
-  } = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>({
+  const { data, loading, status } = useApiCall<
+    ResponseTypesByStatus[keyof ResponseTypesByStatus]
+  >({
     endpoint: API_ENDPOINT.replace('{gallery_id}', galleryId),
     method: API_METHOD,
   });
@@ -32,12 +30,12 @@ function Gallery() {
   if (loading) {
     return <div>Loading...</div>;
   } else {
-    if (response.status === 200) {
-      const data = apiData as ResponseTypesByStatus['200'];
+    if (status === 200) {
+      const responseData = data as ResponseTypesByStatus['200'];
       return (
         <div>
-          <h1>{data.gallery.name}</h1>
-          <p>{data.gallery.description}</p>
+          <p>{responseData.gallery.id}</p>
+          <p>{responseData.gallery.name}</p>
         </div>
       );
     } else {

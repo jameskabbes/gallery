@@ -1,8 +1,8 @@
-import { callApi } from '../../utils/Api';
+import { callApi } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
 import {
+  ApiResponse,
   AuthContext,
-  CallApiReturn,
   ExtractResponseTypes,
   ToastContext,
 } from '../../types';
@@ -10,7 +10,7 @@ import {
 const API_ENDPOINT = '/galleries/{gallery_id}/';
 const API_METHOD = 'patch';
 
-type ResponseTypesByStatus = ExtractResponseTypes<
+type PatchGalleryResponses = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
@@ -18,9 +18,9 @@ async function patchAPIKey(
   authContext: AuthContext,
   galleryId: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['gallery_id'],
   galleryUpdate: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
-): Promise<CallApiReturn<ResponseTypesByStatus[keyof ResponseTypesByStatus]>> {
-  const { data, response } = await callApi<
-    ResponseTypesByStatus[keyof ResponseTypesByStatus],
+): Promise<ApiResponse<PatchGalleryResponses[keyof PatchGalleryResponses]>> {
+  return await callApi<
+    PatchGalleryResponses[keyof PatchGalleryResponses],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >({
     endpoint: API_ENDPOINT.replace('{gallery_id}', galleryId),
@@ -28,8 +28,6 @@ async function patchAPIKey(
     data: galleryUpdate,
     authContext,
   });
-
-  return { data, response };
 }
 
-export { patchAPIKey, ResponseTypesByStatus };
+export { patchAPIKey, PatchGalleryResponses };

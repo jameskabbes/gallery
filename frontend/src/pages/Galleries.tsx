@@ -2,7 +2,7 @@ import React, { useEffect, useContext, useState } from 'react';
 import { DeviceContext } from '../contexts/Device';
 import { paths, operations, components } from '../openapi_schema';
 import { defaultValidatedInputState, ExtractResponseTypes } from '../types';
-import { useApiCall } from '../utils/Api';
+import { useApiCall } from '../utils/api';
 import { Button1, ButtonSubmit } from '../components/Utils/Button';
 import { Link } from 'react-router-dom';
 import { GlobalModalsContext } from '../contexts/GlobalModals';
@@ -25,11 +25,9 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 function Galleries() {
   const globalModalsContext = useContext(GlobalModalsContext);
 
-  const {
-    data: apiData,
-    loading,
-    response,
-  } = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>({
+  const { data, loading } = useApiCall<
+    ResponseTypesByStatus[keyof ResponseTypesByStatus]
+  >({
     endpoint: API_ENDPOINT,
     method: API_METHOD,
   });
@@ -50,10 +48,10 @@ function Galleries() {
         Add Gallery
       </Button1>
       <div className="flex flex-wrap">
-        {Object.keys(apiData.galleries).map((galleryId) => (
+        {Object.keys(data.galleries).map((galleryId) => (
           <div className="p-2" key={galleryId}>
             <GalleryCardButton
-              gallery={apiData.galleries[galleryId]}
+              gallery={data.galleries[galleryId]}
             ></GalleryCardButton>
           </div>
         ))}

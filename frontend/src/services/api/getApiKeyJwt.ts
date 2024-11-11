@@ -1,28 +1,24 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { callApi } from '../../utils/Api';
+import { callApi } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
-import { AuthContext, CallApiReturn, ExtractResponseTypes } from '../../types';
+import { ApiResponse, AuthContext, ExtractResponseTypes } from '../../types';
 
 const API_ENDPOINT = '/api-keys/{api_key_id}/generate-jwt/';
 const API_METHOD = 'get';
 
-type ResponseTypesByStatus = ExtractResponseTypes<
+type GetApiKeyJwtResponses = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
 async function getApiKeyJWT(
   authContext: AuthContext,
   apiKeyId: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['api_key_id']
-): Promise<CallApiReturn<ResponseTypesByStatus[keyof ResponseTypesByStatus]>> {
-  const { data, response } = await callApi<
-    ResponseTypesByStatus[keyof ResponseTypesByStatus]
-  >({
+): Promise<ApiResponse<GetApiKeyJwtResponses[keyof GetApiKeyJwtResponses]>> {
+  return await callApi<GetApiKeyJwtResponses[keyof GetApiKeyJwtResponses]>({
     endpoint: API_ENDPOINT.replace('{api_key_id}', apiKeyId),
     method: API_METHOD,
     authContext: authContext,
   });
-
-  return { data, response };
 }
 
-export { getApiKeyJWT, ResponseTypesByStatus };
+export { getApiKeyJWT, GetApiKeyJwtResponses };

@@ -1,31 +1,27 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { callApi } from '../../utils/Api';
+import { callApi } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
-import { AuthContext, ExtractResponseTypes } from '../../types';
+import { ApiResponse, AuthContext, ExtractResponseTypes } from '../../types';
 
 const API_ENDPOINT = '/users/available/email/{email}/';
 const API_METHOD = 'get';
 
-type AllResponseTypes = ExtractResponseTypes<
+type GetIsEmailAvailableResponses = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
-async function isEmailAvailable(
+async function getIsEmailAvailable(
   email: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['email']
-): Promise<AllResponseTypes['200']['available']> {
-  const { data, response } = await callApi<
-    AllResponseTypes[keyof AllResponseTypes],
+): Promise<
+  ApiResponse<GetIsEmailAvailableResponses[keyof GetIsEmailAvailableResponses]>
+> {
+  return await callApi<
+    GetIsEmailAvailableResponses[keyof GetIsEmailAvailableResponses],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['email']
   >({
     endpoint: API_ENDPOINT.replace('{email}', email),
     method: API_METHOD,
-    authContext: null,
   });
-
-  if (response.status === 200) {
-    const apiData = data as AllResponseTypes['200'];
-    return apiData.available;
-  }
 }
 
-export { isEmailAvailable };
+export { getIsEmailAvailable };

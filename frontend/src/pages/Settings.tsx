@@ -6,7 +6,7 @@ import { Appearance } from '../components/Settings/Appearance';
 import { UserAccessTokens } from '../components/Settings/UserAccessTokens';
 import { paths, operations, components } from '../openapi_schema';
 import { ExtractResponseTypes } from '../types';
-import { useApiCall } from '../utils/Api';
+import { useApiCall } from '../utils/api';
 import { Profile } from '../components/Settings/Profile';
 import { DeviceContext } from '../contexts/Device';
 
@@ -30,11 +30,9 @@ function Settings(): JSX.Element {
   const toastContext = useContext(ToastContext);
   const navigate = useNavigate();
 
-  const {
-    data: apiData,
-    loading,
-    response,
-  } = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>({
+  const { data, loading, status } = useApiCall<
+    ResponseTypesByStatus[keyof ResponseTypesByStatus]
+  >({
     endpoint: API_ENDPOINT,
     method: API_METHOD,
   });

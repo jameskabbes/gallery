@@ -1,29 +1,25 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { callApi } from '../../utils/Api';
+import { callApi } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
-import { CallApiReturn, ExtractResponseTypes, ToastContext } from '../../types';
+import { ApiResponse, ExtractResponseTypes } from '../../types';
 import { AuthContext } from '../../types';
 
 const API_ENDPOINT = '/api-keys/{api_key_id}/';
 const API_METHOD = 'delete';
 
-type ResponseTypesByStatus = ExtractResponseTypes<
+type DeleteApiKeyResponses = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
 async function deleteApiKey(
   authContext: AuthContext,
   apiKeyId: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['api_key_id']
-): Promise<CallApiReturn<ResponseTypesByStatus[keyof ResponseTypesByStatus]>> {
-  const { data, response } = await callApi<
-    ResponseTypesByStatus[keyof ResponseTypesByStatus]
-  >({
+): Promise<ApiResponse<DeleteApiKeyResponses[keyof DeleteApiKeyResponses]>> {
+  return await callApi<DeleteApiKeyResponses[keyof DeleteApiKeyResponses]>({
     endpoint: API_ENDPOINT.replace('{api_key_id}', apiKeyId),
     method: API_METHOD,
     authContext,
   });
-
-  return { data, response };
 }
 
-export { deleteApiKey, ResponseTypesByStatus };
+export { deleteApiKey, DeleteApiKeyResponses };
