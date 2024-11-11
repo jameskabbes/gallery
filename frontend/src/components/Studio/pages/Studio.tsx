@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { paths, operations, components } from '../../../openapi_schema';
 import { ExtractResponseTypes } from '../../../types';
-import { useBackendApiCall } from '../../../utils/Api';
+import { useBackendApiCall } from '../../../utils/api';
 
 const API_PATH = '/pages/studios/{studio_id}/';
 const API_METHOD = 'get';

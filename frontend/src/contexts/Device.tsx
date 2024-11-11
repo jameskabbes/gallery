@@ -1,5 +1,5 @@
 import React, { useEffect, useState, createContext } from 'react';
-import { DeviceContext as DeviceContextType } from '../types';
+import { DeviceContextType } from '../types';
 
 const DeviceContext = createContext<DeviceContextType>({ isMobile: false });
 

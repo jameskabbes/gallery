@@ -106,7 +106,8 @@ class Client:
 
     uvicorn_port: uvicorn_port_type
     db_engine: Engine
-    media_root_path: pathlib.Path
+    media_dir: pathlib.Path
+    galleries_dir: pathlib.Path
     authentication: AuthenticationConfig
     jwt_secret_key: str
     jwt_algorithm: str
@@ -141,9 +142,17 @@ class Client:
         db_engine_path = get_path_from_config(merged_config['db']['path'])
         self.db_engine = create_engine(f'sqlite:///{db_engine_path}')
 
-        # media root
-        self.media_root_path = get_path_from_config(
+        # media dir
+        self.media_dir = get_path_from_config(
             merged_config['media_root']['path'])
+
+        if not self.media_dir.exists():
+            self.media_dir.mkdir()
+
+        # galleries dir
+        self.galleries_dir = self.media_dir / 'galleries'
+        if not self.galleries_dir.exists():
+            self.galleries_dir.mkdir()
 
         # authentication
         self.authentication = merged_config['authentication']

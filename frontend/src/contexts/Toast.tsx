@@ -3,7 +3,7 @@ import {
   Toast,
   ToastId,
   ToastNoType,
-  ToastContext as ToastContextType,
+  ToastContextType,
   ToastContextState,
   ToastReducerAction,
 } from '../types';

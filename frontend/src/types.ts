@@ -47,7 +47,7 @@ const defaultValidatedInputState = <T>(
   error: null,
 });
 
-interface DarkModeContext {
+interface DarkModeContextType {
   state: boolean;
   systemState: boolean;
   preference: 'light' | 'dark' | 'system';
@@ -251,7 +251,7 @@ export {
   CallApiOptions,
   ApiResponse,
   UseApiCallReturn,
-  DarkModeContext,
+  DarkModeContextType,
   ValidatedInputState,
   defaultValidatedInputState,
   SignUpContextType,

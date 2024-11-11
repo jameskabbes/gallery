@@ -7,7 +7,7 @@ import { LogInContext } from '../../contexts/LogIn';
 import { ToastContext } from '../../contexts/Toast';
 import { AuthModalsContext } from '../../contexts/AuthModals';
 import { ExtractResponseTypes } from '../../types';
-import { callApi } from '../../utils/Api';
+import { callApi } from '../../utils/api';
 import { IoWarning } from 'react-icons/io5';
 import { IoPersonAddSharp } from 'react-icons/io5';
 import { IoMail } from 'react-icons/io5';
@@ -16,16 +16,7 @@ import { ValidatedInputCheckbox } from '../Form/ValidatedInputCheckbox';
 import { Button2, ButtonSubmit } from '../Utils/Button';
 import { Loader1, Loader2 } from '../Utils/Loader';
 import { Surface } from '../Utils/Surface';
-
-const API_ENDPOINT = '/auth/login/password/';
-const API_METHOD = 'post';
-
-type ResponseTypesByStatus = ExtractResponseTypes<
-  paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
->;
-
-type TRequestData =
-  paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/x-www-form-urlencoded'];
+import { postLogin, PostLogInResponses } from '../../services/api/postLogIn';
 
 function LogIn() {
   const logInContext = useContext(LogInContext);
@@ -61,26 +52,16 @@ function LogIn() {
     if (logInContext.valid) {
       logInContext.setLoading(true);
 
-      const { data, response } = await callApi<
-        ResponseTypesByStatus[keyof ResponseTypesByStatus],
-        TRequestData
-      >({
-        endpoint: API_ENDPOINT,
-        method: API_METHOD,
-        body: new URLSearchParams({
-          username: logInContext.username.value,
-          password: logInContext.password.value,
-          stay_signed_in: logInContext.staySignedIn.value.toString(),
-        }).toString(),
-        overwriteHeaders: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
+      const { data, status } = await postLogin(authContext, {
+        username: logInContext.username.value,
+        password: logInContext.password.value,
+        stay_signed_in: logInContext.staySignedIn.value,
       });
 
       logInContext.setLoading(false);
 
-      if (response.status == 200) {
-        const apiData = data as ResponseTypesByStatus['200'];
+      if (status == 200) {
+        const apiData = data as PostLogInResponses['200'];
         authContext.updateFromApiResponse(apiData);
         authModalsContext.setActiveModalType(null);
         toastContext.make({
@@ -91,8 +72,8 @@ function LogIn() {
           }`,
           type: 'success',
         });
-      } else if (response.status == 401) {
-        const apiData = data as ResponseTypesByStatus['401'];
+      } else if (status == 401) {
+        const apiData = data as PostLogInResponses['401'];
         logInContext.setError(apiData.detail);
       } else {
         logInContext.setError('Could not log in');

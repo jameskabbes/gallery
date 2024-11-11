@@ -1,5 +1,5 @@
 import React, { useEffect, useState, createContext } from 'react';
-import { DarkModeContext as DarkModeContextType } from '../types';
+import { DarkModeContextType } from '../types';
 
 const localStorageKey = 'theme';
 

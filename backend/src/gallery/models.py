@@ -15,6 +15,7 @@ import jwt
 import pydantic
 import collections.abc
 import re
+import pathlib
 #
 
 
@@ -194,7 +195,11 @@ class TableCreateAdmin[TTable: Table](TableImport[TTable]):
     async def post(self, session: Session) -> TTable:
         table_inst = await self.create()
         await table_inst.add_to_db(session)
+        await self.after_create(session, table_inst)
         return table_inst
+
+    async def after_create(self, session: Session, table_inst: TTable) -> None:
+        pass
 
     async def create(self) -> TTable:
 
@@ -675,26 +680,26 @@ class ApiKeyScopeCreateAdmin(ApiKeyScopeImport, ApiKeyIDBase, TableCreateAdmin[A
 #
 
 
-GalleryID = str
+GalleryId = str
 
 
 class GalleryTypes:
-    id = GalleryID
+    id = GalleryId
     name = typing.Annotated[str, StringConstraints(
         min_length=1, max_length=256)]
     visibility_level = VisibilityLevelTypes.id
-    parent_id = GalleryID
+    parent_id = GalleryId
     description = typing.Annotated[str, StringConstraints(
         min_length=0, max_length=20000)]
     datetime = datetime_module.datetime
 
 
-class GalleryIDBase(IdObject[GalleryTypes.id]):
+class GalleryIdBase(IdObject[GalleryTypes.id]):
     id: GalleryTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
 
-class Gallery(Table[GalleryTypes.id], GalleryIDBase, table=True):
+class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
     __tablename__ = 'gallery'
 
     name: GalleryTypes.name = Field()
@@ -709,6 +714,7 @@ class Gallery(Table[GalleryTypes.id], GalleryIDBase, table=True):
     children: list['Gallery'] = Relationship(back_populates='parent')
     gallery_permissions: list['GalleryPermission'] = Relationship(
         back_populates='gallery')
+    versions: list['Version'] = Relationship(back_populates='gallery')
 
     @field_validator('datetime')
     @classmethod
@@ -754,7 +760,7 @@ class GalleryImport(TableImport[Gallery]):
     _TABLE_MODEL: typing.ClassVar[typing.Type[Gallery]] = Gallery
 
 
-class GalleryUpdate(GalleryImport, GalleryIDBase):
+class GalleryUpdate(GalleryImport, GalleryIdBase):
     name: typing.Optional[GalleryTypes.name] = None
     parent_id: typing.Optional[GalleryTypes.parent_id] = None
     visibility_level: typing.Optional[GalleryTypes.visibility_level] = None
@@ -775,7 +781,9 @@ class GalleryCreate(GalleryImport):
 
 
 class GalleryCreateAdmin(GalleryCreate, TableCreateAdmin[Gallery]):
-    pass
+    async def after_create(self, session: Session, gallery: Gallery) -> None:
+        pass
+
 
 #
 # GalleryPermission
@@ -850,6 +858,171 @@ class GalleryPermissionCreateAdmin(GalleryPermissionImport, TableCreateAdmin[Gal
         return GalleryPermission(
             ** self.model_dump(),
         )
+
+#
+# Version
+#
+
+
+VersionId = str
+
+
+class VersionTypes:
+    id = VersionId
+    gallery_id = GalleryTypes.id
+    version = str
+    parent_id = VersionId
+    datetime = datetime_module.datetime
+    description = typing.Annotated[str, StringConstraints(
+        min_length=0, max_length=20000)]
+
+
+class VersionIdBase(IdObject[VersionTypes.id]):
+    id: VersionTypes.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
+
+
+class Version(Table[VersionTypes.id], VersionIdBase, table=True):
+    __tablename__ = 'version'
+
+    gallery_id: VersionTypes.gallery_id = Field(
+        index=True, foreign_key=Gallery.__tablename__ + '.' + Gallery._ID_COLS[0])
+    version: VersionTypes.version = Field(nullable=True)
+    parent_id: VersionTypes.parent_id = Field(
+        nullable=True, index=True, foreign_key=__tablename__ + '.id')
+    datetime: VersionTypes.datetime = Field(nullable=True)
+    description: VersionTypes.description = Field()
+
+    gallery: Gallery = Relationship(back_populates='versions')
+    parent: typing.Optional['Version'] = Relationship(
+        back_populates='children', sa_relationship_kwargs={'remote_side': 'Version.id'})
+    children: list['Version'] = Relationship(back_populates='parent')
+    files: list['File'] = Relationship(back_populates='version')
+
+    @field_validator('datetime')
+    @classmethod
+    def validate_datetime(cls, value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime:
+        return validate_and_normalize_datetime(value, info)
+
+    @field_serializer('datetime')
+    def serialize_datetime(value: datetime_module.datetime) -> datetime_module.datetime:
+        return value.replace(tzinfo=datetime_module.timezone.utc)
+
+
+type PluralVersionsDict = dict[VersionTypes.id, Version]
+
+# Export Types
+
+
+class VersionExport(TableExport[Version]):
+    _TABLE_MODEL: typing.ClassVar[typing.Type[Version]] = Version
+
+    id: VersionTypes.id
+    version: VersionTypes.version | None
+    parent_id: VersionTypes.parent_id | None
+    datetime: VersionTypes.datetime | None
+    description: VersionTypes.description
+
+
+class VersionPublic(VersionExport):
+    pass
+
+
+class VersionPrivate(VersionExport):
+    pass
+
+
+class VersionImport(TableImport[Version]):
+    _TABLE_MODEL: typing.ClassVar[typing.Type[Version]] = Version
+
+
+class VersionUpdate(VersionImport, VersionIdBase):
+    version: typing.Optional[VersionTypes.version] = None
+    parent_id: typing.Optional[VersionTypes.parent_id] = None
+    datetime: typing.Optional[VersionTypes.datetime] = None
+    description: typing.Optional[VersionTypes.description] = None
+
+
+class VersionUpdateAdmin(VersionUpdate, TableUpdateAdmin[Version, VersionTypes.id]):
+    pass
+
+
+class VersionCreate(VersionImport):
+    version: typing.Optional[VersionTypes.version] = None
+    parent_id: typing.Optional[VersionTypes.parent_id] = None
+    datetime: typing.Optional[VersionTypes.datetime] = None
+    description: typing.Optional[VersionTypes.description] = ''
+
+
+class VersionCreateAdmin(VersionCreate, TableCreateAdmin[Version]):
+    pass
+
+#
+# File
+#
+
+
+class FileTypes:
+    id = str
+    version_id = VersionId
+    size = int
+
+
+class FileIdBase(IdObject[FileTypes.id]):
+    id: FileTypes.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
+
+
+class File(Table[FileTypes.id], FileIdBase, table=True):
+    __tablename__ = 'file'
+
+    version_id: FileTypes.version_id = Field(
+        index=True, foreign_key=Version.__tablename__ + '.' + Version._ID_COLS[0])
+    size: FileTypes.size = Field(nullable=True)
+
+    version: Version = Relationship(back_populates='files')
+
+
+type PluralFilesDict = dict[FileTypes.id, File]
+
+# Export Types
+
+
+class FileExport(TableExport[File]):
+    _TABLE_MODEL: typing.ClassVar[typing.Type[File]] = File
+
+    id: FileTypes.id
+    version_id: FileTypes.version_id
+    size: FileTypes.size
+
+
+class FilePublic(FileExport):
+    pass
+
+
+class FilePrivate(FileExport):
+    pass
+
+
+class FileImport(TableImport[File]):
+    _TABLE_MODEL: typing.ClassVar[typing.Type[File]] = File
+
+
+class FileUpdate(FileImport, FileIdBase):
+    pass
+
+
+class FileUpdateAdmin(FileUpdate, TableUpdateAdmin[File, FileTypes.id]):
+    version_id: typing.Optional[FileTypes.version_id] = None
+    size: typing.Optional[FileTypes.size] = None
+
+
+class FileCreate(FileImport):
+    version_id: FileTypes.version_id
+
+
+class FileCreateAdmin(FileCreate, TableCreateAdmin[File]):
+    pass
 
 
 if __name__ == '__main__':

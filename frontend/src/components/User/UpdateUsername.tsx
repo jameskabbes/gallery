@@ -5,10 +5,10 @@ import openapi_schema from '../../../../openapi_schema.json';
 import { AuthContext } from '../../contexts/Auth';
 import { ToastContext } from '../../contexts/Toast';
 import { components } from '../../openapi_schema';
-import { isUsernameAvailable } from '../../services/api/isUsernameAvailable';
+import { getIsUsernameAvailable } from '../../services/api/getIsUsernameAvailable';
 import {
   patchUserFunc,
-  ResponseTypesByStatus as PatchUserResponseTypes,
+  PatchUserResponses,
 } from '../../services/api/patchUserFunc';
 
 interface Props {
@@ -45,13 +45,13 @@ function UpdateUsername({ user }: Props) {
         message: 'Updating username...',
       });
 
-      let { data, response } = await patchUserFunc({
+      const { data, status } = await patchUserFunc({
         username: username.value,
       });
       setLoading(false);
 
       if (response.status === 200) {
-        const apiData = data as PatchUserResponseTypes['200'];
+        const apiData = data as PatchUserResponses['200'];
         setStartingUsername(username.value);
         toastContext.update(toastId, {
           message: 'Updated username',
@@ -64,7 +64,7 @@ function UpdateUsername({ user }: Props) {
       } else {
         let message = 'Error updating user';
         if (response.status === 404 || response.status === 409) {
-          const apiData = data as PatchUserResponseTypes['404' | '409'];
+          const apiData = data as PatchUserResponses['404' | '409'];
           message = apiData.detail;
         }
         toastContext.update(toastId, {

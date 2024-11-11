@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useReducer, createContext } from 'react';
 import {
-  LogInWithEmailContext as LogInWithEmailContextType,
+  LogInWithEmailContextType,
   defaultValidatedInputState,
 } from '../types';
 

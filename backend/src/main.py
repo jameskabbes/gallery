@@ -1,5 +1,5 @@
 import uvicorn
-from fastapi import FastAPI, HTTPException, Query, status, Response, Depends, Request, BackgroundTasks, Form
+from fastapi import FastAPI, HTTPException, Query, status, Response, Depends, Request, BackgroundTasks, Form, File, UploadFile
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -980,10 +980,32 @@ async def delete_gallery(gallery_id: models.GalleryTypes.id,
                                 detail=models.Gallery.not_found_message())
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-#
 
+class UploadFileToGalleryResponse(BaseModel):
+    message: str
+
+
+@app.post("/upload/", status_code=status.HTTP_201_CREATED)
+async def upload_file(
+        authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+            get_authorization())],
+        file: UploadFile = File(...)
+) -> UploadFileToGalleryResponse:
+
+    print(file.__dict__)
+
+    # file_path = os.path.join(MEDIA_DIR, file.filename)
+    # with open(file_path, "wb") as buffer:
+    #     shutil.copyfileobj(file.file, buffer)
+
+    # # Get the file size
+    # file_size = os.path.getsize(file_path)
+    # file_details.append({"file_path": file_path, "file_size": file_size})
+
+    return UploadFileToGalleryResponse(message="Files uploaded successfully")
 
 # Pages
+
 
 class GetProfilePageResponse(GetAuthReturn):
     user: models.UserPrivate | None = None
@@ -1066,7 +1088,7 @@ class GetGalleriesPageResponse(GetAuthReturn):
     gallery_permissions: dict[models.GalleryTypes.id, models.GalleryPermission]
 
 
-@app.get('/galleries/page/')
+@ app.get('/galleries/page/')
 async def get_galleries_page(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> GetGalleriesPageResponse:
 
     with Session(c.db_engine) as session:
@@ -1090,7 +1112,7 @@ class GetGalleryPageResponse(GetAuthReturn):
     gallery: models.GalleryPublic
 
 
-@app.get('/galleries/{gallery_id}/page/', responses={status.HTTP_404_NOT_FOUND: {"description": models.Gallery.not_found_message(), 'model': NotFoundResponse}})
+@ app.get('/galleries/{gallery_id}/page/', responses={status.HTTP_404_NOT_FOUND: {"description": models.Gallery.not_found_message(), 'model': NotFoundResponse}})
 async def get_gallery_page(
     gallery_id: models.GalleryTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(

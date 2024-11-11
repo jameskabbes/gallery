@@ -24,4 +24,16 @@ async function getIsEmailAvailable(
   });
 }
 
-export { getIsEmailAvailable };
+async function isEmailAvailable(
+  email: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['email']
+): Promise<boolean> {
+  const response = await getIsEmailAvailable(email);
+  if (response.status == 200) {
+    const data = response.data as GetIsEmailAvailableResponses['200'];
+    return data.available;
+  } else {
+    return false;
+  }
+}
+
+export { getIsEmailAvailable, isEmailAvailable };

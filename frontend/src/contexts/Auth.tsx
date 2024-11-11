@@ -1,16 +1,12 @@
 import React, { useEffect, useState, useContext, createContext } from 'react';
-import {
-  AuthContextState,
-  AuthContext as AuthContextType,
-  ToastId,
-} from '../types';
+import { AuthContextState, AuthContextType, ToastId } from '../types';
 import { paths, operations, components } from '../openapi_schema';
 import config from '../../../config.json';
 import { ToastContext } from './Toast';
 
 const defaultState: AuthContextState = {
   user: null,
-  scopes: [],
+  scope_ids: [],
   expiry: null,
 };
 

@@ -19,6 +19,8 @@ async function callApi<TResponseData, TRequestData = any>({
     if (!('Content-Type' in headers)) {
       if (data instanceof FormData) {
         headers['Content-Type'] = 'multipart/form-data';
+      } else if (data instanceof URLSearchParams) {
+        headers['Content-Type'] = 'application/x-www-form-urlencoded';
       } else if (typeof data === 'object' && !(data instanceof FormData)) {
         headers['Content-Type'] = 'application/json';
       }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useReducer, createContext } from 'react';
 import {
-  LogInContext as LogInContextType,
+  LogInContextType,
   ValidatedInputState,
   defaultValidatedInputState,
 } from '../types';

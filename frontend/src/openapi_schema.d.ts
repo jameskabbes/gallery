@@ -149,6 +149,10 @@ export interface paths {
     /** Patch Gallery */
     patch: operations["patch_gallery_galleries__gallery_id___patch"];
   };
+  "/upload/": {
+    /** Upload File */
+    post: operations["upload_file_upload__post"];
+  };
   "/profile/page/": {
     /** Get Pages Profile */
     get: operations["get_pages_profile_profile_page__get"];
@@ -299,6 +303,14 @@ export interface components {
        */
       stay_signed_in?: boolean;
     };
+    /** Body_upload_file_upload__post */
+    Body_upload_file_upload__post: {
+      /**
+       * File
+       * Format: binary
+       */
+      file: string;
+    };
     /** DetailOnlyResponse */
     DetailOnlyResponse: {
       /** Detail */
@@ -370,11 +382,8 @@ export interface components {
       parent_id: string | null;
       /** Description */
       description: string;
-      /**
-       * Datetime
-       * Format: date-time
-       */
-      datetime: string;
+      /** Datetime */
+      datetime: string | null;
     };
     /** GalleryUpdate */
     GalleryUpdate: {
@@ -508,6 +517,11 @@ export interface components {
     /** SignupResponse */
     SignupResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
+    };
+    /** UploadFileToGalleryResponse */
+    UploadFileToGalleryResponse: {
+      /** Message */
+      message: string;
     };
     /** User */
     User: {
@@ -1637,6 +1651,28 @@ export interface operations {
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Upload File */
+  upload_file_upload__post: {
+    requestBody: {
+      content: {
+        "multipart/form-data": components["schemas"]["Body_upload_file_upload__post"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        content: {
+          "application/json": components["schemas"]["UploadFileToGalleryResponse"];
         };
       };
       /** @description Validation Error */

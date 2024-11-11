@@ -1,8 +1,5 @@
 import React, { useEffect, useState, useReducer, createContext } from 'react';
-import {
-  SignUpContext as SignUpContextType,
-  defaultValidatedInputState,
-} from '../types';
+import { SignUpContextType, defaultValidatedInputState } from '../types';
 
 const SignUpContext = createContext<SignUpContextType>({
   email: null,

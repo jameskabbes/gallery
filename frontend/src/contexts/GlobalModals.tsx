@@ -1,5 +1,5 @@
 import React, { useState, useReducer, createContext } from 'react';
-import { GlobalModalsContext as GlobalModalsContextType } from '../types';
+import { GlobalModalsContextType } from '../types';
 
 import { Modal, defaultModal } from '../types';
 

@@ -4,7 +4,7 @@ import {
   ExtractResponseTypes,
   ModalsContext as ModalsContextType,
 } from '../../types';
-import { callBackendApi } from '../../utils/Api';
+import { callBackendApi } from '../../utils/api';
 import { StudiosReducerAction } from '../../types';
 import { ConfirmationModal } from '../ConfirmationModal';
 

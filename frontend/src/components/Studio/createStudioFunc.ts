@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
 import { ExtractResponseTypes } from '../../types';
-import { callBackendApi } from '../../utils/Api';
+import { callBackendApi } from '../../utils/api';
 import { StudiosReducerAction } from '../../types';
 import { toast } from 'react-toastify';
 import { toastTemplate } from '../Toast/Toast';

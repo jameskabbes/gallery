@@ -1,9 +1,10 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
 import { ExtractResponseTypes } from '../../types';
-import { callApi } from '../../utils/Api';
+import { callApi } from '../../utils/api';
 import openapi_schema from '../../../../openapi_schema.json';
 
+import { AuthContext } from '../../contexts/Auth';
 import { AuthModalsContext } from '../../contexts/AuthModals';
 import { LogInWithEmailContext } from '../../contexts/LogInWithEmail';
 
@@ -11,19 +12,10 @@ import { isEmailValid } from '../../services/isEmailValid';
 import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { ButtonSubmit } from '../Utils/Button';
 import { ValidatedInputCheckbox } from '../Form/ValidatedInputCheckbox';
-import { ConfirmationModal } from '../ConfirmationModal';
-
-const API_ENDPOINT = '/auth/login/email-magic-link/';
-const API_METHOD = 'post';
-
-type ResponseTypesByStatus = ExtractResponseTypes<
-  paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
->;
-
-type TRequestData =
-  paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json'];
+import { postEmailMagicLink } from '../../services/api/postEmailMagicLink';
 
 function LogInWithEmail() {
+  const authContext = useContext(AuthContext);
   const logInWithEmailContext = useContext(LogInWithEmailContext);
   const authModalsContext = useContext(AuthModalsContext);
   const [loading, setLoading] = useState<boolean>(false);
@@ -41,20 +33,13 @@ function LogInWithEmail() {
     if (logInWithEmailContext.screen) {
       setLoading(true);
 
-      const { data, response } = await callApi<
-        ResponseTypesByStatus[keyof ResponseTypesByStatus],
-        TRequestData
-      >({
-        endpoint: API_ENDPOINT,
-        method: API_METHOD,
-        data: {
-          email: logInWithEmailContext.email.value,
-          stay_signed_in: logInWithEmailContext.staySignedIn.value,
-        },
+      const { status } = await postEmailMagicLink(authContext, {
+        email: logInWithEmailContext.email.value,
+        stay_signed_in: logInWithEmailContext.staySignedIn.value,
       });
 
       setLoading(false);
-      if (response.status === 200) {
+      if (status === 200) {
         logInWithEmailContext.setScreen('sent');
       }
     }

@@ -1,8 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import {
-  AuthModalsContext as AuthModalsContextType,
-  AuthModalsType,
-} from '../types';
+import { AuthModalsContextType, AuthModalsType } from '../types';
 
 const AuthModalsContext = React.createContext<AuthModalsContextType>({
   activeModalType: null,

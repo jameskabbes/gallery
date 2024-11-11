@@ -8,7 +8,7 @@ import {
   defaultValidatedInputState,
   GlobalModalsContext as GlobalModalsContextType,
 } from '../../types';
-import { useApiCall } from '../../utils/Api';
+import { useApiCall } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
 import {
   deleteApiKey,

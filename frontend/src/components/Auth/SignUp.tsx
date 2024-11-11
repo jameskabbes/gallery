@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
 import { ExtractResponseTypes } from '../../types';
-import { callApi } from '../../utils/Api';
+import { callApi } from '../../utils/api';
 
 import openapi_schema from '../../../../openapi_schema.json';
 
@@ -11,13 +11,14 @@ import { AuthModalsContext } from '../../contexts/AuthModals';
 import { ToastContext } from '../../contexts/Toast';
 
 import { isEmailValid } from '../../services/isEmailValid';
-import { isEmailAvailable } from '../../services/api/isEmailAvailable';
+import { isEmailAvailable } from '../../services/api/getIsEmailAvailable';
 import { isPasswordValid } from '../../services/isPasswordValid';
 import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { ValidatedInputCheckbox } from '../Form/ValidatedInputCheckbox';
 import { IoWarning } from 'react-icons/io5';
 import { ButtonSubmit } from '../Utils/Button';
 import { Loader1, Loader3 } from '../Utils/Loader';
+import { postSignUp } from '../../services/api/postSignUp';
 
 const API_ENDPOINT = '/auth/signup/';
 const API_METHOD = 'post';
@@ -83,30 +84,19 @@ function SignUp() {
     }
   }, [signUpContext.confirmPassword.value, signUpContext.password]);
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
     if (signUpContext.valid) {
       signUpContext.setLoading(true);
 
-      const { data, response } = await callApi<
-        ResponseTypesByStatus[keyof ResponseTypesByStatus],
-        paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/x-www-form-urlencoded']
-      >({
-        authContext: authContext,
-        endpoint: API_ENDPOINT,
-        method: API_METHOD,
-        body: new URLSearchParams({
-          email: signUpContext.email.value,
-          password: signUpContext.password.value,
-          stay_signed_in: signUpContext.staySignedIn.value.toString(),
-        }).toString(),
-        overwriteHeaders: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
+      const { data, status } = await postSignUp(authContext, {
+        email: signUpContext.email.value,
+        password: signUpContext.password.value,
+        stay_signed_in: signUpContext.staySignedIn.value,
       });
       signUpContext.setLoading(false);
 
-      if (response.status === 200) {
+      if (status === 200) {
         const apiData = data as ResponseTypesByStatus['200'];
         authContext.updateFromApiResponse(apiData);
         toastContext.make({
@@ -115,7 +105,7 @@ function SignUp() {
         });
         authModalsContext.setActiveModalType(null);
       } else {
-        console.error('Error creating user:', response.status, data);
+        console.error('Error creating user:', status, data);
         signUpContext.setError('Error creating user');
       }
     }
@@ -125,7 +115,7 @@ function SignUp() {
     <div id="sign-up">
       <div className="flex">
         <div className="flex-1">
-          <form onSubmit={handleLogin} className="flex flex-col space-y-6">
+          <form onSubmit={handleSignUp} className="flex flex-col space-y-6">
             <header>Sign Up</header>
             <fieldset className="flex flex-col space-y-4">
               <section className="space-y-2">
