@@ -2,9 +2,8 @@ import { callApi } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
 import {
   ApiResponse,
-  AuthContext,
+  AuthContextType,
   ExtractResponseTypes,
-  ToastContext,
 } from '../../types';
 
 const API_ENDPOINT = '/api-keys/{api_key_id}/';
@@ -15,7 +14,7 @@ type PatchApiKeyResponses = ExtractResponseTypes<
 >;
 
 async function patchApiKey(
-  authContext: AuthContext,
+  authContext: AuthContextType,
   apiKeyID: components['schemas']['ApiKey']['id'],
   apiKeyUpdate: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
 ): Promise<ApiResponse<PatchApiKeyResponses[keyof PatchApiKeyResponses]>> {

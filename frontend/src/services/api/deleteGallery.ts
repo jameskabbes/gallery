@@ -1,8 +1,11 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { callApi } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
-import { ApiResponse, ExtractResponseTypes, ToastContext } from '../../types';
-import { AuthContext } from '../../types';
+import {
+  ApiResponse,
+  AuthContextType,
+  ExtractResponseTypes,
+} from '../../types';
 
 const API_ENDPOINT = '/galleries/{gallery_id}/';
 const API_METHOD = 'delete';
@@ -12,7 +15,7 @@ type DeleteGalleryResponses = ExtractResponseTypes<
 >;
 
 async function deleteGallery(
-  authContext: AuthContext,
+  authContext: AuthContextType,
   gallery_id: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['gallery_id']
 ): Promise<ApiResponse<DeleteGalleryResponses[keyof DeleteGalleryResponses]>> {
   return await callApi<DeleteGalleryResponses[keyof DeleteGalleryResponses]>({

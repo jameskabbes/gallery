@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { callApi } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
-import { ApiResponse, AuthContext, ExtractResponseTypes } from '../../types';
+import { ApiResponse, ExtractResponseTypes } from '../../types';
 
 const API_ENDPOINT = '/users/available/email/{email}/';
 const API_METHOD = 'get';

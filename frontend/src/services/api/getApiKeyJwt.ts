@@ -1,7 +1,11 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { callApi } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
-import { ApiResponse, AuthContext, ExtractResponseTypes } from '../../types';
+import {
+  ApiResponse,
+  AuthContextType,
+  ExtractResponseTypes,
+} from '../../types';
 
 const API_ENDPOINT = '/api-keys/{api_key_id}/generate-jwt/';
 const API_METHOD = 'get';
@@ -11,7 +15,7 @@ type GetApiKeyJwtResponses = ExtractResponseTypes<
 >;
 
 async function getApiKeyJWT(
-  authContext: AuthContext,
+  authContext: AuthContextType,
   apiKeyId: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['api_key_id']
 ): Promise<ApiResponse<GetApiKeyJwtResponses[keyof GetApiKeyJwtResponses]>> {
   return await callApi<GetApiKeyJwtResponses[keyof GetApiKeyJwtResponses]>({

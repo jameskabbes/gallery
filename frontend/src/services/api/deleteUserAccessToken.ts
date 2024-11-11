@@ -3,9 +3,8 @@ import { callApi } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
 import {
   ApiResponse,
-  AuthContext,
+  AuthContextType,
   ExtractResponseTypes,
-  ToastContext,
 } from '../../types';
 
 const API_ENDPOINT = '/user-access-tokens/{user_access_token_id}/';
@@ -16,7 +15,7 @@ type DeleteUserAccessTokenResponses = ExtractResponseTypes<
 >;
 
 async function deleteUserAccessToken(
-  authContext: AuthContext,
+  authContext: AuthContextType,
   userAccessTokenId: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['user_access_token_id']
 ): Promise<
   ApiResponse<

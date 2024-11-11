@@ -1,8 +1,11 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { callApi } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
-import { ApiResponse, ExtractResponseTypes } from '../../types';
-import { AuthContext } from '../../types';
+import {
+  ApiResponse,
+  AuthContextType,
+  ExtractResponseTypes,
+} from '../../types';
 
 const API_ENDPOINT = '/galleries/';
 const API_METHOD = 'post';
@@ -12,7 +15,7 @@ type PostGalleryResponses = ExtractResponseTypes<
 >;
 
 async function postGallery(
-  authContext: AuthContext,
+  authContext: AuthContextType,
   galleryCreate: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
 ): Promise<ApiResponse<PostGalleryResponses[keyof PostGalleryResponses]>> {
   return await callApi<

@@ -14,7 +14,7 @@ interface CallApiOptions<T> {
   headers?: Record<string, string>;
   onUploadProgress?: (progressEvent: AxiosProgressEvent) => void;
   onDownloadProgress?: (progressEvent: AxiosProgressEvent) => void;
-  authContext?: AuthContext;
+  authContext?: AuthContextType;
 }
 
 type ApiResponse<T> = AxiosResponse<T>;
@@ -56,72 +56,80 @@ interface DarkModeContext {
 
 type AuthModalsType = 'logIn' | 'signUp' | 'logInWithEmail';
 
-interface AuthModalsContext {
+interface AuthModalsContextType {
   activeModalType: AuthModalsType | null;
   setActiveModalType: React.Dispatch<
-    React.SetStateAction<AuthModalsContext['activeModalType']>
+    React.SetStateAction<AuthModalsContextType['activeModalType']>
   >;
 }
 
-interface LogInContext {
+interface LogInContextType {
   username: ValidatedInputState<string>;
-  setUsername: React.Dispatch<React.SetStateAction<LogInContext['username']>>;
+  setUsername: React.Dispatch<
+    React.SetStateAction<LogInContextType['username']>
+  >;
   password: ValidatedInputState<string>;
-  setPassword: React.Dispatch<React.SetStateAction<LogInContext['password']>>;
+  setPassword: React.Dispatch<
+    React.SetStateAction<LogInContextType['password']>
+  >;
   staySignedIn: ValidatedInputState<boolean>;
   setStaySignedIn: React.Dispatch<
-    React.SetStateAction<LogInContext['staySignedIn']>
+    React.SetStateAction<LogInContextType['staySignedIn']>
   >;
   valid: boolean;
-  setValid: React.Dispatch<React.SetStateAction<LogInContext['valid']>>;
+  setValid: React.Dispatch<React.SetStateAction<LogInContextType['valid']>>;
   loading: boolean;
-  setLoading: React.Dispatch<React.SetStateAction<LogInContext['loading']>>;
+  setLoading: React.Dispatch<React.SetStateAction<LogInContextType['loading']>>;
   error: string | null;
-  setError: React.Dispatch<React.SetStateAction<LogInContext['error']>>;
+  setError: React.Dispatch<React.SetStateAction<LogInContextType['error']>>;
 }
 
-interface LogInWithEmailContext {
+interface LogInWithEmailContextType {
   email: ValidatedInputState<string>;
   setEmail: React.Dispatch<
-    React.SetStateAction<LogInWithEmailContext['email']>
+    React.SetStateAction<LogInWithEmailContextType['email']>
   >;
   staySignedIn: ValidatedInputState<boolean>;
   setStaySignedIn: React.Dispatch<
-    React.SetStateAction<LogInWithEmailContext['staySignedIn']>
+    React.SetStateAction<LogInWithEmailContextType['staySignedIn']>
   >;
   screen: 'email' | 'sent';
   setScreen: React.Dispatch<
-    React.SetStateAction<LogInWithEmailContext['screen']>
+    React.SetStateAction<LogInWithEmailContextType['screen']>
   >;
   valid: boolean;
   setValid: React.Dispatch<
-    React.SetStateAction<LogInWithEmailContext['valid']>
+    React.SetStateAction<LogInWithEmailContextType['valid']>
   >;
   loading: boolean;
   setLoading: React.Dispatch<
-    React.SetStateAction<LogInWithEmailContext['loading']>
+    React.SetStateAction<LogInWithEmailContextType['loading']>
   >;
 }
 
-interface SignUpContext {
+interface SignUpContextType {
   email: ValidatedInputState<string>;
-  setEmail: React.Dispatch<React.SetStateAction<SignUpContext['email']>>;
+  setEmail: React.Dispatch<React.SetStateAction<SignUpContextType['email']>>;
   password: ValidatedInputState<string>;
-  setPassword: React.Dispatch<React.SetStateAction<SignUpContext['password']>>;
+  setPassword: React.Dispatch<
+    React.SetStateAction<SignUpContextType['password']>
+  >;
   confirmPassword: ValidatedInputState<string>;
   setConfirmPassword: React.Dispatch<
-    React.SetStateAction<SignUpContext['confirmPassword']>
+    React.SetStateAction<SignUpContextType['confirmPassword']>
   >;
   staySignedIn: ValidatedInputState<boolean>;
   setStaySignedIn: React.Dispatch<
-    React.SetStateAction<SignUpContext['staySignedIn']>
+    React.SetStateAction<SignUpContextType['staySignedIn']>
   >;
   valid: boolean;
-  setValid: React.Dispatch<React.SetStateAction<SignUpContext['valid']>>;
+  setValid: React.Dispatch<React.SetStateAction<SignUpContextType['valid']>>;
   error: string | null;
-  setError: React.Dispatch<React.SetStateAction<SignUpContext['error']>>;
+  setError: React.Dispatch<React.SetStateAction<SignUpContextType['error']>>;
   loading: boolean;
-  setLoading: React.Dispatch<React.SetStateAction<SignUpContext['loading']>>;
+  setLoading: React.Dispatch<
+    React.SetStateAction<SignUpContextType['loading']>
+  >;
 }
 
 interface Modal {
@@ -142,13 +150,13 @@ const defaultModal: Modal = {
   key: null,
 };
 
-interface GlobalModalsContext {
+interface GlobalModalsContextType {
   activeModal: Modal | null;
   clearModal: () => void;
   setModal: (modal: Partial<Modal>) => void;
 }
 
-interface DeviceContext {
+interface DeviceContextType {
   isMobile: boolean;
 }
 
@@ -157,7 +165,7 @@ interface Reducer<State, Dispatch> {
   dispatch: (action: Dispatch) => void;
 }
 
-interface DataContext {
+interface DataContextType {
   studios: null;
 }
 
@@ -201,7 +209,7 @@ interface ToastReducerActionTypes {
 type ToastReducerAction =
   ToastReducerActionTypes[keyof ToastReducerActionTypes];
 
-interface ToastContext {
+interface ToastContextType {
   state: ToastContextState;
   dispatch: React.Dispatch<ToastReducerAction>;
   make: (toast: Toast) => ToastId;
@@ -211,14 +219,14 @@ interface ToastContext {
 
 type AuthContextState = components['schemas']['GetAuthBaseReturn'];
 
-interface AuthContext {
+interface AuthContextType {
   state: AuthContextState;
   setState: React.Dispatch<React.SetStateAction<AuthContextState>>;
   logOut: (toastId?: ToastId) => void;
   updateFromApiResponse: (data: any) => void;
 }
 
-interface EscapeKeyContext {
+interface EscapeKeyContextType {
   addCallback: (callback: () => void) => void;
   removeCallback: (callback: () => void) => void;
 }
@@ -246,26 +254,26 @@ export {
   DarkModeContext,
   ValidatedInputState,
   defaultValidatedInputState,
-  SignUpContext,
-  LogInContext,
-  LogInWithEmailContext,
+  SignUpContextType,
+  LogInContextType,
+  LogInWithEmailContextType,
   Toast,
   ToastId,
   ToastNoType,
   ToastContextState,
   ToastReducerActionTypes,
   ToastReducerAction,
-  ToastContext,
+  ToastContextType,
   AuthContextState,
-  AuthContext,
-  DeviceContext,
+  AuthContextType,
+  DeviceContextType,
   Modal,
   defaultModal,
-  GlobalModalsContext,
-  AuthModalsContext,
+  GlobalModalsContextType,
+  AuthModalsContextType,
   AuthModalsType,
-  DataContext,
-  EscapeKeyContext,
+  DataContextType,
+  EscapeKeyContextType,
   ConfirmationModal,
   SurfaceContextValue,
 };
