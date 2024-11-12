@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import {
-  CallApiProps,
-  ToastContext,
   ExtractResponseTypes,
-  AuthContext,
+  AuthContextType,
+  ToastContextType,
 } from '../../types';
 import { useApiCall } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
 import {
   deleteUserAccessToken,
-  ResponseTypesByStatus as DeleteUserAccessTokenResponseTypes,
+  DeleteUserAccessTokenResponses,
 } from '../../services/api/deleteUserAccessToken';
 import { Card1 } from '../Utils/Card';
 import { Button1 } from '../Utils/Button';
@@ -22,8 +21,8 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 >;
 
 interface Props {
-  authContext: AuthContext;
-  toastContext: ToastContext;
+  authContext: AuthContextType;
+  toastContext: ToastContextType;
 }
 
 function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
@@ -34,14 +33,14 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
   const {
     data: apiData,
     loading,
-    response,
+    status,
   } = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>({
     endpoint: API_ENDPOINT,
     method: API_METHOD,
   });
 
   useEffect(() => {
-    if (apiData && response.status === 200) {
+    if (apiData && status === 200) {
       const userAccessTokensObject = (
         apiData as ResponseTypesByStatus['200']
       ).reduce((acc, session) => {
@@ -50,7 +49,7 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
       }, {} as { [key: string]: ResponseTypesByStatus['200'][number] });
       setUserAccessTokens(userAccessTokensObject);
     }
-  }, [apiData, response]);
+  }, [apiData, status]);
 
   async function handleDeleteSession(
     sessionId: components['schemas']['UserAccessToken']['id']
@@ -67,13 +66,12 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
       return newUserAccessTokens;
     });
 
-    const { data, response } = await deleteUserAccessToken(
+    const { data, status } = await deleteUserAccessToken(
       authContext,
       sessionId
     );
 
-    if (response.status === 204) {
-      const apiData = data as DeleteUserAccessTokenResponseTypes['204'];
+    if (status === 204) {
       toastContext.update(toastId, {
         message: `Deleted session`,
         type: 'success',

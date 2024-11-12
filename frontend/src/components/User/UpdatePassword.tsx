@@ -1,23 +1,23 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { InputText } from '../Form/InputTextBase';
-import { InputState, defaultInputState } from '../../types';
+import { ValidatedInputString } from '../Form/ValidatedInputString';
+import { ValidatedInputState, defaultValidatedInputState } from '../../types';
 import openapi_schema from '../../../../openapi_schema.json';
 import { AuthContext } from '../../contexts/Auth';
 import { components } from '../../openapi_schema';
 import { ToastContext } from '../../contexts/Toast';
 import {
   patchUserFunc,
-  ResponseTypesByStatus as PatchUserResponseTypes,
+  PatchUserResponses,
 } from '../../services/api/patchUserFunc';
 
-interface Props {}
-
 function UpdatePassword() {
-  const [password, setPassword] = useState<InputState>({
-    ...defaultInputState,
+  const [password, setPassword] = useState<ValidatedInputState<string>>({
+    ...defaultValidatedInputState<string>(''),
   });
-  const [confirmPassword, setConfirmPassword] = useState<InputState>({
-    ...defaultInputState,
+  const [confirmPassword, setConfirmPassword] = useState<
+    ValidatedInputState<string>
+  >({
+    ...defaultValidatedInputState<string>(''),
   });
   const [valid, setValid] = useState<boolean>(false);
   const authContext = useContext(AuthContext);
@@ -34,12 +34,12 @@ function UpdatePassword() {
         message: 'Updating password...',
       });
 
-      let { data, response } = await patchUserFunc({
+      const { data, status } = await patchUserFunc(authContext, {
         password: password.value,
       });
 
-      if (response.status === 200) {
-        const apiData = data as PatchUserResponseTypes['200'];
+      if (status === 200) {
+        const apiData = data as PatchUserResponses['200'];
         setPassword({ ...defaultInputState });
         setConfirmPassword({ ...defaultInputState });
         toastContext.update(toastId, {
@@ -52,8 +52,8 @@ function UpdatePassword() {
         });
       } else {
         let message = 'Error updating password';
-        if (response.status === 404 || response.status === 409) {
-          const apiData = data as PatchUserResponseTypes['404' | '409'];
+        if (status === 404 || status === 409) {
+          const apiData = data as PatchUserResponses['404' | '409'];
           message = apiData.detail;
         }
         toastContext.update(toastId, {
@@ -66,7 +66,7 @@ function UpdatePassword() {
 
   return (
     <form onSubmit={handleUpdatePassword} className="flex flex-col space-y-2">
-      <InputText
+      <ValidatedInputString
         state={password}
         setState={setPassword}
         id="password"
@@ -81,7 +81,7 @@ function UpdatePassword() {
         type="password"
         placeholder="New password"
       />
-      <InputText
+      <ValidatedInputString
         state={confirmPassword}
         setState={setConfirmPassword}
         id="confirmPassword"

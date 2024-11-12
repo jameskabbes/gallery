@@ -1,24 +1,20 @@
 import React, { useContext, useEffect, useState } from 'react';
 import {
-  CallApiProps,
   ValidatedInputState,
-  ToastContext as ToastContextType,
+  ToastContextType,
   ExtractResponseTypes,
-  AuthContext as AuthContextType,
+  AuthContextType,
   defaultValidatedInputState,
-  GlobalModalsContext as GlobalModalsContextType,
+  GlobalModalsContextType,
 } from '../../types';
 import { useApiCall } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
 import {
   deleteApiKey,
-  ResponseTypesByStatus as DeleteApiKeyResponseTypes,
+  DeleteApiKeyResponses,
 } from '../../services/api/deleteApiKey';
 
-import {
-  postApiKey,
-  ResponseTypesByStatus as PostApiKeyResponseTypes,
-} from '../../services/api/postApiKey';
+import { postApiKey, PostApiKeyResponses } from '../../services/api/postApiKey';
 
 import { postApiKeyScope } from '../../services/api/postApiKeyScope';
 import { deleteApiKeyScope } from '../../services/api/deleteApiKeyScope';
@@ -39,7 +35,7 @@ import { Card1, CardButton } from '../Utils/Card';
 import { Toggle1 } from '../Utils/Toggle';
 import {
   getApiKeyJWT,
-  ResponseTypesByStatus as GetApiKeyJWTResponseTypes,
+  GetApiKeyJwtResponses,
 } from '../../services/api/getApiKeyJwt';
 import { toast } from 'react-toastify';
 import { Surface } from '../Utils/Surface';
@@ -88,12 +84,12 @@ async function handleAddApiKeyScope(
     };
   });
 
-  const { data, response } = await postApiKeyScope(
+  const { data, status } = await postApiKeyScope(
     authContext,
     apiKey.id,
     scopeId
   );
-  if (response.status === 204) {
+  if (status === 204) {
     toastContext.update(toastId, {
       message: `Added ${scopeName} to ${apiKey.name}`,
       type: 'success',
@@ -136,13 +132,13 @@ async function handleDeleteApiKeyScope(
     };
   });
 
-  const { data, response } = await deleteApiKeyScope(
+  const { data, status } = await deleteApiKeyScope(
     authContext,
     apiKey.id,
     scopeId
   );
 
-  if (response.status === 204) {
+  if (status === 204) {
     toastContext.update(toastId, {
       message: `Removed ${scopeName} from ${apiKey.name}`,
       type: 'success',
@@ -240,10 +236,10 @@ function ApiKeyCodeModal({ authContext, apiKey }: ApiKeyCodeModalProps) {
   }, []);
 
   async function handleGetApiKeyJWT() {
-    const { data, response } = await getApiKeyJWT(authContext, apiKey.id);
+    const { data, status } = await getApiKeyJWT(authContext, apiKey.id);
 
-    if (response.status === 200) {
-      const apiData = data as GetApiKeyJWTResponseTypes['200'];
+    if (status === 200) {
+      const apiData = data as GetApiKeyJwtResponses['200'];
       setJwt(apiData.jwt);
     }
   }
@@ -326,10 +322,10 @@ function ApiKeyRow({
     delete newApiKeyScopes[apiKeyId];
     setApiKeyScopeIds(newApiKeyScopes);
 
-    const { data, response } = await deleteApiKey(authContext, apiKeyId);
+    const { data, status } = await deleteApiKey(authContext, apiKeyId);
 
-    if (response.status === 204) {
-      const apiData = data as DeleteApiKeyResponseTypes['204'];
+    if (status === 204) {
+      const apiData = data as DeleteApiKeyResponses['204'];
       toastContext.update(toastId, {
         message: `Deleted API Key ${apiKeyToDelete.name}`,
         type: 'success',
@@ -501,7 +497,7 @@ function AddApiKey({
     // make a random 16 character string
     const tempId = Math.random().toString();
 
-    const tempApiKey: PostApiKeyResponseTypes['200'] = {
+    const tempApiKey: PostApiKeyResponses['200'] = {
       id: tempId,
       user_id: authContext.state.user.id,
       issued: new Date().toISOString(),
@@ -515,13 +511,13 @@ function AddApiKey({
     }));
     setApiKeyScopeIds((prev) => ({ ...prev, [tempId]: new Set() }));
 
-    const { data, response } = await postApiKey(authContext, {
+    const { data, status } = await postApiKey(authContext, {
       expiry: new Date(expiry['value']).toISOString(),
       name: name['value'],
     });
 
-    if (response.status === 200) {
-      const apiData = data as PostApiKeyResponseTypes['200'];
+    if (status === 200) {
+      const apiData = data as PostApiKeyResponses['200'];
       toastContext.update(toastId, {
         message: `Created API Key ${apiData.name}`,
         type: 'success',
@@ -615,14 +611,14 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
   const {
     data: apiData,
     loading,
-    response,
+    status,
   } = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>({
     endpoint: API_ENDPOINT,
     method: API_METHOD,
   });
 
   useEffect(() => {
-    if (apiData && response.status === 200) {
+    if (apiData && status === 200) {
       const data = apiData as ResponseTypesByStatus['200'];
       setApiKeys(data.api_keys);
 
@@ -632,7 +628,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
       }
       setApiKeyScopeIds(transformedScopes);
     }
-  }, [apiData, response]);
+  }, [apiData, status]);
 
   return (
     <>

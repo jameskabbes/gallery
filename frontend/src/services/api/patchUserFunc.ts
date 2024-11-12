@@ -16,11 +16,15 @@ type PatchUserResponses = ExtractResponseTypes<
 
 async function patchUserFunc(
   authContext: AuthContextType,
-  formData: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
+  formData: Partial<
+    paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
+  >
 ): Promise<ApiResponse<PatchUserResponses[keyof PatchUserResponses]>> {
   return await callApi<
     PatchUserResponses[keyof PatchUserResponses],
-    paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
+    Partial<
+      paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
+    >
   >({
     endpoint: API_ENDPOINT,
     method: API_METHOD,

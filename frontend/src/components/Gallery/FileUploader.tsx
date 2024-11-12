@@ -6,9 +6,7 @@ import { AxiosProgressEvent } from 'axios';
 const FileProgress = ({ file, progress }: { file: File; progress: number }) => (
   <div style={{ marginBottom: '10px' }}>
     <div>{file.name}</div>
-    <progress value={progress} max="100">
-      {progress}%
-    </progress>
+    <progress className="w-full" value={progress} max="100"></progress>
   </div>
 );
 
