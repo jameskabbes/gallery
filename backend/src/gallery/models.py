@@ -714,7 +714,6 @@ class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
     children: list['Gallery'] = Relationship(back_populates='parent')
     gallery_permissions: list['GalleryPermission'] = Relationship(
         back_populates='gallery')
-    versions: list['Version'] = Relationship(back_populates='gallery')
 
     @field_validator('datetime')
     @classmethod
@@ -729,9 +728,11 @@ class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
             return value.replace(tzinfo=datetime_module.timezone.utc)
         return value
 
+    def get_dir(self, root: pathlib.Path) -> pathlib.Path:
+        return root / self.id
+
 
 type PluralGalleriesDict = dict[GalleryTypes.id, Gallery]
-
 
 # Export Types
 
@@ -864,40 +865,44 @@ class GalleryPermissionCreateAdmin(GalleryPermissionImport, TableCreateAdmin[Gal
 #
 
 
-VersionId = str
+MediaVersionId = str
 
 
-class VersionTypes:
-    id = VersionId
+class ImageVersionTypes:
+    id = MediaVersionId
+    parent_id = MediaVersionId
     gallery_id = GalleryTypes.id
     version = str
-    parent_id = VersionId
     datetime = datetime_module.datetime
     description = typing.Annotated[str, StringConstraints(
         min_length=0, max_length=20000)]
+    aspect_ratio = float
+    average_color = str
 
 
-class VersionIdBase(IdObject[VersionTypes.id]):
-    id: VersionTypes.id = Field(
+class MediaVersionIdBase(IdObject[MediaVersionId]):
+    id: MediaVersionId = Field(
         primary_key=True, index=True, unique=True, const=True)
 
 
-class Version(Table[VersionTypes.id], VersionIdBase, table=True):
-    __tablename__ = 'version'
+class ImageVersion(Table[ImageVersionTypes.id], MediaVersionIdBase, table=True):
+    __tablename__ = 'image_version'
 
-    gallery_id: VersionTypes.gallery_id = Field(
+    gallery_id: ImageVersionTypes.gallery_id = Field(
         index=True, foreign_key=Gallery.__tablename__ + '.' + Gallery._ID_COLS[0])
-    version: VersionTypes.version = Field(nullable=True)
-    parent_id: VersionTypes.parent_id = Field(
+    version: ImageVersionTypes.version = Field(nullable=True)
+    parent_id: ImageVersionTypes.parent_id = Field(
         nullable=True, index=True, foreign_key=__tablename__ + '.id')
-    datetime: VersionTypes.datetime = Field(nullable=True)
-    description: VersionTypes.description = Field()
+    datetime: ImageVersionTypes.datetime = Field(nullable=True)
+    description: ImageVersionTypes.description = Field(nullable=True)
+    aspect_ratio = ImageVersionTypes.aspect_ratio = Field(nullable=True)
+    average_color = ImageVersionTypes.average_color = Field(nullable=True)
 
     gallery: Gallery = Relationship(back_populates='versions')
-    parent: typing.Optional['Version'] = Relationship(
-        back_populates='children', sa_relationship_kwargs={'remote_side': 'Version.id'})
-    children: list['Version'] = Relationship(back_populates='parent')
-    files: list['File'] = Relationship(back_populates='version')
+    parent: typing.Optional['ImageVersion'] = Relationship(
+        back_populates='children', sa_relationship_kwargs={'remote_side': 'ImageVersion.id'})
+    children: list['ImageVersion'] = Relationship(back_populates='parent')
+    files: list['ImageFile'] = Relationship(back_populates='version')
 
     @field_validator('datetime')
     @classmethod
@@ -909,52 +914,51 @@ class Version(Table[VersionTypes.id], VersionIdBase, table=True):
         return value.replace(tzinfo=datetime_module.timezone.utc)
 
 
-type PluralVersionsDict = dict[VersionTypes.id, Version]
+type PluralImageVersionsDict = dict[ImageVersionTypes.id, ImageVersion]
 
 # Export Types
 
 
-class VersionExport(TableExport[Version]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[Version]] = Version
+class ImageVersionExport(TableExport[ImageVersion]):
+    _TABLE_MODEL: typing.ClassVar[typing.Type[ImageVersion]] = ImageVersion
 
-    id: VersionTypes.id
-    version: VersionTypes.version | None
-    parent_id: VersionTypes.parent_id | None
-    datetime: VersionTypes.datetime | None
-    description: VersionTypes.description
+    id: ImageVersionTypes.id
+    version: ImageVersionTypes.version | None
+    parent_id: ImageVersionTypes.parent_id | None
+    datetime: ImageVersionTypes.datetime | None
+    description: ImageVersionTypes.description | None
+    aspect_ratio: ImageVersionTypes.aspect_ratio | None
 
 
-class VersionPublic(VersionExport):
+class ImageVersionPublic(ImageVersionExport):
     pass
 
 
-class VersionPrivate(VersionExport):
+class ImageVersionPublic(ImageVersionExport):
     pass
 
 
-class VersionImport(TableImport[Version]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[Version]] = Version
+class VersionImport(TableImport[ImageVersion]):
+    _TABLE_MODEL: typing.ClassVar[typing.Type[ImageVersion]] = ImageVersion
+    version: typing.Optional[ImageVersionTypes.version] = None
+    parent_id: typing.Optional[ImageVersionTypes.parent_id] = None
+    datetime: typing.Optional[ImageVersionTypes.datetime] = None
+    description: typing.Optional[ImageVersionTypes.description] = None
 
 
-class VersionUpdate(VersionImport, VersionIdBase):
-    version: typing.Optional[VersionTypes.version] = None
-    parent_id: typing.Optional[VersionTypes.parent_id] = None
-    datetime: typing.Optional[VersionTypes.datetime] = None
-    description: typing.Optional[VersionTypes.description] = None
+class VersionUpdate(VersionImport, MediaVersionIdBase):
+    pass
 
 
-class VersionUpdateAdmin(VersionUpdate, TableUpdateAdmin[Version, VersionTypes.id]):
+class VersionUpdateAdmin(VersionUpdate, TableUpdateAdmin[ImageVersion, ImageVersionTypes.id]):
     pass
 
 
 class VersionCreate(VersionImport):
-    version: typing.Optional[VersionTypes.version] = None
-    parent_id: typing.Optional[VersionTypes.parent_id] = None
-    datetime: typing.Optional[VersionTypes.datetime] = None
-    description: typing.Optional[VersionTypes.description] = ''
+    pass
 
 
-class VersionCreateAdmin(VersionCreate, TableCreateAdmin[Version]):
+class VersionCreateAdmin(VersionCreate, TableCreateAdmin[ImageVersion]):
     pass
 
 #
@@ -962,66 +966,82 @@ class VersionCreateAdmin(VersionCreate, TableCreateAdmin[Version]):
 #
 
 
-class FileTypes:
-    id = str
-    version_id = VersionId
+MediaFileId = str
+
+
+class MediaFileTypes:
+    id = MediaFileId
+    height = int
+    width = int
     size = int
 
 
-class FileIdBase(IdObject[FileTypes.id]):
-    id: FileTypes.id = Field(
+class ImageFileTypes(MediaFileTypes):
+    version_id = MediaVersionId
+
+
+class VideoFileTypes(MediaFileTypes):
+    gallery_id = GalleryTypes.id
+    aspect_ratio = float
+    duration = int
+
+
+class MediaFileIdBase(IdObject[MediaFileId]):
+    id: MediaFileId = Field(
         primary_key=True, index=True, unique=True, const=True)
 
 
-class File(Table[FileTypes.id], FileIdBase, table=True):
-    __tablename__ = 'file'
+class ImageFile(Table[ImageFileTypes.id], MediaFileIdBase, table=True):
+    __tablename__ = 'image_file'
 
-    version_id: FileTypes.version_id = Field(
-        index=True, foreign_key=Version.__tablename__ + '.' + Version._ID_COLS[0])
-    size: FileTypes.size = Field(nullable=True)
+    version_id: ImageFileTypes.version_id = Field(
+        index=True, foreign_key=ImageVersion.__tablename__ + '.' + ImageVersion._ID_COLS[0])
+    size: ImageFileTypes.size = Field(nullable=True)
+    height: ImageFileTypes.height = Field(nullable=True)
+    width: ImageFileTypes.width = Field(nullable=True)
 
-    version: Version = Relationship(back_populates='files')
+    version: ImageVersion = Relationship(back_populates='files')
 
 
-type PluralFilesDict = dict[FileTypes.id, File]
+type PluralImageFilesDict = dict[MediaFileTypes.id]
 
 # Export Types
 
 
-class FileExport(TableExport[File]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[File]] = File
+class ImageFileExport(TableExport[ImageFile]):
+    _TABLE_MODEL: typing.ClassVar[typing.Type[ImageFile]] = ImageFile
 
-    id: FileTypes.id
-    version_id: FileTypes.version_id
-    size: FileTypes.size
+    id: ImageFileTypes.id
+    version_id: ImageFileTypes.version_id
+    size: ImageFileTypes.size
 
 
-class FilePublic(FileExport):
+class ImageFilePublic(ImageFileExport):
     pass
 
 
-class FilePrivate(FileExport):
+class ImageFilePrivate(ImageFileExport):
     pass
 
 
-class FileImport(TableImport[File]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[File]] = File
+class ImageFileImport(TableImport[ImageFile]):
+    _TABLE_MODEL: typing.ClassVar[typing.Type[ImageFile]] = ImageFile
 
 
-class FileUpdate(FileImport, FileIdBase):
+class ImageFileUpdate(ImageFileImport, MediaFileIdBase):
     pass
 
 
-class FileUpdateAdmin(FileUpdate, TableUpdateAdmin[File, FileTypes.id]):
-    version_id: typing.Optional[FileTypes.version_id] = None
-    size: typing.Optional[FileTypes.size] = None
+class ImageFileUpdateAdmin(ImageFileImport, TableUpdateAdmin[ImageFile, ImageFileTypes.id]):
+    version_id: typing.Optional[ImageFileTypes.version_id] = None
+    size: typing.Optional[ImageFileTypes.size] = None
 
 
-class FileCreate(FileImport):
-    version_id: FileTypes.version_id
+class ImageFileCreate(ImageFileImport):
+    version_id: ImageFileTypes.version_id
 
 
-class FileCreateAdmin(FileCreate, TableCreateAdmin[File]):
+class ImageFileCreateAdmin(ImageFileImport, TableCreateAdmin[ImageFile]):
     pass
 
 

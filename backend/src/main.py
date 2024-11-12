@@ -20,7 +20,8 @@ from pydantic import BaseModel
 import datetime
 from functools import wraps
 from urllib.parse import urlencode
-
+import pathlib
+import shutil
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
@@ -917,6 +918,8 @@ async def post_gallery(gallery_create: models.GalleryCreate,
         await models.GalleryPermissionCreateAdmin(gallery_id=gallery.id, user_id=authorization.user.id,
                                                   permission_level=c.permission_level_name_mapping['owner']).post(session)
 
+        gallery.get_dir(c.galleries_dir).mkdir()
+
         return models.GalleryPrivate.model_validate(gallery)
 
 
@@ -973,12 +976,15 @@ async def delete_gallery(gallery_id: models.GalleryTypes.id,
         if not gallery_permission:
             raise HTTPException(status.HTTP_404_NOT_FOUND,
                                 detail=models.Gallery.not_found_message())
-        if gallery_permission.permission_level < models.PermissionLevel.OWNER:
+        if gallery_permission.permission_level < c.permission_level_name_mapping['owner']:
             raise HTTPException(status.HTTP_403_FORBIDDEN,
                                 detail='User does not have permission to delete this gallery')
         if models.Gallery.delete_one_by_id(session, gallery_id) == 0:
             raise HTTPException(status.HTTP_404_NOT_FOUND,
                                 detail=models.Gallery.not_found_message())
+
+        shutil.rmtree(gallery.get_dir(c.galleries_dir))
+
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -986,22 +992,34 @@ class UploadFileToGalleryResponse(BaseModel):
     message: str
 
 
-@app.post("/upload/", status_code=status.HTTP_201_CREATED)
-async def upload_file(
-        authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-            get_authorization())],
-        file: UploadFile = File(...)
+@app.post("/galleries/{gallery_id}/upload/", status_code=status.HTTP_201_CREATED)
+async def upload_file_to_gallery(
+    gallery_id: models.GalleryTypes.id,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization())],
+    file: UploadFile = File(...)
 ) -> UploadFileToGalleryResponse:
 
-    print(file.__dict__)
+    with Session(c.db_engine) as session:
+        gallery = await models.Gallery.get(session, gallery_id)
+        if not gallery:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail=models.Gallery.not_found_message())
 
-    # file_path = os.path.join(MEDIA_DIR, file.filename)
-    # with open(file_path, "wb") as buffer:
-    #     shutil.copyfileobj(file.file, buffer)
+        gallery_permission = await models.GalleryPermission.get(
+            session, (gallery_id, authorization.user.id))
 
-    # # Get the file size
-    # file_size = os.path.getsize(file_path)
-    # file_details.append({"file_path": file_path, "file_size": file_size})
+        if not gallery_permission:
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail=models.Gallery.not_found_message())
+        if gallery_permission.permission_level < c.permission_level_name_mapping['editor']:
+            raise HTTPException(status.HTTP_403_FORBIDDEN,
+                                detail='User does not have permission to add files to this gallery')
+
+        print(file.__dict__)
+        file_path = gallery.get_dir(c.galleries_dir) / file.filename
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
 
     return UploadFileToGalleryResponse(message="Files uploaded successfully")
 

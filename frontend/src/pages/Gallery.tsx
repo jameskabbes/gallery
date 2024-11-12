@@ -6,6 +6,8 @@ import { defaultValidatedInputState, ExtractResponseTypes } from '../types';
 import { useApiCall } from '../utils/api';
 import { GlobalModalsContext } from '../contexts/GlobalModals';
 import { AuthContext } from '../contexts/Auth';
+import { Button1 } from '../components/Utils/Button';
+import { setFileUploaderModal } from '../components/Gallery/FileUploader';
 
 const API_ENDPOINT = '/galleries/{gallery_id}/page/';
 const API_METHOD = 'get';
@@ -31,12 +33,22 @@ function Gallery() {
     return <div>Loading...</div>;
   } else {
     if (status === 200) {
-      const responseData = data as ResponseTypesByStatus['200'];
+      const apiData = data as ResponseTypesByStatus['200'];
       return (
-        <div>
-          <p>{responseData.gallery.id}</p>
-          <p>{responseData.gallery.name}</p>
-        </div>
+        <>
+          <div className="flex flex-row justify-between items-center">
+            <h1>{apiData.gallery.name}</h1>
+            <div>
+              <Button1
+                onClick={() =>
+                  setFileUploaderModal(globalModalsContext, apiData.gallery)
+                }
+              >
+                Upload Files
+              </Button1>
+            </div>
+          </div>
+        </>
       );
     } else {
       return <div>Gallery not found</div>;

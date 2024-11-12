@@ -149,9 +149,9 @@ export interface paths {
     /** Patch Gallery */
     patch: operations["patch_gallery_galleries__gallery_id___patch"];
   };
-  "/upload/": {
-    /** Upload File */
-    post: operations["upload_file_upload__post"];
+  "/galleries/{gallery_id}/upload/": {
+    /** Upload File To Gallery */
+    post: operations["upload_file_to_gallery_galleries__gallery_id__upload__post"];
   };
   "/profile/page/": {
     /** Get Pages Profile */
@@ -303,8 +303,8 @@ export interface components {
        */
       stay_signed_in?: boolean;
     };
-    /** Body_upload_file_upload__post */
-    Body_upload_file_upload__post: {
+    /** Body_upload_file_to_gallery_galleries__gallery_id__upload__post */
+    Body_upload_file_to_gallery_galleries__gallery_id__upload__post: {
       /**
        * File
        * Format: binary
@@ -371,6 +371,21 @@ export interface components {
       user_id: string;
       /** Permission Level */
       permission_level: number;
+    };
+    /** GalleryPrivate */
+    GalleryPrivate: {
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
+      /** Parent Id */
+      parent_id: string | null;
+      /** Description */
+      description: string;
+      /** Datetime */
+      datetime: string | null;
+      /** Visibility Level */
+      visibility_level: number;
     };
     /** GalleryPublic */
     GalleryPublic: {
@@ -1545,7 +1560,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["Gallery"];
+          "application/json": components["schemas"]["GalleryPrivate"];
         };
       };
       /** @description Gallery already exists */
@@ -1661,11 +1676,16 @@ export interface operations {
       };
     };
   };
-  /** Upload File */
-  upload_file_upload__post: {
+  /** Upload File To Gallery */
+  upload_file_to_gallery_galleries__gallery_id__upload__post: {
+    parameters: {
+      path: {
+        gallery_id: string;
+      };
+    };
     requestBody: {
       content: {
-        "multipart/form-data": components["schemas"]["Body_upload_file_upload__post"];
+        "multipart/form-data": components["schemas"]["Body_upload_file_to_gallery_galleries__gallery_id__upload__post"];
       };
     };
     responses: {

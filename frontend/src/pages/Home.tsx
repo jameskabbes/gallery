@@ -36,15 +36,6 @@ function Home() {
       <Link to="/galleries/">
         <Button1>Galleries</Button1>
       </Link>
-      <Button1
-        onClick={() => {
-          globalModalsContext.setModal({
-            component: <FileUploader />,
-          });
-        }}
-      >
-        Upload Files
-      </Button1>
     </div>
   );
 }

@@ -1,68 +1,212 @@
-import React, { useState, useContext } from 'react';
-import { postFile } from '../../services/api/postFile';
+import React, { useState, useContext, useEffect } from 'react';
+import { postFile, PostFileResponses } from '../../services/api/postFile';
 import { AuthContext } from '../../contexts/Auth';
 import { AxiosProgressEvent } from 'axios';
+import {
+  AuthContextType,
+  defaultValidatedInputState,
+  GlobalModalsContextType,
+  ValidatedInputState,
+} from '../../types';
+import { paths, operations, components } from '../../openapi_schema';
+import { GlobalModalsContext } from '../../contexts/GlobalModals';
+import { Button2, ButtonSubmit } from '../Utils/Button';
+import { Surface } from '../Utils/Surface';
+import { CheckOrX } from '../Form/CheckOrX';
+import { IoClose } from 'react-icons/io5';
 
-const FileProgress = ({ file, progress }: { file: File; progress: number }) => (
-  <div style={{ marginBottom: '10px' }}>
-    <div>{file.name}</div>
-    <progress className="w-full" value={progress} max="100"></progress>
-  </div>
-);
+interface FileProgressProps {
+  file: File;
+  authContext: AuthContextType;
+  galleryId: string;
+}
 
-const FileUploader = () => {
-  const authContext = useContext(AuthContext);
-  const [files, setFiles] = useState<File[]>([]);
-  const [progress, setProgress] = useState<Record<string, number>>({});
+function FileProgress({ file, authContext, galleryId }: FileProgressProps) {
+  const [uploadProgress, setUploadProgress] = useState<
+    ValidatedInputState<number>
+  >({
+    value: 0,
+    error: null,
+    status: 'loading',
+  });
 
-  // Track the upload progress of each file
-  const handleFileUpload = async (file: File) => {
-    const formData = new FormData();
-    formData.append('file', file);
+  useEffect(() => {
+    const handleFileUpload = async () => {
+      const formData = new FormData();
+      formData.append('file', file);
 
-    const onUploadProgress = (event: AxiosProgressEvent) => {
-      if (event.lengthComputable) {
-        const percentComplete = Math.round((event.loaded / event.total) * 100);
-        setProgress((prevProgress) => ({
-          ...prevProgress,
-          [file.name]: percentComplete,
+      const onUploadProgress = (event: AxiosProgressEvent) => {
+        if (event.lengthComputable) {
+          const percentComplete = Math.round(
+            (event.loaded / event.total) * 100
+          );
+          setUploadProgress((prev) => ({
+            ...prev,
+            value: percentComplete,
+          }));
+        }
+      };
+
+      const response = await postFile(
+        authContext,
+        galleryId,
+        formData,
+        onUploadProgress
+      );
+
+      if (response.status === 201) {
+        const data = response.data as PostFileResponses['201'];
+        setUploadProgress((prev) => ({
+          ...prev,
+          status: 'valid',
+        }));
+      } else {
+        setUploadProgress((prev) => ({
+          ...prev,
+          status: 'invalid',
+          error: 'Failed to upload file',
         }));
       }
     };
 
-    try {
-      await postFile(authContext, formData, onUploadProgress); // Use your postFile function to upload
-    } catch (error) {
-      console.error('Error uploading file:', error);
-    }
-  };
+    handleFileUpload();
+  }, [file, authContext, galleryId]);
+
+  return (
+    <div>
+      <div className="flex flex-row justify-between items-center space-x-2">
+        <h4 className="overflow-x-hidden">{file.name}</h4>
+        <div className="flex-1">
+          <CheckOrX status={uploadProgress.status} />
+        </div>
+        <button>
+          <IoClose />
+        </button>
+      </div>
+      <h6>
+        <div className="flex flex-row items-center space-x-2">
+          <Surface>
+            <div
+              className="flex w-full h-2 rounded-full overflow-hidden "
+              role="progressbar"
+              aria-valuenow={uploadProgress.value}
+              aria-valuemin={0} // Change this to a number
+              aria-valuemax={100} // Change this to a number
+            >
+              <div
+                className="rounded-full bg-green-500 dark:bg-green-500 transition duration-500"
+                style={{ width: `${uploadProgress.value}%` }}
+              ></div>
+            </div>
+          </Surface>
+        </div>
+      </h6>
+    </div>
+  );
+}
+
+interface FileUploaderProps {
+  gallery: components['schemas']['GalleryPublic'];
+}
+
+function FileUploader({ gallery }: FileUploaderProps) {
+  const authContext = useContext(AuthContext);
+  const globalModalsContext = useContext(GlobalModalsContext);
+
+  const [files, setFiles] = useState<File[]>([]);
+  const [dragging, setDragging] = useState(false);
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    globalModalsContext.clearModal();
+  }
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       const selectedFiles = Array.from(event.target.files);
       setFiles((prevFiles) => [...prevFiles, ...selectedFiles]);
+    }
+  };
 
-      selectedFiles.forEach((file) => {
-        setProgress((prevProgress) => ({ ...prevProgress, [file.name]: 0 }));
-        handleFileUpload(file);
-      });
+  const handleCustomButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    document.getElementById('fileInput')?.click();
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragging(false);
+
+    if (e.dataTransfer.files) {
+      const droppedFiles = Array.from(e.dataTransfer.files);
+      setFiles((prevFiles) => [...prevFiles, ...droppedFiles]);
     }
   };
 
   return (
-    <div>
-      <input type="file" multiple onChange={handleFileSelect} />
-      <div style={{ marginTop: '10px' }}>
-        {files.map((file) => (
+    <form onSubmit={handleSubmit} className="flex flex-col space-y-2">
+      <header>Upload Files</header>
+      <input
+        id="fileInput"
+        className="hidden"
+        type="file"
+        multiple
+        onChange={handleFileSelect}
+      />
+      <Button2
+        type="button"
+        onClick={handleCustomButtonClick}
+        className="custom-file-button"
+      >
+        Choose Files
+      </Button2>
+      <Surface>
+        <div
+          id="drop-zone"
+          className={`${
+            dragging ? 'border-color-primary' : ''
+          } p-8 rounded-xl border-2 border-dashed`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          <p className="text-center">Drop files</p>
+        </div>
+      </Surface>
+      <div className="flex flex-col space-y-2">
+        {files.map((file, index) => (
           <FileProgress
-            key={file.name}
+            key={index}
             file={file}
-            progress={progress[file.name] || 0}
+            authContext={authContext}
+            galleryId={gallery.id}
           />
         ))}
       </div>
-    </div>
+      <ButtonSubmit>Done</ButtonSubmit>
+    </form>
   );
-};
+}
 
-export { FileUploader };
+function setFileUploaderModal(
+  globalModalsContext: GlobalModalsContextType,
+  gallery: components['schemas']['GalleryPublic']
+) {
+  globalModalsContext.setModal({
+    component: <FileUploader gallery={gallery} />,
+    key: 'file-uploader',
+    className: 'max-w-[400px] w-full',
+  });
+}
+
+export { FileUploader, setFileUploaderModal };

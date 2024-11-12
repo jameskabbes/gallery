@@ -7,7 +7,7 @@ import {
 } from '../../types';
 import { AxiosProgressEvent } from 'axios';
 
-const API_ENDPOINT = '/upload/'; // Adjust to your actual file upload endpoint
+const API_ENDPOINT = '/galleries/{gallery_id}/upload/'; // Adjust to your actual file upload endpoint
 const API_METHOD = 'post';
 
 type PostFileResponses = ExtractResponseTypes<
@@ -16,6 +16,7 @@ type PostFileResponses = ExtractResponseTypes<
 
 async function postFile(
   authContext: AuthContextType,
+  galleryId: components['schemas']['Gallery']['id'],
   file: FormData, // FormData for file uploads
   onUploadProgress: (progressEvent: AxiosProgressEvent) => void // This is the upload progress callback
 ): Promise<ApiResponse<PostFileResponses[keyof PostFileResponses]>> {
@@ -24,7 +25,7 @@ async function postFile(
     PostFileResponses[keyof PostFileResponses],
     FormData // We are sending FormData which contains the file(s)
   >({
-    endpoint: API_ENDPOINT,
+    endpoint: API_ENDPOINT.replace('{gallery_id}', galleryId.toString()), // Replace the gallery_id with the actual gallery id
     method: API_METHOD,
     authContext,
     data: file,
