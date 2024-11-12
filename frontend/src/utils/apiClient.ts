@@ -23,13 +23,4 @@ apiClient.interceptors.request.use((requestConfig) => {
   return requestConfig;
 });
 
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error: AxiosError) => {
-    // Handle errors globally if needed
-    console.error('API Call error:', error);
-    throw error;
-  }
-);
-
 export { apiClient };

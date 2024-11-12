@@ -3,6 +3,7 @@ import { AuthContextState, AuthContextType, ToastId } from '../types';
 import { paths, operations, components } from '../openapi_schema';
 import config from '../../../config.json';
 import { ToastContext } from './Toast';
+import isEqual from 'lodash.isequal';
 
 const defaultState: AuthContextState = {
   user: null,
@@ -63,7 +64,10 @@ function AuthContextProvider({ children }: Props) {
 
   function updateFromApiResponse(data: any) {
     if (data && config.auth_key in data) {
-      return setState(data[config.auth_key]);
+      // only update if the state is different
+      if (!isEqual(data[config.auth_key], state)) {
+        return setState(data[config.auth_key]);
+      }
     }
   }
 

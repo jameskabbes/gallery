@@ -34,13 +34,15 @@ async function callApi<TResponseData, TRequestData = any>({
       onDownloadProgress: onDownloadProgress,
     };
 
+    console.log(method, endpoint);
     const response = await apiClient.request<TResponseData>(requestConfig);
     if (authContext && response.headers[config.header_keys['auth_error']]) {
       authContext.logOut();
     }
     return response;
   } catch (error) {
-    throw error;
+    console.log(error);
+    return error.response;
   }
 }
 
@@ -52,7 +54,7 @@ function useApiCall<TResponseData extends object, TRequestData = any>(
   const [response, setResponse] = useState<AxiosResponse>(null);
   const authContext = useContext(AuthContext);
 
-  useEffect(() => {
+  async function refetch() {
     setLoading(true);
     const fetchData = async () => {
       const response = await callApi<TResponseData, TRequestData>({
@@ -63,11 +65,14 @@ function useApiCall<TResponseData extends object, TRequestData = any>(
       setLoading(false);
       authContext.updateFromApiResponse(response.data);
     };
+    await fetchData();
+  }
 
-    fetchData();
+  useEffect(() => {
+    refetch();
   }, dependencies);
 
-  return { ...response, loading };
+  return { ...response, loading, refetch };
 }
 
 export { callApi, useApiCall };

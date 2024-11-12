@@ -21,6 +21,7 @@ type ApiResponse<T> = AxiosResponse<T>;
 
 interface UseApiCallReturn<T> extends ApiResponse<T> {
   loading: boolean;
+  refetch: () => void;
 }
 
 type ExtractResponseTypes<T> = {

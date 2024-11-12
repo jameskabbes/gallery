@@ -907,7 +907,7 @@ async def get_gallery(
 async def post_gallery(gallery_create: models.GalleryCreate,
                        authorization: typing.Annotated[GetAuthorizationReturn, Depends(
                            get_authorization())]
-                       ) -> models.Gallery:
+                       ) -> models.GalleryPrivate:
 
     gallery_create_admin = models.GalleryCreateAdmin(
         **gallery_create.model_dump())
@@ -916,7 +916,8 @@ async def post_gallery(gallery_create: models.GalleryCreate,
         gallery = await gallery_create_admin.post(session)
         await models.GalleryPermissionCreateAdmin(gallery_id=gallery.id, user_id=authorization.user.id,
                                                   permission_level=c.permission_level_name_mapping['owner']).post(session)
-        return gallery
+
+        return models.GalleryPrivate.model_validate(gallery)
 
 
 @ app.patch('/galleries/{gallery_id}/', responses={
@@ -938,7 +939,7 @@ async def patch_gallery(gallery_id: models.GalleryTypes.id, gallery_update: mode
         gallery_permission = await models.GalleryPermission.get(
             session, (gallery_id, authorization.user.id))
 
-        if not gallery_permission and gallery.visibility == models.VisibilityLevel.PRIVATE:
+        if not gallery_permission and gallery.visibility_level == c.visibility_level_name_mapping['private']:
             raise HTTPException(status.HTTP_404_NOT_FOUND,
                                 detail=models.Gallery.not_found_message())
         if gallery_permission.permission_level < models.PermissionLevel.EDITOR:

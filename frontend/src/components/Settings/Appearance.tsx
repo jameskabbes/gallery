@@ -3,7 +3,7 @@ import { DarkModeContext } from '../../contexts/DarkMode';
 import { IoSunnyOutline } from 'react-icons/io5';
 import { IoMoonOutline } from 'react-icons/io5';
 import { IoSettingsOutline } from 'react-icons/io5';
-import { DarkModeContext as DarkModeContextType } from '../../types';
+import { DarkModeContextType } from '../../types';
 import { RadioButton1 } from '../Utils/RadioButton';
 
 interface ThemeOption {

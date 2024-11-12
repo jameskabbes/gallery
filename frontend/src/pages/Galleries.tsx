@@ -1,19 +1,15 @@
 import React, { useEffect, useContext, useState } from 'react';
 import { DeviceContext } from '../contexts/Device';
 import { paths, operations, components } from '../openapi_schema';
-import { defaultValidatedInputState, ExtractResponseTypes } from '../types';
+import { ExtractResponseTypes } from '../types';
 import { useApiCall } from '../utils/api';
-import { Button1, ButtonSubmit } from '../components/Utils/Button';
-import { Link } from 'react-router-dom';
-import { GlobalModalsContext } from '../contexts/GlobalModals';
+import { Button1 } from '../components/Utils/Button';
 import { AuthContext } from '../contexts/Auth';
-import { ValidatedInputState } from '../types';
-import { ValidatedInputString } from '../components/Form/ValidatedInputString';
-import openapi_schema from '../../../openapi_schema.json';
-import { ValidatedInputDatetimeLocal } from '../components/Form/ValidatedInputDatetimeLocal';
-import { AddGallery } from '../components/Gallery/AddGallery';
-import { Card1 } from '../components/Utils/Card';
+import { GlobalModalsContext } from '../contexts/GlobalModals';
+import { setGalleryModal } from '../components/Gallery/AddGallery';
 import { GalleryCardButton } from '../components/Gallery/CardButton';
+import { LogInPromptFullPage } from '../components/LogInPromptFullPage';
+import { PostGalleryResponses } from '../services/api/postGallery';
 
 const API_ENDPOINT = '/galleries/page/';
 const API_METHOD = 'get';
@@ -23,41 +19,65 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 >;
 
 function Galleries() {
+  const authContext = useContext(AuthContext);
   const globalModalsContext = useContext(GlobalModalsContext);
 
-  const { data, loading } = useApiCall<
+  const [galleries, setGalleries] = useState<
+    ResponseTypesByStatus['200']['galleries']
+  >({});
+
+  const { data, loading, status, refetch } = useApiCall<
     ResponseTypesByStatus[keyof ResponseTypesByStatus]
-  >({
-    endpoint: API_ENDPOINT,
-    method: API_METHOD,
-  });
+  >(
+    {
+      endpoint: API_ENDPOINT,
+      method: API_METHOD,
+    },
+    [authContext.state]
+  );
+
+  useEffect(() => {
+    if (data && status === 200) {
+      setGalleries((data as ResponseTypesByStatus['200']).galleries);
+    }
+  }, [data]);
 
   if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  return (
-    <div>
-      <Button1
-        onClick={() => {
-          globalModalsContext.setModal({
-            component: <AddGallery />,
-          });
-        }}
-      >
-        Add Gallery
-      </Button1>
-      <div className="flex flex-wrap">
-        {Object.keys(data.galleries).map((galleryId) => (
-          <div className="p-2" key={galleryId}>
-            <GalleryCardButton
-              gallery={data.galleries[galleryId]}
-            ></GalleryCardButton>
-          </div>
-        ))}
+    return null;
+  } else if (!authContext.state.user) {
+    return <LogInPromptFullPage />;
+  } else if (status === 200) {
+    return (
+      <div>
+        <Button1
+          onClick={() => {
+            setGalleryModal(
+              globalModalsContext,
+              (gallery: PostGalleryResponses['200']) => {
+                setGalleries((galleries) => {
+                  galleries[gallery.id] = gallery;
+                  return { ...galleries };
+                });
+              }
+            );
+          }}
+        >
+          Add Gallery
+        </Button1>
+        <div className="flex flex-wrap">
+          {Object.keys(galleries).map((galleryId) => (
+            <div className="p-2" key={galleryId}>
+              <GalleryCardButton
+                gallery={galleries[galleryId]}
+              ></GalleryCardButton>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  } else {
+    return null;
+  }
 }
 
 export { Galleries };

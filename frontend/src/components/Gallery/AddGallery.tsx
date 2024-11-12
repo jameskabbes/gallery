@@ -1,23 +1,34 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { ValidatedInputState, defaultValidatedInputState } from '../../types';
+import {
+  GlobalModalsContextType,
+  Modal,
+  ValidatedInputState,
+  defaultValidatedInputState,
+} from '../../types';
 import { paths, operations, components } from '../../openapi_schema';
-import { postGallery } from '../../services/api/postGallery';
+import {
+  postGallery,
+  PostGalleryResponses,
+} from '../../services/api/postGallery';
 
 import { AuthContext } from '../../contexts/Auth';
 import { ToastContext } from '../../contexts/Toast';
+import { GlobalModalsContext } from '../../contexts/GlobalModals';
 
 import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { ValidatedInputDatetimeLocal } from '../Form/ValidatedInputDatetimeLocal';
 import { ButtonSubmit } from '../Utils/Button';
 import openapi_schema from '../../../../openapi_schema.json';
 import config from '../../../../config.json';
-import { toast } from 'react-toastify';
 
-interface AddGalleryProps {}
+interface AddGalleryProps {
+  onSuccess: (gallery: PostGalleryResponses['200']) => void;
+}
 
-function AddGallery({}: AddGalleryProps) {
+function AddGallery({ onSuccess }: AddGalleryProps) {
   const authContext = useContext(AuthContext);
   const toastContext = useContext(ToastContext);
+  const globalModalsContext = useContext(GlobalModalsContext);
 
   const [name, setName] = useState<ValidatedInputState<string>>({
     ...defaultValidatedInputState<string>(''),
@@ -62,6 +73,7 @@ function AddGallery({}: AddGalleryProps) {
 
   async function addGallery(event: React.FormEvent) {
     event.preventDefault();
+    globalModalsContext.setModal(null);
 
     const toastId = toastContext.makePending({
       message: 'Adding gallery...',
@@ -77,13 +89,14 @@ function AddGallery({}: AddGalleryProps) {
     };
     console.log(galleryCreate);
 
-    const { data, response } = await postGallery(authContext, galleryCreate);
-
-    if (response.status === 200) {
+    const { data, status } = await postGallery(authContext, galleryCreate);
+    if (status === 200) {
       toastContext.update(toastId, {
         message: 'Gallery added',
         type: 'success',
       });
+      console.log(data);
+      onSuccess(data as PostGalleryResponses['200']);
     } else {
       toastContext.update(toastId, {
         message: 'Error adding gallery',
@@ -152,4 +165,14 @@ function AddGallery({}: AddGalleryProps) {
   );
 }
 
-export { AddGallery };
+function setGalleryModal(
+  globalModalsContext: GlobalModalsContextType,
+  onSuccess: (gallery: PostGalleryResponses['200']) => void
+) {
+  globalModalsContext.setModal({
+    component: <AddGallery onSuccess={onSuccess} />,
+    key: 'add-gallery',
+  });
+}
+
+export { AddGallery, setGalleryModal };
