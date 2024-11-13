@@ -24,6 +24,7 @@ function ValidatedInputString({
   isAvailable,
   minLength,
   maxLength,
+  className = '',
   showStatus = false,
   ...rest
 }: ValidatedInputStringProps) {
@@ -46,6 +47,7 @@ function ValidatedInputString({
           setValue={(value) =>
             setState((prev) => ({ ...prev, value: value as T }))
           }
+          className={'dark:[color-scheme:dark]' + className}
           {...rest}
         />
         {showStatus && (
