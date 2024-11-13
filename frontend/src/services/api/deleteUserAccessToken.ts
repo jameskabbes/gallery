@@ -25,7 +25,7 @@ async function deleteUserAccessToken(
   return await callApi<
     DeleteUserAccessTokenResponses[keyof DeleteUserAccessTokenResponses]
   >({
-    endpoint: API_ENDPOINT.replace('{user_access_token_id}', userAccessTokenId),
+    url: API_ENDPOINT.replace('{user_access_token_id}', userAccessTokenId),
     method: API_METHOD,
     authContext,
   });

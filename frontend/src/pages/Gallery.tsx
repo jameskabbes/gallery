@@ -25,7 +25,7 @@ function Gallery() {
   const { data, loading, status } = useApiCall<
     ResponseTypesByStatus[keyof ResponseTypesByStatus]
   >({
-    endpoint: API_ENDPOINT.replace('{gallery_id}', galleryId),
+    url: API_ENDPOINT.replace('{gallery_id}', galleryId),
     method: API_METHOD,
   });
 

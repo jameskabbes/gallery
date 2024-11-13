@@ -17,7 +17,7 @@ async function getIsUsernameAvailable(
     GetIsUsernameAvailable[keyof GetIsUsernameAvailable],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['username']
   >({
-    endpoint: API_ENDPOINT.replace('{username}', username),
+    url: API_ENDPOINT.replace('{username}', username),
     method: API_METHOD,
     authContext: null,
   });

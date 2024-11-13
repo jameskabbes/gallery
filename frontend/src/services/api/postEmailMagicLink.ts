@@ -24,7 +24,7 @@ async function postEmailMagicLink(
     PostEmailMagicLinkResponses[keyof PostEmailMagicLinkResponses],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >({
-    endpoint: API_ENDPOINT,
+    url: API_ENDPOINT,
     method: API_METHOD,
     authContext,
     data,

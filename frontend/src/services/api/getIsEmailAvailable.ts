@@ -19,7 +19,7 @@ async function getIsEmailAvailable(
     GetIsEmailAvailableResponses[keyof GetIsEmailAvailableResponses],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['email']
   >({
-    endpoint: API_ENDPOINT.replace('{email}', email),
+    url: API_ENDPOINT.replace('{email}', email),
     method: API_METHOD,
   });
 }

@@ -6,13 +6,12 @@ import { ApiResponse, CallApiOptions, UseApiCallReturn } from '../types';
 import config from '../../../config.json';
 
 async function callApi<TResponseData, TRequestData = any>({
-  endpoint,
+  url,
   method,
   data,
   headers = {},
   authContext = null,
-  onUploadProgress = null,
-  onDownloadProgress = null,
+  ...rest
 }: CallApiOptions<TRequestData>): Promise<ApiResponse<TResponseData>> {
   try {
     // if user didn't set Content-Type, set it based on data type
@@ -26,15 +25,12 @@ async function callApi<TResponseData, TRequestData = any>({
       }
     }
     const requestConfig: AxiosRequestConfig = {
-      url: endpoint,
-      method: method,
       headers: headers,
       data: data,
-      onUploadProgress: onUploadProgress,
-      onDownloadProgress: onDownloadProgress,
+      ...rest,
     };
 
-    console.log(method, endpoint);
+    console.log(method, url);
     const response = await apiClient.request<TResponseData>(requestConfig);
     if (authContext && response.headers[config.header_keys['auth_error']]) {
       authContext.logOut();

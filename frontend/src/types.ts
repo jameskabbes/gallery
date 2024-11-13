@@ -1,19 +1,14 @@
 import React from 'react';
 import { paths, operations, components } from './openapi_schema';
 import {
+  Axios,
   AxiosProgressEvent,
   AxiosRequestConfig,
   AxiosResponse,
   Method,
 } from 'axios';
 
-interface CallApiOptions<T> {
-  endpoint: string;
-  method: Method;
-  data?: T;
-  headers?: Record<string, string>;
-  onUploadProgress?: (progressEvent: AxiosProgressEvent) => void;
-  onDownloadProgress?: (progressEvent: AxiosProgressEvent) => void;
+interface CallApiOptions<T> extends AxiosRequestConfig<T> {
   authContext?: AuthContextType;
 }
 

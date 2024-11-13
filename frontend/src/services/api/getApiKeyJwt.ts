@@ -19,7 +19,7 @@ async function getApiKeyJWT(
   apiKeyId: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['api_key_id']
 ): Promise<ApiResponse<GetApiKeyJwtResponses[keyof GetApiKeyJwtResponses]>> {
   return await callApi<GetApiKeyJwtResponses[keyof GetApiKeyJwtResponses]>({
-    endpoint: API_ENDPOINT.replace('{api_key_id}', apiKeyId),
+    url: API_ENDPOINT.replace('{api_key_id}', apiKeyId),
     method: API_METHOD,
     authContext: authContext,
   });

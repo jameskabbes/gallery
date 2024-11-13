@@ -22,7 +22,7 @@ async function patchAPIKey(
     PatchGalleryResponses[keyof PatchGalleryResponses],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >({
-    endpoint: API_ENDPOINT.replace('{gallery_id}', galleryId),
+    url: API_ENDPOINT.replace('{gallery_id}', galleryId),
     method: API_METHOD,
     data: galleryUpdate,
     authContext,

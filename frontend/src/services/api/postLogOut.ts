@@ -18,7 +18,7 @@ async function postLogOut(
   authContext: AuthContextType
 ): Promise<ApiResponse<PostLogOutResponses[keyof PostLogOutResponses]>> {
   return await callApi<PostLogOutResponses[keyof PostLogOutResponses]>({
-    endpoint: API_ENDPOINT,
+    url: API_ENDPOINT,
     method: API_METHOD,
     authContext,
   });

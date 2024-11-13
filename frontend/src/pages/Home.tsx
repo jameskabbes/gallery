@@ -1,7 +1,11 @@
 import React, { useEffect, useContext, useState } from 'react';
 import { DeviceContext } from '../contexts/Device';
 import { paths, operations, components } from '../openapi_schema';
-import { ExtractResponseTypes } from '../types';
+import {
+  defaultValidatedInputState,
+  ExtractResponseTypes,
+  ValidatedInputState,
+} from '../types';
 import { useApiCall } from '../utils/api';
 import { Button1 } from '../components/Utils/Button';
 import { AuthModalsContext } from '../contexts/AuthModals';
@@ -24,7 +28,7 @@ function Home() {
   const { data } = useApiCall<
     ResponseTypesByStatus[keyof ResponseTypesByStatus]
   >({
-    endpoint: API_ENDPOINT,
+    url: API_ENDPOINT,
     method: API_METHOD,
   });
 

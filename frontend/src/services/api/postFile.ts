@@ -25,7 +25,7 @@ async function postFile(
     PostFileResponses[keyof PostFileResponses],
     FormData // We are sending FormData which contains the file(s)
   >({
-    endpoint: API_ENDPOINT.replace('{gallery_id}', galleryId.toString()), // Replace the gallery_id with the actual gallery id
+    url: API_ENDPOINT.replace('{gallery_id}', galleryId.toString()), // Replace the gallery_id with the actual gallery id
     method: API_METHOD,
     authContext,
     data: file,

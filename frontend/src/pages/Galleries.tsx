@@ -30,7 +30,7 @@ function Galleries() {
     ResponseTypesByStatus[keyof ResponseTypesByStatus]
   >(
     {
-      endpoint: API_ENDPOINT,
+      url: API_ENDPOINT,
       method: API_METHOD,
     },
     [authContext.state]

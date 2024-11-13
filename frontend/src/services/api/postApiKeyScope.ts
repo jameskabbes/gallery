@@ -25,7 +25,7 @@ async function postApiKeyScope(
     PostApiKeyScopeResponses[keyof PostApiKeyScopeResponses],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']
   >({
-    endpoint: API_ENDPOINT.replace('{api_key_id}', apiKeyId).replace(
+    url: API_ENDPOINT.replace('{api_key_id}', apiKeyId).replace(
       '{scope_id}',
       scopeId.toString()
     ),

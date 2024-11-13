@@ -19,7 +19,7 @@ async function deleteApiKey(
   apiKeyId: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['api_key_id']
 ): Promise<ApiResponse<DeleteApiKeyResponses[keyof DeleteApiKeyResponses]>> {
   return await callApi<DeleteApiKeyResponses[keyof DeleteApiKeyResponses]>({
-    endpoint: API_ENDPOINT.replace('{api_key_id}', apiKeyId),
+    url: API_ENDPOINT.replace('{api_key_id}', apiKeyId),
     method: API_METHOD,
     authContext,
   });

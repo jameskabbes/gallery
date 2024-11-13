@@ -22,7 +22,7 @@ async function patchApiKey(
     PatchApiKeyResponses[keyof PatchApiKeyResponses],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >({
-    endpoint: API_ENDPOINT.replace('{api_key_id}', apiKeyID),
+    url: API_ENDPOINT.replace('{api_key_id}', apiKeyID),
     method: API_METHOD,
     data: apiKeyUpdate,
     authContext,

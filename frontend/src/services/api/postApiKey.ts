@@ -22,7 +22,7 @@ async function postApiKey(
     PostApiKeyResponses[keyof PostApiKeyResponses],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >({
-    endpoint: API_ENDPOINT,
+    url: API_ENDPOINT,
     method: API_METHOD,
     data: apiKeyCreate,
     authContext: authContext,

@@ -63,7 +63,7 @@ function Styles() {
   });
 
   const {} = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>({
-    endpoint: API_ENDPOINT,
+    url: API_ENDPOINT,
     method: API_METHOD,
   });
 

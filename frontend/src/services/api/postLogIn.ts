@@ -27,7 +27,7 @@ async function postLogin(
     PostLogInResponses[keyof PostLogInResponses],
     URLSearchParams
   >({
-    endpoint: API_ENDPOINT,
+    url: API_ENDPOINT,
     method: API_METHOD,
     authContext,
     data: formData,
