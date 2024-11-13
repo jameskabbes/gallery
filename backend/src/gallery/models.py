@@ -21,7 +21,7 @@ import pathlib
 
 class PermissionLevelTypes:
     id = int
-    name = typing.Literal['owner', 'editor', 'viewer']
+    name = typing.Literal['editor', 'viewer']
 
 
 class VisibilityLevelTypes:
@@ -77,6 +77,10 @@ class Table[IdType](SQLModel, IdObject[IdType]):
     @ classmethod
     def not_found_message(cls) -> str:
         return f'{cls.__name__} not found'
+
+    @classmethod
+    def already_exists_message(cls) -> str:
+        return f'{cls.__name__} already exists'
 
     @ classmethod
     async def get_one_by_id(cls, session: Session, id: IdType) -> typing.Self | None:
@@ -250,10 +254,17 @@ class User(Table[UserTypes.id], UserIDBase, table=True):
         back_populates='user')
     gallery_permissions: list['GalleryPermission'] = Relationship(
         back_populates='user')
+    galleries: list['Gallery'] = Relationship(back_populates='user')
 
     @ property
     def is_public(self) -> bool:
         return self.username is not None
+
+    def get_dir(self, root: pathlib.Path) -> pathlib.Path:
+        if self.is_public:
+            return root / self.username
+        else:
+            return root / self.id
 
     @ classmethod
     async def authenticate(cls, session: Session, username_or_email: UserTypes.email | UserTypes.username, password: UserTypes.password) -> typing.Self | None:
@@ -404,7 +415,7 @@ class AuthCredential[IdType](BaseModel, ABC):
 
     type: typing.ClassVar[AuthCredentialTypes.type | None] = None
 
-    class JWTExport(typing.TypedDict):
+    class JwtExport(typing.TypedDict):
         sub: IdType
         exp: AuthCredentialTypes.expiry
         iat: AuthCredentialTypes.issued
@@ -417,7 +428,7 @@ class AuthCredential[IdType](BaseModel, ABC):
         'type': 'type',
     }
 
-    class JWTImport(typing.TypedDict):
+    class JwtImport(typing.TypedDict):
         id: IdType
         expiry: AuthCredentialTypes.expiry
         issued: AuthCredentialTypes.issued
@@ -428,14 +439,14 @@ class AuthCredential[IdType](BaseModel, ABC):
         exception: typing.Optional[auth.EXCEPTION]
 
     @ classmethod
-    def validate_jwt_claims(cls, payload: JWTExport) -> bool:
+    def validate_jwt_claims(cls, payload: JwtExport) -> bool:
         return all(claim in payload for claim in cls._JWT_CLAIMS_TO_ATTRIBUTES)
 
     @ classmethod
-    def import_from_jwt(cls, payload: dict) -> JWTImport:
+    def import_from_jwt(cls, payload: dict) -> JwtImport:
         return {cls._JWT_CLAIMS_TO_ATTRIBUTES[claim]: payload.get(claim) for claim in cls._JWT_CLAIMS_TO_ATTRIBUTES}
 
-    def export_to_jwt(self) -> JWTExport:
+    def export_to_jwt(self) -> JwtExport:
         return {key: getattr(self, value) for key, value in self._JWT_CLAIMS_TO_ATTRIBUTES.items()}
 
     @field_validator('issued', 'expiry')
@@ -685,13 +696,14 @@ GalleryId = str
 
 class GalleryTypes:
     id = GalleryId
+    user_id = UserTypes.id
     name = typing.Annotated[str, StringConstraints(
         min_length=1, max_length=256)]
     visibility_level = VisibilityLevelTypes.id
     parent_id = GalleryId
     description = typing.Annotated[str, StringConstraints(
         min_length=0, max_length=20000)]
-    datetime = datetime_module.datetime
+    date = datetime_module.date
 
 
 class GalleryIdBase(IdObject[GalleryTypes.id]):
@@ -699,37 +711,50 @@ class GalleryIdBase(IdObject[GalleryTypes.id]):
         primary_key=True, index=True, unique=True, const=True)
 
 
+class GalleryAvailable(BaseModel):
+    name: GalleryTypes.name
+    parent_id: typing.Optional[GalleryTypes.parent_id] = None
+    date: typing.Optional[GalleryTypes.date] = None
+
+
+class GalleryAvailableAdmin(GalleryAvailable):
+    user_id: UserTypes.id
+
+
 class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
     __tablename__ = 'gallery'
 
     name: GalleryTypes.name = Field()
+    user_id: GalleryTypes.user_id = Field(
+        index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0])
+
     visibility_level: GalleryTypes.visibility_level = Field()
     parent_id: GalleryTypes.parent_id = Field(nullable=True, index=True,
                                               foreign_key=__tablename__ + '.id')
-    description: GalleryTypes.description = Field()
-    datetime: GalleryTypes.datetime = Field(nullable=True)
+    description: GalleryTypes.description = Field(nullable=True)
+    date: GalleryTypes.date = Field(nullable=True)
 
+    user: User = Relationship(back_populates='galleries')
     parent: typing.Optional['Gallery'] = Relationship(
         back_populates='children', sa_relationship_kwargs={'remote_side': 'Gallery.id'})
     children: list['Gallery'] = Relationship(back_populates='parent')
     gallery_permissions: list['GalleryPermission'] = Relationship(
         back_populates='gallery')
 
-    @field_validator('datetime')
     @classmethod
-    def validate_datetime(cls, value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime | None:
-        if value != None:
-            return validate_and_normalize_datetime(value, info)
-        return value
+    async def is_available(cls, session: Session, gallery_available_admin: GalleryAvailableAdmin) -> bool:
+        return not await cls.get_one_by_key_values(session, gallery_available_admin.model_dump())
 
-    @field_serializer('datetime')
-    def serialize_datetime(value: datetime_module.datetime) -> datetime_module.datetime | None:
-        if value != None:
-            return value.replace(tzinfo=datetime_module.timezone.utc)
-        return value
+    def get_dir(self, session: Session, root: pathlib.Path) -> pathlib.Path:
+        return root / self.get_rel_dir(session)
 
-    def get_dir(self, root: pathlib.Path) -> pathlib.Path:
-        return root / self.id
+    def get_rel_dir(self, session: Session) -> pathlib.Path:
+        if self.parent_id is None:
+            return pathlib.Path(self.date.isoformat() + ' ' + self.name)
+        else:
+            parent_gallery = session.exec(
+                select(Gallery).where(Gallery.id == self.parent_id)).one()
+            return parent_gallery.get_rel_dir(session) / (self.date.isoformat() + ' ' + self.name)
 
 
 type PluralGalleriesDict = dict[GalleryTypes.id, Gallery]
@@ -741,10 +766,11 @@ class GalleryExport(TableExport[Gallery]):
     _TABLE_MODEL: typing.ClassVar[typing.Type[Gallery]] = Gallery
 
     id: GalleryTypes.id
+    user_id: GalleryTypes.user_id
     name: GalleryTypes.name
     parent_id: GalleryTypes.parent_id | None
-    description: GalleryTypes.description
-    datetime: GalleryTypes.datetime | None
+    description: GalleryTypes.description | None
+    date: GalleryTypes.date | None
 
 
 class GalleryPublic(GalleryExport):
@@ -763,27 +789,58 @@ class GalleryImport(TableImport[Gallery]):
 
 class GalleryUpdate(GalleryImport, GalleryIdBase):
     name: typing.Optional[GalleryTypes.name] = None
-    parent_id: typing.Optional[GalleryTypes.parent_id] = None
+    user_id: typing.Optional[GalleryTypes.user_id] = None
     visibility_level: typing.Optional[GalleryTypes.visibility_level] = None
+    parent_id: typing.Optional[GalleryTypes.parent_id] = None
     description: typing.Optional[GalleryTypes.description] = None
-    datetime: typing.Optional[GalleryTypes.datetime] = None
+    date: typing.Optional[GalleryTypes.date] = None
 
 
 class GalleryUpdateAdmin(GalleryUpdate, TableUpdateAdmin[Gallery, GalleryTypes.id]):
-    pass
+
+    async def patch(self, session: Session) -> Gallery:
+
+        gallery = await self._TABLE_MODEL.get_one_by_id(session, self.id)
+        if not gallery:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=self._TABLE_MODEL.not_found_message())
+
+        gallery_available = GalleryAvailableAdmin(
+            **gallery.model_dump(), **self.model_dump(exclude_unset=True)
+        )
+
+        if not await Gallery.is_available(session, gallery_available):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail=self._TABLE_MODEL.already_exists_message())
+
+        gallery.sqlmodel_update(self.model_dump(exclude_unset=True))
+        await gallery.add_to_db(session)
+        return gallery
 
 
 class GalleryCreate(GalleryImport):
     name: GalleryTypes.name
+    user_id: GalleryTypes.user_id
     visibility_level: typing.Optional[GalleryTypes.visibility_level]
     parent_id: typing.Optional[GalleryTypes.parent_id] = None
-    description: typing.Optional[GalleryTypes.description] = ''
-    datetime: typing.Optional[GalleryTypes.datetime] = None
+    description: typing.Optional[GalleryTypes.description] = None
+    date: typing.Optional[GalleryTypes.date] = None
 
 
 class GalleryCreateAdmin(GalleryCreate, TableCreateAdmin[Gallery]):
-    async def after_create(self, session: Session, gallery: Gallery) -> None:
-        pass
+
+    async def post(self, session: Session) -> Gallery:
+
+        gallery_available = GalleryAvailableAdmin(**self.model_dump())
+        if not await Gallery.is_available(session, gallery_available):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail=self._TABLE_MODEL.already_exists_message())
+
+        gallery = await self.create()
+        print(gallery)
+
+        await gallery.add_to_db(session)
+        return gallery
 
 
 #
@@ -895,10 +952,9 @@ class ImageVersion(Table[ImageVersionTypes.id], MediaVersionIdBase, table=True):
         nullable=True, index=True, foreign_key=__tablename__ + '.id')
     datetime: ImageVersionTypes.datetime = Field(nullable=True)
     description: ImageVersionTypes.description = Field(nullable=True)
-    aspect_ratio = ImageVersionTypes.aspect_ratio = Field(nullable=True)
-    average_color = ImageVersionTypes.average_color = Field(nullable=True)
+    aspect_ratio: ImageVersionTypes.aspect_ratio = Field(nullable=True)
+    average_color: ImageVersionTypes.average_color = Field(nullable=True)
 
-    gallery: Gallery = Relationship(back_populates='versions')
     parent: typing.Optional['ImageVersion'] = Relationship(
         back_populates='children', sa_relationship_kwargs={'remote_side': 'ImageVersion.id'})
     children: list['ImageVersion'] = Relationship(back_populates='parent')
