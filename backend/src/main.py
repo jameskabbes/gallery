@@ -860,6 +860,31 @@ async def delete_gallery_admin(
             return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+@app.get('/admin/galleries/available/')
+async def get_is_gallery_available_admin(
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization(required_scopes={'admin'}))],
+    gallery_available_admin: models.GalleryAvailableAdmin = Depends(),
+) -> ItemAvailableResponse:
+    with Session(c.db_engine) as session:
+        return ItemAvailableResponse(available=await models.Gallery.is_available(session, gallery_available_admin))
+
+
+@app.get('/galleries/available/')
+async def get_is_gallery_available(
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization())],
+    gallery_available: models.GalleryAvailable = Depends(),
+) -> ItemAvailableResponse:
+
+    print(gallery_available.model_dump())
+
+    with Session(c.db_engine) as session:
+        return ItemAvailableResponse(available=await models.Gallery.is_available(session, models.GalleryAvailableAdmin(
+            **gallery_available.model_dump(), user_id=authorization.user.id
+        )))
+
+
 @ app.get('/galleries/')
 async def get_galleries(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
@@ -867,12 +892,19 @@ async def get_galleries(
 ) -> models.PluralGalleriesDict:
 
     with Session(c.db_engine) as session:
+
+        galleries = await models.Gallery.get_all_by_key_values(
+            session, {'user_id': authorization.user.id}
+        )
+
         gallery_permissions = await models.GalleryPermission.get_all_by_key_values(
             session, {'user_id': authorization.user.id})
 
-        galleries = await models.Gallery.get_all_by_key_values(
-            session, {'id': [
-                gallery_permission.gallery_id for gallery_permission in gallery_permissions]}
+        galleries.append(
+            await models.Gallery.get_all_by_key_values(
+                session, {'id': [
+                    gallery_permission.gallery_id for gallery_permission in gallery_permissions]}
+            )
         )
 
         return {
@@ -894,17 +926,18 @@ async def get_gallery(
                 raise HTTPException(status.HTTP_404_NOT_FOUND,
                                     detail=models.Gallery.not_found_message())
 
-            gallery_permission = await models.GalleryPermission.get(
-                session, (gallery_id, authorization.user.id))
+            if gallery.user_id != authorization.user.id:
+                gallery_permission = await models.GalleryPermission.get(
+                    session, (gallery_id, authorization.user.id))
 
-            if not gallery_permission:
-                raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                    detail=models.Gallery.not_found_message())
+                if not gallery_permission:
+                    raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                        detail=models.Gallery.not_found_message())
 
         return models.GalleryPublic.model_validate(gallery)
 
 
-@ app.post('/galleries/', responses={status.HTTP_409_CONFLICT: {"description": 'Gallery already exists', 'model': DetailOnlyResponse}})
+@ app.post('/galleries/', responses={status.HTTP_409_CONFLICT: {"description": models.Gallery.already_exists_message(), 'model': DetailOnlyResponse}})
 async def post_gallery(gallery_create: models.GalleryCreate,
                        authorization: typing.Annotated[GetAuthorizationReturn, Depends(
                            get_authorization())]
@@ -915,17 +948,13 @@ async def post_gallery(gallery_create: models.GalleryCreate,
 
     with Session(c.db_engine) as session:
         gallery = await gallery_create_admin.post(session)
-        await models.GalleryPermissionCreateAdmin(gallery_id=gallery.id, user_id=authorization.user.id,
-                                                  permission_level=c.permission_level_name_mapping['owner']).post(session)
-
-        gallery.get_dir(c.galleries_dir).mkdir()
-
         return models.GalleryPrivate.model_validate(gallery)
 
 
 @ app.patch('/galleries/{gallery_id}/', responses={
     status.HTTP_403_FORBIDDEN: {"description": 'User does not have permission to update this gallery', 'model': DetailOnlyResponse},
-    status.HTTP_404_NOT_FOUND: {"description": models.Gallery.not_found_message(), 'model': NotFoundResponse}}
+    status.HTTP_404_NOT_FOUND: {"description": models.Gallery.not_found_message(), 'model': NotFoundResponse},
+    status.HTTP_409_CONFLICT: {"description": models.Gallery.already_exists_message(), 'model': DetailOnlyResponse}}
 )
 async def patch_gallery(gallery_id: models.GalleryTypes.id, gallery_update: models.GalleryUpdate,
                         authorization: typing.Annotated[GetAuthorizationReturn, Depends(
@@ -945,7 +974,7 @@ async def patch_gallery(gallery_id: models.GalleryTypes.id, gallery_update: mode
         if not gallery_permission and gallery.visibility_level == c.visibility_level_name_mapping['private']:
             raise HTTPException(status.HTTP_404_NOT_FOUND,
                                 detail=models.Gallery.not_found_message())
-        if gallery_permission.permission_level < models.PermissionLevel.EDITOR:
+        if gallery_permission.permission_level < c.permission_level_name_mapping['editor']:
             raise HTTPException(status.HTTP_403_FORBIDDEN,
                                 detail='User does not have permission to update this gallery')
 
@@ -992,7 +1021,7 @@ class UploadFileToGalleryResponse(BaseModel):
     message: str
 
 
-@app.post("/galleries/{gallery_id}/upload/", status_code=status.HTTP_201_CREATED)
+@ app.post("/galleries/{gallery_id}/upload/", status_code=status.HTTP_201_CREATED)
 async def upload_file_to_gallery(
     gallery_id: models.GalleryTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
@@ -1102,61 +1131,23 @@ async def get_styles_page(authorization: typing.Annotated[GetAuthorizationReturn
     )
 
 
-class GetGalleriesPageResponse(GetAuthReturn):
-    galleries: models.PluralGalleriesDict
-    gallery_permissions: dict[models.GalleryTypes.id, models.GalleryPermission]
-
-
-@ app.get('/galleries/page/')
-async def get_galleries_page(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> GetGalleriesPageResponse:
-
-    with Session(c.db_engine) as session:
-        gallery_permissions = await models.GalleryPermission.get_all_by_key_values(
-            session, {'user_id': authorization.user.id})
-
-        galleries = await models.Gallery.get_all_by_key_values(
-            session, {'id': [
-                gallery_permission.gallery_id for gallery_permission in gallery_permissions]}
-        )
-
-        return GetGalleriesPageResponse(
-            **get_auth(authorization).model_dump(),
-            galleries={gallery.id: gallery for gallery in galleries},
-            gallery_permissions={
-                gallery_permission.gallery_id: gallery_permission for gallery_permission in gallery_permissions}
-        )
-
-
 class GetGalleryPageResponse(GetAuthReturn):
     gallery: models.GalleryPublic
+    gallery_permissions: dict[models.GalleryTypes.id, models.GalleryPermission]
 
 
 @ app.get('/galleries/{gallery_id}/page/', responses={status.HTTP_404_NOT_FOUND: {"description": models.Gallery.not_found_message(), 'model': NotFoundResponse}})
 async def get_gallery_page(
-    gallery_id: models.GalleryTypes.id,
+    gallery_id: models.GalleryTypes.id | None,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization(raise_exceptions=False))]
 ) -> GetGalleryPageResponse:
 
-    with Session(c.db_engine) as session:
-        gallery = await models.Gallery.get(session, gallery_id)
-
-        if gallery.visibility_level == c.visibility_level_name_mapping['private']:
-            if authorization.exception:
-                raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                    detail=models.Gallery.not_found_message())
-
-            gallery_permission = await models.GalleryPermission.get(
-                session, (gallery_id, authorization.user.id))
-
-            if not gallery_permission:
-                raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                    detail=models.Gallery.not_found_message())
-
-        return GetGalleryPageResponse(
-            **get_auth(authorization).model_dump(),
-            gallery=models.GalleryPublic.model_validate(gallery)
-        )
+    gallery = await get_gallery(gallery_id, authorization)
+    return GetGalleryPageResponse(
+        **get_auth(authorization).model_dump(),
+        gallery=models.GalleryPublic.model_validate(gallery)
+    )
 
 
 if __name__ == "__main__":

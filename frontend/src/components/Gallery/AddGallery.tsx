@@ -1,7 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import {
   GlobalModalsContextType,
-  Modal,
   ValidatedInputState,
   defaultValidatedInputState,
 } from '../../types';
@@ -16,10 +15,13 @@ import { ToastContext } from '../../contexts/Toast';
 import { GlobalModalsContext } from '../../contexts/GlobalModals';
 
 import { ValidatedInputString } from '../Form/ValidatedInputString';
-import { ValidatedInputDatetimeLocal } from '../Form/ValidatedInputDatetimeLocal';
 import { ButtonSubmit } from '../Utils/Button';
 import openapi_schema from '../../../../openapi_schema.json';
 import config from '../../../../config.json';
+import { RadioButton1 } from '../Utils/RadioButton';
+import { isGalleryAvailable } from '../../services/api/getIsGalleryAvailable';
+import { useValidatedInput } from '../../utils/useValidatedInput';
+import { CheckOrX } from '../Form/CheckOrX';
 
 interface AddGalleryProps {
   onSuccess: (gallery: PostGalleryResponses['200']) => void;
@@ -34,19 +36,15 @@ function AddGallery({ onSuccess }: AddGalleryProps) {
     ...defaultValidatedInputState<string>(''),
   });
 
-  const [parentGallery, setParentGallery] = useState<
-    ValidatedInputState<components['schemas']['Gallery']>
+  const [parentGalleryId, setParentGalleryId] = useState<
+    ValidatedInputState<components['schemas']['Gallery']['id']>
   >({
-    ...defaultValidatedInputState<components['schemas']['Gallery']>(null),
+    ...defaultValidatedInputState<components['schemas']['Gallery']['id']>(''),
   });
 
-  const [datetime, setDatetime] = useState<ValidatedInputState<Date | null>>(
-    defaultValidatedInputState<Date | null>(null)
+  const [date, setDate] = useState<ValidatedInputState<string>>(
+    defaultValidatedInputState<string>('')
   );
-
-  const [description, setDescription] = useState<ValidatedInputState<string>>({
-    ...defaultValidatedInputState<string>(''),
-  });
 
   const [visibilityLevelName, setVisibilityLevelName] = useState<
     ValidatedInputState<string>
@@ -54,22 +52,54 @@ function AddGallery({ onSuccess }: AddGalleryProps) {
     ...defaultValidatedInputState<string>('private'),
   });
 
-  const [valid, setValid] = useState(false);
+  interface ValidatedGalleryAvailable {
+    name: ValidatedInputState<string>;
+    parentGalleryId: ValidatedInputState<
+      components['schemas']['Gallery']['id']
+    >;
+    date: ValidatedInputState<string>;
+  }
+
+  const [galleryAvailable, setGalleryAvailable] = useState<
+    ValidatedInputState<ValidatedGalleryAvailable>
+  >({
+    ...defaultValidatedInputState<ValidatedGalleryAvailable>({
+      date: date,
+      name: name,
+      parentGalleryId: parentGalleryId,
+    }),
+  });
+
+  useValidatedInput<ValidatedGalleryAvailable>({
+    state: galleryAvailable,
+    setState: setGalleryAvailable,
+    checkAvailability: true,
+    checkValidity: true,
+    isAvailable: () =>
+      isGalleryAvailable(authContext, {
+        date: date.value !== '' ? date.value : null,
+        name: name.value,
+        parent_id: parentGalleryId.value !== '' ? parentGalleryId.value : null,
+      }),
+    isValid: (value) => {
+      return value.date.status === 'valid' &&
+        value.name.status === 'valid' &&
+        value.parentGalleryId.status === 'valid'
+        ? { valid: true }
+        : { valid: false, message: 'Invalid entries' };
+    },
+  });
+
   useEffect(() => {
-    setValid(
-      name.status === 'valid' &&
-        parentGallery.status === 'valid' &&
-        datetime.status === 'valid' &&
-        description.status === 'valid' &&
-        visibilityLevelName.status === 'valid'
-    );
-  }, [
-    name.status,
-    parentGallery.status,
-    datetime.status,
-    description.status,
-    visibilityLevelName.status,
-  ]);
+    setGalleryAvailable((prev) => ({
+      ...prev,
+      value: {
+        date: date,
+        name: name,
+        parentGalleryId: parentGalleryId,
+      },
+    }));
+  }, [name, parentGalleryId, date]);
 
   async function addGallery(event: React.FormEvent) {
     event.preventDefault();
@@ -79,11 +109,11 @@ function AddGallery({ onSuccess }: AddGalleryProps) {
       message: 'Adding gallery...',
     });
 
-    const galleryCreate = {
+    const galleryCreate: components['schemas']['GalleryCreate'] = {
       name: name.value,
-      parent_id: parentGallery.value ? parentGallery.value.id : null,
-      datetime: datetime['value'] ? datetime['value'].toISOString() : null,
-      description: description.value,
+      user_id: authContext.state.user.id,
+      parent_id: parentGalleryId.value !== '' ? parentGalleryId.value : null,
+      date: date.value !== '' ? date.value : null,
       visibility_level:
         config['visibility_level_name_mapping'][visibilityLevelName.value],
     };
@@ -109,7 +139,7 @@ function AddGallery({ onSuccess }: AddGalleryProps) {
     <div id="add-gallery">
       <form onSubmit={addGallery} className="flex flex-col space-y-4">
         <header>Add Gallery</header>
-        <fieldset>
+        <fieldset className="flex flex-col space-y-4">
           <section>
             <label htmlFor="gallery-name">Name</label>
             <ValidatedInputString
@@ -132,34 +162,81 @@ function AddGallery({ onSuccess }: AddGalleryProps) {
           </section>
           <section>
             <label htmlFor="gallery-date">Date</label>
-            <ValidatedInputDatetimeLocal
-              state={datetime}
-              setState={setDatetime}
+            <ValidatedInputString
+              state={date}
+              setState={setDate}
+              type="date"
               id="gallery-date"
               showStatus={true}
             />
           </section>
           <section>
-            <label htmlFor="gallery-description">Description</label>
+            <label htmlFor="gallery-parentId">Parent Gallery</label>
             <ValidatedInputString
-              state={description}
-              setState={setDescription}
-              id="gallery-description"
+              state={parentGalleryId}
+              setState={setParentGalleryId}
               type="text"
-              minLength={
-                openapi_schema.components.schemas.GalleryCreate.properties
-                  .description.anyOf[0].minLength
-              }
-              maxLength={
-                openapi_schema.components.schemas.GalleryCreate.properties
-                  .description.anyOf[0].maxLength
-              }
-              checkValidity={true}
+              id="gallery-parentId"
               showStatus={true}
             />
           </section>
+          <section>
+            <label>
+              <legend>Visibility</legend>
+            </label>
+            <fieldset className="flex flex-row justify-around">
+              {Object.keys(config.visibility_level_name_mapping).map(
+                (levelName) => (
+                  <div
+                    key={levelName}
+                    className="flex flex-row items-center space-x-1"
+                    onClick={() => {
+                      setVisibilityLevelName((prev) => ({
+                        ...prev,
+                        value: levelName,
+                      }));
+                    }}
+                  >
+                    <RadioButton1
+                      state={visibilityLevelName.value == levelName}
+                    >
+                      <input
+                        id={`gallery-visibility-level-${levelName}`}
+                        type="radio"
+                        name="gallery-visibility-level"
+                        className="opacity-0 absolute h-0 w-0 inset-0"
+                        value={levelName}
+                        onChange={() =>
+                          setVisibilityLevelName({
+                            ...visibilityLevelName,
+                            value: levelName,
+                          })
+                        }
+                      />
+                    </RadioButton1>
+                    <label htmlFor={`gallery-visibility-level-${levelName}`}>
+                      {levelName}
+                    </label>
+                  </div>
+                )
+              )}
+            </fieldset>
+          </section>
         </fieldset>
-        <ButtonSubmit disabled={!valid}>Add Gallery</ButtonSubmit>
+        <div className="flex flex-row justify-center space-x-2 items-center">
+          <p className="text-center">
+            {galleryAvailable.status === 'valid'
+              ? 'Available'
+              : galleryAvailable.status === 'loading'
+              ? 'Checking'
+              : 'Not available'}
+          </p>
+          <CheckOrX status={galleryAvailable.status} />
+        </div>
+
+        <ButtonSubmit disabled={galleryAvailable.status !== 'valid'}>
+          Add Gallery
+        </ButtonSubmit>
       </form>
     </div>
   );
@@ -172,6 +249,7 @@ function setGalleryModal(
   globalModalsContext.setModal({
     component: <AddGallery onSuccess={onSuccess} />,
     key: 'add-gallery',
+    className: 'max-w-[400px] w-full',
   });
 }
 

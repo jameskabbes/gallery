@@ -27,6 +27,8 @@ async function callApi<TResponseData, TRequestData = any>({
     const requestConfig: AxiosRequestConfig = {
       headers: headers,
       data: data,
+      url: url,
+      method: method,
       ...rest,
     };
 

@@ -133,6 +133,14 @@ export interface paths {
     /** Patch Gallery Admin */
     patch: operations["patch_gallery_admin_admin_galleries__gallery_id___patch"];
   };
+  "/admin/galleries/available/": {
+    /** Get Is Gallery Available Admin */
+    get: operations["get_is_gallery_available_admin_admin_galleries_available__get"];
+  };
+  "/galleries/available/": {
+    /** Get Is Gallery Available */
+    get: operations["get_is_gallery_available_galleries_available__get"];
+  };
   "/galleries/": {
     /** Get Galleries */
     get: operations["get_galleries_galleries__get"];
@@ -322,46 +330,49 @@ export interface components {
       id: string;
       /** Name */
       name: string;
+      /** User Id */
+      user_id: string;
       /** Visibility Level */
       visibility_level: number;
       /** Parent Id */
       parent_id: string;
       /** Description */
       description: string;
-      /** Datetime */
-      datetime: string | null;
+      /**
+       * Date
+       * Format: date
+       */
+      date: string;
     };
     /** GalleryCreate */
     GalleryCreate: {
       /** Name */
       name: string;
+      /** User Id */
+      user_id: string;
       /** Visibility Level */
       visibility_level: number | null;
       /** Parent Id */
       parent_id?: string | null;
-      /**
-       * Description
-       * @default
-       */
+      /** Description */
       description?: string | null;
-      /** Datetime */
-      datetime?: string | null;
+      /** Date */
+      date?: string | null;
     };
     /** GalleryCreateAdmin */
     GalleryCreateAdmin: {
       /** Name */
       name: string;
+      /** User Id */
+      user_id: string;
       /** Visibility Level */
       visibility_level: number | null;
       /** Parent Id */
       parent_id?: string | null;
-      /**
-       * Description
-       * @default
-       */
+      /** Description */
       description?: string | null;
-      /** Datetime */
-      datetime?: string | null;
+      /** Date */
+      date?: string | null;
     };
     /** GalleryPermission */
     GalleryPermission: {
@@ -376,14 +387,16 @@ export interface components {
     GalleryPrivate: {
       /** Id */
       id: string;
+      /** User Id */
+      user_id: string;
       /** Name */
       name: string;
       /** Parent Id */
       parent_id: string | null;
       /** Description */
-      description: string;
-      /** Datetime */
-      datetime: string | null;
+      description: string | null;
+      /** Date */
+      date: string | null;
       /** Visibility Level */
       visibility_level: number;
     };
@@ -391,14 +404,16 @@ export interface components {
     GalleryPublic: {
       /** Id */
       id: string;
+      /** User Id */
+      user_id: string;
       /** Name */
       name: string;
       /** Parent Id */
       parent_id: string | null;
       /** Description */
-      description: string;
-      /** Datetime */
-      datetime: string | null;
+      description: string | null;
+      /** Date */
+      date: string | null;
     };
     /** GalleryUpdate */
     GalleryUpdate: {
@@ -406,14 +421,16 @@ export interface components {
       id: string;
       /** Name */
       name?: string | null;
-      /** Parent Id */
-      parent_id?: string | null;
+      /** User Id */
+      user_id?: string | null;
       /** Visibility Level */
       visibility_level?: number | null;
+      /** Parent Id */
+      parent_id?: string | null;
       /** Description */
       description?: string | null;
-      /** Datetime */
-      datetime?: string | null;
+      /** Date */
+      date?: string | null;
     };
     /** GalleryUpdateAdmin */
     GalleryUpdateAdmin: {
@@ -421,14 +438,16 @@ export interface components {
       id: string;
       /** Name */
       name?: string | null;
-      /** Parent Id */
-      parent_id?: string | null;
+      /** User Id */
+      user_id?: string | null;
       /** Visibility Level */
       visibility_level?: number | null;
+      /** Parent Id */
+      parent_id?: string | null;
       /** Description */
       description?: string | null;
-      /** Datetime */
-      datetime?: string | null;
+      /** Date */
+      date?: string | null;
     };
     /** GetAuthBaseReturn */
     GetAuthBaseReturn: {
@@ -1538,6 +1557,55 @@ export interface operations {
       };
     };
   };
+  /** Get Is Gallery Available Admin */
+  get_is_gallery_available_admin_admin_galleries_available__get: {
+    parameters: {
+      query: {
+        name: string;
+        parent_id: string | null;
+        date: string | null;
+        user_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ItemAvailableResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get Is Gallery Available */
+  get_is_gallery_available_galleries_available__get: {
+    parameters: {
+      query: {
+        name: string;
+        parent_id: string | null;
+        date: string | null;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ItemAvailableResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   /** Get Galleries */
   get_galleries_galleries__get: {
     responses: {
@@ -1666,6 +1734,12 @@ export interface operations {
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Gallery already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
         };
       };
       /** @description Validation Error */

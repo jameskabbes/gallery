@@ -28,7 +28,7 @@ async function getIsGalleryAvailable(
   >({
     url: API_ENDPOINT,
     method: API_METHOD,
-    data: galleryAvailable,
+    params: galleryAvailable,
     authContext: authContext,
   });
 }
