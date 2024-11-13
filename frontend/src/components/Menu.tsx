@@ -27,11 +27,11 @@ function Menu() {
   const menuItems = authContext.state.user
     ? [
         {
-          element: <Link to="/settings">Settings</Link>,
+          element: <Link to="/galleries">Galleries</Link>,
           onClick: () => {},
         },
         {
-          element: <Link to="/profile">Profile</Link>,
+          element: <Link to="/settings">Settings</Link>,
           onClick: () => {},
         },
         {

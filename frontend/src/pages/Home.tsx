@@ -37,9 +37,6 @@ function Home() {
       <Link to="/styles/">
         <Button1>Styles</Button1>
       </Link>
-      <Link to="/galleries/">
-        <Button1>Galleries</Button1>
-      </Link>
     </div>
   );
 }
