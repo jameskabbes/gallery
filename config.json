@@ -20,7 +20,6 @@
     "private": 2
   },
   "permission_level_name_mapping": {
-    "owner": 3,
     "editor": 2,
     "viewer": 1
   },

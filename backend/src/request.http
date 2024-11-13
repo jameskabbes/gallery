@@ -93,6 +93,10 @@
 # GET http://localhost:8087/api-keys/a2f7275e-75bf-4a1a-a7a1-67c8bce90781/generate-jwt/
 # Authorization: Bearer token
 
+GET http://localhost:8087/galleries/available/?name=gallery&date=2022-12-12&parent_id=1234
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmNzA3M2EzNS1mOTIwLTRhNjMtOWJiYi1iZTRiZTU2NjllYzEiLCJleHAiOjE3MzIxMzMxMTMsImlhdCI6MTczMTUyODMxMywidHlwZSI6ImFjY2Vzc190b2tlbiJ9.cwlDcHWQIzk_OVqKxiXLQ5UFLJ-LJegAeIph4TvCXUw
+
 # POST http://localhost:8087/galleries/
 # Authorization: Bearer token
 
@@ -101,5 +105,5 @@
 # }
 
 
-GET http://localhost:8087/settings/api-keys/page
-Authorization: Bearer token
+# GET http://localhost:8087/settings/api-keys/page
+# Authorization: Bearer token
