@@ -16,6 +16,8 @@ import pydantic
 import collections.abc
 import re
 import pathlib
+from gallery.client import Client
+from gallery import config
 #
 
 
@@ -370,15 +372,16 @@ class UserCreate(UserImport):
 
 
 class UserCreateAdmin(UserCreate, TableCreateAdmin[User]):
-    username: typing.Optional[UserTypes.username] = None
     user_role_id: UserTypes.user_role_id
 
-    async def post(self, session: Session) -> User:
+    async def post(self, session: Session, client: Client) -> User:
         if not await self._TABLE_MODEL.is_email_available(session, self.email):
             raise HTTPException(status.HTTP_409_CONFLICT,
                                 detail='Email already exists')
         user = await self.create()
         await user.add_to_db(session)
+        await GalleryCreateAdmin.post_init_galleries(session, client, user.id)
+
         return user
 
     async def create(self) -> User:
@@ -821,7 +824,7 @@ class GalleryUpdateAdmin(GalleryUpdate, TableUpdateAdmin[Gallery, GalleryTypes.i
 class GalleryCreate(GalleryImport):
     name: GalleryTypes.name
     user_id: GalleryTypes.user_id
-    visibility_level: typing.Optional[GalleryTypes.visibility_level]
+    visibility_level: GalleryTypes.visibility_level
     parent_id: typing.Optional[GalleryTypes.parent_id] = None
     description: typing.Optional[GalleryTypes.description] = None
     date: typing.Optional[GalleryTypes.date] = None
@@ -829,7 +832,7 @@ class GalleryCreate(GalleryImport):
 
 class GalleryCreateAdmin(GalleryCreate, TableCreateAdmin[Gallery]):
 
-    async def post(self, session: Session) -> Gallery:
+    async def post(self, session: Session, client: Client) -> Gallery:
 
         gallery_available = GalleryAvailableAdmin(**self.model_dump())
         if not await Gallery.is_available(session, gallery_available):
@@ -837,12 +840,16 @@ class GalleryCreateAdmin(GalleryCreate, TableCreateAdmin[Gallery]):
                 status_code=status.HTTP_409_CONFLICT, detail=self._TABLE_MODEL.already_exists_message())
 
         gallery = await self.create()
-        print(gallery)
-
         await gallery.add_to_db(session)
         return gallery
 
-
+    @classmethod
+    async def post_init_galleries(cls, session: Session, client: Client, user_id: GalleryTypes.user_id) -> list[Gallery]:
+        root_gallery = await cls(name='root', user_id=user_id, visibility_level=client.visibility_level_name_mapping['private'],
+                                 ).post(session)
+        deleted_gallery = await cls(name='deleted', user_id=user_id, visibility_level=client.visibility_level_name_mapping['private'], parent_id=root_gallery.id,
+                                    ).post(session)
+        return [root_gallery, deleted_gallery]
 #
 # GalleryPermission
 #

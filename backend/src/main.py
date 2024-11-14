@@ -353,14 +353,7 @@ async def sign_up(
         set_access_token_cookie(jwt_encode(
             user_access_token.export_to_jwt()), response, stay_signed_in)
 
-        return SignupResponse(
-            auth=GetAuthBaseReturn(
-                user=models.UserPrivate.model_validate(user),
-                scope_ids=set(
-                    c.user_role_id_scope_ids[user.user_role_id]),
-                expiry=user_access_token.expiry
-            )
-        )
+        return SignupResponse(auth=auth)
 
 
 class LoginWithEmailMagicLinkRequest(BaseModel):
