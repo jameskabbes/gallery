@@ -25,21 +25,16 @@ import { CheckOrX } from '../Form/CheckOrX';
 
 interface AddGalleryProps {
   onSuccess: (gallery: PostGalleryResponses['200']) => void;
+  parentGalleryId: components['schemas']['Gallery']['id'];
 }
 
-function AddGallery({ onSuccess }: AddGalleryProps) {
+function AddGallery({ onSuccess, parentGalleryId }: AddGalleryProps) {
   const authContext = useContext(AuthContext);
   const toastContext = useContext(ToastContext);
   const globalModalsContext = useContext(GlobalModalsContext);
 
   const [name, setName] = useState<ValidatedInputState<string>>({
     ...defaultValidatedInputState<string>(''),
-  });
-
-  const [parentGalleryId, setParentGalleryId] = useState<
-    ValidatedInputState<components['schemas']['Gallery']['id']>
-  >({
-    ...defaultValidatedInputState<components['schemas']['Gallery']['id']>(''),
   });
 
   const [date, setDate] = useState<ValidatedInputState<string>>(
@@ -54,9 +49,6 @@ function AddGallery({ onSuccess }: AddGalleryProps) {
 
   interface ValidatedGalleryAvailable {
     name: ValidatedInputState<string>;
-    parentGalleryId: ValidatedInputState<
-      components['schemas']['Gallery']['id']
-    >;
     date: ValidatedInputState<string>;
   }
 
@@ -66,7 +58,6 @@ function AddGallery({ onSuccess }: AddGalleryProps) {
     ...defaultValidatedInputState<ValidatedGalleryAvailable>({
       date: date,
       name: name,
-      parentGalleryId: parentGalleryId,
     }),
   });
 
@@ -79,12 +70,10 @@ function AddGallery({ onSuccess }: AddGalleryProps) {
       isGalleryAvailable(authContext, {
         date: date.value !== '' ? date.value : null,
         name: name.value,
-        parent_id: parentGalleryId.value !== '' ? parentGalleryId.value : null,
+        parent_id: parentGalleryId,
       }),
     isValid: (value) => {
-      return value.date.status === 'valid' &&
-        value.name.status === 'valid' &&
-        value.parentGalleryId.status === 'valid'
+      return value.date.status === 'valid' && value.name.status === 'valid'
         ? { valid: true }
         : { valid: false, message: 'Invalid entries' };
     },
@@ -112,7 +101,7 @@ function AddGallery({ onSuccess }: AddGalleryProps) {
     const galleryCreate: components['schemas']['GalleryCreate'] = {
       name: name.value,
       user_id: authContext.state.user.id,
-      parent_id: parentGalleryId.value !== '' ? parentGalleryId.value : null,
+      parent_id: parentGalleryId,
       date: date.value !== '' ? date.value : null,
       visibility_level:
         config['visibility_level_name_mapping'][visibilityLevelName.value],
@@ -167,16 +156,6 @@ function AddGallery({ onSuccess }: AddGalleryProps) {
               setState={setDate}
               type="date"
               id="gallery-date"
-              showStatus={true}
-            />
-          </section>
-          <section>
-            <label htmlFor="gallery-parentId">Parent Gallery</label>
-            <ValidatedInputString
-              state={parentGalleryId}
-              setState={setParentGalleryId}
-              type="text"
-              id="gallery-parentId"
               showStatus={true}
             />
           </section>
@@ -242,12 +221,16 @@ function AddGallery({ onSuccess }: AddGalleryProps) {
   );
 }
 
-function setGalleryModal(
-  globalModalsContext: GlobalModalsContextType,
-  onSuccess: (gallery: PostGalleryResponses['200']) => void
-) {
+interface SetGalleryModalProps extends AddGalleryProps {
+  globalModalsContext: GlobalModalsContextType;
+}
+
+function setGalleryModal({
+  globalModalsContext,
+  ...rest
+}: SetGalleryModalProps) {
   globalModalsContext.setModal({
-    component: <AddGallery onSuccess={onSuccess} />,
+    component: <AddGallery {...rest} />,
     key: 'add-gallery',
     className: 'max-w-[400px] w-full',
   });

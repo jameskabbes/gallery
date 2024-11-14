@@ -5,7 +5,6 @@ import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { ApplicationContextProvider } from './contexts/Application';
 import { Toast } from './components/Toast/Toast';
-import { Galleries } from './pages/Galleries';
 import { Gallery } from './pages/Gallery';
 import { Settings } from './pages/Settings';
 import { AuthModals } from './components/Auth/AuthModals';
@@ -31,7 +30,7 @@ function App(): JSX.Element {
               <Route path="/" element={<Home />} />
               <Route
                 path={`${siteConfig.galleriesUrlBase}`}
-                element={<Galleries />}
+                element={<Gallery root={true} />}
               />
               <Route
                 path={`${siteConfig.galleriesUrlBase}/:galleryId`}

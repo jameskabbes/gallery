@@ -1,7 +1,7 @@
 from pydantic import BaseModel, field_validator
 import typing
 import uuid
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Response
 from sqlmodel import SQLModel, Field, Column, Session, select, delete, Relationship
 from pydantic import BaseModel, EmailStr, constr, StringConstraints, field_validator, ValidationInfo, ValidatorFunctionWrapHandler, ValidationError, field_serializer, model_validator
 from pydantic.functional_validators import WrapValidator
@@ -16,29 +16,18 @@ import pydantic
 import collections.abc
 import re
 import pathlib
-from gallery.client import Client
-from gallery import config
+from gallery import client
+
 #
 
 
-class PermissionLevelTypes:
-    id = int
-    name = typing.Literal['editor', 'viewer']
-
-
-class VisibilityLevelTypes:
-    id = int
-    name = typing.Literal['public', 'private']
-
-
-class ScopeTypes:
-    id = int
-    name = typing.Literal['admin', 'users.read', 'users.write']
-
-
-class UserRoleTypes:
-    id = int
-    name = typing.Literal['admin', 'user']
+class GetAuthorizationReturn(BaseModel):
+    isAuthorized: bool = False
+    expiry: typing.Optional[datetime_module.datetime] = None
+    exception: typing.Optional[auth.EXCEPTION] = None
+    user: typing.Optional['UserPrivate'] = None
+    scope_ids: typing.Optional[set[client.ScopeTypes.id]] = None
+    auth_credential: typing.Optional['AUTH_CREDENTIAL_MODEL'] = None
 
 
 def validate_and_normalize_datetime(value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime:
@@ -155,20 +144,30 @@ class Table[IdType](SQLModel, IdObject[IdType]):
         return True
 
     @ classmethod
-    async def get(cls, session: Session, id: IdType) -> typing.Self:
+    async def _basic_api_get(cls, session: Session, id: IdType) -> typing.Self:
+        """Get a model by its ID, raise an exception if not found"""
+
         instance = await cls.get_one_by_id(session, id)
         if not instance:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
         return instance
 
+    @classmethod
+    async def api_get(cls, session: Session, id: IdType) -> typing.Self:
+        return await cls._basic_api_get(session, id)
+
     @ classmethod
-    async def delete(cls, session: Session, id: IdType) -> bool:
+    async def _basic_api_delete(cls, session: Session, id: IdType) -> bool:
         if await cls.delete_one_by_id(session, id) == 0:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
         else:
-            return True
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    @classmethod
+    async def api_delete(cls, session: Session, id: IdType) -> bool:
+        return await cls._basic_api_delete(session, id)
 
 
 class TableExport[TTable: Table](BaseModel):
@@ -185,14 +184,14 @@ class TableImport[TTable: Table](BaseModel):
 class TableUpdateAdmin[TTable: Table, IdType](TableImport[TTable], IdObject[IdType]):
     _TABLE_MODEL: typing.ClassVar[typing.Type[TTable]] = Table
 
-    async def patch(self, session: Session) -> TTable:
-        table_inst = await self._TABLE_MODEL.get_one_by_id(session, self.id)
-        if not table_inst:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=self._TABLE_MODEL.not_found_message())
+    async def patch(self, session: Session, table_inst: TTable) -> TTable:
         table_inst.sqlmodel_update(self.model_dump(exclude_unset=True))
         await table_inst.add_to_db(session)
         return table_inst
+
+    async def api_patch(self, session: Session) -> TTable:
+        table_inst = await self._TABLE_MODEL.api_get(session, self._id)
+        return await self.patch(session, table_inst)
 
 
 class TableCreateAdmin[TTable: Table](TableImport[TTable]):
@@ -201,11 +200,7 @@ class TableCreateAdmin[TTable: Table](TableImport[TTable]):
     async def post(self, session: Session) -> TTable:
         table_inst = await self.create()
         await table_inst.add_to_db(session)
-        await self.after_create(session, table_inst)
         return table_inst
-
-    async def after_create(self, session: Session, table_inst: TTable) -> None:
-        pass
 
     async def create(self) -> TTable:
 
@@ -234,7 +229,7 @@ class UserTypes:
     username = typing.Annotated[str, StringConstraints(
         min_length=3, max_length=20, pattern=re.compile(r'^[a-zA-Z0-9_.-]+$'), to_lower=True)]
     hashed_password = str
-    user_role_id = UserRoleTypes.id
+    user_role_id = client.UserRoleTypes.id
 
 
 class UserIDBase(IdObject[UserTypes.id]):
@@ -296,6 +291,19 @@ class User(Table[UserTypes.id], UserIDBase, table=True):
             return False
         return True
 
+    @ classmethod
+    async def api_get(cls, session: Session, c: client.Client, authorization: GetAuthorizationReturn, user_id: UserTypes.id, admin: bool = False) -> typing.Self:
+
+        user = await cls._basic_api_get(session, user_id)
+
+        if not user.is_public:
+            if not admin:
+                if user.id != authorization.user.id:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
+
+        return user
+
 
 type PluralUsersDict = dict[UserTypes.id, User]
 
@@ -328,28 +336,40 @@ class UserImport(TableImport[User]):
 
 
 class UserUpdate(UserImport, UserIDBase):
-    email: typing.Optional[UserTypes.email] = None
-    password: typing.Optional[UserTypes.password] = None
-    username: typing.Optional[UserTypes.username] = None
+    email: typing.Optional[UserTypes.email]
+    password: typing.Optional[UserTypes.password]
+    username: typing.Optional[UserTypes.username | None]
 
 
 class UserUpdateAdmin(UserUpdate, TableUpdateAdmin[User, UserTypes.id]):
-    async def patch(self, session: Session) -> User:
+    async def api_patch(self, session: Session, c: client.Client, authorized_user_id: UserTypes.id, admin: bool = False) -> User:
 
-        user = await self._TABLE_MODEL.get_one_by_id(session, self.id)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=self._TABLE_MODEL.not_found_message())
+        user = await self._TABLE_MODEL._basic_api_get(session, self._id)
 
-        # if they changed their username, check if it's available
-        if self.username != None:
+        if not admin:
+            if user.id != authorized_user_id:
+                if user.is_public:
+                    raise HTTPException(
+                        status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to patch this user')
+                else:
+                    raise HTTPException(
+                        status.HTTP_404_NOT_FOUND, detail=self._TABLE_MODEL.not_found_message())
+
+        if 'username' in self.model_fields_set:
             if user.username != self.username:
-                if not await self._TABLE_MODEL.is_username_available(session, self.username):
-                    raise HTTPException(status.HTTP_409_CONFLICT,
-                                        detail='Username already exists')
 
-        # if they changed their email, check if it's available
-        if self.email != None:
+                # username has been changed
+                if self.username == None:
+                    root_gallery = await Gallery.get_root_gallery(session, user.id)
+                    if root_gallery:
+                        await GalleryUpdateAdmin(id=root_gallery.id, name=self.username).patch(session)
+
+                if self.username is not None:
+                    if not await self._TABLE_MODEL.is_username_available(session, self.username):
+                        raise HTTPException(status.HTTP_409_CONFLICT,
+                                            detail='Username already exists')
+
+        if 'email' in self.model_fields_set:
             if user.email != self.email:
                 if not await self._TABLE_MODEL.is_email_available(session, self.email):
                     raise HTTPException(status.HTTP_409_CONFLICT,
@@ -374,14 +394,13 @@ class UserCreate(UserImport):
 class UserCreateAdmin(UserCreate, TableCreateAdmin[User]):
     user_role_id: UserTypes.user_role_id
 
-    async def post(self, session: Session, client: Client) -> User:
+    async def post(self, session: Session, c: client.Client) -> User:
         if not await self._TABLE_MODEL.is_email_available(session, self.email):
             raise HTTPException(status.HTTP_409_CONFLICT,
                                 detail='Email already exists')
         user = await self.create()
         await user.add_to_db(session)
-        await GalleryCreateAdmin.post_init_galleries(session, client, user.id)
-
+        await GalleryCreateAdmin.post_init_galleries(session, c, user.id)
         return user
 
     async def create(self) -> User:
@@ -584,7 +603,7 @@ class ApiKey(Table[ApiKeyTypes.id], ApiKeyIDBase, AuthCredential[ApiKeyTypes.id]
     api_key_scopes: list['ApiKeyScope'] = Relationship(
         back_populates='api_key')
 
-    async def get_scope_ids(self) -> list[ScopeTypes.id]:
+    async def get_scope_ids(self) -> list[client.ScopeTypes.id]:
         return [api_key_scope.scope_id for api_key_scope in self.api_key_scopes]
 
 
@@ -639,7 +658,7 @@ AUTH_CREDENTIAL_MODEL_MAPPING: dict[AuthCredentialTypes.type, AUTH_CREDENTIAL_MO
 
 class ApiKeyScopeTypes:
     api_key_id = ApiKeyTypes.id
-    scope_id = ScopeTypes.id
+    scope_id = client.ScopeTypes.id
 
 
 type ApiKeyScopeID = typing.Annotated[tuple[ApiKeyScopeTypes.api_key_id,
@@ -702,7 +721,7 @@ class GalleryTypes:
     user_id = UserTypes.id
     name = typing.Annotated[str, StringConstraints(
         min_length=1, max_length=256)]
-    visibility_level = VisibilityLevelTypes.id
+    visibility_level = client.VisibilityLevelTypes.id
     parent_id = GalleryId
     description = typing.Annotated[str, StringConstraints(
         min_length=0, max_length=20000)]
@@ -745,19 +764,68 @@ class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
         back_populates='gallery')
 
     @classmethod
+    async def get_root_gallery(cls, session: Session, user_id: GalleryTypes.user_id) -> typing.Self | None:
+        return await cls.get_one_by_key_values(session, {'user_id': user_id, 'parent_id': None})
+
+    @property
+    def folder_name(self) -> str:
+        if self.parent_id is None and self.name == 'root':
+            return self.user_id
+        if self.date is None:
+            return self.name
+        else:
+            return self.date.isoformat() + ' ' + self.name
+
+    async def get_dir(self, session: Session, root: pathlib.Path) -> pathlib.Path:
+
+        if self.parent_id is None:
+            return root / self.folder_name
+        else:
+            return (await self.parent.get_dir(session, root)) / self.folder_name
+
+    async def get_parents(self, session: Session) -> list[typing.Self]:
+
+        if self.parent_id is None:
+            return []
+        else:
+            return (await self.parent.get_parents(session)) + [self.parent]
+
+    @classmethod
+    async def api_get(cls, session: Session, c: client.Client, authorized_user_id: UserTypes.id | None, gallery_id: GalleryTypes.id, admin: bool = False) -> typing.Self:
+
+        # if it doesn't exist here, throw 404
+        gallery = await cls._basic_api_get(session, gallery_id)
+
+        # if the gallery is private, check permissions
+        if gallery.visibility_level == c.visibility_level_name_mapping['private']:
+
+            # user is not authorized, pretend it doesn't exist
+            if not authorized_user_id:
+                raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                    detail=cls.not_found_message())
+
+            if not admin:
+
+                # check user's permission
+                if gallery.user_id != authorized_user_id:
+                    gallery_permission = await GalleryPermission.get_one_by_id(session, (gallery_id, authorized_user_id))
+
+                    # user has no access, pretend it doesn't exist
+                    if not gallery_permission:
+                        raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                            detail=cls.not_found_message())
+
+        return gallery
+
+    @classmethod
     async def is_available(cls, session: Session, gallery_available_admin: GalleryAvailableAdmin) -> bool:
         return not await cls.get_one_by_key_values(session, gallery_available_admin.model_dump())
 
-    def get_dir(self, session: Session, root: pathlib.Path) -> pathlib.Path:
-        return root / self.get_rel_dir(session)
-
-    def get_rel_dir(self, session: Session) -> pathlib.Path:
-        if self.parent_id is None:
-            return pathlib.Path(self.date.isoformat() + ' ' + self.name)
-        else:
-            parent_gallery = session.exec(
-                select(Gallery).where(Gallery.id == self.parent_id)).one()
-            return parent_gallery.get_rel_dir(session) / (self.date.isoformat() + ' ' + self.name)
+    @classmethod
+    async def api_get_is_available(cls, session: Session, gallery_available_admin: GalleryAvailableAdmin) -> None:
+        if not await cls.is_available(session, gallery_available_admin):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail=cls.already_exists_message())
 
 
 type PluralGalleriesDict = dict[GalleryTypes.id, Gallery]
@@ -801,20 +869,33 @@ class GalleryUpdate(GalleryImport, GalleryIdBase):
 
 class GalleryUpdateAdmin(GalleryUpdate, TableUpdateAdmin[Gallery, GalleryTypes.id]):
 
-    async def patch(self, session: Session) -> Gallery:
+    async def api_patch(self, session: Session, c: client.Client, authorized_user_id: UserTypes.id | None, admin: bool = False) -> Gallery:
 
-        gallery = await self._TABLE_MODEL.get_one_by_id(session, self.id)
-        if not gallery:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=self._TABLE_MODEL.not_found_message())
+        # if it doesn't exist, throw 404
+        gallery = await self._TABLE_MODEL._basic_api_get(session, self._id)
 
-        gallery_available = GalleryAvailableAdmin(
-            **gallery.model_dump(), **self.model_dump(exclude_unset=True)
-        )
+        if not admin:
+            # check user's permission
+            gallery_permission = await GalleryPermission.get_one_by_id(session, (gallery.id, authorized_user_id))
 
-        if not await Gallery.is_available(session, gallery_available):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail=self._TABLE_MODEL.already_exists_message())
+            # if the gallery is private and user has no access, pretend it doesn't exist
+            if not gallery_permission and gallery.visibility_level == c.visibility_level_name_mapping['private']:
+                raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                    detail=self._TABLE_MODEL.not_found_message())
+
+            # for public galleries, or for private galleries where the user has access
+            if gallery_permission.permission_level < c.permission_level_name_mapping['editor']:
+                raise HTTPException(
+                    status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to patch this gallery')
+
+            # raise HTTP 409 if the gallery already exists
+            await Gallery.api_get_is_available(session, GalleryAvailableAdmin(
+                **gallery.model_dump(), **self.model_dump(exclude_unset=True)
+            ))
+
+        # rename the folder
+        if 'name' in self.model_fields_set or 'date' in self.model_fields_set or 'parent_id' in self.model_fields_set:
+            print('renaming the folder!')
 
         gallery.sqlmodel_update(self.model_dump(exclude_unset=True))
         await gallery.add_to_db(session)
@@ -832,7 +913,7 @@ class GalleryCreate(GalleryImport):
 
 class GalleryCreateAdmin(GalleryCreate, TableCreateAdmin[Gallery]):
 
-    async def post(self, session: Session, client: Client) -> Gallery:
+    async def post(self, session: Session, c: client.Client) -> Gallery:
 
         gallery_available = GalleryAvailableAdmin(**self.model_dump())
         if not await Gallery.is_available(session, gallery_available):
@@ -841,14 +922,17 @@ class GalleryCreateAdmin(GalleryCreate, TableCreateAdmin[Gallery]):
 
         gallery = await self.create()
         await gallery.add_to_db(session)
+
+        (await gallery.get_dir(session, c.galleries_dir)).mkdir()
+
         return gallery
 
     @classmethod
-    async def post_init_galleries(cls, session: Session, client: Client, user_id: GalleryTypes.user_id) -> list[Gallery]:
-        root_gallery = await cls(name='root', user_id=user_id, visibility_level=client.visibility_level_name_mapping['private'],
-                                 ).post(session)
-        deleted_gallery = await cls(name='deleted', user_id=user_id, visibility_level=client.visibility_level_name_mapping['private'], parent_id=root_gallery.id,
-                                    ).post(session)
+    async def post_init_galleries(cls, session: Session, c: client.Client, user_id: GalleryTypes.user_id) -> list[Gallery]:
+        root_gallery = await cls(name='root', user_id=user_id, visibility_level=c.visibility_level_name_mapping['private'],
+                                 ).post(session, c)
+        deleted_gallery = await cls(name='deleted', user_id=user_id, visibility_level=c.visibility_level_name_mapping['private'], parent_id=root_gallery.id,
+                                    ).post(session, c)
         return [root_gallery, deleted_gallery]
 #
 # GalleryPermission
@@ -858,7 +942,7 @@ class GalleryCreateAdmin(GalleryCreate, TableCreateAdmin[Gallery]):
 class GalleryPermissionTypes:
     gallery_id = GalleryTypes.id
     user_id = UserTypes.id
-    permission_level = PermissionLevelTypes.id
+    permission_level = client.PermissionLevelTypes.id
 
 
 type GalleryPermissionId = typing.Annotated[tuple[GalleryPermissionTypes.gallery_id,

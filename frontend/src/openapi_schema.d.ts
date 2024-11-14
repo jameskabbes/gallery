@@ -181,10 +181,6 @@ export interface paths {
     /** Get Styles Page */
     get: operations["get_styles_page_styles_page__get"];
   };
-  "/galleries/page/": {
-    /** Get Galleries Page */
-    get: operations["get_galleries_page_galleries_page__get"];
-  };
   "/galleries/{gallery_id}/page/": {
     /** Get Gallery Page */
     get: operations["get_gallery_page_galleries__gallery_id__page__get"];
@@ -351,7 +347,7 @@ export interface components {
       /** User Id */
       user_id: string;
       /** Visibility Level */
-      visibility_level: number | null;
+      visibility_level: number;
       /** Parent Id */
       parent_id?: string | null;
       /** Description */
@@ -366,22 +362,13 @@ export interface components {
       /** User Id */
       user_id: string;
       /** Visibility Level */
-      visibility_level: number | null;
+      visibility_level: number;
       /** Parent Id */
       parent_id?: string | null;
       /** Description */
       description?: string | null;
       /** Date */
       date?: string | null;
-    };
-    /** GalleryPermission */
-    GalleryPermission: {
-      /** Gallery Id */
-      gallery_id: string;
-      /** User Id */
-      user_id: string;
-      /** Permission Level */
-      permission_level: number;
     };
     /** GalleryPrivate */
     GalleryPrivate: {
@@ -461,19 +448,14 @@ export interface components {
     GetAuthReturn: {
       auth: components["schemas"]["GetAuthBaseReturn"];
     };
-    /** GetGalleriesPageResponse */
-    GetGalleriesPageResponse: {
-      auth: components["schemas"]["GetAuthBaseReturn"];
-      galleries: components["schemas"]["PluralGalleriesDict"];
-      /** Gallery Permissions */
-      gallery_permissions: {
-        [key: string]: components["schemas"]["GalleryPermission"];
-      };
-    };
     /** GetGalleryPageResponse */
     GetGalleryPageResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
       gallery: components["schemas"]["GalleryPublic"];
+      /** Parents */
+      parents: components["schemas"]["GalleryPublic"][];
+      /** Children */
+      children: components["schemas"]["GalleryPublic"][];
     };
     /** GetHomePageResponse */
     GetHomePageResponse: {
@@ -617,8 +599,6 @@ export interface components {
       email: string;
       /** Password */
       password?: string | null;
-      /** Username */
-      username?: string | null;
       /** User Role Id */
       user_role_id: number;
     };
@@ -1562,8 +1542,8 @@ export interface operations {
     parameters: {
       query: {
         name: string;
-        parent_id: string | null;
-        date: string | null;
+        parent_id?: string | null;
+        date?: string | null;
         user_id: string;
       };
     };
@@ -1587,8 +1567,8 @@ export interface operations {
     parameters: {
       query: {
         name: string;
-        parent_id: string | null;
-        date: string | null;
+        parent_id?: string | null;
+        date?: string | null;
       };
     };
     responses: {
@@ -1832,20 +1812,12 @@ export interface operations {
       };
     };
   };
-  /** Get Galleries Page */
-  get_galleries_page_galleries_page__get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["GetGalleriesPageResponse"];
-        };
-      };
-    };
-  };
   /** Get Gallery Page */
   get_gallery_page_galleries__gallery_id__page__get: {
     parameters: {
+      query?: {
+        root?: boolean;
+      };
       path: {
         gallery_id: string;
       };

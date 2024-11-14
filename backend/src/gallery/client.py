@@ -1,11 +1,44 @@
 import typing
 import pathlib
-from gallery import config, utils, models
-from sqlmodel import Session
+from gallery import utils
 from sqlalchemy import create_engine, Engine
 from sqlmodel import SQLModel
 import datetime
 import json
+from pathlib import Path
+
+GALLERY_DIR = Path(__file__).parent
+SRC_DIR = GALLERY_DIR.parent
+BACKEND_DIR = SRC_DIR.parent
+REPO_DIR = BACKEND_DIR.parent
+REPO_DATA_DIR = REPO_DIR / 'data'
+PROJECT_CONFIG_PATH = REPO_DIR / 'config.json'
+
+FASTAPI_RUN_PATH = SRC_DIR / 'fastapi_run.sh'
+FASTAPI_DEV_PATH = SRC_DIR / 'fastapi_dev.sh'
+
+REQUIREMENTS_INSTALLED_PATH = SRC_DIR / 'requirements_installed.txt'
+
+
+class PermissionLevelTypes:
+    id = int
+    name = typing.Literal['editor', 'viewer']
+
+
+class VisibilityLevelTypes:
+    id = int
+    name = typing.Literal['public', 'private']
+
+
+class ScopeTypes:
+    id = int
+    name = typing.Literal['admin', 'users.read', 'users.write']
+
+
+class UserRoleTypes:
+    id = int
+    name = typing.Literal['admin', 'user']
+
 
 type uvicorn_port_type = int
 
@@ -59,14 +92,14 @@ DefaultConfig: Config = {
     },
     'db': {
         'path': {
-            'parent_dir': config.DATA_DIR,
-            'filename': 'gallery.db',
+            'parent_dir': BACKEND_DIR,
+            'filename': 'data/gallery.db',
         }
     },
     'media_root': {
         'path': {
-            'parent_dir': config.DATA_DIR,
-            'filename': 'media_root'
+            'parent_dir': BACKEND_DIR,
+            'filename': 'data/media_root'
         }
     },
 
@@ -77,14 +110,14 @@ DefaultConfig: Config = {
     },
     'jwt': {
         'secret_key_path': {
-            'parent_dir': config.DATA_DIR,
-            'filename': 'jwt_secret_key.txt'
+            'parent_dir': BACKEND_DIR,
+            'filename': 'data/jwt_secret_key.txt'
         },
         'algorithm': 'HS256'
     },
     'google_client': {
         'path': {
-            'parent_dir': config.REPO_DATA_DIR,
+            'parent_dir': REPO_DATA_DIR,
             'filename': 'google_client_secret.json'
         }}
 }
@@ -119,17 +152,17 @@ class Client:
     cookie_keys: dict[str, str]
     magic_link_frontend_url: str
 
-    scope_name_mapping: dict[models.ScopeTypes.name, models.ScopeTypes.id]
-    scope_id_mapping: dict[models.ScopeTypes.id, models.ScopeTypes.name]
-    visibility_level_name_mapping: dict[models.VisibilityLevelTypes.name,
-                                        models.VisibilityLevelTypes.id]
-    permission_level_name_mapping: dict[models.PermissionLevelTypes.name,
-                                        models.PermissionLevelTypes.id]
-    user_role_name_mapping: dict[models.UserRoleTypes.name,
-                                 models.UserRoleTypes.id]
+    scope_name_mapping: dict[ScopeTypes.name, ScopeTypes.id]
+    scope_id_mapping: dict[ScopeTypes.id, ScopeTypes.name]
+    visibility_level_name_mapping: dict[VisibilityLevelTypes.name,
+                                        VisibilityLevelTypes.id]
+    permission_level_name_mapping: dict[PermissionLevelTypes.name,
+                                        PermissionLevelTypes.id]
+    user_role_name_mapping: dict[UserRoleTypes.name,
+                                 UserRoleTypes.id]
 
-    user_role_id_scope_ids: dict[models.UserRoleTypes.id,
-                                 set[models.ScopeTypes.id]]
+    user_role_id_scope_ids: dict[UserRoleTypes.id,
+                                 set[ScopeTypes.id]]
 
     def __init__(self, config: Config = {}):
 
