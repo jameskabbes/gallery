@@ -591,7 +591,7 @@ class UserAccessToken(Table[UserAccessTokenTypes.id], UserAccessTokenIDBase, Aut
     __tablename__ = 'user_access_token'
 
     user: User = Relationship(
-        back_populates='user_access_tokens', cascade_delete=True)
+        back_populates='user_access_tokens')
 
     @classmethod
     async def api_get(cls, **kwargs: Unpack[ApiGetMethodKwargs[UserAccessTokenTypes.id]]) -> typing.Self:
@@ -677,6 +677,14 @@ class ApiKeyIdBase(IdObject[ApiKeyTypes.id]):
         primary_key=True, index=True, unique=True, const=True)
 
 
+class ApiKeyAvailable(BaseModel):
+    name: ApiKeyTypes.name
+
+
+class ApiKeyAvailableAdmin(ApiKeyAvailable):
+    user_id: UserTypes.id
+
+
 class ApiKey(Table[ApiKeyTypes.id], ApiKeyIdBase, AuthCredential[ApiKeyTypes.id], table=True):
     __tablename__ = 'api_key'
 
@@ -691,12 +699,12 @@ class ApiKey(Table[ApiKeyTypes.id], ApiKeyIdBase, AuthCredential[ApiKeyTypes.id]
         return [api_key_scope.scope_id for api_key_scope in self.api_key_scopes]
 
     @classmethod
-    async def is_available(cls, session: Session, name: ApiKeyTypes.name) -> bool:
-        return not await cls.get_one_by_key_values(session, {'name': name})
+    async def is_available(cls, session: Session, api_key_available_admin: ApiKeyAvailableAdmin) -> bool:
+        return not await cls.get_one_by_key_values(session, api_key_available_admin.model_dump())
 
     @classmethod
-    async def api_get_is_available(cls, session: Session, name: ApiKeyTypes.name) -> None:
-        if not await cls.is_available(session, name):
+    async def api_get_is_available(cls, session: Session, api_key_available_admin: ApiKeyAvailableAdmin) -> None:
+        if not await cls.is_available(session, api_key_available_admin):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail=cls.already_exists_message())
 
@@ -756,7 +764,7 @@ class ApiKeyUpdateAdmin(ApiKeyUpdate, TableUpdateAdmin[ApiKey, ApiKeyTypes.id]):
 
         if 'name' in self.model_fields_set:
             if api_key.name != self.name:
-                await ApiKey.api_get_is_available(kwargs['session'], self.name)
+                await ApiKey.api_get_is_available(kwargs['session'], ApiKeyAvailableAdmin(name=self.name, user_id=api_key.user_id))
 
         api_key.sqlmodel_update(self.model_dump(exclude_unset=True))
         await api_key.add_to_db(kwargs['session'])
@@ -770,7 +778,7 @@ class ApiKeyCreate(ApiKeyImport):
 class ApiKeyCreateAdmin(ApiKeyCreate, AuthCredentialCreateAdmin[ApiKey, ApiKeyTypes.id]):
 
     async def api_post(self, **kwargs: Unpack[ApiPostMethodKwargs]) -> ApiKey:
-        await ApiKey.api_get_is_available(kwargs['session'], self.name)
+        await ApiKey.api_get_is_available(kwargs['session'], ApiKeyAvailableAdmin(name=self.name, user_id=kwargs['authorized_user_id']))
         api_key = await self.create()
         await api_key.add_to_db(kwargs['session'])
         return api_key
@@ -867,6 +875,15 @@ class ApiKeyScopeCreateAdmin(ApiKeyScopeIdBase, TableCreateAdmin[ApiKeyScope]):
 
         # if the given kwargs allow the user to access the api key, then they allow the user to create the ApiKeyScope
         api_key = await ApiKey.api_get(**kwargs, id=self.api_key_id)
+
+        if self.scope_id not in kwargs['c'].user_role_id_scope_ids[api_key.user.user_role_id]:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Scope doesn't exist for this user")
+
+        existing_api_key_scope = await ApiKeyScope._basic_api_get(kwargs['session'], self.model_dump())
+        if existing_api_key_scope:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="Scope already exists for this API key")
 
         api_key_scope = await self.create()
         await api_key_scope.add_to_db(kwargs['session'])
@@ -966,7 +983,6 @@ class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
         gallery = await cls._basic_api_get(kwargs['session'], kwargs['id'])
 
         if not kwargs['admin']:
-
             if gallery.visibility_level == kwargs['c'].visibility_level_name_mapping['private']:
 
                 # user is not authorized, pretend it doesn't exist
