@@ -65,14 +65,14 @@ type EXCEPTION = typing.Literal[
     'invalid_authorization_type'
 ]
 
-EXCEPTION_MAPPING: dict[EXCEPTION, typing.Callable[[], HTTPException]] = {
-    'improper_format': improper_format_exception,
-    'missing_required_claims': missing_required_claims_exception,
-    'authorization_expired': authorization_expired_exception,
-    'user_not_found': user_not_found_exception,
-    'not_permitted': not_permitted_exception,
-    'credentials': credentials_exception,
-    'invalid_authorization_type': invalid_authorization_type_exception
+EXCEPTION_MAPPING: dict[EXCEPTION, HTTPException] = {
+    'improper_format': improper_format_exception(),
+    'missing_required_claims': missing_required_claims_exception(),
+    'authorization_expired': authorization_expired_exception(),
+    'user_not_found': user_not_found_exception(),
+    'not_permitted': not_permitted_exception(),
+    'credentials': credentials_exception(),
+    'invalid_authorization_type': invalid_authorization_type_exception()
 }
 
 # Scopes

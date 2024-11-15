@@ -1,5 +1,6 @@
 from pydantic import BaseModel, field_validator
 import typing
+from typing import Unpack
 import uuid
 from fastapi import HTTPException, status, Response
 from sqlmodel import SQLModel, Field, Column, Session, select, delete, Relationship
@@ -21,13 +22,31 @@ from gallery import client
 #
 
 
-class GetAuthorizationReturn(BaseModel):
-    isAuthorized: bool = False
-    expiry: typing.Optional[datetime_module.datetime] = None
-    exception: typing.Optional[auth.EXCEPTION] = None
-    user: typing.Optional['UserPrivate'] = None
-    scope_ids: typing.Optional[set[client.ScopeTypes.id]] = None
-    auth_credential: typing.Optional['AUTH_CREDENTIAL_MODEL'] = None
+class ApiMethodBaseKwargs(typing.TypedDict):
+    session: Session
+    c: client.Client
+    authorized_user_id: str | None
+    admin: bool
+
+
+class ApiMethodBaseKwargsWithId[IdType](ApiMethodBaseKwargs):
+    id: IdType
+
+
+class ApiGetMethodKwargs[IdType](ApiMethodBaseKwargsWithId[IdType]):
+    pass
+
+
+class ApiPostMethodKwargs(ApiMethodBaseKwargs):
+    pass
+
+
+class ApiPatchMethodKwargs[IdType](ApiMethodBaseKwargsWithId[IdType]):
+    pass
+
+
+class ApiDeleteMethodKwargs[IdType](ApiMethodBaseKwargsWithId[IdType]):
+    pass
 
 
 def validate_and_normalize_datetime(value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime:
@@ -154,20 +173,16 @@ class Table[IdType](SQLModel, IdObject[IdType]):
         return instance
 
     @classmethod
-    async def api_get(cls, session: Session, id: IdType) -> typing.Self:
-        return await cls._basic_api_get(session, id)
-
-    @ classmethod
-    async def _basic_api_delete(cls, session: Session, id: IdType) -> bool:
-        if await cls.delete_one_by_id(session, id) == 0:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
-        else:
-            return Response(status_code=status.HTTP_204_NO_CONTENT)
+    async def api_get(cls, **kwargs: Unpack[ApiGetMethodKwargs[IdType]]) -> typing.Self:
+        return await cls._basic_api_get(kwargs['session'], kwargs['id'])
 
     @classmethod
-    async def api_delete(cls, session: Session, id: IdType) -> bool:
-        return await cls._basic_api_delete(session, id)
+    async def api_delete(cls, **kwargs: Unpack[ApiDeleteMethodKwargs[IdType]]) -> None:
+
+        table_inst = cls._basic_api_get(kwargs['session'], kwargs['id'])
+        kwargs['session'].delete(table_inst)
+        kwargs['session'].commit()
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 class TableExport[TTable: Table](BaseModel):
@@ -184,22 +199,19 @@ class TableImport[TTable: Table](BaseModel):
 class TableUpdateAdmin[TTable: Table, IdType](TableImport[TTable], IdObject[IdType]):
     _TABLE_MODEL: typing.ClassVar[typing.Type[TTable]] = Table
 
-    async def patch(self, session: Session, table_inst: TTable) -> TTable:
+    async def api_patch(self, **kwargs: typing.Unpack[ApiPatchMethodKwargs[IdType]]) -> TTable:
+        table_inst = await self._TABLE_MODEL.api_get(**kwargs)
         table_inst.sqlmodel_update(self.model_dump(exclude_unset=True))
-        await table_inst.add_to_db(session)
+        await table_inst.add_to_db(kwargs['session'])
         return table_inst
-
-    async def api_patch(self, session: Session) -> TTable:
-        table_inst = await self._TABLE_MODEL.api_get(session, self._id)
-        return await self.patch(session, table_inst)
 
 
 class TableCreateAdmin[TTable: Table](TableImport[TTable]):
     _TABLE_MODEL: typing.ClassVar[typing.Type[TTable]] = Table
 
-    async def post(self, session: Session) -> TTable:
+    async def api_post(self, **kwargs: typing.Unpack[ApiPostMethodKwargs]) -> TTable:
         table_inst = await self.create()
-        await table_inst.add_to_db(session)
+        await table_inst.add_to_db(kwargs['session'])
         return table_inst
 
     async def create(self) -> TTable:
@@ -246,12 +258,14 @@ class User(Table[UserTypes.id], UserIDBase, table=True):
     hashed_password: UserTypes.hashed_password | None = Field()
     user_role_id: UserTypes.user_role_id = Field()
 
-    api_keys: list['ApiKey'] = Relationship(back_populates='user')
+    api_keys: list['ApiKey'] = Relationship(
+        back_populates='user', cascade_delete=True)
     user_access_tokens: list['UserAccessToken'] = Relationship(
-        back_populates='user')
+        back_populates='user', cascade_delete=True)
+    galleries: list['Gallery'] = Relationship(
+        back_populates='user', cascade_delete=True)
     gallery_permissions: list['GalleryPermission'] = Relationship(
-        back_populates='user')
-    galleries: list['Gallery'] = Relationship(back_populates='user')
+        back_populates='user', cascade_delete=True)
 
     @ property
     def is_public(self) -> bool:
@@ -285,24 +299,57 @@ class User(Table[UserTypes.id], UserIDBase, table=True):
             return False
         return True
 
+    @classmethod
+    async def api_get_is_username_available(cls, session: Session, username: UserTypes.username) -> None:
+        if not await cls.is_username_available(session, username):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail='Username already exists')
+
     @ classmethod
     async def is_email_available(cls, session: Session, email: UserTypes.email) -> bool:
         if await cls.get_one_by_key_values(session, {'email': email}):
             return False
         return True
 
+    @classmethod
+    async def api_get_is_email_available(cls, session: Session, email: UserTypes.email) -> None:
+        if not await cls.is_email_available(session, email):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail='Email already exists')
+
     @ classmethod
-    async def api_get(cls, session: Session, c: client.Client, authorization: GetAuthorizationReturn, user_id: UserTypes.id, admin: bool = False) -> typing.Self:
+    async def api_get(cls, **kwargs: Unpack[ApiGetMethodKwargs[UserTypes.id]]) -> typing.Self:
 
-        user = await cls._basic_api_get(session, user_id)
-
+        user = await cls._basic_api_get(kwargs['session'], kwargs['id'])
         if not user.is_public:
-            if not admin:
-                if user.id != authorization.user.id:
+            if not kwargs['admin']:
+                if user.id != kwargs['authorized_user_id']:
                     raise HTTPException(
                         status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
 
         return user
+
+    @classmethod
+    async def api_delete(cls, **kwargs: Unpack[ApiDeleteMethodKwargs[UserTypes.id]]) -> None:
+
+        user = await cls._basic_api_get(kwargs['session'], kwargs['id'])
+
+        if not kwargs['admin']:
+            if user.id != kwargs['authorized_user_id']:
+
+                # cannot edit the user,
+                if user.is_public:
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to delete this user')
+
+                # pretend the user doesn't exist
+                else:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
+
+        kwargs['session'].delete(user)
+        kwargs['session'].commit()
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 type PluralUsersDict = dict[UserTypes.id, User]
@@ -335,19 +382,19 @@ class UserImport(TableImport[User]):
         return utils.hash_password(password)
 
 
-class UserUpdate(UserImport, UserIDBase):
+class UserUpdate(UserImport):
     email: typing.Optional[UserTypes.email]
     password: typing.Optional[UserTypes.password]
     username: typing.Optional[UserTypes.username | None]
 
 
 class UserUpdateAdmin(UserUpdate, TableUpdateAdmin[User, UserTypes.id]):
-    async def api_patch(self, session: Session, c: client.Client, authorized_user_id: UserTypes.id, admin: bool = False) -> User:
+    async def api_patch(self, **kwargs: Unpack[ApiPatchMethodKwargs[UserTypes.id]]) -> User:
 
-        user = await self._TABLE_MODEL._basic_api_get(session, self._id)
+        user = await self._TABLE_MODEL._basic_api_get(kwargs['session'], kwargs['id'])
 
-        if not admin:
-            if user.id != authorized_user_id:
+        if not kwargs['admin']:
+            if user.id != kwargs['authorized_user_id']:
                 if user.is_public:
                     raise HTTPException(
                         status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to patch this user')
@@ -360,18 +407,23 @@ class UserUpdateAdmin(UserUpdate, TableUpdateAdmin[User, UserTypes.id]):
 
                 # username has been changed
                 if self.username == None:
-                    root_gallery = await Gallery.get_root_gallery(session, user.id)
+                    root_gallery = await Gallery.get_root_gallery(kwargs['session'], kwargs['id'])
                     if root_gallery:
-                        await GalleryUpdateAdmin(id=root_gallery.id, name=self.username).patch(session)
+
+                        #
+                        #
+                        #
+
+                        await GalleryUpdateAdmin(id=root_gallery.id, name=self.username).api_patch()
 
                 if self.username is not None:
-                    if not await self._TABLE_MODEL.is_username_available(session, self.username):
+                    if not await self._TABLE_MODEL.is_username_available(kwargs['session'], self.username):
                         raise HTTPException(status.HTTP_409_CONFLICT,
                                             detail='Username already exists')
 
         if 'email' in self.model_fields_set:
             if user.email != self.email:
-                if not await self._TABLE_MODEL.is_email_available(session, self.email):
+                if not await self._TABLE_MODEL.is_email_available(kwargs['session'], self.email):
                     raise HTTPException(status.HTTP_409_CONFLICT,
                                         detail='Email already exists')
 
@@ -382,7 +434,7 @@ class UserUpdateAdmin(UserUpdate, TableUpdateAdmin[User, UserTypes.id]):
             exported['hashed_password'] = self.hash_password(self.password)
 
         user.sqlmodel_update(exported)
-        user.add_to_db(session)
+        user.add_to_db(kwargs['session'])
         return user
 
 
@@ -394,13 +446,12 @@ class UserCreate(UserImport):
 class UserCreateAdmin(UserCreate, TableCreateAdmin[User]):
     user_role_id: UserTypes.user_role_id
 
-    async def post(self, session: Session, c: client.Client) -> User:
-        if not await self._TABLE_MODEL.is_email_available(session, self.email):
-            raise HTTPException(status.HTTP_409_CONFLICT,
-                                detail='Email already exists')
+    async def api_post(self, **kwargs: Unpack[ApiPostMethodKwargs]) -> User:
+
+        await User.api_get_is_email_available(kwargs['session'], self.email)
         user = await self.create()
-        await user.add_to_db(session)
-        await GalleryCreateAdmin.post_init_galleries(session, c, user.id)
+        await user.add_to_db(kwargs['session'])
+        await GalleryCreateAdmin.post_init_galleries(kwargs['session'], kwargs['c'], user.id)
         return user
 
     async def create(self) -> User:
@@ -431,7 +482,7 @@ class AuthCredentialTypes:
 
 class AuthCredential[IdType](BaseModel, ABC):
     user_id: UserTypes.id = Field(
-        index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0], const=True)
+        index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0], const=True, ondelete='CASCADE')
     issued: AuthCredentialTypes.issued = Field(const=True)
     expiry: AuthCredentialTypes.expiry = Field()
 
@@ -539,7 +590,34 @@ class UserAccessToken(Table[UserAccessTokenTypes.id], UserAccessTokenIDBase, Aut
     type: typing.ClassVar[AuthCredentialTypes.type] = 'access_token'
     __tablename__ = 'user_access_token'
 
-    user: User = Relationship(back_populates='user_access_tokens')
+    user: User = Relationship(
+        back_populates='user_access_tokens', cascade_delete=True)
+
+    @classmethod
+    async def api_get(cls, **kwargs: Unpack[ApiGetMethodKwargs[UserAccessTokenTypes.id]]) -> typing.Self:
+
+        user_access_token = await cls._basic_api_get(kwargs['session'], kwargs['id'])
+
+        if not kwargs['admin']:
+            if user_access_token.user_id != kwargs['authorized_user_id']:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
+
+        return user_access_token
+
+    @classmethod
+    async def api_delete(cls, **kwargs: Unpack[ApiDeleteMethodKwargs[UserAccessTokenTypes.id]]) -> None:
+
+        user_access_token = await cls._basic_api_get(kwargs['session'], kwargs['id'])
+
+        if not kwargs['admin']:
+            if user_access_token.user_id != kwargs['authorized_user_id']:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
+
+        kwargs['session'].delete(user_access_token)
+        kwargs['session'].commit()
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 type PluralUserAccessTokensDict = dict[UserAccessTokenTypes.id,
@@ -564,12 +642,17 @@ class UserAccessTokenImport(AuthCredentialImport[UserAccessTokenTypes.id]):
                                   ] = UserAccessToken
 
 
-class UserAccessTokenUpdate(UserAccessTokenImport, UserAccessTokenIDBase):
+class UserAccessTokenUpdate(UserAccessTokenImport):
     pass
 
 
 class UserAccessTokenUpdateAdmin(UserAccessTokenUpdate, TableUpdateAdmin[UserAccessToken, UserAccessTokenTypes.id]):
-    pass
+
+    async def api_patch(self, **kwargs: Unpack[ApiPatchMethodKwargs[UserAccessTokenTypes.id]]) -> UserAccessToken:
+        user_access_token = await UserAccessToken.api_get(**kwargs)
+        user_access_token.sqlmodel_update(self.model_dump(exclude_unset=True))
+        await user_access_token.add_to_db(kwargs['session'])
+        return user_access_token
 
 
 class UserAccessTokenCreate(UserAccessTokenImport):
@@ -578,6 +661,7 @@ class UserAccessTokenCreate(UserAccessTokenImport):
 
 class UserAccessTokenCreateAdmin(UserAccessTokenCreate, AuthCredentialCreateAdmin[UserAccessToken, UserAccessTokenTypes.id]):
     pass
+
 
 # # ApiKey
 
@@ -588,12 +672,12 @@ class ApiKeyTypes(AuthCredentialTypes):
         min_length=1, max_length=256)]
 
 
-class ApiKeyIDBase(IdObject[ApiKeyTypes.id]):
+class ApiKeyIdBase(IdObject[ApiKeyTypes.id]):
     id: ApiKeyTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
 
-class ApiKey(Table[ApiKeyTypes.id], ApiKeyIDBase, AuthCredential[ApiKeyTypes.id], table=True):
+class ApiKey(Table[ApiKeyTypes.id], ApiKeyIdBase, AuthCredential[ApiKeyTypes.id], table=True):
     __tablename__ = 'api_key'
 
     name: ApiKeyTypes.name = Field()
@@ -601,10 +685,45 @@ class ApiKey(Table[ApiKeyTypes.id], ApiKeyIDBase, AuthCredential[ApiKeyTypes.id]
 
     user: User = Relationship(back_populates='api_keys')
     api_key_scopes: list['ApiKeyScope'] = Relationship(
-        back_populates='api_key')
+        back_populates='api_key', cascade_delete=True)
 
     async def get_scope_ids(self) -> list[client.ScopeTypes.id]:
         return [api_key_scope.scope_id for api_key_scope in self.api_key_scopes]
+
+    @classmethod
+    async def is_available(cls, session: Session, name: ApiKeyTypes.name) -> bool:
+        return not await cls.get_one_by_key_values(session, {'name': name})
+
+    @classmethod
+    async def api_get_is_available(cls, session: Session, name: ApiKeyTypes.name) -> None:
+        if not await cls.is_available(session, name):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail=cls.already_exists_message())
+
+    @classmethod
+    async def api_get(cls, **kwargs: Unpack[ApiGetMethodKwargs[ApiKeyTypes.id]]) -> typing.Self:
+
+        api_key = await cls._basic_api_get(kwargs['session'], kwargs['id'])
+        if not kwargs['admin']:
+            if api_key.user_id != kwargs['authorized_user_id']:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
+
+        return api_key
+
+    @classmethod
+    async def api_delete(cls, **kwargs: Unpack[ApiDeleteMethodKwargs[ApiKeyTypes.id]]) -> None:
+
+        api_key = await cls._basic_api_get(kwargs['session'], kwargs['id'])
+
+        if not kwargs['admin']:
+            if api_key.user_id != kwargs['authorized_user_id']:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
+
+        kwargs['session'].delete(api_key)
+        kwargs['session'].commit()
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 type PluralApiKeysDict = dict[ApiKeyTypes.id, ApiKey]
@@ -627,12 +746,21 @@ class ApiKeyImport(AuthCredentialImport[ApiKeyTypes.id]):
     _TABLE_MODEL: typing.ClassVar[typing.Type[ApiKey]] = ApiKey
 
 
-class ApiKeyUpdate(ApiKeyImport, ApiKeyIDBase):
+class ApiKeyUpdate(ApiKeyImport):
     name: typing.Optional[ApiKeyTypes.name] = None
 
 
 class ApiKeyUpdateAdmin(ApiKeyUpdate, TableUpdateAdmin[ApiKey, ApiKeyTypes.id]):
-    pass
+    async def api_patch(self, **kwargs: Unpack[ApiPatchMethodKwargs[ApiKeyTypes.id]]) -> ApiKey:
+        api_key = await ApiKey.api_get(**kwargs)
+
+        if 'name' in self.model_fields_set:
+            if api_key.name != self.name:
+                await ApiKey.api_get_is_available(kwargs['session'], self.name)
+
+        api_key.sqlmodel_update(self.model_dump(exclude_unset=True))
+        await api_key.add_to_db(kwargs['session'])
+        return api_key
 
 
 class ApiKeyCreate(ApiKeyImport):
@@ -640,7 +768,12 @@ class ApiKeyCreate(ApiKeyImport):
 
 
 class ApiKeyCreateAdmin(ApiKeyCreate, AuthCredentialCreateAdmin[ApiKey, ApiKeyTypes.id]):
-    pass
+
+    async def api_post(self, **kwargs: Unpack[ApiPostMethodKwargs]) -> ApiKey:
+        await ApiKey.api_get_is_available(kwargs['session'], self.name)
+        api_key = await self.create()
+        await api_key.add_to_db(kwargs['session'])
+        return api_key
 
 
 # AuthCredentialTypes
@@ -668,7 +801,7 @@ type ApiKeyScopeID = typing.Annotated[tuple[ApiKeyScopeTypes.api_key_id,
 
 class ApiKeyScopeIdBase(IdObject[ApiKeyScopeID]):
     api_key_id: ApiKeyScopeTypes.api_key_id = Field(
-        index=True, foreign_key=ApiKey.__tablename__ + '.' + ApiKey._ID_COLS[0])
+        index=True, foreign_key=ApiKey.__tablename__ + '.' + ApiKey._ID_COLS[0], ondelete='CASCADE')
     scope_id: ApiKeyScopeTypes.scope_id = Field(index=True)
 
 
@@ -679,7 +812,33 @@ class ApiKeyScope(Table[ApiKeyScopeID], ApiKeyScopeIdBase, table=True):
     )
     _ID_COLS: typing.ClassVar[list[str]] = ['api_key_id', 'scope_id']
 
-    api_key: ApiKey = Relationship(back_populates='api_key_scopes')
+    api_key: ApiKey = Relationship(
+        back_populates='api_key_scopes')
+
+    @classmethod
+    async def api_get(cls, **kwargs: Unpack[ApiGetMethodKwargs[ApiKeyScopeID]]) -> typing.Self:
+
+        api_key_scope = await cls._basic_api_get(kwargs['session'], kwargs['id'])
+        if not kwargs['admin']:
+            if api_key_scope.api_key.user_id != kwargs['authorized_user_id']:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
+
+        return api_key_scope
+
+    @classmethod
+    async def api_delete(cls, **kwargs: Unpack[ApiDeleteMethodKwargs[ApiKeyScopeID]]) -> None:
+
+        api_key_scope = await cls._basic_api_get(kwargs['session'], kwargs['id'])
+
+        if not kwargs['admin']:
+            if api_key_scope.api_key.user_id != kwargs['authorized_user_id']:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
+
+        kwargs['session'].delete(api_key_scope)
+        kwargs['session'].commit()
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 type PluralApiKeyScopesDict = dict[ApiKeyScopeID, ApiKeyScope]
@@ -697,11 +856,21 @@ class ApiKeyScopePrivate(ApiKeyScopeExport):
     pass
 
 
-class ApiKeyScopeImport(ApiKeyScopeIdBase, TableImport[ApiKeyScope]):
+class ApiKeyScopeCreateAdmin(ApiKeyScopeIdBase, TableCreateAdmin[ApiKeyScope]):
     _TABLE_MODEL: typing.ClassVar[typing.Type[ApiKeyScope]] = ApiKeyScope
 
+    async def api_post(self, **kwargs: Unpack[ApiPostMethodKwargs]) -> ApiKeyScope:
 
-class ApiKeyScopeCreateAdmin(ApiKeyScopeImport, ApiKeyIDBase, TableCreateAdmin[ApiKeyScope]):
+        if ApiKeyScope._basic_api_get(kwargs['session'], self.model_dump()):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail='Api key scope already exists')
+
+        # if the given kwargs allow the user to access the api key, then they allow the user to create the ApiKeyScope
+        api_key = await ApiKey.api_get(**kwargs, id=self.api_key_id)
+
+        api_key_scope = await self.create()
+        await api_key_scope.add_to_db(kwargs['session'])
+        return api_key_scope
 
     async def create(self) -> ApiKeyScope:
         return ApiKeyScope(
@@ -748,20 +917,21 @@ class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
 
     name: GalleryTypes.name = Field()
     user_id: GalleryTypes.user_id = Field(
-        index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0])
+        index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0], ondelete='CASCADE')
 
     visibility_level: GalleryTypes.visibility_level = Field()
     parent_id: GalleryTypes.parent_id = Field(nullable=True, index=True,
-                                              foreign_key=__tablename__ + '.id')
+                                              foreign_key=__tablename__ + '.id', ondelete='CASCADE')
     description: GalleryTypes.description = Field(nullable=True)
     date: GalleryTypes.date = Field(nullable=True)
 
     user: User = Relationship(back_populates='galleries')
     parent: typing.Optional['Gallery'] = Relationship(
         back_populates='children', sa_relationship_kwargs={'remote_side': 'Gallery.id'})
-    children: list['Gallery'] = Relationship(back_populates='parent')
+    children: list['Gallery'] = Relationship(
+        back_populates='parent', cascade_delete=True)
     gallery_permissions: list['GalleryPermission'] = Relationship(
-        back_populates='gallery')
+        back_populates='gallery', cascade_delete=True)
 
     @classmethod
     async def get_root_gallery(cls, session: Session, user_id: GalleryTypes.user_id) -> typing.Self | None:
@@ -791,24 +961,22 @@ class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
             return (await self.parent.get_parents(session)) + [self.parent]
 
     @classmethod
-    async def api_get(cls, session: Session, c: client.Client, authorized_user_id: UserTypes.id | None, gallery_id: GalleryTypes.id, admin: bool = False) -> typing.Self:
+    async def api_get(cls, **kwargs: Unpack[ApiGetMethodKwargs[GalleryTypes.id]]) -> typing.Self:
 
-        # if it doesn't exist here, throw 404
-        gallery = await cls._basic_api_get(session, gallery_id)
+        gallery = await cls._basic_api_get(kwargs['session'], kwargs['id'])
 
-        # if the gallery is private, check permissions
-        if gallery.visibility_level == c.visibility_level_name_mapping['private']:
+        if not kwargs['admin']:
 
-            # user is not authorized, pretend it doesn't exist
-            if not authorized_user_id:
-                raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                    detail=cls.not_found_message())
+            if gallery.visibility_level == kwargs['c'].visibility_level_name_mapping['private']:
 
-            if not admin:
+                # user is not authorized, pretend it doesn't exist
+                if not kwargs['authorized_user_id']:
+                    raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                        detail=cls.not_found_message())
 
                 # check user's permission
-                if gallery.user_id != authorized_user_id:
-                    gallery_permission = await GalleryPermission.get_one_by_id(session, (gallery_id, authorized_user_id))
+                if gallery.user_id != kwargs['authorized_user_id']:
+                    gallery_permission = await GalleryPermission.get_one_by_id(kwargs['session'], (kwargs['id'], kwargs['authorized_user_id']))
 
                     # user has no access, pretend it doesn't exist
                     if not gallery_permission:
@@ -826,6 +994,27 @@ class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
         if not await cls.is_available(session, gallery_available_admin):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail=cls.already_exists_message())
+
+    @classmethod
+    async def api_delete(cls, **kwargs: Unpack[ApiDeleteMethodKwargs[GalleryTypes.id]]) -> None:
+
+        gallery = await cls._basic_api_get(kwargs['session'], kwargs['id'])
+
+        if not kwargs['admin']:
+            if gallery.user_id != kwargs['authorized_user_id']:
+
+                gallery_permission = await GalleryPermission.get_one_by_id(kwargs['session'], (kwargs['id'], kwargs['authorized_user_id']))
+
+                if not gallery_permission and gallery.visibility_level == kwargs['c'].visibility_level_name_mapping['private']:
+                    raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                        detail=cls.not_found_message())
+
+                raise HTTPException(
+                    status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to delete this gallery')
+
+        kwargs['session'].delete(gallery)
+        kwargs['session'].commit()
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 type PluralGalleriesDict = dict[GalleryTypes.id, Gallery]
@@ -858,7 +1047,7 @@ class GalleryImport(TableImport[Gallery]):
     _TABLE_MODEL: typing.ClassVar[typing.Type[Gallery]] = Gallery
 
 
-class GalleryUpdate(GalleryImport, GalleryIdBase):
+class GalleryUpdate(GalleryImport):
     name: typing.Optional[GalleryTypes.name] = None
     user_id: typing.Optional[GalleryTypes.user_id] = None
     visibility_level: typing.Optional[GalleryTypes.visibility_level] = None
@@ -869,36 +1058,37 @@ class GalleryUpdate(GalleryImport, GalleryIdBase):
 
 class GalleryUpdateAdmin(GalleryUpdate, TableUpdateAdmin[Gallery, GalleryTypes.id]):
 
-    async def api_patch(self, session: Session, c: client.Client, authorized_user_id: UserTypes.id | None, admin: bool = False) -> Gallery:
+    async def api_patch(self, **kwargs: Unpack[ApiPatchMethodKwargs[GalleryTypes.id]]) -> Gallery:
 
         # if it doesn't exist, throw 404
-        gallery = await self._TABLE_MODEL._basic_api_get(session, self._id)
+        gallery = await self._TABLE_MODEL._basic_api_get(kwargs['session'], kwargs['id'])
 
-        if not admin:
+        if not kwargs['admin']:
             # check user's permission
-            gallery_permission = await GalleryPermission.get_one_by_id(session, (gallery.id, authorized_user_id))
+            gallery_permission = await GalleryPermission.get_one_by_id(kwargs['session'], (kwargs['id'], kwargs['authorized_user_id']))
 
             # if the gallery is private and user has no access, pretend it doesn't exist
-            if not gallery_permission and gallery.visibility_level == c.visibility_level_name_mapping['private']:
+            if not gallery_permission and gallery.visibility_level == kwargs['c'].visibility_level_name_mapping['private']:
                 raise HTTPException(status.HTTP_404_NOT_FOUND,
                                     detail=self._TABLE_MODEL.not_found_message())
 
-            # for public galleries, or for private galleries where the user has access
-            if gallery_permission.permission_level < c.permission_level_name_mapping['editor']:
+            # for public galleries, or for private galleries where the user lacks edit access
+            if gallery_permission.permission_level < kwargs['c'].permission_level_name_mapping['editor']:
                 raise HTTPException(
                     status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to patch this gallery')
 
-            # raise HTTP 409 if the gallery already exists
-            await Gallery.api_get_is_available(session, GalleryAvailableAdmin(
-                **gallery.model_dump(), **self.model_dump(exclude_unset=True)
-            ))
+        # raise HTTP 409 if the gallery already exists
+        await Gallery.api_get_is_available(kwargs['session'], GalleryAvailableAdmin(
+            **gallery.model_dump(include=['name', 'parent_id', 'date', 'user_id']), **self.model_dump(include=['name', 'parent_id', 'date', 'user_id'], exclude_unset=True)
+        ))
 
         # rename the folder
         if 'name' in self.model_fields_set or 'date' in self.model_fields_set or 'parent_id' in self.model_fields_set:
             print('renaming the folder!')
+            # need to fill this in later
 
         gallery.sqlmodel_update(self.model_dump(exclude_unset=True))
-        await gallery.add_to_db(session)
+        await gallery.add_to_db(kwargs['session'])
         return gallery
 
 
@@ -913,27 +1103,23 @@ class GalleryCreate(GalleryImport):
 
 class GalleryCreateAdmin(GalleryCreate, TableCreateAdmin[Gallery]):
 
-    async def post(self, session: Session, c: client.Client) -> Gallery:
+    async def api_post(self, **kwargs: Unpack[ApiPostMethodKwargs]) -> Gallery:
 
-        gallery_available = GalleryAvailableAdmin(**self.model_dump())
-        if not await Gallery.is_available(session, gallery_available):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail=self._TABLE_MODEL.already_exists_message())
-
+        await Gallery.api_get_is_available(kwargs['session'], GalleryAvailableAdmin(**self.model_dump(include=['name', 'parent_id', 'date', 'user_id'])))
         gallery = await self.create()
-        await gallery.add_to_db(session)
+        await gallery.add_to_db(kwargs['session'])
 
-        (await gallery.get_dir(session, c.galleries_dir)).mkdir()
-
+        # (await gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)).mkdir()
         return gallery
 
     @classmethod
     async def post_init_galleries(cls, session: Session, c: client.Client, user_id: GalleryTypes.user_id) -> list[Gallery]:
-        root_gallery = await cls(name='root', user_id=user_id, visibility_level=c.visibility_level_name_mapping['private'],
-                                 ).post(session, c)
-        deleted_gallery = await cls(name='deleted', user_id=user_id, visibility_level=c.visibility_level_name_mapping['private'], parent_id=root_gallery.id,
-                                    ).post(session, c)
-        return [root_gallery, deleted_gallery]
+        return []
+        # root_gallery = await cls(name='root', user_id=user_id, visibility_level=c.visibility_level_name_mapping['private'],
+        #                          ).post(session, c)
+        # deleted_gallery = await cls(name='deleted', user_id=user_id, visibility_level=c.visibility_level_name_mapping['private'], parent_id=root_gallery.id,
+        #                             ).post(session, c)
+        # return [root_gallery, deleted_gallery]
 #
 # GalleryPermission
 #
@@ -953,9 +1139,9 @@ class GalleryPermissionIdBase(IdObject[GalleryPermissionId]):
     _ID_COLS: typing.ClassVar[list[str]] = ['gallery_id', 'user_id']
 
     gallery_id: GalleryPermissionTypes.gallery_id = Field(
-        primary_key=True, index=True, foreign_key=Gallery.__tablename__ + '.' + Gallery._ID_COLS[0])
+        primary_key=True, index=True, foreign_key=Gallery.__tablename__ + '.' + Gallery._ID_COLS[0], ondelete='CASCADE')
     user_id: GalleryPermissionTypes.user_id = Field(
-        primary_key=True, index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0])
+        primary_key=True, index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0], ondelete='CASCADE')
 
 
 class GalleryPermission(Table[GalleryPermissionId], GalleryPermissionIdBase, table=True):
@@ -968,6 +1154,33 @@ class GalleryPermission(Table[GalleryPermissionId], GalleryPermissionIdBase, tab
 
     gallery: Gallery = Relationship(back_populates='gallery_permissions')
     user: User = Relationship(back_populates='gallery_permissions')
+
+    @classmethod
+    async def api_get(cls, method='get', **kwargs: Unpack[ApiGetMethodKwargs[GalleryPermissionId]]) -> typing.Self:
+
+        gallery_permission = await cls._basic_api_get(kwargs['session'], kwargs['id'])
+
+        if not kwargs['admin']:
+            gallery = await Gallery.get_one_by_id(kwargs['session'], kwargs['id'][0])
+            if gallery.user_id != kwargs['authorized_user_id']:
+                authorized_user_gallery_permission = await cls.get_one_by_id(kwargs['session'], (kwargs['id'][0], kwargs['authorized_user_id']))
+
+                if authorized_user_gallery_permission or gallery.visibility_level == kwargs['c'].visibility_level_name_mapping['public']:
+                    raise HTTPException(
+                        status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to ' + method + ' this gallery permission')
+                else:
+                    raise HTTPException(
+                        status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
+
+        return gallery_permission
+
+    @classmethod
+    async def api_delete(cls, **kwargs: Unpack[ApiDeleteMethodKwargs[GalleryPermissionId]]) -> None:
+
+        gallery_permission = await cls.api_get(method='delete', **kwargs)
+        kwargs['session'].delete(gallery_permission)
+        kwargs['session'].commit()
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 type PluralGalleryPermissionsDict = dict[GalleryPermissionId,
@@ -991,17 +1204,32 @@ class GalleryPermissionPrivate(GalleryPermissionExport):
     pass
 
 
-class GalleryPermissionImport(TableImport[GalleryPermission], GalleryPermissionIdBase):
+class GalleryPermissionImport(TableImport[GalleryPermission]):
     _TABLE_MODEL: typing.ClassVar[typing.Type[GalleryPermission]
                                   ] = GalleryPermission
 
 
 class GalleryPermissionUpdateAdmin(GalleryPermissionImport, TableUpdateAdmin[GalleryPermission, GalleryPermissionId]):
-    permission_level: typing.Optional[GalleryPermissionTypes.permission_level] = None
+    permission_level: typing.Optional[GalleryPermissionTypes.permission_level]
+
+    async def api_patch(self, **kwargs: Unpack[ApiPatchMethodKwargs[GalleryPermissionId]]) -> GalleryPermission:
+        gallery_permission = await GalleryPermission.api_get(method='patch', **kwargs)
+        gallery_permission.sqlmodel_update(self.model_dump(exclude_unset=True))
+        await gallery_permission.add_to_db(kwargs['session'])
+        return gallery_permission
 
 
-class GalleryPermissionCreateAdmin(GalleryPermissionImport, TableCreateAdmin[GalleryPermission]):
+class GalleryPermissionCreateAdmin(GalleryPermissionImport, GalleryPermissionIdBase, TableCreateAdmin[GalleryPermission]):
     permission_level: GalleryPermissionTypes.permission_level
+
+    async def api_post(self, **kwargs: Unpack[ApiPostMethodKwargs]) -> GalleryPermission:
+        if await GalleryPermission.get_one_by_id(kwargs['session'], self.model_dump()):
+            raise HTTPException(
+                status.HTTP_409_CONFLICT, detail='Gallery permission already exists')
+
+        gallery_permission = await self.create()
+        await gallery_permission.add_to_db(kwargs['session'])
+        return gallery_permission
 
     async def create(self) -> GalleryPermission:
         return GalleryPermission(
