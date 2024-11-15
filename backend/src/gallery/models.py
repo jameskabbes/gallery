@@ -97,7 +97,7 @@ class Table[IdType](SQLModel, IdObject[IdType]):
         """Get a model by its ID"""
 
         if len(cls._ID_COLS) > 1:
-            assert isinstance(id, (tuple, list))
+            assert isinstance(id, tuple)
             assert len(id) == len(cls._ID_COLS)
             resp = await cls._get_by_key_values(session, {cls._ID_COLS[i]: id[i] for i in range(len(cls._ID_COLS))})
         else:
@@ -451,8 +451,9 @@ class UserCreateAdmin(UserCreate, TableCreateAdmin[User]):
         await User.api_get_is_email_available(kwargs['session'], self.email)
         user = await self.create()
         await user.add_to_db(kwargs['session'])
-        await GalleryCreateAdmin.post_init_galleries(kwargs['session'], kwargs['c'], user.id)
-        return user
+
+        root_gallery = await GalleryCreateAdmin(name='root', user_id=kwargs['authorized_user_id'], visibility_level=kwargs['c'].visibility_level_name_mapping['private']).api_post(**kwargs)
+        deleted_gallery = await GalleryCreateAdmin(name='deleted', user_id=kwargs['authorized_user_id'], visibility_level=kwargs['c'].visibility_level_name_mapping['private'], parent_id=root_gallery._id).api_post(**kwargs)
 
     async def create(self) -> User:
 
@@ -808,6 +809,8 @@ type ApiKeyScopeID = typing.Annotated[tuple[ApiKeyScopeTypes.api_key_id,
 
 
 class ApiKeyScopeIdBase(IdObject[ApiKeyScopeID]):
+    _ID_COLS: typing.ClassVar[list[str]] = ['api_key_id', 'scope_id']
+
     api_key_id: ApiKeyScopeTypes.api_key_id = Field(
         index=True, foreign_key=ApiKey.__tablename__ + '.' + ApiKey._ID_COLS[0], ondelete='CASCADE')
     scope_id: ApiKeyScopeTypes.scope_id = Field(index=True)
@@ -818,7 +821,6 @@ class ApiKeyScope(Table[ApiKeyScopeID], ApiKeyScopeIdBase, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('api_key_id', 'scope_id'),
     )
-    _ID_COLS: typing.ClassVar[list[str]] = ['api_key_id', 'scope_id']
 
     api_key: ApiKey = Relationship(
         back_populates='api_key_scopes')
@@ -837,13 +839,7 @@ class ApiKeyScope(Table[ApiKeyScopeID], ApiKeyScopeIdBase, table=True):
     @classmethod
     async def api_delete(cls, **kwargs: Unpack[ApiDeleteMethodKwargs[ApiKeyScopeID]]) -> None:
 
-        api_key_scope = await cls._basic_api_get(kwargs['session'], kwargs['id'])
-
-        if not kwargs['admin']:
-            if api_key_scope.api_key.user_id != kwargs['authorized_user_id']:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
-
+        api_key_scope = await cls.api_get(**kwargs)
         kwargs['session'].delete(api_key_scope)
         kwargs['session'].commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -869,18 +865,17 @@ class ApiKeyScopeCreateAdmin(ApiKeyScopeIdBase, TableCreateAdmin[ApiKeyScope]):
 
     async def api_post(self, **kwargs: Unpack[ApiPostMethodKwargs]) -> ApiKeyScope:
 
-        if ApiKeyScope._basic_api_get(kwargs['session'], self.model_dump()):
+        if await ApiKeyScope.get_one_by_id(kwargs['session'], self._id):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail='Api key scope already exists')
 
         # if the given kwargs allow the user to access the api key, then they allow the user to create the ApiKeyScope
         api_key = await ApiKey.api_get(**kwargs, id=self.api_key_id)
-
         if self.scope_id not in kwargs['c'].user_role_id_scope_ids[api_key.user.user_role_id]:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Scope doesn't exist for this user")
 
-        existing_api_key_scope = await ApiKeyScope._basic_api_get(kwargs['session'], self.model_dump())
+        existing_api_key_scope = await ApiKeyScope.get_one_by_id(kwargs['session'], self._id)
         if existing_api_key_scope:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail="Scope already exists for this API key")
@@ -1095,7 +1090,7 @@ class GalleryUpdateAdmin(GalleryUpdate, TableUpdateAdmin[Gallery, GalleryTypes.i
 
         # raise HTTP 409 if the gallery already exists
         await Gallery.api_get_is_available(kwargs['session'], GalleryAvailableAdmin(
-            **gallery.model_dump(include=['name', 'parent_id', 'date', 'user_id']), **self.model_dump(include=['name', 'parent_id', 'date', 'user_id'], exclude_unset=True)
+            **gallery.model_dump(include=list(GalleryAvailableAdmin.model_fields.keys())), **self.model_dump(list(GalleryAvailableAdmin.model_fields.keys()), exclude_unset=True)
         ))
 
         # rename the folder
@@ -1128,14 +1123,6 @@ class GalleryCreateAdmin(GalleryCreate, TableCreateAdmin[Gallery]):
         # (await gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)).mkdir()
         return gallery
 
-    @classmethod
-    async def post_init_galleries(cls, session: Session, c: client.Client, user_id: GalleryTypes.user_id) -> list[Gallery]:
-        return []
-        # root_gallery = await cls(name='root', user_id=user_id, visibility_level=c.visibility_level_name_mapping['private'],
-        #                          ).post(session, c)
-        # deleted_gallery = await cls(name='deleted', user_id=user_id, visibility_level=c.visibility_level_name_mapping['private'], parent_id=root_gallery.id,
-        #                             ).post(session, c)
-        # return [root_gallery, deleted_gallery]
 #
 # GalleryPermission
 #
