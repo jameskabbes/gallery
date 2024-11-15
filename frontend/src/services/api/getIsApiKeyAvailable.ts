@@ -16,33 +16,30 @@ type GetIsApiKeyAvailableResponses = ExtractResponseTypes<
 
 async function getIsApiKeyAvailable(
   authContext: AuthContextType,
-  apiKeyAvailable: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
+  apiKeyAvailable: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['query']
 ): Promise<
   ApiResponse<
     GetIsApiKeyAvailableResponses[keyof GetIsApiKeyAvailableResponses]
   >
 > {
-  console.log(apiKeyAvailable);
-
   return await callApi<
     GetIsApiKeyAvailableResponses[keyof GetIsApiKeyAvailableResponses],
-    paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
+    paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['query']
   >({
     url: API_ENDPOINT,
     method: API_METHOD,
-    data: apiKeyAvailable,
+    params: apiKeyAvailable,
     authContext: authContext,
   });
 }
 
 async function isApiKeyAvailable(
   authContext: AuthContextType,
-  apiKeyAvailable: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
+  apiKeyAvailable: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['query']
 ): Promise<boolean> {
   const response = await getIsApiKeyAvailable(authContext, apiKeyAvailable);
   if (response.status == 200) {
-    const data = response.data as GetIsApiKeyAvailableResponses['200'];
-    return data.available;
+    return true;
   } else {
     return false;
   }

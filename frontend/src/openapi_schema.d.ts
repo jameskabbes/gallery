@@ -226,18 +226,6 @@ export interface components {
       /** Name */
       name: string;
     };
-    /** ApiKeyAvailable */
-    ApiKeyAvailable: {
-      /** Name */
-      name: string;
-    };
-    /** ApiKeyAvailableAdmin */
-    ApiKeyAvailableAdmin: {
-      /** Name */
-      name: string;
-      /** User Id */
-      user_id: string;
-    };
     /** ApiKeyCreate */
     ApiKeyCreate: {
       /** Lifespan */
@@ -365,26 +353,6 @@ export interface components {
        * Format: date
        */
       date: string;
-    };
-    /** GalleryAvailable */
-    GalleryAvailable: {
-      /** Name */
-      name: string;
-      /** Parent Id */
-      parent_id?: string | null;
-      /** Date */
-      date?: string | null;
-    };
-    /** GalleryAvailableAdmin */
-    GalleryAvailableAdmin: {
-      /** Name */
-      name: string;
-      /** Parent Id */
-      parent_id?: string | null;
-      /** Date */
-      date?: string | null;
-      /** User Id */
-      user_id: string;
     };
     /** GalleryCreate */
     GalleryCreate: {
@@ -538,11 +506,6 @@ export interface components {
     HTTPValidationError: {
       /** Detail */
       detail?: components["schemas"]["ValidationError"][];
-    };
-    /** ItemAvailableResponse */
-    ItemAvailableResponse: {
-      /** Available */
-      available: boolean;
     };
     /** LoginResponse */
     LoginResponse: {
@@ -1006,7 +969,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ItemAvailableResponse"];
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */
@@ -1028,7 +991,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ItemAvailableResponse"];
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */
@@ -1342,16 +1305,17 @@ export interface operations {
   };
   /** Get Is Api Key Available Admin */
   get_is_api_key_available_admin_admin_api_keys_available__get: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["ApiKeyAvailableAdmin"];
+    parameters: {
+      query: {
+        name: string;
+        user_id: string;
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ItemAvailableResponse"];
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */
@@ -1364,16 +1328,16 @@ export interface operations {
   };
   /** Get Is Api Key Available */
   get_is_api_key_available_api_keys_available__get: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["ApiKeyAvailable"];
+    parameters: {
+      query: {
+        name: string;
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ItemAvailableResponse"];
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */
@@ -1673,16 +1637,19 @@ export interface operations {
   };
   /** Get Is Gallery Available Admin */
   get_is_gallery_available_admin_admin_galleries_available__get: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["GalleryAvailableAdmin"];
+    parameters: {
+      query: {
+        name: string;
+        parent_id?: string | null;
+        date?: string | null;
+        user_id: string;
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ItemAvailableResponse"];
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */
@@ -1695,16 +1662,18 @@ export interface operations {
   };
   /** Get Is Gallery Available */
   get_is_gallery_available_galleries_available__get: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["GalleryAvailable"];
+    parameters: {
+      query: {
+        name: string;
+        parent_id?: string | null;
+        date?: string | null;
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ItemAvailableResponse"];
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */

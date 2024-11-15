@@ -28,8 +28,7 @@ async function isUsernameAvailable(
 ): Promise<boolean> {
   const response = await getIsUsernameAvailable(username);
   if (response.status == 200) {
-    const data = response.data as GetIsUsernameAvailable['200'];
-    return data.available;
+    return true;
   } else {
     return false;
   }

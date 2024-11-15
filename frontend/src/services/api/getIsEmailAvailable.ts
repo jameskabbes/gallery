@@ -29,8 +29,7 @@ async function isEmailAvailable(
 ): Promise<boolean> {
   const response = await getIsEmailAvailable(email);
   if (response.status == 200) {
-    const data = response.data as GetIsEmailAvailableResponses['200'];
-    return data.available;
+    return true;
   } else {
     return false;
   }

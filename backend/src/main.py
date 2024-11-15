@@ -89,10 +89,6 @@ class NotFoundResponse(DetailOnlyResponse):
     pass
 
 
-class ItemAvailableResponse(BaseModel):
-    available: bool
-
-
 @app.exception_handler(HTTPException)
 async def custom_http_exception_handler(request: Request, exc: HTTPException):
 
@@ -515,15 +511,15 @@ async def delete_user_admin(
 
 
 @ app.get('/users/available/username/{username}/')
-async def user_username_available(username: models.UserTypes.username) -> ItemAvailableResponse:
+async def user_username_available(username: models.UserTypes.username):
     with Session(c.db_engine) as session:
-        return ItemAvailableResponse(available=await models.User.is_username_available(session, username))
+        return await models.User.api_get_is_username_available(session, username)
 
 
 @ app.get('/users/available/email/{email}/')
-async def user_email_available(email: models.UserTypes.email) -> ItemAvailableResponse:
+async def user_email_available(email: models.UserTypes.email):
     with Session(c.db_engine) as session:
-        return ItemAvailableResponse(available=await models.User.is_email_available(session, email))
+        await models.User.api_get_is_email_available(session, email)
 
 
 @app.get('/user/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
@@ -564,7 +560,7 @@ async def delete_user(
         get_authorization())]
 ) -> Response:
     with Session(c.db_engine) as session:
-        return models.User.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=authorization.user.id)
+        return await models.User.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=authorization.user.id, admin=False)
 
 #
 # User Access Tokens
@@ -646,7 +642,7 @@ async def get_api_key_by_id_admin(
 async def post_api_key_admin(
     api_key_create_admin: models.ApiKeyCreateAdmin,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(required_scopes={'admin'}))]
+        get_authorization(required_scopes={'admin'}))],
 ) -> models.ApiKey:
     with Session(c.db_engine) as session:
         return await api_key_create_admin.api_post(session=session, c=c, authorized_user_id=authorization.user.id, admin=True)
@@ -654,24 +650,24 @@ async def post_api_key_admin(
 
 @app.get('/admin/api-keys/available/')
 async def get_is_api_key_available_admin(
-    api_key_available_admin: models.ApiKeyAvailableAdmin,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(required_scopes={'admin'}))]
-) -> ItemAvailableResponse:
+        get_authorization(required_scopes={'admin'}))],
+    api_key_available_admin: models.ApiKeyAvailableAdmin = Depends(),
+):
     with Session(c.db_engine) as session:
-        return ItemAvailableResponse(available=await models.ApiKey.is_available(session, api_key_available_admin))
+        return await models.ApiKey.api_get_is_available(session=session, c=c, authorized_user_id=authorization.user.id, model=api_key_available_admin, admin=True)
 
 
 @app.get('/api-keys/available/')
 async def get_is_api_key_available(
-    api_key_available: models.ApiKeyAvailable,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization())]
-) -> ItemAvailableResponse:
+        get_authorization())],
+    api_key_available: models.ApiKeyAvailable = Depends(),
+):
     with Session(c.db_engine) as session:
-        return ItemAvailableResponse(available=await models.ApiKey.is_available(session, models.ApiKeyAvailableAdmin(
+        await models.ApiKey.api_get_is_available(session, models.ApiKeyAvailableAdmin(
             **api_key_available.model_dump(), user_id=authorization.user.id
-        )))
+        ))
 
 
 @ app.get('/api-keys/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
@@ -805,24 +801,24 @@ async def delete_gallery_admin(
 
 @app.get('/admin/galleries/available/')
 async def get_is_gallery_available_admin(
-    gallery_available_admin: models.GalleryAvailableAdmin,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(required_scopes={'admin'}))]
-) -> ItemAvailableResponse:
+        get_authorization(required_scopes={'admin'}))],
+    gallery_available_admin: models.GalleryAvailableAdmin = Depends(),
+):
     with Session(c.db_engine) as session:
-        return ItemAvailableResponse(available=await models.Gallery.is_available(session, gallery_available_admin))
+        return await models.Gallery.api_get_is_available(session, gallery_available_admin)
 
 
 @app.get('/galleries/available/')
 async def get_is_gallery_available(
-    gallery_available: models.GalleryAvailable,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())],
-) -> ItemAvailableResponse:
+    gallery_available: models.GalleryAvailable = Depends(),
+):
     with Session(c.db_engine) as session:
-        return ItemAvailableResponse(available=await models.Gallery.is_available(session, models.GalleryAvailableAdmin(
+        return await models.Gallery.api_get_is_available(session, models.GalleryAvailableAdmin(
             **gallery_available.model_dump(), user_id=authorization.user.id
-        )))
+        ))
 
 
 @ app.get('/galleries/')
@@ -861,7 +857,7 @@ async def post_gallery(
         get_authorization())]
 ) -> models.GalleryPrivate:
     with Session(c.db_engine) as session:
-        return models.GalleryPrivate.model_validate(models.GalleryCreateAdmin(
+        return models.GalleryPrivate.model_validate(await models.GalleryCreateAdmin(
             **gallery_create.model_dump()).api_post(session=session, c=c, authorized_user_id=authorization.user.id, admin=False))
 
 
@@ -1029,7 +1025,7 @@ async def get_gallery_page(
             **get_auth(authorization).model_dump(),
             gallery=models.GalleryPublic.model_validate(gallery),
             parents=[models.GalleryPublic.model_validate(
-                parent) for parent in gallery.get_parents(session)],
+                parent) for parent in await gallery.get_parents(session)],
             children=[models.GalleryPublic.model_validate(
                 child) for child in gallery.children]
         )
