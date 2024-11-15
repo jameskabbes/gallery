@@ -64,8 +64,12 @@ export interface paths {
     get: operations["get_user_user__get"];
     /** Delete User */
     delete: operations["delete_user_user__delete"];
+  };
+  "/users/{user_id}": {
+    /** Get User By Id */
+    get: operations["get_user_by_id_users__user_id__get"];
     /** Patch User */
-    patch: operations["patch_user_user__patch"];
+    patch: operations["patch_user_users__user_id__patch"];
   };
   "/admin/user-access-tokens/{user_access_token_id}": {
     /** Get User Access Token By Id Admin */
@@ -97,11 +101,23 @@ export interface paths {
     /** Post Api Key Admin */
     post: operations["post_api_key_admin_admin_api_keys__post"];
   };
+  "/admin/api-keys/available/": {
+    /** Get Is Api Key Available Admin */
+    get: operations["get_is_api_key_available_admin_admin_api_keys_available__get"];
+  };
+  "/api-keys/available/": {
+    /** Get Is Api Key Available */
+    get: operations["get_is_api_key_available_api_keys_available__get"];
+  };
   "/api-keys/": {
     /** Get Api Keys */
     get: operations["get_api_keys_api_keys__get"];
     /** Post Api Key */
     post: operations["post_api_key_api_keys__post"];
+  };
+  "/api-keys/{api_key_id}": {
+    /** Get Api Key By Id */
+    get: operations["get_api_key_by_id_api_keys__api_key_id__get"];
   };
   "/api-keys/{api_key_id}/": {
     /** Delete Api Key */
@@ -210,6 +226,18 @@ export interface components {
       /** Name */
       name: string;
     };
+    /** ApiKeyAvailable */
+    ApiKeyAvailable: {
+      /** Name */
+      name: string;
+    };
+    /** ApiKeyAvailableAdmin */
+    ApiKeyAvailableAdmin: {
+      /** Name */
+      name: string;
+      /** User Id */
+      user_id: string;
+    };
     /** ApiKeyCreate */
     ApiKeyCreate: {
       /** Lifespan */
@@ -237,8 +265,6 @@ export interface components {
     };
     /** ApiKeyUpdate */
     ApiKeyUpdate: {
-      /** Id */
-      id: string;
       /** Lifespan */
       lifespan?: string | null;
       /** Expiry */
@@ -340,6 +366,26 @@ export interface components {
        */
       date: string;
     };
+    /** GalleryAvailable */
+    GalleryAvailable: {
+      /** Name */
+      name: string;
+      /** Parent Id */
+      parent_id?: string | null;
+      /** Date */
+      date?: string | null;
+    };
+    /** GalleryAvailableAdmin */
+    GalleryAvailableAdmin: {
+      /** Name */
+      name: string;
+      /** Parent Id */
+      parent_id?: string | null;
+      /** Date */
+      date?: string | null;
+      /** User Id */
+      user_id: string;
+    };
     /** GalleryCreate */
     GalleryCreate: {
       /** Name */
@@ -404,8 +450,6 @@ export interface components {
     };
     /** GalleryUpdate */
     GalleryUpdate: {
-      /** Id */
-      id: string;
       /** Name */
       name?: string | null;
       /** User Id */
@@ -421,8 +465,6 @@ export interface components {
     };
     /** GalleryUpdateAdmin */
     GalleryUpdateAdmin: {
-      /** Id */
-      id: string;
       /** Name */
       name?: string | null;
       /** User Id */
@@ -583,8 +625,6 @@ export interface components {
     };
     /** UserAccessTokenUpdateAdmin */
     UserAccessTokenUpdateAdmin: {
-      /** Id */
-      id: string;
       /** Lifespan */
       lifespan?: string | null;
       /** Expiry */
@@ -616,27 +656,30 @@ export interface components {
       /** User Role Id */
       user_role_id: number;
     };
-    /** UserUpdate */
-    UserUpdate: {
+    /** UserPublic */
+    UserPublic: {
       /** Id */
       id: string;
-      /** Email */
-      email?: string | null;
-      /** Password */
-      password?: string | null;
       /** Username */
-      username?: string | null;
+      username: string | null;
+    };
+    /** UserUpdate */
+    UserUpdate: {
+      /** Email */
+      email: string | null;
+      /** Password */
+      password: string | null;
+      /** Username */
+      username: string | null;
     };
     /** UserUpdateAdmin */
     UserUpdateAdmin: {
-      /** Id */
-      id: string;
       /** Email */
-      email?: string | null;
+      email: string | null;
       /** Password */
-      password?: string | null;
+      password: string | null;
       /** Username */
-      username?: string | null;
+      username: string | null;
     };
     /** ValidationError */
     ValidationError: {
@@ -944,10 +987,6 @@ export interface operations {
           "application/json": components["schemas"]["User"];
         };
       };
-      /** @description User id in url does not match user id in body */
-      400: {
-        content: never;
-      };
       /** @description Validation Error */
       422: {
         content: {
@@ -1032,8 +1071,41 @@ export interface operations {
       };
     };
   };
+  /** Get User By Id */
+  get_user_by_id_users__user_id__get: {
+    parameters: {
+      path: {
+        user_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["UserPublic"];
+        };
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   /** Patch User */
-  patch_user_user__patch: {
+  patch_user_users__user_id__patch: {
+    parameters: {
+      path: {
+        user_id: string;
+      };
+    };
     requestBody: {
       content: {
         "application/json": components["schemas"]["UserUpdate"];
@@ -1108,7 +1180,7 @@ export interface operations {
           "application/json": components["schemas"]["UserAccessToken"];
         };
       };
-      /** @description User already exists */
+      /** @description UserAccessToken already exists */
       409: {
         content: {
           "application/json": components["schemas"]["DetailOnlyResponse"];
@@ -1166,10 +1238,6 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["User"];
         };
-      };
-      /** @description User access token id in url does not match user access token id in body */
-      400: {
-        content: never;
       };
       /** @description Validation Error */
       422: {
@@ -1272,6 +1340,50 @@ export interface operations {
       };
     };
   };
+  /** Get Is Api Key Available Admin */
+  get_is_api_key_available_admin_admin_api_keys_available__get: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ApiKeyAvailableAdmin"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ItemAvailableResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get Is Api Key Available */
+  get_is_api_key_available_api_keys_available__get: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ApiKeyAvailable"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ItemAvailableResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   /** Get Api Keys */
   get_api_keys_api_keys__get: {
     responses: {
@@ -1294,6 +1406,28 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": components["schemas"]["ApiKeyCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ApiKey"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get Api Key By Id */
+  get_api_key_by_id_api_keys__api_key_id__get: {
+    parameters: {
+      path: {
+        api_key_id: string;
       };
     };
     responses: {
@@ -1539,12 +1673,9 @@ export interface operations {
   };
   /** Get Is Gallery Available Admin */
   get_is_gallery_available_admin_admin_galleries_available__get: {
-    parameters: {
-      query: {
-        name: string;
-        parent_id?: string | null;
-        date?: string | null;
-        user_id: string;
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GalleryAvailableAdmin"];
       };
     };
     responses: {
@@ -1564,11 +1695,9 @@ export interface operations {
   };
   /** Get Is Gallery Available */
   get_is_gallery_available_galleries_available__get: {
-    parameters: {
-      query: {
-        name: string;
-        parent_id?: string | null;
-        date?: string | null;
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GalleryAvailable"];
       };
     };
     responses: {

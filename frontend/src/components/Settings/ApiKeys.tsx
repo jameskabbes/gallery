@@ -37,13 +37,14 @@ import {
   getApiKeyJWT,
   GetApiKeyJwtResponses,
 } from '../../services/api/getApiKeyJwt';
-import { toast } from 'react-toastify';
-import { Surface } from '../Utils/Surface';
 import config from '../../../../config.json';
 import {
   scopeIdToName,
   userRoleIdToName,
 } from '../../utils/reverseMappingConfig';
+import { useValidatedInput } from '../../utils/useValidatedInput';
+import { isApiKeyAvailable } from '../../services/api/getIsApiKeyAvailable';
+import { CheckOrX } from '../Form/CheckOrX';
 
 const API_ENDPOINT = '/settings/api-keys/page/';
 const API_METHOD = 'get';
@@ -480,11 +481,31 @@ function AddApiKey({
     ),
   });
 
-  const [valid, setValid] = useState(false);
+  interface ValidatedApiKeyAvailable {
+    name: ValidatedInputState<string>;
+  }
 
-  useEffect(() => {
-    setValid(name.status === 'valid' && expiry.status === 'valid');
-  }, [name.status, expiry.status]);
+  const [apiKeyAvailable, setApiKeyAvailable] = useState<
+    ValidatedInputState<ValidatedApiKeyAvailable>
+  >({
+    ...defaultValidatedInputState<ValidatedApiKeyAvailable>({
+      name: name,
+    }),
+  });
+
+  useValidatedInput<ValidatedApiKeyAvailable>({
+    state: apiKeyAvailable,
+    setState: setApiKeyAvailable,
+    checkAvailability: true,
+    checkValidity: true,
+    isAvailable: () =>
+      isApiKeyAvailable(authContext, {
+        name: name.value,
+      }),
+    isValid: (value) => {
+      return value.name.status === 'valid' ? { valid: true } : { valid: false };
+    },
+  });
 
   async function addApiKey(event: React.FormEvent) {
     event.preventDefault();
@@ -590,7 +611,21 @@ function AddApiKey({
             />
           </section>
         </fieldset>
-        <ButtonSubmit disabled={!valid}>Add API Key</ButtonSubmit>
+
+        <div className="flex flex-row justify-center space-x-2 items-center">
+          <p className="text-center">
+            {apiKeyAvailable.status === 'valid'
+              ? 'Available'
+              : apiKeyAvailable.status === 'loading'
+              ? 'Checking'
+              : 'Not available'}
+          </p>
+          <CheckOrX status={apiKeyAvailable.status} />
+        </div>
+
+        <ButtonSubmit disabled={apiKeyAvailable.status !== 'valid'}>
+          Add API Key
+        </ButtonSubmit>
       </form>
     </div>
   );

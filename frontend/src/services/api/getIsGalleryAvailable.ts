@@ -16,7 +16,7 @@ type GetIsGalleryAvailableResponses = ExtractResponseTypes<
 
 async function getIsGalleryAvailable(
   authContext: AuthContextType,
-  galleryAvailable: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['query']
+  galleryAvailable: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
 ): Promise<
   ApiResponse<
     GetIsGalleryAvailableResponses[keyof GetIsGalleryAvailableResponses]
@@ -24,18 +24,18 @@ async function getIsGalleryAvailable(
 > {
   return await callApi<
     GetIsGalleryAvailableResponses[keyof GetIsGalleryAvailableResponses],
-    paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['query']
+    paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >({
     url: API_ENDPOINT,
     method: API_METHOD,
-    params: galleryAvailable,
+    data: galleryAvailable,
     authContext: authContext,
   });
 }
 
 async function isGalleryAvailable(
   authContext: AuthContextType,
-  galleryAvailable: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['query']
+  galleryAvailable: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
 ): Promise<boolean> {
   const response = await getIsGalleryAvailable(authContext, galleryAvailable);
   if (response.status == 200) {
