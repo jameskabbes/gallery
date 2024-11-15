@@ -25,13 +25,17 @@ import { CheckOrX } from '../Form/CheckOrX';
 
 interface AddGalleryProps {
   onSuccess: (gallery: PostGalleryResponses['200']) => void;
+  globalModalsContext: GlobalModalsContextType;
   parentGalleryId: components['schemas']['Gallery']['id'];
 }
 
-function AddGallery({ onSuccess, parentGalleryId }: AddGalleryProps) {
+function AddGallery({
+  onSuccess,
+  globalModalsContext,
+  parentGalleryId,
+}: AddGalleryProps) {
   const authContext = useContext(AuthContext);
   const toastContext = useContext(ToastContext);
-  const globalModalsContext = useContext(GlobalModalsContext);
 
   const [name, setName] = useState<ValidatedInputState<string>>({
     ...defaultValidatedInputState<string>(''),
@@ -92,7 +96,7 @@ function AddGallery({ onSuccess, parentGalleryId }: AddGalleryProps) {
 
   async function addGallery(event: React.FormEvent) {
     event.preventDefault();
-    globalModalsContext.setModal(null);
+    globalModalsContext.clearModal();
 
     const toastId = toastContext.makePending({
       message: 'Adding gallery...',
@@ -221,16 +225,16 @@ function AddGallery({ onSuccess, parentGalleryId }: AddGalleryProps) {
   );
 }
 
-interface SetGalleryModalProps extends AddGalleryProps {
-  globalModalsContext: GlobalModalsContextType;
-}
+interface SetGalleryModalProps extends AddGalleryProps {}
 
 function setGalleryModal({
   globalModalsContext,
   ...rest
 }: SetGalleryModalProps) {
   globalModalsContext.setModal({
-    component: <AddGallery {...rest} />,
+    component: (
+      <AddGallery globalModalsContext={globalModalsContext} {...rest} />
+    ),
     key: 'add-gallery',
     className: 'max-w-[400px] w-full',
   });

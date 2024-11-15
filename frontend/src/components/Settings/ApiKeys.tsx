@@ -503,9 +503,20 @@ function AddApiKey({
         name: name.value,
       }),
     isValid: (value) => {
-      return value.name.status === 'valid' ? { valid: true } : { valid: false };
+      return value.name.status === 'valid'
+        ? { valid: true }
+        : { valid: false, message: 'Invalid name' };
     },
   });
+
+  useEffect(() => {
+    setApiKeyAvailable((prev) => ({
+      ...prev,
+      value: {
+        name: name,
+      },
+    }));
+  }, [name]);
 
   async function addApiKey(event: React.FormEvent) {
     event.preventDefault();
