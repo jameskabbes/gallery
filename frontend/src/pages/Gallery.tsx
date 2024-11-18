@@ -1,5 +1,5 @@
 import React, { useEffect, useContext, useState, Children } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { DeviceContext } from '../contexts/Device';
 import { paths, operations, components } from '../openapi_schema';
 import { defaultValidatedInputState, ExtractResponseTypes } from '../types';
@@ -10,9 +10,12 @@ import { Button1 } from '../components/Utils/Button';
 import { setFileUploaderModal } from '../components/Gallery/FileUploader';
 
 import { IoCloudUploadOutline } from 'react-icons/io5';
-import { setGalleryModal } from '../components/Gallery/AddGallery';
+import { setAddGalleryModal } from '../components/Gallery/AddGallery';
 import { getGalleryLink } from '../components/Gallery/getLink';
 import { Link } from 'react-router-dom';
+import { ToastContext } from '../contexts/Toast';
+import { deleteGallery } from '../services/api/deleteGallery';
+import siteConfig from '../../siteConfig.json';
 
 const API_ENDPOINT = '/galleries/{gallery_id}/page/';
 const API_METHOD = 'get';
@@ -28,11 +31,13 @@ interface Props {
 function Gallery({ root = false }: Props) {
   const globalModalsContext = useContext(GlobalModalsContext);
   const authContext = useContext(AuthContext);
+  const toastContext = useContext(ToastContext);
+  const navigate = useNavigate();
 
   const galleryId: components['schemas']['Gallery']['id'] =
     useParams().galleryId;
 
-  const { data, loading, status } = useApiCall<
+  const { data, loading, status, refetch } = useApiCall<
     ResponseTypesByStatus[keyof ResponseTypesByStatus]
   >(
     {
@@ -44,6 +49,28 @@ function Gallery({ root = false }: Props) {
     },
     [galleryId]
   );
+
+  async function handleDeleteGallery(
+    gallery: components['schemas']['GalleryPublic']
+  ) {
+    let toastId = toastContext.makePending({
+      message: `Delete gallery ${gallery.date} ${gallery.name}`,
+    });
+    const response = await deleteGallery(authContext, gallery.id);
+
+    if (response.status === 204) {
+      toastContext.update(toastId, {
+        message: 'Gallery deleted',
+        type: 'success',
+      });
+      navigate(siteConfig.galleriesUrlBase);
+    } else {
+      toastContext.update(toastId, {
+        message: 'Error deleting gallery',
+        type: 'error',
+      });
+    }
+  }
 
   if (loading) {
     return <div>Loading...</div>;
@@ -68,10 +95,10 @@ function Gallery({ root = false }: Props) {
             <h1>{apiData.gallery.name}</h1>
             <Button1
               onClick={() =>
-                setGalleryModal({
+                setAddGalleryModal({
                   globalModalsContext,
                   onSuccess: (gallery) => {
-                    console.log(gallery);
+                    refetch();
                   },
                   parentGalleryId: apiData.gallery.id,
                 })
@@ -88,6 +115,12 @@ function Gallery({ root = false }: Props) {
                 <IoCloudUploadOutline />
                 Upload Files
               </div>
+            </Button1>
+            <Button1
+              onClick={() => handleDeleteGallery(apiData.gallery)}
+              disabled={apiData.gallery.parent_id === null}
+            >
+              Delete Gallery
             </Button1>
           </div>
           <div>

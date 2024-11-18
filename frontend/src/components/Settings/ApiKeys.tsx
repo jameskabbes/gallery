@@ -291,9 +291,9 @@ interface ApiKeyRowProps {
   toastContext: ToastContextType;
   authContext: AuthContextType;
   globalModalsContext: GlobalModalsContextType;
-  checkConfirmation: ReturnType<
+  checkButtonConfirmation: ReturnType<
     typeof useConfirmationModal
-  >['checkConfirmation'];
+  >['checkButtonConfirmation'];
 }
 
 function ApiKeyRow({
@@ -305,10 +305,12 @@ function ApiKeyRow({
   toastContext,
   authContext,
   globalModalsContext,
-  checkConfirmation,
+  checkButtonConfirmation,
 }: ApiKeyRowProps) {
   const [isEditing, setIsEditing] = useState(false);
-  async function handleDeleteApiKey(apiKeyId: string) {
+  async function handleDeleteApiKey(
+    apiKeyId: components['schemas']['ApiKey']['id']
+  ) {
     let toastId = toastContext.makePending({
       message: `Deleting API Key ${apiKeys[apiKeyId].name}`,
     });
@@ -415,7 +417,7 @@ function ApiKeyRow({
           <Button2
             onClick={(e) => {
               e.stopPropagation();
-              checkConfirmation(
+              checkButtonConfirmation(
                 {
                   title: 'Delete API Key?',
                   confirmText: 'Delete',
@@ -649,7 +651,7 @@ interface ApiKeysProps {
 
 function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
   const globalModalsContext = useContext(GlobalModalsContext);
-  const { checkConfirmation } = useConfirmationModal();
+  const { checkButtonConfirmation } = useConfirmationModal();
 
   const [apiKeys, setApiKeys] = useState<TApiKeys>({});
   const [apiKeyScopeIds, setApiKeyScopeIds] = useState<TApiKeyScopeIds>({});
@@ -719,7 +721,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
                 toastContext={toastContext}
                 authContext={authContext}
                 globalModalsContext={globalModalsContext}
-                checkConfirmation={checkConfirmation}
+                checkButtonConfirmation={checkButtonConfirmation}
               />
             ))}
           </div>

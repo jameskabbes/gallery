@@ -6,7 +6,7 @@ from fastapi import HTTPException, status, Response
 from sqlmodel import SQLModel, Field, Column, Session, select, delete, Relationship
 from pydantic import BaseModel, EmailStr, constr, StringConstraints, field_validator, ValidationInfo, ValidatorFunctionWrapHandler, ValidationError, field_serializer, model_validator
 from pydantic.functional_validators import WrapValidator
-from sqlalchemy import PrimaryKeyConstraint, and_, or_
+from sqlalchemy import PrimaryKeyConstraint, and_, or_, event
 from sqlalchemy.types import DateTime
 from gallery import utils, auth
 from abc import ABC, abstractmethod
@@ -18,6 +18,7 @@ import collections.abc
 import re
 import pathlib
 from gallery import client
+import shutil
 
 #
 
@@ -346,6 +347,11 @@ class User(Table[UserTypes.id], UserIDBase, table=True):
                 else:
                     raise HTTPException(
                         status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
+
+        # delete the root gallery folder
+        root_gallery = await Gallery.get_root_gallery(
+            kwargs['session'], kwargs['id'])
+        shutil.rmtree((await root_gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)))
 
         kwargs['session'].delete(user)
         kwargs['session'].commit()
@@ -947,10 +953,6 @@ class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
     gallery_permissions: list['GalleryPermission'] = Relationship(
         back_populates='gallery', cascade_delete=True)
 
-    @classmethod
-    async def get_root_gallery(cls, session: Session, user_id: GalleryTypes.user_id) -> typing.Self | None:
-        return await cls.get_one_by_key_values(session, {'user_id': user_id, 'parent_id': None})
-
     @property
     def folder_name(self) -> str:
         if self.parent_id is None and self.name == 'root':
@@ -999,6 +1001,10 @@ class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
         return gallery
 
     @classmethod
+    async def get_root_gallery(cls, session: Session, user_id: GalleryTypes.user_id) -> typing.Self | None:
+        return await cls.get_one_by_key_values(session, {'user_id': user_id, 'parent_id': None})
+
+    @classmethod
     async def is_available(cls, session: Session, gallery_available_admin: GalleryAvailableAdmin) -> bool:
         return not await cls.get_one_by_key_values(session, gallery_available_admin.model_dump())
 
@@ -1025,12 +1031,15 @@ class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
                 raise HTTPException(
                     status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to delete this gallery')
 
+        shutil.rmtree((await gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)))
+
         kwargs['session'].delete(gallery)
         kwargs['session'].commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 type PluralGalleriesDict = dict[GalleryTypes.id, Gallery]
+
 
 # Export Types
 
@@ -1122,7 +1131,7 @@ class GalleryCreateAdmin(GalleryCreate, TableCreateAdmin[Gallery]):
         gallery = await self.create()
         await gallery.add_to_db(kwargs['session'])
 
-        # (await gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)).mkdir()
+        (await gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)).mkdir()
         return gallery
 
 #

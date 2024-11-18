@@ -227,14 +227,9 @@ interface EscapeKeyContextType {
   removeCallback: (callback: () => void) => void;
 }
 
-interface ConfirmationModal {
-  title: string;
-  message: string;
+interface ConfirmationModalBaseProps {
   onConfirm: () => void;
   onCancel?: () => void;
-  confirmText?: string;
-  cancelText?: string;
-  showCancel?: boolean;
 }
 
 interface SurfaceContextValue {
@@ -270,6 +265,6 @@ export {
   AuthModalsType,
   DataContextType,
   EscapeKeyContextType,
-  ConfirmationModal,
+  ConfirmationModalBaseProps,
   SurfaceContextValue,
 };

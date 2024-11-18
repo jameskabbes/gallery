@@ -225,12 +225,12 @@ function AddGallery({
   );
 }
 
-interface SetGalleryModalProps extends AddGalleryProps {}
+interface SetAddGalleryModalProps extends AddGalleryProps {}
 
-function setGalleryModal({
+function setAddGalleryModal({
   globalModalsContext,
   ...rest
-}: SetGalleryModalProps) {
+}: SetAddGalleryModalProps) {
   globalModalsContext.setModal({
     component: (
       <AddGallery globalModalsContext={globalModalsContext} {...rest} />
@@ -240,4 +240,4 @@ function setGalleryModal({
   });
 }
 
-export { AddGallery, setGalleryModal };
+export { AddGallery, setAddGalleryModal };

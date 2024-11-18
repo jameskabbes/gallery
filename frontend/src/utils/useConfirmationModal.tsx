@@ -1,7 +1,14 @@
 import React, { useContext } from 'react';
 import { GlobalModalsContext } from '../contexts/GlobalModals';
-import { ConfirmationModal as ConfirmationModalType, Modal } from '../types';
-import { ConfirmationModal } from '../components/ConfirmationModal';
+import {
+  ButtonConfirmationModalProps,
+  ButtonConfirmationModal,
+} from '../components/ConfirmationModals/ButtonConfirmationModal';
+import {
+  TextConfirmationModal,
+  TextConfirmationModalProps,
+} from '../components/ConfirmationModals/TextConfirmationModal';
+import { Modal } from '../types';
 
 function useConfirmationModal() {
   const globalModalsContext = useContext(GlobalModalsContext);
@@ -11,17 +18,14 @@ function useConfirmationModal() {
     key: 'confirmation-modal',
   };
 
-  function checkConfirmation(
-    {
-      onCancel = () => {},
-      onConfirm = () => {},
-      ...restConfirmationModalProps
-    }: ConfirmationModalType,
+  function setModal(
+    ModalComponent: React.ComponentType<any>,
+    { onCancel = () => {}, onConfirm = () => {}, ...restModalProps }: any,
     modalProps: Partial<Omit<Modal, 'component'>> = {}
   ) {
     globalModalsContext.setModal({
       component: (
-        <ConfirmationModal
+        <ModalComponent
           {...{
             onCancel: () => {
               onCancel();
@@ -31,7 +35,7 @@ function useConfirmationModal() {
               onConfirm();
               globalModalsContext.clearModal();
             },
-            ...restConfirmationModalProps,
+            ...restModalProps,
           }}
         />
       ),
@@ -40,8 +44,23 @@ function useConfirmationModal() {
     });
   }
 
+  function checkTextConfirmation(
+    props: TextConfirmationModalProps,
+    modalProps: Partial<Omit<Modal, 'component'>> = {}
+  ) {
+    setModal(TextConfirmationModal, props, modalProps);
+  }
+
+  function checkButtonConfirmation(
+    props: ButtonConfirmationModalProps,
+    modalProps: Partial<Omit<Modal, 'component'>> = {}
+  ) {
+    setModal(ButtonConfirmationModal, props, modalProps);
+  }
+
   return {
-    checkConfirmation,
+    checkButtonConfirmation,
+    checkTextConfirmation,
   };
 }
 

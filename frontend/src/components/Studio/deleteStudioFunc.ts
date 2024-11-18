@@ -6,7 +6,7 @@ import {
 } from '../../types';
 import { callBackendApi } from '../../utils/api';
 import { StudiosReducerAction } from '../../types';
-import { ConfirmationModal } from '../ConfirmationModal';
+import { ConfirmationModal } from '../ConfirmationModals/TextConfirmationModal';
 
 import { toast } from 'react-toastify';
 import { toastTemplate } from '../Toast/Toast';
