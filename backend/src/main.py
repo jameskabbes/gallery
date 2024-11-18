@@ -147,7 +147,7 @@ def get_authorization(
                 return GetAuthorizationReturn(exception='improper_format')
 
             try:
-                payload: models.AuthCredential.JWTExport = jwt_decode(
+                payload: models.AuthCredential.JwtExport = jwt_decode(
                     auth_token)
             except:
                 return GetAuthorizationReturn(exception='improper_format')
@@ -238,10 +238,16 @@ def get_authorization(
     return dependecy
 
 
+class AuthCredentialIdAndType(BaseModel):
+    id: models.ApiKeyTypes.id | models.UserAccessTokenTypes.id
+    type: models.AuthCredentialTypes.type
+
+
 class GetAuthBaseReturn(BaseModel):
     user: typing.Optional[models.UserPrivate]
     scope_ids: typing.Optional[set[client.ScopeTypes.id]]
     expiry: typing.Optional[models.AuthCredentialTypes.expiry]
+    auth_credential: typing.Optional[AuthCredentialIdAndType]
 
 
 assert c.auth_key == 'auth'
@@ -255,7 +261,9 @@ def get_auth(get_authorization_return: GetAuthorizationReturn) -> GetAuthReturn:
     return GetAuthReturn(auth=GetAuthBaseReturn(
         user=get_authorization_return.user,
         scope_ids=get_authorization_return.scope_ids,
-        expiry=get_authorization_return.expiry
+        expiry=get_authorization_return.expiry,
+        auth_credential=AuthCredentialIdAndType(id=get_authorization_return.auth_credential.id,
+                                                type=get_authorization_return.auth_credential.type) if get_authorization_return.auth_credential else None
     ))
 
 
@@ -269,7 +277,7 @@ async def authenticate_user_with_username_and_password(form_data: typing.Annotat
         user = await models.User.authenticate(
             session, form_data.username, form_data.password)
         if not user:
-            raise auth.credentials_exception
+            raise auth.EXCEPTION_MAPPING['credentials']
         return user
 
 
@@ -310,7 +318,9 @@ async def login(
                 user=models.UserPrivate.model_validate(user),
                 scope_ids=set(
                     c.user_role_id_scope_ids[user.user_role_id]),
-                expiry=user_access_token.expiry
+                expiry=user_access_token.expiry,
+                auth_credential=AuthCredentialIdAndType(
+                    id=user_access_token.id, type='access_token')
             )
         )
 
@@ -333,7 +343,7 @@ async def sign_up(
     with Session(c.db_engine) as session:
         user = await user_create_admin.api_post(session=session, c=c, authorized_user_id=None, admin=True)
         user_access_token = await models.UserAccessTokenCreateAdmin(
-            user_id=user.id, type='access_token', lifespan=c.authentication['default_expiry_timedelta']).api_post(session=session, c=c, authorized_user_id=None, admin=False)
+            user_id=user.id, type='access_token', lifespan=c.authentication['default_expiry_timedelta']).api_post(session=session, c=c, authorized_user_id=user.id, admin=False)
 
         set_access_token_cookie(jwt_encode(
             user_access_token.export_to_jwt()), response, stay_signed_in)
@@ -342,7 +352,9 @@ async def sign_up(
             user=models.UserPrivate.model_validate(user),
             scope_ids=set(
                 c.user_role_id_scope_ids[user.user_role_id]),
-            expiry=user_access_token.expiry
+            expiry=user_access_token.expiry,
+            auth_credential=AuthCredentialIdAndType(
+                id=user_access_token.id, type='access_token')
         ))
 
 
@@ -408,7 +420,9 @@ async def verify_magic_link(model: VerifyMagicLinkRequest, authorization: typing
                 user=models.UserPrivate.model_validate(authorization.user),
                 scope_ids=set(
                     c.user_role_id_scope_ids[authorization.user.user_role_id]),
-                expiry=user_access_token.expiry
+                expiry=user_access_token.expiry,
+                auth_credential=AuthCredentialIdAndType(
+                    id=user_access_token.id, type='access_token')
             )
         )
 
@@ -449,7 +463,9 @@ async def login_with_google(request_token: GoogleAuthRequest, response: Response
                 user=models.UserPrivate.model_validate(user),
                 scope_ids=set(
                     c.user_role_id_scope_ids[user.user_role_id]),
-                expiry=user_access_token.expiry
+                expiry=user_access_token.expiry,
+                auth_credential=AuthCredentialIdAndType(
+                    id=user_access_token.id, type='access_token')
             )
         )
 
@@ -1015,7 +1031,8 @@ async def get_gallery_page(
 
     if root:
         with Session(c.db_engine) as session:
-            gallery_id = (await models.Gallery.get_root_gallery(session, authorization.user.id))._id
+            gallery = await models.Gallery.get_root_gallery(session, authorization.user.id)
+            gallery_id = gallery._id
 
     with Session(c.db_engine) as session:
         gallery = await models.Gallery.api_get(

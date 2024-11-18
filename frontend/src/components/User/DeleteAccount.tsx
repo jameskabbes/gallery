@@ -38,6 +38,8 @@ function DeleteAccount({ globalModalsContext }: DeleteAccountProps) {
         message: 'Account deleted',
         type: 'success',
       });
+      console.log('Account deleted');
+      authContext.logOut();
     } else {
       toastContext.update(toastId, {
         message: 'Error deleting account',

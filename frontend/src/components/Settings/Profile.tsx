@@ -6,7 +6,7 @@ import { UpdateUsername } from '../User/UpdateUsername';
 import { UpdatePassword } from '../User/UpdatePassword';
 import { UpdateUser } from '../User/UpdateUser';
 import { Button1 } from '../Utils/Button';
-import { SetDeleteAccountModal } from '../Profile/DeleteAccount';
+import { SetDeleteAccountModal } from '../User/DeleteAccount';
 import { GlobalModalsContext } from '../../contexts/GlobalModals';
 
 interface Props {

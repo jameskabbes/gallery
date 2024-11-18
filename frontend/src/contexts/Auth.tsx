@@ -9,6 +9,7 @@ const defaultState: AuthContextState = {
   user: null,
   scope_ids: [],
   expiry: null,
+  auth_credential: null,
 };
 
 const AuthContext = createContext<AuthContextType>({

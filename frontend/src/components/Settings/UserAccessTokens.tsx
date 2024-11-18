@@ -12,6 +12,7 @@ import {
 } from '../../services/api/deleteUserAccessToken';
 import { Card1 } from '../Utils/Card';
 import { Button1 } from '../Utils/Button';
+import { useConfirmationModal } from '../../utils/useConfirmationModal';
 
 const API_ENDPOINT = '/user-access-tokens/';
 const API_METHOD = 'get';
@@ -26,6 +27,8 @@ interface Props {
 }
 
 function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
+  const { checkConfirmation } = useConfirmationModal();
+
   const [userAccessTokens, setUserAccessTokens] = useState<{
     [key: string]: ResponseTypesByStatus['200'][number];
   }>({});
@@ -76,6 +79,13 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
         message: `Deleted session`,
         type: 'success',
       });
+
+      if (
+        authContext.state.auth_credential?.id === sessionId &&
+        authContext.state.auth_credential?.type === 'access_token'
+      ) {
+        authContext.logOut();
+      }
     } else {
       toastContext.update(toastId, {
         message: 'Could not delete session',
@@ -113,9 +123,26 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
                       minute: 'numeric',
                     })}
                   </p>
+                  <p>
+                    {authContext.state.auth_credential?.id === session.id && (
+                      <span>Current Session</span>
+                    )}
+                  </p>
                   <Button1
                     onClick={() => {
-                      handleDeleteSession(key);
+                      if (
+                        authContext.state.auth_credential?.id === session.id
+                      ) {
+                        checkConfirmation({
+                          title: 'Sign Out?',
+                          message:
+                            'This will sign you out of your current session.',
+                          onConfirm: () => handleDeleteSession(key),
+                          confirmText: 'Sign Out',
+                        });
+                      } else {
+                        handleDeleteSession(key);
+                      }
                     }}
                   >
                     Sign Out

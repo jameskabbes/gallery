@@ -452,8 +452,10 @@ class UserCreateAdmin(UserCreate, TableCreateAdmin[User]):
         user = await self.create()
         await user.add_to_db(kwargs['session'])
 
-        root_gallery = await GalleryCreateAdmin(name='root', user_id=kwargs['authorized_user_id'], visibility_level=kwargs['c'].visibility_level_name_mapping['private']).api_post(**kwargs)
-        deleted_gallery = await GalleryCreateAdmin(name='deleted', user_id=kwargs['authorized_user_id'], visibility_level=kwargs['c'].visibility_level_name_mapping['private'], parent_id=root_gallery._id).api_post(**kwargs)
+        root_gallery = await GalleryCreateAdmin(name='root', user_id=user.id, visibility_level=kwargs['c'].visibility_level_name_mapping['private']).api_post(**kwargs)
+        deleted_gallery = await GalleryCreateAdmin(name='deleted', user_id=user.id, visibility_level=kwargs['c'].visibility_level_name_mapping['private'], parent_id=root_gallery._id).api_post(**kwargs)
+
+        return user
 
     async def create(self) -> User:
 
@@ -787,10 +789,10 @@ class ApiKeyCreateAdmin(ApiKeyCreate, AuthCredentialCreateAdmin[ApiKey, ApiKeyTy
 
 # AuthCredentialTypes
 
-AUTH_CREDENTIAL_MODEL = typing.Union[UserAccessToken, ApiKey]
+AUTH_CREDENTIAL_MODEL = UserAccessToken | ApiKey
 AUTH_CREDENTIAL_MODEL_MAPPING: dict[AuthCredentialTypes.type, AUTH_CREDENTIAL_MODEL] = {
-    'access_token': UserAccessToken,
-    'api_key': ApiKey
+    UserAccessToken.type: UserAccessToken,
+    ApiKey.type: ApiKey
 }
 
 

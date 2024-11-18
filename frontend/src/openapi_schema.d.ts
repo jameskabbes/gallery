@@ -260,6 +260,16 @@ export interface components {
       /** Name */
       name?: string | null;
     };
+    /** AuthCredentialIdAndType */
+    AuthCredentialIdAndType: {
+      /** Id */
+      id: string;
+      /**
+       * Type
+       * @enum {string}
+       */
+      type: "access_token" | "api_key";
+    };
     /** Body_login_auth_login_password__post */
     Body_login_auth_login_password__post: {
       /**
@@ -453,6 +463,7 @@ export interface components {
       scope_ids: number[] | null;
       /** Expiry */
       expiry: string | null;
+      auth_credential: components["schemas"]["AuthCredentialIdAndType"] | null;
     };
     /** GetAuthReturn */
     GetAuthReturn: {
