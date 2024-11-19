@@ -4,7 +4,7 @@ from typing import Unpack
 import uuid
 from fastapi import HTTPException, status, Response
 from sqlmodel import SQLModel, Field, Column, Session, select, delete, Relationship
-from pydantic import BaseModel, EmailStr, constr, StringConstraints, field_validator, ValidationInfo, ValidatorFunctionWrapHandler, ValidationError, field_serializer, model_validator
+from pydantic import BaseModel, EmailStr, constr, StringConstraints, field_validator, ValidationInfo, ValidatorFunctionWrapHandler, ValidationError, field_serializer, model_validator, conint
 from pydantic.functional_validators import WrapValidator
 from sqlalchemy import PrimaryKeyConstraint, and_, or_, event
 from sqlalchemy.types import DateTime
@@ -180,7 +180,7 @@ class Table[IdType](SQLModel, IdObject[IdType]):
     @classmethod
     async def api_delete(cls, **kwargs: Unpack[ApiDeleteMethodKwargs[IdType]]) -> None:
 
-        table_inst = cls._basic_api_get(kwargs['session'], kwargs['id'])
+        table_inst = await cls._basic_api_get(kwargs['session'], kwargs['id'])
         kwargs['session'].delete(table_inst)
         kwargs['session'].commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -905,13 +905,16 @@ GalleryId = str
 class GalleryTypes:
     id = GalleryId
     user_id = UserTypes.id
+
+    # name can't start with the `YYYY-MM-DD ` pattern
     name = typing.Annotated[str, StringConstraints(
-        min_length=1, max_length=256)]
+        min_length=1, max_length=256, pattern=re.compile(r'^(?!\d{4}-\d{2}-\d{2} ).*'))]
     visibility_level = client.VisibilityLevelTypes.id
     parent_id = GalleryId
     description = typing.Annotated[str, StringConstraints(
         min_length=0, max_length=20000)]
     date = datetime_module.date
+    folder_name = str
 
 
 class GalleryIdBase(IdObject[GalleryTypes.id]):
@@ -949,15 +952,28 @@ class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
         back_populates='parent', cascade_delete=True)
     gallery_permissions: list['GalleryPermission'] = Relationship(
         back_populates='gallery', cascade_delete=True)
+    files: list['File'] = Relationship(
+        back_populates='gallery', cascade_delete=True)
 
-    @property
-    def folder_name(self) -> str:
+    @ property
+    def folder_name(self) -> GalleryTypes.folder_name:
         if self.parent_id is None and self.name == 'root':
             return self.user_id
         if self.date is None:
             return self.name
         else:
             return self.date.isoformat() + ' ' + self.name
+
+    @classmethod
+    def get_date_and_name_from_folder_name(cls, folder_name: GalleryTypes.folder_name) -> tuple[GalleryTypes.date | None, GalleryTypes.name]:
+
+        match = re.match(r'^(\d{4}-\d{2}-\d{2}) (.+)$', folder_name)
+        if match:
+            date_str, name = match.groups()
+            date = datetime_module.date.fromisoformat(date_str)
+            return (date, name)
+        else:
+            return (None, folder_name)
 
     async def get_dir(self, session: Session, root: pathlib.Path) -> pathlib.Path:
 
@@ -973,7 +989,7 @@ class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
         else:
             return (await self.parent.get_parents(session)) + [self.parent]
 
-    @classmethod
+    @ classmethod
     async def api_get(cls, **kwargs: Unpack[ApiGetMethodKwargs[GalleryTypes.id]]) -> typing.Self:
 
         gallery = await cls._basic_api_get(kwargs['session'], kwargs['id'])
@@ -997,22 +1013,22 @@ class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
 
         return gallery
 
-    @classmethod
+    @ classmethod
     async def get_root_gallery(cls, session: Session, user_id: GalleryTypes.user_id) -> typing.Self | None:
         return await cls.get_one_by_key_values(session, {'user_id': user_id, 'parent_id': None})
 
-    @classmethod
+    @ classmethod
     async def is_available(cls, session: Session, gallery_available_admin: GalleryAvailableAdmin) -> bool:
         return not await cls.get_one_by_key_values(session, gallery_available_admin.model_dump())
 
-    @classmethod
+    @ classmethod
     async def api_get_is_available(cls, session: Session, gallery_available_admin: GalleryAvailableAdmin) -> None:
         if not await cls.is_available(session, gallery_available_admin):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail=cls.already_exists_message())
 
-    @classmethod
-    async def api_delete(cls, **kwargs: Unpack[ApiDeleteMethodKwargs[GalleryTypes.id]]) -> None:
+    @ classmethod
+    async def api_delete(cls, rmtree=True, **kwargs: Unpack[ApiDeleteMethodKwargs[GalleryTypes.id]]) -> None:
 
         gallery = await cls._basic_api_get(kwargs['session'], kwargs['id'])
 
@@ -1028,11 +1044,84 @@ class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
                 raise HTTPException(
                     status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to delete this gallery')
 
-        shutil.rmtree((await gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)))
+        if rmtree:
+            shutil.rmtree((await gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)))
 
         kwargs['session'].delete(gallery)
         kwargs['session'].commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    async def sync_with_local(self, session: Session, c: client.Client, dir: pathlib.Path) -> None:
+
+        if not dir.exists():
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                detail='Directory not found')
+
+        if self.folder_name != dir.name:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                                detail='Folder name does not match gallery name')
+
+        files: list[pathlib.Path] = []
+        dirs: list[pathlib.Path] = []
+        for item in dir.iterdir():
+            if item.is_dir():
+                dirs.append(item)
+            if item.is_file():
+                files.append(item)
+
+        # Add new galleries, remove old ones
+        local_galleries_by_folder_name = {
+            item.name: item for item in dirs}
+        db_galleries_by_folder_name = {
+            gallery.folder_name: gallery for gallery in self.children}
+
+        local_galleries_folder_names = set(
+            local_galleries_by_folder_name.keys())
+        db_galleries_folder_names = set(db_galleries_by_folder_name.keys())
+
+        to_add = local_galleries_folder_names - db_galleries_folder_names
+        to_remove = db_galleries_folder_names - local_galleries_folder_names
+
+        for folder_name in to_add:
+            date, name = self.get_date_and_name_from_folder_name(folder_name)
+            new_gallery = await GalleryCreateAdmin(name=name, user_id=self.user_id, visibility_level=self.visibility_level, parent_id=self.id, date=date).api_post(
+                session=session, c=c, authorized_user_id=self.user_id, admin=False, mkdir=False)
+
+        for folder_name in to_remove:
+            gallery = db_galleries_by_folder_name[folder_name]
+            await Gallery.api_delete(session=session, c=c, id=gallery.id, authorized_user_id=self.user_id, admin=False, rmtree=False)
+
+        # add new files, remove old ones
+        local_file_by_names = {
+            file.name: file for file in files}
+        db_files_by_names = {
+            file.name: file for file in self.files}
+
+        local_file_names = set(local_file_by_names.keys())
+        db_file_names = set(db_files_by_names.keys())
+
+        to_add = local_file_names - db_file_names
+        to_remove = db_file_names - local_file_names
+
+        for file_name in to_add:
+            stem = local_file_by_names[file_name].stem
+            suffix = ''.join(suffixes) if (
+                suffixes := local_file_by_names[file_name].suffixes) else None
+
+            new_file = await FileCreateAdmin(stem=stem, suffix=suffix, gallery_id=self.id, size=local_file_by_names[file_name].stat().st_size).api_post(
+                session=session, c=c, authorized_user_id=self.user_id, admin=False)
+
+            # rename the file, just to make sure the suffix is lowercase
+            local_file_by_names[file_name].rename(
+                local_file_by_names[file_name].with_name(new_file.name))
+
+        for file_name in to_remove:
+            file = db_files_by_names[file_name]
+            await File.api_delete(session=session, c=c, id=file.id, authorized_user_id=self.user_id, admin=False, unlink=False)
+
+        # recursively sync children
+        for child in self.children:
+            await child.sync_with_local(session, c, dir / child.folder_name)
 
 
 type PluralGalleriesDict = dict[GalleryTypes.id, Gallery]
@@ -1129,13 +1218,15 @@ class GalleryCreate(GalleryImport):
 
 class GalleryCreateAdmin(GalleryCreate, TableCreateAdmin[Gallery]):
 
-    async def api_post(self, **kwargs: Unpack[ApiPostMethodKwargs]) -> Gallery:
+    async def api_post(self, mkdir=True, **kwargs: Unpack[ApiPostMethodKwargs]) -> Gallery:
 
         await Gallery.api_get_is_available(kwargs['session'], GalleryAvailableAdmin(**self.model_dump(include=['name', 'parent_id', 'date', 'user_id'])))
         gallery = await self.create()
         await gallery.add_to_db(kwargs['session'])
 
-        (await gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)).mkdir()
+        if mkdir:
+            (await gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)).mkdir()
+
         return gallery
 
 #
@@ -1173,7 +1264,7 @@ class GalleryPermission(Table[GalleryPermissionId], GalleryPermissionIdBase, tab
     gallery: Gallery = Relationship(back_populates='gallery_permissions')
     user: User = Relationship(back_populates='gallery_permissions')
 
-    @classmethod
+    @ classmethod
     async def api_get(cls, method='get', **kwargs: Unpack[ApiGetMethodKwargs[GalleryPermissionId]]) -> typing.Self:
 
         gallery_permission = await cls._basic_api_get(kwargs['session'], kwargs['id'])
@@ -1192,7 +1283,7 @@ class GalleryPermission(Table[GalleryPermissionId], GalleryPermissionIdBase, tab
 
         return gallery_permission
 
-    @classmethod
+    @ classmethod
     async def api_delete(cls, **kwargs: Unpack[ApiDeleteMethodKwargs[GalleryPermissionId]]) -> None:
 
         gallery_permission = await cls.api_get(method='delete', **kwargs)
@@ -1254,19 +1345,108 @@ class GalleryPermissionCreateAdmin(GalleryPermissionImport, GalleryPermissionIdB
             ** self.model_dump(),
         )
 
+
+#
+# File
+#
+
+
+class FileTypes:
+    id = str
+    stem = str
+    suffix = typing.Annotated[str, StringConstraints(
+        to_lower=True)]
+    size = int
+    gallery_id = GalleryTypes.id
+
+
+class FileIdBase(IdObject[FileTypes.id]):
+    id: FileTypes.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
+
+
+class File(Table[FileTypes.id], FileIdBase, table=True):
+    __tablename__ = 'file'
+
+    stem: FileTypes.stem
+    suffix: FileTypes.suffix = Field(nullable=True)
+    gallery_id: FileTypes.gallery_id = Field(
+        index=True, foreign_key=Gallery.__tablename__ + '.' + Gallery._ID_COLS[0], ondelete='CASCADE')
+    size: FileTypes.size = Field(nullable=True)
+
+    gallery: Gallery = Relationship(back_populates='files')
+    image_file_metadata: 'ImageFileMetadata' = Relationship(
+        back_populates='file')
+
+    @property
+    def name(self) -> str:
+        return self.stem + self.suffix
+
+    @classmethod
+    async def api_get(cls, **kwargs: Unpack[ApiGetMethodKwargs[FileTypes.id]]) -> typing.Self:
+        return await super().api_get(**kwargs)
+
+    @classmethod
+    async def api_delete(cls, unlink=True, **kwargs: Unpack[ApiDeleteMethodKwargs[FileTypes.id]]) -> None:
+        return await super().api_delete(**kwargs)
+
+
+type PluralFilesDict = dict[FileTypes.id, File]
+
+
+class FileExport(TableExport[File]):
+    _TABLE_MODEL: typing.ClassVar[typing.Type[File]] = File
+
+    id: FileTypes.id
+    stem: FileTypes.stem
+    suffix: FileTypes.suffix | None
+    size: FileTypes.size
+
+
+class FilePublic(FileExport):
+    pass
+
+
+class FilePrivate(FileExport):
+    pass
+
+
+class FileImport(TableImport[File]):
+    _TABLE_MODEL: typing.ClassVar[typing.Type[File]] = File
+
+
+class FileUpdate(FileImport):
+    stem: typing.Optional[FileTypes.stem] = None
+    gallery_id: typing.Optional[FileTypes.gallery_id] = None
+
+
+class FileUpdateAdmin(FileUpdate, TableUpdateAdmin[File, FileTypes.id]):
+    pass
+
+
+class FileCreate(FileImport):
+    stem: FileTypes.stem
+    suffix: FileTypes.suffix | None
+    gallery_id: FileTypes.gallery_id
+    size: FileTypes.size | None
+
+
+class FileCreateAdmin(FileCreate, TableCreateAdmin[File]):
+    pass
+
+
 #
 # Version
 #
-
-
-MediaVersionId = str
+ImageVersionId = str
 
 
 class ImageVersionTypes:
-    id = MediaVersionId
-    parent_id = MediaVersionId
-    gallery_id = GalleryTypes.id
+    id = ImageVersionId
+    base_name = str
+    parent_id = ImageVersionId
     version = str
+    gallery_id = GalleryTypes.id
     datetime = datetime_module.datetime
     description = typing.Annotated[str, StringConstraints(
         min_length=0, max_length=20000)]
@@ -1274,19 +1454,23 @@ class ImageVersionTypes:
     average_color = str
 
 
-class MediaVersionIdBase(IdObject[MediaVersionId]):
-    id: MediaVersionId = Field(
+class ImageVersionIdBase(IdObject[ImageVersionId]):
+    id: ImageVersionId = Field(
         primary_key=True, index=True, unique=True, const=True)
 
 
-class ImageVersion(Table[ImageVersionTypes.id], MediaVersionIdBase, table=True):
+class ImageVersion(Table[ImageVersionTypes.id], ImageVersionIdBase, table=True):
     __tablename__ = 'image_version'
 
-    gallery_id: ImageVersionTypes.gallery_id = Field(
-        index=True, foreign_key=Gallery.__tablename__ + '.' + Gallery._ID_COLS[0])
-    version: ImageVersionTypes.version = Field(nullable=True)
+    base_name: ImageVersionTypes.base_name = Field(nullable=True, index=True)
     parent_id: ImageVersionTypes.parent_id = Field(
         nullable=True, index=True, foreign_key=__tablename__ + '.id')
+
+    # BW, Edit1, etc. Original version is null
+    version: ImageVersionTypes.version = Field(nullable=True)
+    gallery_id: ImageVersionTypes.gallery_id = Field(
+        index=True, foreign_key=Gallery.__tablename__ + '.' + Gallery._ID_COLS[0])
+
     datetime: ImageVersionTypes.datetime = Field(nullable=True)
     description: ImageVersionTypes.description = Field(nullable=True)
     aspect_ratio: ImageVersionTypes.aspect_ratio = Field(nullable=True)
@@ -1295,19 +1479,27 @@ class ImageVersion(Table[ImageVersionTypes.id], MediaVersionIdBase, table=True):
     parent: typing.Optional['ImageVersion'] = Relationship(
         back_populates='children', sa_relationship_kwargs={'remote_side': 'ImageVersion.id'})
     children: list['ImageVersion'] = Relationship(back_populates='parent')
-    files: list['ImageFile'] = Relationship(back_populates='version')
 
-    @field_validator('datetime')
-    @classmethod
+    image_file_metadatas: list['ImageFileMetadata'] = Relationship(
+        back_populates='version')  # cascade_delete=True ?
+
+    @model_validator()
+    def validate_model(self, info: ValidationInfo) -> None:
+        if self.base_name is None and self.parent_id is None:
+            raise ValueError('Unnamed versions must have a parent_id')
+
+    @ field_validator('datetime')
+    @ classmethod
     def validate_datetime(cls, value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime:
         return validate_and_normalize_datetime(value, info)
 
-    @field_serializer('datetime')
+    @ field_serializer('datetime')
     def serialize_datetime(value: datetime_module.datetime) -> datetime_module.datetime:
         return value.replace(tzinfo=datetime_module.timezone.utc)
 
 
 type PluralImageVersionsDict = dict[ImageVersionTypes.id, ImageVersion]
+
 
 # Export Types
 
@@ -1316,8 +1508,9 @@ class ImageVersionExport(TableExport[ImageVersion]):
     _TABLE_MODEL: typing.ClassVar[typing.Type[ImageVersion]] = ImageVersion
 
     id: ImageVersionTypes.id
-    version: ImageVersionTypes.version | None
+    base_name: ImageVersionTypes.base_name | None
     parent_id: ImageVersionTypes.parent_id | None
+    version: ImageVersionTypes.version | None
     datetime: ImageVersionTypes.datetime | None
     description: ImageVersionTypes.description | None
     aspect_ratio: ImageVersionTypes.aspect_ratio | None
@@ -1331,110 +1524,103 @@ class ImageVersionPublic(ImageVersionExport):
     pass
 
 
-class VersionImport(TableImport[ImageVersion]):
+class ImageVersionImport(TableImport[ImageVersion]):
     _TABLE_MODEL: typing.ClassVar[typing.Type[ImageVersion]] = ImageVersion
-    version: typing.Optional[ImageVersionTypes.version] = None
+    base_name: typing.Optional[ImageVersionTypes.base_name] = None
     parent_id: typing.Optional[ImageVersionTypes.parent_id] = None
+    version: typing.Optional[ImageVersionTypes.version] = None
     datetime: typing.Optional[ImageVersionTypes.datetime] = None
     description: typing.Optional[ImageVersionTypes.description] = None
 
 
-class VersionUpdate(VersionImport, MediaVersionIdBase):
+class ImageVersionUpdate(ImageVersionImport, ImageVersionIdBase):
     pass
 
 
-class VersionUpdateAdmin(VersionUpdate, TableUpdateAdmin[ImageVersion, ImageVersionTypes.id]):
+class ImageVersionUpdateAdmin(ImageVersionUpdate, TableUpdateAdmin[ImageVersion, ImageVersionTypes.id]):
     pass
 
 
-class VersionCreate(VersionImport):
+class ImageVersionCreate(ImageVersionImport):
     pass
 
 
-class VersionCreateAdmin(VersionCreate, TableCreateAdmin[ImageVersion]):
+class ImageVersionCreateAdmin(ImageVersionCreate, TableCreateAdmin[ImageVersion]):
     pass
+
 
 #
-# File
+# Image File Metadata
 #
 
-
-MediaFileId = str
-
-
-class MediaFileTypes:
-    id = MediaFileId
-    height = int
-    width = int
-    size = int
+class ImageFileMetadataTypes:
+    file_id = FileTypes.id
+    version_id = ImageVersionTypes.id
+    scale = int
 
 
-class ImageFileTypes(MediaFileTypes):
-    version_id = MediaVersionId
+class ImageFileMetadataIdBase(IdObject[ImageFileMetadataTypes.file_id]):
+    _ID_COLS: typing.ClassVar[list[str]] = ['file_id']
+
+    file_id: ImageFileMetadataTypes.file_id = Field(
+        primary_key=True, index=True, unique=True, const=True, foreign_key=File.__tablename__ + '.' + File._ID_COLS[0], ondelete='CASCADE')
 
 
-class VideoFileTypes(MediaFileTypes):
-    gallery_id = GalleryTypes.id
-    aspect_ratio = float
-    duration = int
+class ImageFileMetadata(Table[ImageFileMetadataTypes.file_id], ImageFileMetadataIdBase, table=True):
+    __tablename__ = 'image_file_metadata'
 
-
-class MediaFileIdBase(IdObject[MediaFileId]):
-    id: MediaFileId = Field(
-        primary_key=True, index=True, unique=True, const=True)
-
-
-class ImageFile(Table[ImageFileTypes.id], MediaFileIdBase, table=True):
-    __tablename__ = 'image_file'
-
-    version_id: ImageFileTypes.version_id = Field(
+    version_id: ImageFileMetadataTypes.version_id = Field(
+        # ONDELETE = CASCADE?
         index=True, foreign_key=ImageVersion.__tablename__ + '.' + ImageVersion._ID_COLS[0])
-    size: ImageFileTypes.size = Field(nullable=True)
-    height: ImageFileTypes.height = Field(nullable=True)
-    width: ImageFileTypes.width = Field(nullable=True)
+    scale: ImageFileMetadataTypes.scale = Field(nullable=True)
 
-    version: ImageVersion = Relationship(back_populates='files')
+    version: ImageVersion = Relationship(back_populates='image_file_metadatas')
+    file = Relationship(back_populates='image_file_metadata')
 
 
-type PluralImageFilesDict = dict[MediaFileTypes.id]
+ImageFileMetadatasPluralDict = dict[ImageFileMetadataTypes.file_id,
+                                    ImageFileMetadata]
 
 # Export Types
 
 
-class ImageFileExport(TableExport[ImageFile]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[ImageFile]] = ImageFile
+class ImageFileMetadataExport(TableExport[ImageFileMetadata]):
+    _TABLE_MODEL: typing.ClassVar[typing.Type[ImageFileMetadata]
+                                  ] = ImageFileMetadata
 
-    id: ImageFileTypes.id
-    version_id: ImageFileTypes.version_id
-    size: ImageFileTypes.size
+    file_id: ImageFileMetadataTypes.file_id
+    version_id: ImageFileMetadataTypes.version_id
+    scale: ImageFileMetadataTypes.scale | None
 
 
-class ImageFilePublic(ImageFileExport):
+class ImageFilePublic(ImageFileMetadataExport):
     pass
 
 
-class ImageFilePrivate(ImageFileExport):
+class ImageFilePrivate(ImageFileMetadataExport):
     pass
 
 
-class ImageFileImport(TableImport[ImageFile]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[ImageFile]] = ImageFile
+class ImageFileImport(TableImport[ImageFileMetadata]):
+    _TABLE_MODEL: typing.ClassVar[typing.Type[ImageFileMetadata]
+                                  ] = ImageFileMetadata
 
 
-class ImageFileUpdate(ImageFileImport, MediaFileIdBase):
+class ImageFileUpdate(ImageFileImport, ImageFileMetadataIdBase):
+    scale: typing.Optional[ImageFileMetadataTypes.scale] = None
+
+
+class ImageFileUpdateAdmin(ImageFileImport, TableUpdateAdmin[ImageFileMetadata, ImageFileMetadataTypes.file_id]):
     pass
-
-
-class ImageFileUpdateAdmin(ImageFileImport, TableUpdateAdmin[ImageFile, ImageFileTypes.id]):
-    version_id: typing.Optional[ImageFileTypes.version_id] = None
-    size: typing.Optional[ImageFileTypes.size] = None
 
 
 class ImageFileCreate(ImageFileImport):
-    version_id: ImageFileTypes.version_id
+    file_id: ImageFileMetadataTypes.file_id
+    version_id: ImageFileMetadataTypes.version_id
+    scale: typing.Optional[ImageFileMetadataTypes.scale] = None
 
 
-class ImageFileCreateAdmin(ImageFileImport, TableCreateAdmin[ImageFile]):
+class ImageFileCreateAdmin(ImageFileImport, TableCreateAdmin[ImageFileMetadata]):
     pass
 
 

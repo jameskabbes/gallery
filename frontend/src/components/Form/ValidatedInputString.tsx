@@ -24,6 +24,7 @@ function ValidatedInputString({
   isAvailable,
   minLength,
   maxLength,
+  pattern,
   className = '',
   showStatus = false,
   ...rest
@@ -37,6 +38,7 @@ function ValidatedInputString({
     isAvailable,
     minLength,
     maxLength,
+    pattern,
   });
 
   return (

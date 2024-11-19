@@ -16,6 +16,10 @@ import { Link } from 'react-router-dom';
 import { ToastContext } from '../contexts/Toast';
 import { deleteGallery } from '../services/api/deleteGallery';
 import siteConfig from '../../siteConfig.json';
+import {
+  postGallerySync,
+  PostGallerySyncResponses,
+} from '../services/api/postGallerySync';
 
 const API_ENDPOINT = '/galleries/{gallery_id}/page/';
 const API_METHOD = 'get';
@@ -47,8 +51,30 @@ function Gallery({ root = false }: Props) {
         root: root,
       },
     },
-    [galleryId]
+    [galleryId, authContext.state.user]
   );
+
+  async function handleSyncGallery(
+    gallery: components['schemas']['GalleryPublic']
+  ) {
+    let toastId = toastContext.makePending({
+      message: `Syncing gallery ${gallery.date ? `${gallery.date} ` : ''}${
+        gallery.name
+      }`,
+    });
+    const response = await postGallerySync(authContext, gallery.id);
+    if (response.status === 200) {
+      toastContext.update(toastId, {
+        message: 'Gallery synced with local',
+        type: 'success',
+      });
+    } else {
+      toastContext.update(toastId, {
+        message: 'Error syncing gallery with local',
+        type: 'error',
+      });
+    }
+  }
 
   async function handleDeleteGallery(
     gallery: components['schemas']['GalleryPublic']
@@ -115,6 +141,9 @@ function Gallery({ root = false }: Props) {
                 <IoCloudUploadOutline />
                 Upload Files
               </div>
+            </Button1>
+            <Button1 onClick={() => handleSyncGallery(apiData.gallery)}>
+              Sync with Local
             </Button1>
             <Button1
               onClick={() => handleDeleteGallery(apiData.gallery)}

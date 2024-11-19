@@ -952,6 +952,20 @@ async def upload_file_to_gallery(
 
     return UploadFileToGalleryResponse(message="Files uploaded successfully")
 
+
+@app.post('/galleries/{gallery_id}/sync/')
+async def sync_gallery(
+    gallery_id: models.GalleryTypes.id,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization())]
+) -> DetailOnlyResponse:
+
+    with Session(c.db_engine) as session:
+        gallery = await models.Gallery.api_get(session=session, c=c, authorized_user_id=authorization.user.id, id=gallery_id, admin=False)
+        dir = await gallery.get_dir(session, c.galleries_dir)
+        await gallery.sync_with_local(session, c, dir)
+        return DetailOnlyResponse(detail='Synced gallery')
+
 # Pages
 
 

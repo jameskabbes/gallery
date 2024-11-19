@@ -179,6 +179,10 @@ export interface paths {
     /** Upload File To Gallery */
     post: operations["upload_file_to_gallery_galleries__gallery_id__upload__post"];
   };
+  "/galleries/{gallery_id}/sync/": {
+    /** Sync Gallery */
+    post: operations["sync_gallery_galleries__gallery_id__sync__post"];
+  };
   "/profile/page/": {
     /** Get Pages Profile */
     get: operations["get_pages_profile_profile_page__get"];
@@ -642,20 +646,20 @@ export interface components {
     /** UserUpdate */
     UserUpdate: {
       /** Email */
-      email: string | null;
+      email?: string | null;
       /** Password */
-      password: string | null;
+      password?: string | null;
       /** Username */
-      username: string | null;
+      username?: string | null;
     };
     /** UserUpdateAdmin */
     UserUpdateAdmin: {
       /** Email */
-      email: string | null;
+      email?: string | null;
       /** Password */
-      password: string | null;
+      password?: string | null;
       /** Username */
-      username: string | null;
+      username?: string | null;
     };
     /** ValidationError */
     ValidationError: {
@@ -1880,6 +1884,28 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["UploadFileToGalleryResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Sync Gallery */
+  sync_gallery_galleries__gallery_id__sync__post: {
+    parameters: {
+      path: {
+        gallery_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
         };
       };
       /** @description Validation Error */

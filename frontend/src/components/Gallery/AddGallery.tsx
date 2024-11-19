@@ -148,6 +148,10 @@ function AddGallery({
                 openapi_schema.components.schemas.GalleryCreate.properties.name
                   .maxLength
               }
+              pattern={
+                openapi_schema.components.schemas.GalleryCreate.properties.name
+                  .pattern
+              }
               required={true}
               checkValidity={true}
               showStatus={true}

@@ -64,7 +64,7 @@ function AuthContextProvider({ children }: Props) {
   }
 
   function updateFromApiResponse(data: any) {
-    if (data && config.auth_key in data) {
+    if (data && typeof data === 'object' && config.auth_key in data) {
       // only update if the state is different
       if (!isEqual(data[config.auth_key], state)) {
         return setState(data[config.auth_key]);

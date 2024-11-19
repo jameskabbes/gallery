@@ -74,16 +74,20 @@ function useValidatedInput<T>({
 }
 
 interface UseValidatedInputStringProps extends UseValidatedInputProps<string> {
-  minLength?: number | null;
-  maxLength?: number | null;
+  minLength?: React.InputHTMLAttributes<HTMLInputElement>['minLength'];
+  maxLength?: React.InputHTMLAttributes<HTMLInputElement>['minLength'];
+  pattern?: React.InputHTMLAttributes<HTMLInputElement>['pattern'];
 }
 
 function useValidatedInputString({
   isValid = (value) => ({ valid: true }),
-  minLength = null,
-  maxLength = null,
+  minLength,
+  maxLength,
+  pattern,
   ...rest
 }: UseValidatedInputStringProps) {
+  const regexPattern = pattern ? new RegExp(pattern) : null;
+
   function isValidWrapper(value: string): ValidatedInputCheckValidityReturn {
     if (minLength && value.length < minLength) {
       return {
@@ -95,6 +99,12 @@ function useValidatedInputString({
       return {
         valid: false,
         message: `Must be at most ${maxLength} characters`,
+      };
+    }
+    if (pattern && !regexPattern.test(value)) {
+      return {
+        valid: false,
+        message: `Invalid format`,
       };
     }
     return isValid(value);
