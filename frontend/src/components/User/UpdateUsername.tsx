@@ -100,7 +100,13 @@ function UpdateUsername({ user }: Props) {
             }
             checkValidity={true}
             checkAvailability={true}
-            isAvailable={isUsernameAvailable}
+            isAvailable={async (value) => {
+              if (value === startingUsername) {
+                return true;
+              } else {
+                return await isUsernameAvailable(value);
+              }
+            }}
             showStatus={modified}
           />
         </div>
