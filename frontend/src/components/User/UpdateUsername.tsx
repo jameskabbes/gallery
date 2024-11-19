@@ -11,8 +11,7 @@ import { patchUser, PatchUserResponses } from '../../services/api/patchUser';
 import { defaultValidatedInputState, ValidatedInputState } from '../../types';
 import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { Button1, Button2 } from '../Utils/Button';
-import { ValidatedInputToggle } from '../Form/ValidatedInputToggle';
-import { Toggle1 } from '../Utils/Toggle';
+import { useConfirmationModal } from '../../utils/useConfirmationModal';
 
 interface Props {
   user: components['schemas']['UserPrivate'];
@@ -23,8 +22,6 @@ function UpdateUsername({ user }: Props) {
     Props['user']['username']
   >(user.username === null ? '' : user.username);
 
-  const [isPublic, setIsPublic] = useState<boolean>(false);
-
   const [username, setUsername] = useState<ValidatedInputState<string>>({
     ...defaultValidatedInputState<string>(startingUsername),
   });
@@ -33,6 +30,7 @@ function UpdateUsername({ user }: Props) {
   const [loading, setLoading] = useState<boolean>(false);
   const authContext = useContext(AuthContext);
   const toastContext = useContext(ToastContext);
+  const { checkButtonConfirmation } = useConfirmationModal();
 
   useEffect(() => {
     setValid(username.status === 'valid' && modified);
@@ -42,80 +40,114 @@ function UpdateUsername({ user }: Props) {
     setModified(username.value !== startingUsername);
   }, [username.value, loading]);
 
+  async function updateUsername(
+    username: components['schemas']['UserUpdate']['username']
+  ) {
+    setLoading(true);
+    let toastId = toastContext.makePending({
+      message: 'Updating username...',
+    });
+
+    const response = await patchUser(authContext, {
+      username,
+    });
+
+    setLoading(false);
+
+    if (response.status === 200) {
+      const apiData = response.data as PatchUserResponses['200'];
+      setStartingUsername(username ? username : '');
+      toastContext.update(toastId, {
+        message: 'Updated username',
+        type: 'success',
+      });
+      authContext.setState({
+        ...authContext.state,
+        user: apiData,
+      });
+    } else {
+      toastContext.update(toastId, {
+        message: 'Error updating username',
+        type: 'error',
+      });
+    }
+  }
+
   async function handleUpdateUsername(e: React.FormEvent) {
     e.preventDefault();
     if (valid && authContext.state.user !== null) {
-      setLoading(true);
-      let toastId = toastContext.makePending({
-        message: 'Updating username...',
-      });
-
-      const response = await patchUser(authContext, {
-        username: username.value,
-      });
-
-      setLoading(false);
-
-      if (response.status === 200) {
-        const apiData = response.data as PatchUserResponses['200'];
-        setStartingUsername(username.value);
-        toastContext.update(toastId, {
-          message: 'Updated username',
-          type: 'success',
-        });
-        authContext.setState({
-          ...authContext.state,
-          user: apiData,
-        });
-      } else {
-        toastContext.update(toastId, {
-          message: 'Error updating username',
-          type: 'error',
-        });
-      }
+      await updateUsername(username.value);
     }
   }
 
   return (
-    <form onSubmit={handleUpdateUsername} className="flex flex-col space-y-2">
-      <div>
-        <label htmlFor="username">Username</label>
-        <ValidatedInputString
-          state={username}
-          setState={setUsername}
-          id="username"
-          type="text"
-          minLength={
-            openapi_schema.components.schemas.UserUpdate.properties.username
-              .anyOf[0].minLength
-          }
-          maxLength={
-            openapi_schema.components.schemas.UserUpdate.properties.username
-              .anyOf[0].maxLength
-          }
-          checkValidity={true}
-          checkAvailability={true}
-          isAvailable={isUsernameAvailable}
-          showStatus={true}
-        />
-      </div>
-      <div className="flex flex-row space-x-2">
-        <Button2
-          className="flex-1"
-          onClick={(e) => {
-            setUsername({
-              ...defaultValidatedInputState<string>(startingUsername),
-            });
-          }}
-          disabled={!modified}
-        >
-          Cancel
-        </Button2>
-        <Button1 type="submit" className="flex-1" disabled={!valid}>
-          Update Username
-        </Button1>
-      </div>
-    </form>
+    <div className="flex flex-col space-y-2">
+      <form onSubmit={handleUpdateUsername} className="flex flex-col space-y-2">
+        <div>
+          <label htmlFor="username">Username</label>
+          <ValidatedInputString
+            state={username}
+            setState={setUsername}
+            id="username"
+            type="text"
+            minLength={
+              openapi_schema.components.schemas.UserUpdate.properties.username
+                .anyOf[0].minLength
+            }
+            maxLength={
+              openapi_schema.components.schemas.UserUpdate.properties.username
+                .anyOf[0].maxLength
+            }
+            checkValidity={true}
+            checkAvailability={true}
+            isAvailable={isUsernameAvailable}
+            showStatus={modified}
+          />
+        </div>
+        <div className="flex flex-row space-x-2">
+          <Button2
+            className="flex-1"
+            onClick={(e) => {
+              setUsername({
+                ...defaultValidatedInputState<string>(startingUsername),
+              });
+            }}
+            disabled={!modified}
+          >
+            Cancel
+          </Button2>
+          <Button1 type="submit" className="flex-1" disabled={!valid}>
+            Update Username
+          </Button1>
+        </div>
+      </form>
+      {startingUsername !== '' && (
+        <div className="flex flex-row justify-center">
+          <Button1
+            onClick={() =>
+              checkButtonConfirmation({
+                title: 'Make Account Private?',
+                message:
+                  'This will action will make your account private. Are you sure you want to continue?',
+                confirmText: 'Make Account Private',
+                onConfirm: async () => {
+                  setUsername((prev) => {
+                    return {
+                      ...prev,
+                      value: '',
+                      status: 'valid',
+                    };
+                  });
+                  await updateUsername(null);
+                },
+              })
+            }
+          >
+            Make Account Private
+          </Button1>
+        </div>
+      )}
+    </div>
   );
 }
 

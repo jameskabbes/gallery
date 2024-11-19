@@ -98,7 +98,7 @@ function UpdatePassword() {
           type="password"
           isValid={isPasswordValid}
           checkValidity={true}
-          showStatus={true}
+          showStatus={password.value !== '' || confirmPassword.value !== ''}
         />
       </div>
       <div>
@@ -109,7 +109,7 @@ function UpdatePassword() {
           id="confirmPassword"
           type="password"
           checkValidity={true}
-          showStatus={true}
+          showStatus={password.value !== '' || confirmPassword.value !== ''}
         />
       </div>
       <Button1 type="submit" disabled={!valid}>

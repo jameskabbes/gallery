@@ -95,7 +95,7 @@ function UpdateEmail({ user }: Props) {
             }}
             isValid={isEmailValid}
             required={true}
-            showStatus={true}
+            showStatus={modified}
           />
         </div>
       </div>

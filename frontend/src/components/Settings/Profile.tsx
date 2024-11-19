@@ -23,23 +23,41 @@ function Profile({ authContext, toastContext }: Props) {
     return (
       <div>
         <h2 className="mb-4">Profile</h2>
-        <div className="flex flex-col max-w-sm space-y-6">
-          <UpdateEmail user={authContext.state.user} />
-          <UpdateUsername user={authContext.state.user} />
-          <UpdatePassword />
+        <div className="flex flex-col max-w-md space-y-6">
+          <div className="flex flex-col space-y-2">
+            <hr />
+            <UpdateEmail user={authContext.state.user} />
+          </div>
+          <div className="flex flex-col space-y-2">
+            <hr />
+            <UpdateUsername user={authContext.state.user} />
+          </div>
+          <div className="flex flex-col space-y-2">
+            <hr />
+            <UpdatePassword />
+          </div>
+          <div className="flex flex-col space-y-2">
+            <hr />
+            <h4>Delete Account</h4>
+            <p>
+              Delete your entire account. All galleries, images, videos, api
+              keys, etc. will be deleted.{' '}
+              <strong>This cannot be undone.</strong>
+            </p>
+            <Button1
+              onClick={() =>
+                setDeleteAccountModal({
+                  checkTextConfirmation,
+                  authContext,
+                  toastContext,
+                  globalModalsContext,
+                })
+              }
+            >
+              Delete Account
+            </Button1>
+          </div>
         </div>
-        <Button1
-          onClick={() =>
-            setDeleteAccountModal({
-              checkTextConfirmation,
-              authContext,
-              toastContext,
-              globalModalsContext,
-            })
-          }
-        >
-          Delete Account
-        </Button1>
       </div>
     );
   }
