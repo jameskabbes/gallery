@@ -1483,7 +1483,7 @@ class ImageVersion(Table[ImageVersionTypes.id], ImageVersionIdBase, table=True):
     image_file_metadatas: list['ImageFileMetadata'] = Relationship(
         back_populates='version')  # cascade_delete=True ?
 
-    @model_validator()
+    @model_validator(mode='after')
     def validate_model(self, info: ValidationInfo) -> None:
         if self.base_name is None and self.parent_id is None:
             raise ValueError('Unnamed versions must have a parent_id')
