@@ -15,7 +15,7 @@ const Button3 = createStyledButton(
 );
 
 const ButtonSubmit = createStyledButton(
-  'button-base bg-color-primary text-light-lighter flex flex-row justify-center p-4 rounded-3xl mb-0',
+  'button-base bg-color-primary text-light-lighter flex flex-row justify-center p-4 rounded-3xl mb-0 h4',
   { type: 'submit' }
 );
 

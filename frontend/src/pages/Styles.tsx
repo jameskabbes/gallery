@@ -43,7 +43,7 @@ function Styles() {
   let toastContext = useContext(ToastContext);
   const authContext = useContext(AuthContext);
   const globalModalsContext = useContext(GlobalModalsContext);
-  const { checkConfirmation } = useConfirmationModal();
+  const { checkButtonConfirmation } = useConfirmationModal();
 
   const [toggleState, setToggleState] = useState<ValidatedInputState<boolean>>({
     ...defaultValidatedInputState<boolean>(false),

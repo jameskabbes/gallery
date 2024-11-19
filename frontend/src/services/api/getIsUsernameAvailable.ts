@@ -34,4 +34,4 @@ async function isUsernameAvailable(
   }
 }
 
-export { getIsUsernameAvailable };
+export { getIsUsernameAvailable, isUsernameAvailable };

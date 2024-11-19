@@ -678,57 +678,50 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
     }
   }, [apiData, status]);
 
-  return (
-    <>
-      {authContext.state.user === null ? (
-        <>
+  if (authContext.state.user !== null) {
+    return (
+      <>
+        <div className="flex flex-row justify-between mb-4">
           <h2>API Keys</h2>
-          <p>Login to view your API keys.</p>
-        </>
-      ) : (
-        <>
-          <div className="flex flex-row justify-between mb-4">
-            <h2>API Keys</h2>
-            <Button1
-              onClick={() => {
-                globalModalsContext.setModal({
-                  component: (
-                    <AddApiKey
-                      authContext={authContext}
-                      toastContext={toastContext}
-                      globalModalsContext={globalModalsContext}
-                      setApiKeys={setApiKeys}
-                      setApiKeyScopeIds={setApiKeyScopeIds}
-                    />
-                  ),
-                  className: 'max-w-[350px] w-full',
-                  key: 'modal-make-api-key',
-                });
-              }}
-            >
-              Add API Key
-            </Button1>
-          </div>
-          <div className="flex flex-col space-y-4">
-            {Object.keys(apiKeys).map((apiKeyId) => (
-              <ApiKeyRow
-                key={apiKeyId}
-                apiKeyId={apiKeyId}
-                apiKeys={apiKeys}
-                setApiKeys={setApiKeys}
-                apiKeyScopeIds={apiKeyScopeIds}
-                setApiKeyScopeIds={setApiKeyScopeIds}
-                toastContext={toastContext}
-                authContext={authContext}
-                globalModalsContext={globalModalsContext}
-                checkButtonConfirmation={checkButtonConfirmation}
-              />
-            ))}
-          </div>
-        </>
-      )}
-    </>
-  );
+          <Button1
+            onClick={() => {
+              globalModalsContext.setModal({
+                component: (
+                  <AddApiKey
+                    authContext={authContext}
+                    toastContext={toastContext}
+                    globalModalsContext={globalModalsContext}
+                    setApiKeys={setApiKeys}
+                    setApiKeyScopeIds={setApiKeyScopeIds}
+                  />
+                ),
+                className: 'max-w-[350px] w-full',
+                key: 'modal-make-api-key',
+              });
+            }}
+          >
+            Add API Key
+          </Button1>
+        </div>
+        <div className="flex flex-col space-y-4">
+          {Object.keys(apiKeys).map((apiKeyId) => (
+            <ApiKeyRow
+              key={apiKeyId}
+              apiKeyId={apiKeyId}
+              apiKeys={apiKeys}
+              setApiKeys={setApiKeys}
+              apiKeyScopeIds={apiKeyScopeIds}
+              setApiKeyScopeIds={setApiKeyScopeIds}
+              toastContext={toastContext}
+              authContext={authContext}
+              globalModalsContext={globalModalsContext}
+              checkButtonConfirmation={checkButtonConfirmation}
+            />
+          ))}
+        </div>
+      </>
+    );
+  }
 }
 
 export { ApiKeys };

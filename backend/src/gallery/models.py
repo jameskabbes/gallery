@@ -389,9 +389,9 @@ class UserImport(TableImport[User]):
 
 
 class UserUpdate(UserImport):
-    email: typing.Optional[UserTypes.email]
-    password: typing.Optional[UserTypes.password]
-    username: typing.Optional[UserTypes.username | None]
+    email: typing.Optional[UserTypes.email] = None
+    password: typing.Optional[UserTypes.password] = None
+    username: typing.Optional[UserTypes.username] = None
 
 
 class UserUpdateAdmin(UserUpdate, TableUpdateAdmin[User, UserTypes.id]):
@@ -409,38 +409,35 @@ class UserUpdateAdmin(UserUpdate, TableUpdateAdmin[User, UserTypes.id]):
                         status.HTTP_404_NOT_FOUND, detail=self._TABLE_MODEL.not_found_message())
 
         if 'username' in self.model_fields_set:
+            # username has been changed
             if user.username != self.username:
+                root_gallery = await Gallery.get_root_gallery(kwargs['session'], kwargs['id'])
 
-                # username has been changed
+                print(root_gallery)
+
                 if self.username == None:
-                    root_gallery = await Gallery.get_root_gallery(kwargs['session'], kwargs['id'])
-                    if root_gallery:
-
-                        #
-                        #
-                        #
-
-                        await GalleryUpdateAdmin(id=root_gallery.id, name=self.username).api_patch()
+                    await GalleryUpdateAdmin(name=user.id).api_patch(
+                        **{**kwargs, **{'id': root_gallery.id}})
 
                 if self.username is not None:
-                    if not await self._TABLE_MODEL.is_username_available(kwargs['session'], self.username):
-                        raise HTTPException(status.HTTP_409_CONFLICT,
-                                            detail='Username already exists')
+                    await User.api_get_is_username_available(kwargs['session'], self.username)
+                    await GalleryUpdateAdmin(name=self.username).api_patch(
+                        **{**kwargs, **{'id': root_gallery.id}})
+
+                user.username = self.username
 
         if 'email' in self.model_fields_set:
             if user.email != self.email:
-                if not await self._TABLE_MODEL.is_email_available(kwargs['session'], self.email):
-                    raise HTTPException(status.HTTP_409_CONFLICT,
-                                        detail='Email already exists')
+                await User.api_get_is_email_available(kwargs['session'], self.email)
+                user.email = self.email
 
-        exported = self.model_dump(
-            exclude='password', exclude_unset=True)
+        if 'password' in self.model_fields_set:
+            if self.password == None:
+                user.hashed_password = None
+            else:
+                user.hashed_password = self.hash_password(self.password)
 
-        if self.password != None:
-            exported['hashed_password'] = self.hash_password(self.password)
-
-        user.sqlmodel_update(exported)
-        user.add_to_db(kwargs['session'])
+        await user.add_to_db(kwargs['session'])
         return user
 
 
@@ -1083,33 +1080,40 @@ class GalleryUpdateAdmin(GalleryUpdate, TableUpdateAdmin[Gallery, GalleryTypes.i
     async def api_patch(self, **kwargs: Unpack[ApiPatchMethodKwargs[GalleryTypes.id]]) -> Gallery:
 
         # if it doesn't exist, throw 404
+
         gallery = await self._TABLE_MODEL._basic_api_get(kwargs['session'], kwargs['id'])
-
         if not kwargs['admin']:
-            # check user's permission
-            gallery_permission = await GalleryPermission.get_one_by_id(kwargs['session'], (kwargs['id'], kwargs['authorized_user_id']))
+            if kwargs['authorized_user_id'] != gallery.user_id:
+                gallery_permission = await GalleryPermission.get_one_by_id(kwargs['session'], (kwargs['id'], kwargs['authorized_user_id']))
 
-            # if the gallery is private and user has no access, pretend it doesn't exist
-            if not gallery_permission and gallery.visibility_level == kwargs['c'].visibility_level_name_mapping['private']:
-                raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                    detail=self._TABLE_MODEL.not_found_message())
+                # if the gallery is private and user has no access, pretend it doesn't exist
+                if not gallery_permission and gallery.visibility_level == kwargs['c'].visibility_level_name_mapping['private']:
+                    raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                        detail=self._TABLE_MODEL.not_found_message())
 
-            # for public galleries, or for private galleries where the user lacks edit access
-            if gallery_permission.permission_level < kwargs['c'].permission_level_name_mapping['editor']:
-                raise HTTPException(
-                    status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to patch this gallery')
+                # for public galleries, or for private galleries where the user lacks edit access
+                if gallery_permission.permission_level < kwargs['c'].permission_level_name_mapping['editor']:
+                    raise HTTPException(
+                        status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to patch this gallery')
 
         # raise HTTP 409 if the gallery already exists
-        await Gallery.api_get_is_available(kwargs['session'], GalleryAvailableAdmin(
-            **gallery.model_dump(include=list(GalleryAvailableAdmin.model_fields.keys())), **self.model_dump(list(GalleryAvailableAdmin.model_fields.keys()), exclude_unset=True)
-        ))
+        await Gallery.api_get_is_available(kwargs['session'], GalleryAvailableAdmin(**{
+            **gallery.model_dump(include=GalleryAvailableAdmin.model_fields.keys()), **self.model_dump(include=list(GalleryAvailableAdmin.model_fields.keys()), exclude_unset=True)
+        }))
+
+        rename_folder = False
 
         # rename the folder
         if 'name' in self.model_fields_set or 'date' in self.model_fields_set or 'parent_id' in self.model_fields_set:
-            print('renaming the folder!')
-            # need to fill this in later
+            rename_folder = True
+            original_dir = await gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)
 
         gallery.sqlmodel_update(self.model_dump(exclude_unset=True))
+
+        if rename_folder:
+            new_dir = (await gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)).parent / gallery.folder_name
+            original_dir.rename(new_dir)
+
         await gallery.add_to_db(kwargs['session'])
         return gallery
 

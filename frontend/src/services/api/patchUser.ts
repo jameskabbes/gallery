@@ -14,9 +14,9 @@ type PatchUserResponses = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
-async function patchUserFunc(
+async function patchUser(
   authContext: AuthContextType,
-  formData: Partial<
+  userUpdate: Partial<
     paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >
 ): Promise<ApiResponse<PatchUserResponses[keyof PatchUserResponses]>> {
@@ -28,9 +28,9 @@ async function patchUserFunc(
   >({
     url: API_ENDPOINT,
     method: API_METHOD,
-    data: formData,
+    data: userUpdate,
     authContext,
   });
 }
 
-export { patchUserFunc, PatchUserResponses };
+export { patchUser, PatchUserResponses };

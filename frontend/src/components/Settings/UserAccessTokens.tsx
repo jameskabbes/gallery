@@ -98,63 +98,57 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
     }
   }
 
-  return (
-    <>
-      {authContext.state.user === null ? (
-        <p>Login to view your sessions.</p>
-      ) : (
-        <>
-          <h2 className="mb-4">Sessions</h2>
-          <div className="flex flex-col space-y-4">
-            {Object.keys(userAccessTokens).map((key) => {
-              const session = userAccessTokens[key];
-              return (
-                <Card1
-                  key={key}
-                  className="flex flex-row justify-between items-center"
+  if (authContext.state.user !== null) {
+    return (
+      <>
+        <h2 className="mb-4">Sessions</h2>
+        <div className="flex flex-col space-y-4">
+          {Object.keys(userAccessTokens).map((key) => {
+            const session = userAccessTokens[key];
+            return (
+              <Card1
+                key={key}
+                className="flex flex-row justify-between items-center"
+              >
+                <p>
+                  Issued:{' '}
+                  {new Date(session.issued).toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: 'numeric',
+                  })}
+                </p>
+                <p>
+                  {authContext.state.auth_credential?.id === session.id && (
+                    <span>Current Session</span>
+                  )}
+                </p>
+                <Button1
+                  onClick={() => {
+                    if (authContext.state.auth_credential?.id === session.id) {
+                      checkButtonConfirmation({
+                        title: 'Sign Out?',
+                        message:
+                          'This will sign you out of your current session.',
+                        onConfirm: () => handleDeleteSession(key),
+                        confirmText: 'Sign Out',
+                      });
+                    } else {
+                      handleDeleteSession(key);
+                    }
+                  }}
                 >
-                  <p>
-                    Issued:{' '}
-                    {new Date(session.issued).toLocaleString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: 'numeric',
-                      minute: 'numeric',
-                    })}
-                  </p>
-                  <p>
-                    {authContext.state.auth_credential?.id === session.id && (
-                      <span>Current Session</span>
-                    )}
-                  </p>
-                  <Button1
-                    onClick={() => {
-                      if (
-                        authContext.state.auth_credential?.id === session.id
-                      ) {
-                        checkButtonConfirmation({
-                          title: 'Sign Out?',
-                          message:
-                            'This will sign you out of your current session.',
-                          onConfirm: () => handleDeleteSession(key),
-                          confirmText: 'Sign Out',
-                        });
-                      } else {
-                        handleDeleteSession(key);
-                      }
-                    }}
-                  >
-                    Sign Out
-                  </Button1>
-                </Card1>
-              );
-            })}
-          </div>
-        </>
-      )}
-    </>
-  );
+                  Sign Out
+                </Button1>
+              </Card1>
+            );
+          })}
+        </div>
+      </>
+    );
+  }
 }
 
 export { UserAccessTokens };

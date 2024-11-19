@@ -64,12 +64,14 @@ export interface paths {
     get: operations["get_user_user__get"];
     /** Delete User */
     delete: operations["delete_user_user__delete"];
-  };
-  "/users/{user_id}": {
-    /** Get User By Id */
-    get: operations["get_user_by_id_users__user_id__get"];
     /** Patch User */
-    patch: operations["patch_user_users__user_id__patch"];
+    patch: operations["patch_user_user__patch"];
+  };
+  "/users/{user_id}/": {
+    /** Get User By Id */
+    get: operations["get_user_by_id_users__user_id___get"];
+    /** Patch User By Id */
+    patch: operations["patch_user_by_id_users__user_id___patch"];
   };
   "/admin/user-access-tokens/{user_access_token_id}": {
     /** Get User Access Token By Id Admin */
@@ -1045,8 +1047,30 @@ export interface operations {
       };
     };
   };
+  /** Patch User */
+  patch_user_user__patch: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UserUpdate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["UserPrivate"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   /** Get User By Id */
-  get_user_by_id_users__user_id__get: {
+  get_user_by_id_users__user_id___get: {
     parameters: {
       path: {
         user_id: string;
@@ -1073,8 +1097,8 @@ export interface operations {
       };
     };
   };
-  /** Patch User */
-  patch_user_users__user_id__patch: {
+  /** Patch User By Id */
+  patch_user_by_id_users__user_id___patch: {
     parameters: {
       path: {
         user_id: string;

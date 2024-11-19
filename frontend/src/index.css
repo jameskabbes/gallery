@@ -183,10 +183,6 @@ form label {
   @apply h5 mb-0;
 }
 
-form button[type='submit'] {
-  @apply h4;
-}
-
 .input-text-container,
 .input-datetime-local-container {
   @apply rounded-xl border-[1px] py-1 px-2;

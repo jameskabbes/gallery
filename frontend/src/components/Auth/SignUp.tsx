@@ -168,14 +168,6 @@ function SignUp() {
                   state={signUpContext.confirmPassword}
                   setState={signUpContext.setConfirmPassword}
                   id="sign-up-confirmPassword"
-                  minLength={
-                    openapi_schema.components.schemas.UserCreateAdmin.properties
-                      .password.anyOf[0].minLength
-                  }
-                  maxLength={
-                    openapi_schema.components.schemas.UserCreateAdmin.properties
-                      .password.anyOf[0].maxLength
-                  }
                   type="password"
                   checkValidity={true}
                   showStatus={true}

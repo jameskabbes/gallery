@@ -544,28 +544,38 @@ async def get_user(authorization: typing.Annotated[GetAuthorizationReturn, Depen
         return models.UserPrivate.model_validate(await models.User.api_get(session=session, c=c, authorized_user_id=authorization.user.id, id=authorization.user.id))
 
 
-@app.get('/users/{user_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+@app.get('/users/{user_id}/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
 async def get_user_by_id(
     user_id: models.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization(raise_exceptions=False))]
 ) -> models.UserPublic:
     with Session(c.db_engine) as session:
-        return models.UserPublic.model_validate(await models.User.api_get(session=session, c=c, authorized_user_id=None if not authorization.isAuthorized else authorization.user.id, id=user_id))
+        return models.UserPublic.model_validate(await models.User.api_get(session=session, c=c, authorized_user_id=None if not authorization.isAuthorized else authorization.user.id, id=user_id, admin=False))
 
 
-@ app.patch('/users/{user_id}', responses={
+@app.patch('/user/')
+async def patch_user(
+    user_update: models.UserUpdate,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization())]
+) -> models.UserPrivate:
+    with Session(c.db_engine) as session:
+        return models.UserPrivate.model_validate(await models.UserUpdateAdmin(**user_update.model_dump(exclude_unset=True)).api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=authorization.user.id, admin=False))
+
+
+@ app.patch('/users/{user_id}/', responses={
     status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse},
     status.HTTP_409_CONFLICT: {"description": 'Username or email already exists', 'model': DetailOnlyResponse},
 })
-async def patch_user(
+async def patch_user_by_id(
     user_id: models.UserTypes.id,
     user_update: models.UserUpdate,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())]
 ) -> models.UserPrivate:
     with Session(c.db_engine) as session:
-        return models.UserPrivate.model_validate(await models.UserUpdateAdmin(**user_update.model_dump()).api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=user_id))
+        return models.UserPrivate.model_validate(await models.UserUpdateAdmin(**user_update.model_dump(exclude_unset=True)).api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=user_id, admin=True))
 
 
 @ app.delete('/user/', status_code=status.HTTP_204_NO_CONTENT, responses={
@@ -682,7 +692,7 @@ async def get_is_api_key_available(
 ):
     with Session(c.db_engine) as session:
         await models.ApiKey.api_get_is_available(session, models.ApiKeyAvailableAdmin(
-            **api_key_available.model_dump(), user_id=authorization.user.id
+            **api_key_available.model_dump(exclude_unset=True), user_id=authorization.user.id
         ))
 
 
@@ -709,7 +719,7 @@ async def post_api_key(
         authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> models.ApiKey:
 
     with Session(c.db_engine) as session:
-        return await models.ApiKeyCreateAdmin(**api_key_create.model_dump(), user_id=authorization.user.id).api_post(session=session, c=c, authorized_user_id=authorization.user.id, admin=False)
+        return await models.ApiKeyCreateAdmin(**api_key_create.model_dump(exclude_unset=True), user_id=authorization.user.id).api_post(session=session, c=c, authorized_user_id=authorization.user.id, admin=False)
 
 
 @app.patch('/api-keys/{api_key_id}/')
@@ -719,7 +729,7 @@ async def patch_api_key(
         authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> models.ApiKey:
 
     with Session(c.db_engine) as session:
-        return await models.ApiKeyUpdateAdmin(**api_key_update.model_dump()).api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=False)
+        return await models.ApiKeyUpdateAdmin(**api_key_update.model_dump(exclude_unset=True)).api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=False)
 
 
 @ app.delete('/api-keys/{api_key_id}/', status_code=status.HTTP_204_NO_CONTENT)
@@ -833,7 +843,7 @@ async def get_is_gallery_available(
 ):
     with Session(c.db_engine) as session:
         return await models.Gallery.api_get_is_available(session, models.GalleryAvailableAdmin(
-            **gallery_available.model_dump(), user_id=authorization.user.id
+            **gallery_available.model_dump(exclude_unset=True), user_id=authorization.user.id
         ))
 
 
@@ -874,7 +884,7 @@ async def post_gallery(
 ) -> models.GalleryPrivate:
     with Session(c.db_engine) as session:
         return models.GalleryPrivate.model_validate(await models.GalleryCreateAdmin(
-            **gallery_create.model_dump()).api_post(session=session, c=c, authorized_user_id=authorization.user.id, admin=False))
+            **gallery_create.model_dump(exclude_unset=True)).api_post(session=session, c=c, authorized_user_id=authorization.user.id, admin=False))
 
 
 @ app.patch('/galleries/{gallery_id}/', responses={
