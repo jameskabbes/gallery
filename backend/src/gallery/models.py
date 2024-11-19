@@ -1569,13 +1569,13 @@ class ImageFileMetadataIdBase(IdObject[ImageFileMetadataTypes.file_id]):
 class ImageFileMetadata(Table[ImageFileMetadataTypes.file_id], ImageFileMetadataIdBase, table=True):
     __tablename__ = 'image_file_metadata'
 
+    # ONDELETE = CASCADE?
     version_id: ImageFileMetadataTypes.version_id = Field(
-        # ONDELETE = CASCADE?
         index=True, foreign_key=ImageVersion.__tablename__ + '.' + ImageVersion._ID_COLS[0])
     scale: ImageFileMetadataTypes.scale = Field(nullable=True)
 
     version: ImageVersion = Relationship(back_populates='image_file_metadatas')
-    file = Relationship(back_populates='image_file_metadata')
+    file: File = Relationship(back_populates='image_file_metadata')
 
 
 ImageFileMetadatasPluralDict = dict[ImageFileMetadataTypes.file_id,
