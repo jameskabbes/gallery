@@ -1,5 +1,5 @@
 import uvicorn
-from fastapi import FastAPI, HTTPException, Query, status, Response, Depends, Request, BackgroundTasks, Form, File, UploadFile
+from fastapi import FastAPI, HTTPException, Query, status, Response, Depends, Request, BackgroundTasks, Form, File, UploadFile, APIRouter
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -483,6 +483,27 @@ async def logout(response: Response, authorization: typing.Annotated[GetAuthoriz
     return DetailOnlyResponse(detail='Logged out')
 
 # # USERS
+
+
+class CRUDBase:
+    pass
+
+
+def create_crud_router(id_key) -> APIRouter:
+
+    router = APIRouter()
+    crud = CRUDBase()
+
+    @router.get('/{id}/')
+    async def read_by_id(
+        authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+            get_authorization(required_scopes={'admin'}))]
+    ) -> int:
+        return 1
+
+
+user_router = create_crud_router()
+app.include_router(user_router, prefix='/users', tags=['users'])
 
 
 @app.get('/admin/users/{user_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
