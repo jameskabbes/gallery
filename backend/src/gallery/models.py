@@ -70,13 +70,6 @@ class IdObject[IdType]:
             return getattr(self, self._ID_COLS[0])
 
     @ classmethod
-    def export_plural_to_dict(cls, items: collections.abc.Iterable[typing.Self]) -> dict[IdType, typing.Self]:
-        return {item._id: item for item in items}
-
-
-class Table[IdType](SQLModel, IdObject[IdType]):
-
-    @ classmethod
     def generate_id(cls) -> IdType:
         """Generate a new ID for the model"""
 
@@ -84,6 +77,13 @@ class Table[IdType](SQLModel, IdObject[IdType]):
             return tuple(str(uuid.uuid4()) for _ in range(len(cls._ID_COLS)))
         else:
             return str(uuid.uuid4())
+
+    @ classmethod
+    def export_plural_to_dict(cls, items: collections.abc.Iterable[typing.Self]) -> dict[IdType, typing.Self]:
+        return {item._id: item for item in items}
+
+
+class Table[IdType](SQLModel, IdObject[IdType]):
 
     @ classmethod
     def not_found_message(cls) -> str:
