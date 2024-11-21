@@ -19,6 +19,7 @@ import re
 import pathlib
 from gallery import client
 import shutil
+from functools import wraps
 
 #
 
@@ -38,15 +39,35 @@ class ApiGetMethodKwargs[IdType](ApiMethodBaseKwargsWithId[IdType]):
     pass
 
 
-class ApiPostMethodKwargs(ApiMethodBaseKwargs):
-    pass
+class ApiPostMethodKwargs[TPost](ApiMethodBaseKwargs):
+    create_model: TPost
 
 
-class ApiPatchMethodKwargs[IdType](ApiMethodBaseKwargsWithId[IdType]):
-    pass
+class ApiPatchMethodKwargs[IdType, TPatch](ApiMethodBaseKwargsWithId[IdType]):
+    update_model: TPatch
 
 
 class ApiDeleteMethodKwargs[IdType](ApiMethodBaseKwargsWithId[IdType]):
+    pass
+
+
+class CheckAuthorizationExistingKwargs(ApiMethodBaseKwargs):
+    method: typing.Literal['get', 'patch', 'delete']
+
+
+class CheckAuthorizationPostKwargs[TPost](ApiPostMethodKwargs[TPost]):
+    pass
+
+
+class CheckValidationDeleteKwargs[IdType](ApiDeleteMethodKwargs[IdType]):
+    pass
+
+
+class CheckValidationPatchKwargs[IdType, TPatch](ApiPatchMethodKwargs[IdType, TPatch]):
+    pass
+
+
+class CheckValidationPostKwargs[TPost](ApiPostMethodKwargs[TPost]):
     pass
 
 
@@ -83,7 +104,19 @@ class IdObject[IdType]:
         return {item._id: item for item in items}
 
 
-class Table[IdType](SQLModel, IdObject[IdType]):
+class TableExport(BaseModel):
+    class Config:
+        from_attributes = True
+
+
+def api_endpoint(func):
+    @ wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapper
+
+
+class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, IdObject[IdType]):
 
     @ classmethod
     def not_found_message(cls) -> str:
@@ -94,7 +127,7 @@ class Table[IdType](SQLModel, IdObject[IdType]):
         return f'{cls.__name__} already exists'
 
     @ classmethod
-    async def get_one_by_id(cls, session: Session, id: IdType) -> typing.Self | None:
+    async def get_one_by_id(cls, session: Session, id: IdType) -> T | None:
         """Get a model by its ID"""
 
         if len(cls._ID_COLS) > 1:
@@ -107,14 +140,14 @@ class Table[IdType](SQLModel, IdObject[IdType]):
         return resp.one_or_none()
 
     @ classmethod
-    async def get_one_by_key_values(cls, session: Session, key_values: dict[str, typing.Any]) -> typing.Self | None:
+    async def get_one_by_key_values(cls, session: Session, key_values: dict[str, typing.Any]) -> T | None:
         """Get a model by its key values"""
 
         resp = await cls._get_by_key_values(session, key_values)
         return resp.one_or_none()
 
     @ classmethod
-    async def get_all_by_key_values(cls, session: Session, key_values: dict[str, typing.Any]) -> list[typing.Self]:
+    async def get_all_by_key_values(cls, session: Session, key_values: dict[str, typing.Any]) -> list[T]:
         """Get all models by their key values"""
 
         resp = await cls._get_by_key_values(session, key_values)
@@ -159,12 +192,28 @@ class Table[IdType](SQLModel, IdObject[IdType]):
         session.commit()
         return result.rowcount
 
-    @ classmethod
-    async def is_available(cls, session: Session) -> bool:
-        return True
+    @classmethod
+    async def create(cls, **kwargs: Unpack[ApiPostMethodKwargs[TPost]]) -> T:
+
+        id = cls.generate_id()
+        if len(cls._ID_COLS) == 1:
+            id = [id]
+
+        return cls(
+            **{key: value for key, value in zip(
+                cls._ID_COLS, id)},
+            ** kwargs['create_model'].model_dump(),
+        )
+
+    async def update(self, **kwargs: Unpack[ApiPatchMethodKwargs[IdType, TPatch]]):
+        self.sqlmodel_update(
+            kwargs['update_model'].model_dump(exclude_unset=True))
+
+    async def delete(self, **kwargs: Unpack[ApiDeleteMethodKwargs[IdType]]):
+        pass
 
     @ classmethod
-    async def _basic_api_get(cls, session: Session, id: IdType) -> typing.Self:
+    async def _basic_api_get(cls, session: Session, id: IdType) -> T:
         """Get a model by its ID, raise an exception if not found"""
 
         instance = await cls.get_one_by_id(session, id)
@@ -173,59 +222,68 @@ class Table[IdType](SQLModel, IdObject[IdType]):
                 status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
         return instance
 
-    @classmethod
-    async def api_get(cls, **kwargs: Unpack[ApiGetMethodKwargs[IdType]]) -> typing.Self:
-        return await cls._basic_api_get(kwargs['session'], kwargs['id'])
+    async def _check_authorization_existing(self, **kwargs: Unpack[CheckAuthorizationExistingKwargs]):
+        pass
 
     @classmethod
+    async def _check_authorization_post(cls, **kwargs: Unpack[CheckAuthorizationPostKwargs[TPost]]):
+        pass
+
+    async def _check_validation_delete(self, **kwargs: Unpack[CheckValidationDeleteKwargs[IdType]]):
+        pass
+
+    async def _check_validation_patch(self, **kwargs: Unpack[CheckValidationPatchKwargs[IdType, TPatch]]):
+        pass
+
+    @classmethod
+    async def _check_validation_post(cls, **kwargs: Unpack[CheckValidationPostKwargs[TPost]]):
+        pass
+
+    @classmethod
+    @api_endpoint
+    async def api_post(cls, **kwargs: typing.Unpack[ApiPostMethodKwargs[TPost]]) -> T:
+        await cls._check_authorization_post(**kwargs)
+        await cls._check_validation_post(**kwargs)
+
+        instance = await cls.create(kwargs['create_model'])
+        kwargs['session'].add(instance)
+        kwargs['session'].commit()
+        kwargs['session'].refresh(instance)
+        return instance
+
+    @classmethod
+    @api_endpoint
+    async def api_get(cls, **kwargs: Unpack[ApiGetMethodKwargs[IdType]]) -> T:
+
+        instance = await cls._basic_api_get(kwargs['session'], kwargs['id'])
+        await instance._check_authorization_existing(**kwargs, method='get')
+        return instance
+
+    @classmethod
+    @api_endpoint
+    async def api_patch(self, **kwargs: typing.Unpack[ApiPatchMethodKwargs[IdType, TPatch]]) -> T:
+
+        instance = await self._basic_api_get(kwargs['session'], kwargs['id'])
+        await instance._check_authorization_existing(**kwargs, method='patch')
+        await instance._check_validation_patch(**kwargs)
+
+        await instance.update(kwargs['update_model'])
+        kwargs['session'].add(instance)
+        kwargs['session'].commit()
+        kwargs['session'].refresh(instance)
+        return instance
+
+    @classmethod
+    @api_endpoint
     async def api_delete(cls, **kwargs: Unpack[ApiDeleteMethodKwargs[IdType]]) -> None:
 
-        table_inst = await cls._basic_api_get(kwargs['session'], kwargs['id'])
-        kwargs['session'].delete(table_inst)
+        instance = await cls._basic_api_get(kwargs['session'], kwargs['id'])
+        await instance._check_authorization_existing(**kwargs, method='delete')
+        await instance._check_validation_delete(**kwargs)
+
+        await kwargs['session'].delete(instance)
         kwargs['session'].commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-class TableExport[TTable: Table](BaseModel):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[TTable]]
-
-    class Config:
-        from_attributes = True
-
-
-class TableImport[TTable: Table](BaseModel):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[TTable]] = Table
-
-
-class TableUpdateAdmin[TTable: Table, IdType](TableImport[TTable], IdObject[IdType]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[TTable]] = Table
-
-    async def api_patch(self, **kwargs: typing.Unpack[ApiPatchMethodKwargs[IdType]]) -> TTable:
-        table_inst = await self._TABLE_MODEL.api_get(**kwargs)
-        table_inst.sqlmodel_update(self.model_dump(exclude_unset=True))
-        await table_inst.add_to_db(kwargs['session'])
-        return table_inst
-
-
-class TableCreateAdmin[TTable: Table](TableImport[TTable]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[TTable]] = Table
-
-    async def api_post(self, **kwargs: typing.Unpack[ApiPostMethodKwargs]) -> TTable:
-        table_inst = await self.create()
-        await table_inst.add_to_db(kwargs['session'])
-        return table_inst
-
-    async def create(self) -> TTable:
-
-        id = self._TABLE_MODEL.generate_id()
-        if len(self._TABLE_MODEL._ID_COLS) == 1:
-            id = [id]
-
-        return self._TABLE_MODEL(
-            **{key: value for key, value in zip(
-                self._TABLE_MODEL._ID_COLS, id)},
-            ** self.model_dump(),
-        )
 
 
 #
@@ -245,12 +303,54 @@ class UserTypes:
     user_role_id = client.UserRoleTypes.id
 
 
-class UserIDBase(IdObject[UserTypes.id]):
+class UserIDBase(IdObject[UserTypes.id], BaseModel):
     id: UserTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
 
-class User(Table[UserTypes.id], UserIDBase, table=True):
+# Export Types
+
+
+class UserExport(TableExport):
+    id: UserTypes.id
+    username: UserTypes.username | None
+
+
+class UserPublic(UserExport):
+    pass
+
+
+class UserPrivate(UserExport):
+    email: UserTypes.email
+    user_role_id: UserTypes.user_role_id
+
+
+# Import Types
+class UserImport(BaseModel):
+    pass
+
+
+class UserUpdate(UserImport):
+    email: typing.Optional[UserTypes.email] = None
+    password: typing.Optional[UserTypes.password] = None
+    username: typing.Optional[UserTypes.username] = None
+
+
+class UserUpdateAdmin(UserUpdate):
+    pass
+
+
+class UserCreate(UserImport):
+    email: UserTypes.email
+    username: typing.Optional[UserTypes.username] = None
+    password: typing.Optional[UserTypes.password] = None
+
+
+class UserCreateAdmin(UserCreate):
+    user_role_id: UserTypes.user_role_id
+
+
+class User(Table['User', UserTypes.id, UserCreateAdmin, UserUpdateAdmin], UserIDBase, table=True):
     __tablename__ = 'user'
 
     email: UserTypes.email = Field(index=True, unique=True)
@@ -267,22 +367,6 @@ class User(Table[UserTypes.id], UserIDBase, table=True):
         back_populates='user', cascade_delete=True)
     gallery_permissions: list['GalleryPermission'] = Relationship(
         back_populates='user', cascade_delete=True)
-
-    class Update(BaseModel):
-        email: typing.Optional[UserTypes.email] = None
-        password: typing.Optional[UserTypes.password] = None
-        username: typing.Optional[UserTypes.username] = None
-
-    class UpdateAdmin(Update):
-        test: str
-
-    class Create(BaseModel):
-        email: UserTypes.email
-        password: UserTypes.password
-        username: typing.Optional[UserTypes.username] = None
-
-    class CreateAdmin(Create):
-        user_role_id: UserTypes.user_role_id
 
     @ property
     def is_public(self) -> bool:
@@ -311,6 +395,7 @@ class User(Table[UserTypes.id], UserIDBase, table=True):
         return user
 
     @ classmethod
+    @api_endpoint
     async def is_username_available(cls, session: Session, username: UserTypes.username) -> bool:
         if await cls.get_one_by_key_values(session, {'username': username}):
             return False
@@ -329,161 +414,87 @@ class User(Table[UserTypes.id], UserIDBase, table=True):
         return True
 
     @classmethod
+    @api_endpoint
     async def api_get_is_email_available(cls, session: Session, email: UserTypes.email) -> None:
         if not await cls.is_email_available(session, email):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail='Email already exists')
 
-    @ classmethod
-    async def api_get(cls, **kwargs: Unpack[ApiGetMethodKwargs[UserTypes.id]]) -> typing.Self:
-
-        user = await cls._basic_api_get(kwargs['session'], kwargs['id'])
-        if not user.is_public:
-            if not kwargs['admin']:
-                if user.id != kwargs['authorized_user_id']:
-                    raise HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
-
-        return user
-
-    @classmethod
-    async def api_delete(cls, **kwargs: Unpack[ApiDeleteMethodKwargs[UserTypes.id]]) -> None:
-
-        user = await cls._basic_api_get(kwargs['session'], kwargs['id'])
-
-        if not kwargs['admin']:
-            if user.id != kwargs['authorized_user_id']:
-
-                # cannot edit the user,
-                if user.is_public:
-                    raise HTTPException(
-                        status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to delete this user')
-
-                # pretend the user doesn't exist
-                else:
-                    raise HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
-
-        # delete the root gallery folder
-        root_gallery = await Gallery.get_root_gallery(
-            kwargs['session'], kwargs['id'])
-        shutil.rmtree((await root_gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)))
-
-        kwargs['session'].delete(user)
-        kwargs['session'].commit()
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-type PluralUsersDict = dict[UserTypes.id, User]
-
-# Export Types
-
-
-class UserExport(TableExport[User]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[User]] = User
-
-    id: UserTypes.id
-    username: UserTypes.username | None
-
-
-class UserPublic(UserExport):
-    pass
-
-
-class UserPrivate(UserExport):
-    email: UserTypes.email
-    user_role_id: UserTypes.user_role_id
-
-
-# Import Types
-class UserImport(TableImport[User]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[User]] = User
-
     @classmethod
     def hash_password(cls, password: UserTypes.password) -> UserTypes.hashed_password:
         return utils.hash_password(password)
 
-
-class UserUpdate(UserImport):
-    email: typing.Optional[UserTypes.email] = None
-    password: typing.Optional[UserTypes.password] = None
-    username: typing.Optional[UserTypes.username] = None
-
-
-class UserUpdateAdmin(UserUpdate, TableUpdateAdmin[User, UserTypes.id]):
-    async def api_patch(self, **kwargs: Unpack[ApiPatchMethodKwargs[UserTypes.id]]) -> User:
-
-        user = await self._TABLE_MODEL._basic_api_get(kwargs['session'], kwargs['id'])
-
+    async def _check_authorization_existing(self, **kwargs: Unpack[CheckAuthorizationExistingKwargs[typing.Self]]):
         if not kwargs['admin']:
-            if user.id != kwargs['authorized_user_id']:
-                if user.is_public:
-                    raise HTTPException(
-                        status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to patch this user')
+            if self.id != kwargs['authorized_user_id']:
+                if self.is_public:
+                    if kwargs['method'] == 'delete' or kwargs['method'] == 'patch':
+                        raise HTTPException(
+                            status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this user'.format(method=kwargs['method']))
                 else:
                     raise HTTPException(
-                        status.HTTP_404_NOT_FOUND, detail=self._TABLE_MODEL.not_found_message())
+                        status_code=status.HTTP_404_NOT_FOUND, detail=self.not_found_message())
 
-        if 'username' in self.model_fields_set:
-            # username has been changed
-            if user.username != self.username:
-                root_gallery = await Gallery.get_root_gallery(kwargs['session'], kwargs['id'])
+    @classmethod
+    async def _check_validation_post(cls, **kwargs):
 
-                print(root_gallery)
+        model = kwargs['create_model']
+        if 'username' in model.model_fields_set:
+            if model.username != None:
+                await User.api_get_is_username_available(
+                    kwargs['session'], model.username)
+        if 'email' in model.model_fields_set:
+            if model.email != None:
+                await User.api_get_is_email_available(kwargs['session'], model.email)
 
-                if self.username == None:
-                    await GalleryUpdateAdmin(name=user.id).api_patch(
-                        **{**kwargs, **{'id': root_gallery.id}})
+    async def _check_validation_patch(self, **kwargs):
+        model = kwargs['update_model']
+        if 'username' in model.model_fields_set:
+            if model.username != None:
+                await User.api_get_is_username_available(
+                    kwargs['session'], model.username)
+        if 'email' in model.model_fields_set:
+            if model.email != None:
+                await User.api_get_is_email_available(kwargs['session'], model.email)
 
-                if self.username is not None:
-                    await User.api_get_is_username_available(kwargs['session'], self.username)
-                    await GalleryUpdateAdmin(name=self.username).api_patch(
-                        **{**kwargs, **{'id': root_gallery.id}})
+    @classmethod
+    async def create(cls, **kwargs) -> typing.Self:
 
-                user.username = self.username
-
-        if 'email' in self.model_fields_set:
-            if user.email != self.email:
-                await User.api_get_is_email_available(kwargs['session'], self.email)
-                user.email = self.email
-
-        if 'password' in self.model_fields_set:
-            if self.password == None:
-                user.hashed_password = None
-            else:
-                user.hashed_password = self.hash_password(self.password)
-
-        await user.add_to_db(kwargs['session'])
-        return user
-
-
-class UserCreate(UserImport):
-    email: UserTypes.email
-    password: typing.Optional[UserTypes.password] = None
-
-
-class UserCreateAdmin(UserCreate, TableCreateAdmin[User]):
-    user_role_id: UserTypes.user_role_id
-
-    async def api_post(self, **kwargs: Unpack[ApiPostMethodKwargs]) -> User:
-
-        await User.api_get_is_email_available(kwargs['session'], self.email)
-        user = await self.create()
-        await user.add_to_db(kwargs['session'])
-
-        root_gallery = await GalleryCreateAdmin(name='root', user_id=user.id, visibility_level=kwargs['c'].visibility_level_name_mapping['private']).api_post(**kwargs)
-        deleted_gallery = await GalleryCreateAdmin(name='deleted', user_id=user.id, visibility_level=kwargs['c'].visibility_level_name_mapping['private'], parent_id=root_gallery._id).api_post(**kwargs)
-
-        return user
-
-    async def create(self) -> User:
-
-        return self._TABLE_MODEL(
-            id=self._TABLE_MODEL.generate_id(),
-            hashed_password=None if self.password == None else utils.hash_password(
-                self.password),
-            **self.model_dump(exclude=['password'])
+        new_user = cls(
+            id=cls.generate_id(),
+            hashed_password=cls.hash_password(
+                kwargs['create_model'].password) if 'password' in kwargs['create_model'].model_fields_set else None,
+            **kwargs['create_model'].model_dump(exclude=['password'])
         )
+
+        # root_gallery = await GalleryCreateAdmin(name='root', user_id=new_user.id, visibility_level=kwargs['c'].visibility_level_name_mapping['private']).api_post(**kwargs)
+        # deleted_gallery = await GalleryCreateAdmin(name='deleted', user_id=new_user.id, visibility_level=kwargs['c'].visibility_level_name_mapping['private'], parent_id=root_gallery._id).api_post(**kwargs)
+
+        return new_user
+
+    async def update(self, **kwargs):
+
+        self.sqlmodel_update(kwargs['update_model'].model_dump(
+            exclude_unset=True, exclude=['password']))
+        if 'password' in kwargs['update_model'].model_fields_set:
+            self.hashed_password = self.hash_password(
+                kwargs['update_model'].password)
+
+        # if 'username' in kwargs['update_model'].model_fields_set:
+        #     await GalleryUpdateAdmin(name=user.id).api_patch(
+        #                 **{**kwargs, **{'id': root_gallery.id}})
+
+        #     await GalleryUpdateAdmin(name=self.username).api_patch(
+        #                 **{**kwargs, **{'id': root_gallery.id}})
+
+    async def delete(self, **kwargs):
+        # root_gallery = await Gallery.get_root_gallery(
+        #     kwargs['session'], kwargs['id'])
+        # shutil.rmtree((await root_gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)))
+        pass
+
+
+PluralUsersDict = dict[UserTypes.id, User]
 
 
 #
@@ -502,7 +513,41 @@ class AuthCredentialTypes:
     type = typing.Literal['access_token', 'api_key']
 
 
-class AuthCredential[IdType](BaseModel, ABC):
+class AuthCredentialExport(TableExport):
+    user_id: UserTypes.id
+    issued: AuthCredentialTypes.issued
+    expiry: AuthCredentialTypes.expiry
+
+
+class AuthCredentialImport(BaseModel):
+    pass
+
+
+class AuthCredentialUpdateAdmin(AuthCredentialImport):
+    pass
+
+
+class AuthCredentialCreateAdmin(AuthCredentialImport):
+    user_id: AuthCredentialTypes.user_id
+    lifespan: typing.Optional[AuthCredentialTypes.lifespan] = None
+    expiry: typing.Optional[AuthCredentialTypes.expiry] = None
+
+    @ model_validator(mode='after')
+    def check_lifespan_or_expiry(self):
+        if self.lifespan == None and self.expiry == None:
+            raise ValueError(
+                "Either 'lifespan' or 'expiry' must be set and not None.")
+        return self
+
+    def get_expiry(self) -> datetime_module.datetime:
+        if self.expiry != None:
+            return self.expiry
+
+        return datetime_module.datetime.now(
+            datetime_module.UTC) + self.lifespan
+
+
+class AuthCredential[T: 'Table', IdType, TPost: AuthCredentialCreateAdmin, TPatch: AuthCredentialUpdateAdmin](Table[T, IdType, TPost, TPatch]):
     user_id: UserTypes.id = Field(
         index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0], const=True, ondelete='CASCADE')
     issued: AuthCredentialTypes.issued = Field(const=True)
@@ -553,46 +598,23 @@ class AuthCredential[IdType](BaseModel, ABC):
     def serialize_datetime(value: datetime_module.datetime) -> datetime_module.datetime:
         return value.replace(tzinfo=datetime_module.timezone.utc)
 
+    @classmethod
+    async def create(cls, **kwargs) -> typing.Self:
 
-class AuthCredentialExport[IdType](TableExport[AuthCredential[IdType]]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[AuthCredential]] = AuthCredential
-
-    user_id: UserTypes.id
-    issued: AuthCredentialTypes.issued
-    expiry: AuthCredentialTypes.expiry
-
-
-class AuthCredentialImport[IdType](TableImport[AuthCredential[IdType]]):
-    lifespan: typing.Optional[AuthCredentialTypes.lifespan] = None
-    expiry: typing.Optional[AuthCredentialTypes.expiry] = None
-
-    @ model_validator(mode='after')
-    def check_lifespan_or_expiry(self):
-        if self.lifespan == None and self.expiry == None:
-            raise ValueError(
-                "Either 'lifespan' or 'expiry' must be set and not None.")
-        return self
-
-    def get_expiry(self) -> datetime_module.datetime:
-        if self.expiry != None:
-            return self.expiry
-
-        return datetime_module.datetime.now(
-            datetime_module.UTC) + self.lifespan
-
-
-class AuthCredentialCreateAdmin[TTable: Table, IdType](AuthCredentialImport[IdType], TableCreateAdmin[TTable]):
-
-    user_id: UserTypes.id
-
-    async def create(self) -> TTable:
-        return self._TABLE_MODEL(
-            id=self._TABLE_MODEL.generate_id(),
+        return cls(
+            id=cls.generate_id(),
             issued=datetime_module.datetime.now(
                 datetime_module.timezone.utc),
-            expiry=self.get_expiry(),
-            **self.model_dump(exclude=['lifespan', 'expiry'])
+            expiry=kwargs['create_model'].get_expiry(),
+            **kwargs['create_model'].model_dump(exclude=['lifespan', 'expiry'])
         )
+
+    async def _check_authorization_existing(self, **kwargs):
+        if not kwargs['admin']:
+            if self.user_id != kwargs['authorized_user_id']:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail=self.not_found_message())
+
 
 #
 # User Access Token
@@ -603,12 +625,20 @@ class UserAccessTokenTypes(AuthCredentialTypes):
     id = str
 
 
-class UserAccessTokenIDBase(IdObject[UserAccessTokenTypes.id]):
+class UserAccessTokenIDBase(IdObject[UserAccessTokenTypes.id], BaseModel):
     id: UserAccessTokenTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
 
-class UserAccessToken(Table[UserAccessTokenTypes.id], UserAccessTokenIDBase, AuthCredential[UserAccessTokenTypes.id], table=True):
+class UserAccessTokenUpdateAdmin(AuthCredentialUpdateAdmin):
+    pass
+
+
+class UserAccessTokenCreateAdmin(AuthCredentialCreateAdmin):
+    pass
+
+
+class UserAccessToken(Table['UserAccessToken', UserAccessTokenTypes.id, UserAccessTokenCreateAdmin, UserAccessTokenUpdateAdmin], UserAccessTokenIDBase, AuthCredential, table=True):
     type: typing.ClassVar[AuthCredentialTypes.type] = 'access_token'
     __tablename__ = 'user_access_token'
 
@@ -616,73 +646,15 @@ class UserAccessToken(Table[UserAccessTokenTypes.id], UserAccessTokenIDBase, Aut
         back_populates='user_access_tokens')
 
     @classmethod
-    async def api_get(cls, **kwargs: Unpack[ApiGetMethodKwargs[UserAccessTokenTypes.id]]) -> typing.Self:
-
-        user_access_token = await cls._basic_api_get(kwargs['session'], kwargs['id'])
-
+    async def _check_authorization_post(cls, **kwargs):
         if not kwargs['admin']:
-            if user_access_token.user_id != kwargs['authorized_user_id']:
+            if kwargs['authorized_user_id'] != kwargs['create_model'].user_id:
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
-
-        return user_access_token
-
-    @classmethod
-    async def api_delete(cls, **kwargs: Unpack[ApiDeleteMethodKwargs[UserAccessTokenTypes.id]]) -> None:
-
-        user_access_token = await cls._basic_api_get(kwargs['session'], kwargs['id'])
-
-        if not kwargs['admin']:
-            if user_access_token.user_id != kwargs['authorized_user_id']:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
-
-        kwargs['session'].delete(user_access_token)
-        kwargs['session'].commit()
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to post access token for another user')
 
 
-type PluralUserAccessTokensDict = dict[UserAccessTokenTypes.id,
-                                       UserAccessToken]
-
-
-class UserAccessTokenExport(TableExport[UserAccessToken], AuthCredentialExport[UserAccessTokenTypes.id]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[UserAccessToken]
-                                  ] = UserAccessToken
-
-
-class UserAccessTokenPublic(UserAccessTokenExport):
-    pass
-
-
-class UserAccessTokenPrivate(UserAccessTokenExport):
-    pass
-
-
-class UserAccessTokenImport(AuthCredentialImport[UserAccessTokenTypes.id]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[UserAccessToken]
-                                  ] = UserAccessToken
-
-
-class UserAccessTokenUpdate(UserAccessTokenImport):
-    pass
-
-
-class UserAccessTokenUpdateAdmin(UserAccessTokenUpdate, TableUpdateAdmin[UserAccessToken, UserAccessTokenTypes.id]):
-
-    async def api_patch(self, **kwargs: Unpack[ApiPatchMethodKwargs[UserAccessTokenTypes.id]]) -> UserAccessToken:
-        user_access_token = await UserAccessToken.api_get(**kwargs)
-        user_access_token.sqlmodel_update(self.model_dump(exclude_unset=True))
-        await user_access_token.add_to_db(kwargs['session'])
-        return user_access_token
-
-
-class UserAccessTokenCreate(UserAccessTokenImport):
-    pass
-
-
-class UserAccessTokenCreateAdmin(UserAccessTokenCreate, AuthCredentialCreateAdmin[UserAccessToken, UserAccessTokenTypes.id]):
-    pass
+PluralUserAccessTokensDict = dict[UserAccessTokenTypes.id,
+                                  UserAccessToken]
 
 
 # # ApiKey
@@ -694,7 +666,7 @@ class ApiKeyTypes(AuthCredentialTypes):
         min_length=1, max_length=256)]
 
 
-class ApiKeyIdBase(IdObject[ApiKeyTypes.id]):
+class ApiKeyIdBase(IdObject[ApiKeyTypes.id], BaseModel):
     id: ApiKeyTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
@@ -707,7 +679,39 @@ class ApiKeyAvailableAdmin(ApiKeyAvailable):
     user_id: UserTypes.id
 
 
-class ApiKey(Table[ApiKeyTypes.id], ApiKeyIdBase, AuthCredential[ApiKeyTypes.id], table=True):
+class ApiKeyExport(AuthCredentialExport):
+    name: ApiKeyTypes.name
+
+
+class ApiKeyPublic(ApiKeyExport):
+    pass
+
+
+class ApiKeyPrivate(ApiKeyExport):
+    pass
+
+
+class ApiKeyImport(AuthCredentialImport):
+    pass
+
+
+class ApiKeyUpdate(ApiKeyImport):
+    name: typing.Optional[ApiKeyTypes.name] = None
+
+
+class ApiKeyUpdateAdmin(ApiKeyUpdate):
+    pass
+
+
+class ApiKeyCreate(ApiKeyImport):
+    name: ApiKeyTypes.name
+
+
+class ApiKeyCreateAdmin(ApiKeyCreate, AuthCredentialCreateAdmin):
+    pass
+
+
+class ApiKey(Table['ApiKey', ApiKeyTypes.id, ApiKeyCreateAdmin, ApiKeyUpdateAdmin], ApiKeyIdBase, AuthCredential, table=True):
     __tablename__ = 'api_key'
 
     name: ApiKeyTypes.name = Field()
@@ -731,79 +735,30 @@ class ApiKey(Table[ApiKeyTypes.id], ApiKeyIdBase, AuthCredential[ApiKeyTypes.id]
                 status_code=status.HTTP_409_CONFLICT, detail=cls.already_exists_message())
 
     @classmethod
-    async def api_get(cls, **kwargs: Unpack[ApiGetMethodKwargs[ApiKeyTypes.id]]) -> typing.Self:
-
-        api_key = await cls._basic_api_get(kwargs['session'], kwargs['id'])
+    async def _check_authorization_post(cls, **kwargs):
         if not kwargs['admin']:
-            if api_key.user_id != kwargs['authorized_user_id']:
+            if kwargs['authorized_user_id'] != kwargs['create_model'].user_id:
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to post api key for another user')
 
-        return api_key
+    async def _check_authorization_existing(self, **kwargs):
+        if not kwargs['admin']:
+            if self.user_id != kwargs['authorized_user_id']:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail=self.not_found_message())
 
     @classmethod
-    async def api_delete(cls, **kwargs: Unpack[ApiDeleteMethodKwargs[ApiKeyTypes.id]]) -> None:
+    async def _check_validation_post(cls, **kwargs):
+        await cls.api_get_is_available(kwargs['session'], ApiKeyAvailableAdmin(
+            name=kwargs['create_model'].name, user_id=kwargs['create_model']))
 
-        api_key = await cls._basic_api_get(kwargs['session'], kwargs['id'])
-
-        if not kwargs['admin']:
-            if api_key.user_id != kwargs['authorized_user_id']:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
-
-        kwargs['session'].delete(api_key)
-        kwargs['session'].commit()
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    async def _check_validation_patch(self, **kwargs):
+        if 'name' in kwargs['update_model'].model_fields_set:
+            await self.api_get_is_available(kwargs['session'], ApiKeyAvailableAdmin(
+                name=kwargs['update_model'].name, user_id=kwargs['authorized_user_id']))
 
 
-type PluralApiKeysDict = dict[ApiKeyTypes.id, ApiKey]
-
-
-class ApiKeyExport(TableExport[ApiKey], AuthCredentialExport[ApiKeyTypes.id]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[ApiKey]] = ApiKey
-    name: ApiKeyTypes.name
-
-
-class ApiKeyPublic(ApiKeyExport):
-    pass
-
-
-class ApiKeyPrivate(ApiKeyExport):
-    pass
-
-
-class ApiKeyImport(AuthCredentialImport[ApiKeyTypes.id]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[ApiKey]] = ApiKey
-
-
-class ApiKeyUpdate(ApiKeyImport):
-    name: typing.Optional[ApiKeyTypes.name] = None
-
-
-class ApiKeyUpdateAdmin(ApiKeyUpdate, TableUpdateAdmin[ApiKey, ApiKeyTypes.id]):
-    async def api_patch(self, **kwargs: Unpack[ApiPatchMethodKwargs[ApiKeyTypes.id]]) -> ApiKey:
-        api_key = await ApiKey.api_get(**kwargs)
-
-        if 'name' in self.model_fields_set:
-            if api_key.name != self.name:
-                await ApiKey.api_get_is_available(kwargs['session'], ApiKeyAvailableAdmin(name=self.name, user_id=api_key.user_id))
-
-        api_key.sqlmodel_update(self.model_dump(exclude_unset=True))
-        await api_key.add_to_db(kwargs['session'])
-        return api_key
-
-
-class ApiKeyCreate(ApiKeyImport):
-    name: ApiKeyTypes.name
-
-
-class ApiKeyCreateAdmin(ApiKeyCreate, AuthCredentialCreateAdmin[ApiKey, ApiKeyTypes.id]):
-
-    async def api_post(self, **kwargs: Unpack[ApiPostMethodKwargs]) -> ApiKey:
-        await ApiKey.api_get_is_available(kwargs['session'], ApiKeyAvailableAdmin(name=self.name, user_id=kwargs['authorized_user_id']))
-        api_key = await self.create()
-        await api_key.add_to_db(kwargs['session'])
-        return api_key
+PluralApiKeysDict = dict[ApiKeyTypes.id, ApiKey]
 
 
 # AuthCredentialTypes
@@ -824,12 +779,12 @@ class ApiKeyScopeTypes:
     scope_id = client.ScopeTypes.id
 
 
-type ApiKeyScopeID = typing.Annotated[tuple[ApiKeyScopeTypes.api_key_id,
-                                            ApiKeyScopeTypes.scope_id], '(api_key_id, scope_id)'
-                                      ]
+ApiKeyScopeID = typing.Annotated[tuple[ApiKeyScopeTypes.api_key_id,
+                                       ApiKeyScopeTypes.scope_id], '(api_key_id, scope_id)'
+                                 ]
 
 
-class ApiKeyScopeIdBase(IdObject[ApiKeyScopeID]):
+class ApiKeyScopeIdBase(IdObject[ApiKeyScopeID], BaseModel):
     _ID_COLS: typing.ClassVar[list[str]] = ['api_key_id', 'scope_id']
 
     api_key_id: ApiKeyScopeTypes.api_key_id = Field(
@@ -837,40 +792,8 @@ class ApiKeyScopeIdBase(IdObject[ApiKeyScopeID]):
     scope_id: ApiKeyScopeTypes.scope_id = Field(index=True)
 
 
-class ApiKeyScope(Table[ApiKeyScopeID], ApiKeyScopeIdBase, table=True):
-    __tablename__ = 'api_key_scope'
-    __table_args__ = (
-        PrimaryKeyConstraint('api_key_id', 'scope_id'),
-    )
-
-    api_key: ApiKey = Relationship(
-        back_populates='api_key_scopes')
-
-    @classmethod
-    async def api_get(cls, **kwargs: Unpack[ApiGetMethodKwargs[ApiKeyScopeID]]) -> typing.Self:
-
-        api_key_scope = await cls._basic_api_get(kwargs['session'], kwargs['id'])
-        if not kwargs['admin']:
-            if api_key_scope.api_key.user_id != kwargs['authorized_user_id']:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
-
-        return api_key_scope
-
-    @classmethod
-    async def api_delete(cls, **kwargs: Unpack[ApiDeleteMethodKwargs[ApiKeyScopeID]]) -> None:
-
-        api_key_scope = await cls.api_get(**kwargs)
-        kwargs['session'].delete(api_key_scope)
-        kwargs['session'].commit()
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-type PluralApiKeyScopesDict = dict[ApiKeyScopeID, ApiKeyScope]
-
-
-class ApiKeyScopeExport(TableExport[ApiKeyScope], ApiKeyScopeIdBase):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[ApiKeyScope]] = ApiKeyScope
+class ApiKeyScopeExport(TableExport, ApiKeyScopeIdBase):
+    pass
 
 
 class ApiKeyScopePublic(ApiKeyScopeExport):
@@ -881,34 +804,52 @@ class ApiKeyScopePrivate(ApiKeyScopeExport):
     pass
 
 
-class ApiKeyScopeCreateAdmin(ApiKeyScopeIdBase, TableCreateAdmin[ApiKeyScope]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[ApiKeyScope]] = ApiKeyScope
+class ApiKeyScopeUpdateAdmin(BaseModel):
+    pass
 
-    async def api_post(self, **kwargs: Unpack[ApiPostMethodKwargs]) -> ApiKeyScope:
 
-        if await ApiKeyScope.get_one_by_id(kwargs['session'], self._id):
+class ApiKeyScopeCreateAdmin(ApiKeyScopeIdBase):
+    pass
+
+
+class ApiKeyScope(Table['ApiKeyScope', ApiKeyScopeID, ApiKeyScopeCreateAdmin, ApiKeyScopeUpdateAdmin], ApiKeyScopeIdBase, table=True):
+    __tablename__ = 'api_key_scope'
+    __table_args__ = (
+        PrimaryKeyConstraint('api_key_id', 'scope_id'),
+    )
+
+    api_key: ApiKey = Relationship(
+        back_populates='api_key_scopes')
+
+    @classmethod
+    async def create(cls, **kwargs):
+        return ApiKeyScope(
+            **kwargs['create_model'].model_dump(),
+        )
+
+    @classmethod
+    async def _check_authorization_post(cls, **kwargs):
+        api_key = await ApiKey._basic_api_get(kwargs['session'], kwargs['create_model']._id)
+        if not kwargs['admin']:
+            if api_key.user_id != kwargs['authorized_user_id']:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
+
+    @classmethod
+    async def _check_validation_post(cls, **kwargs):
+        if await ApiKeyScope.get_one_by_id(kwargs['session'], kwargs['create_model']._id):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail='Api key scope already exists')
 
-        # if the given kwargs allow the user to access the api key, then they allow the user to create the ApiKeyScope
-        api_key = await ApiKey.api_get(**kwargs, id=self.api_key_id)
-        if self.scope_id not in kwargs['c'].user_role_id_scope_ids[api_key.user.user_role_id]:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Scope doesn't exist for this user")
+    async def _check_authorization_existing(self, **kwargs):
+        if not kwargs['admin']:
+            if self.api_key.user_id != kwargs['authorized_user_id']:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail=self.not_found_message())
 
-        existing_api_key_scope = await ApiKeyScope.get_one_by_id(kwargs['session'], self._id)
-        if existing_api_key_scope:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail="Scope already exists for this API key")
 
-        api_key_scope = await self.create()
-        await api_key_scope.add_to_db(kwargs['session'])
-        return api_key_scope
+PluralApiKeyScopesDict = dict[ApiKeyScopeID, ApiKeyScope]
 
-    async def create(self) -> ApiKeyScope:
-        return ApiKeyScope(
-            ** self.model_dump(),
-        )
 
 #
 # Gallery
@@ -937,6 +878,57 @@ class GalleryIdBase(IdObject[GalleryTypes.id]):
     id: GalleryTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
+# Export Types
+
+
+class GalleryExport(TableExport):
+    id: GalleryTypes.id
+    user_id: GalleryTypes.user_id
+    name: GalleryTypes.name
+    parent_id: GalleryTypes.parent_id | None
+    description: GalleryTypes.description | None
+    date: GalleryTypes.date | None
+
+
+class GalleryPublic(GalleryExport):
+    pass
+
+
+class GalleryPrivate(GalleryExport):
+    visibility_level: GalleryTypes.visibility_level
+
+
+# Import Types
+
+class GalleryImport(BaseModel):
+    pass
+
+
+class GalleryUpdate(GalleryImport):
+    name: typing.Optional[GalleryTypes.name] = None
+    user_id: typing.Optional[GalleryTypes.user_id] = None
+    visibility_level: typing.Optional[GalleryTypes.visibility_level] = None
+    parent_id: typing.Optional[GalleryTypes.parent_id] = None
+    description: typing.Optional[GalleryTypes.description] = None
+    date: typing.Optional[GalleryTypes.date] = None
+
+
+class GalleryUpdateAdmin(GalleryUpdate):
+    pass
+
+
+class GalleryCreate(GalleryImport):
+    name: GalleryTypes.name
+    user_id: GalleryTypes.user_id
+    visibility_level: GalleryTypes.visibility_level
+    parent_id: typing.Optional[GalleryTypes.parent_id] = None
+    description: typing.Optional[GalleryTypes.description] = None
+    date: typing.Optional[GalleryTypes.date] = None
+
+
+class GalleryCreateAdmin(GalleryCreate):
+    pass
+
 
 class GalleryAvailable(BaseModel):
     name: GalleryTypes.name
@@ -948,7 +940,7 @@ class GalleryAvailableAdmin(GalleryAvailable):
     user_id: UserTypes.id
 
 
-class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
+class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdateAdmin], GalleryIdBase, table=True):
     __tablename__ = 'gallery'
 
     name: GalleryTypes.name = Field()
@@ -1008,30 +1000,6 @@ class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
             return (await self.parent.get_parents(session)) + [self.parent]
 
     @ classmethod
-    async def api_get(cls, **kwargs: Unpack[ApiGetMethodKwargs[GalleryTypes.id]]) -> typing.Self:
-
-        gallery = await cls._basic_api_get(kwargs['session'], kwargs['id'])
-
-        if not kwargs['admin']:
-            if gallery.visibility_level == kwargs['c'].visibility_level_name_mapping['private']:
-
-                # user is not authorized, pretend it doesn't exist
-                if not kwargs['authorized_user_id']:
-                    raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                        detail=cls.not_found_message())
-
-                # check user's permission
-                if gallery.user_id != kwargs['authorized_user_id']:
-                    gallery_permission = await GalleryPermission.get_one_by_id(kwargs['session'], (kwargs['id'], kwargs['authorized_user_id']))
-
-                    # user has no access, pretend it doesn't exist
-                    if not gallery_permission:
-                        raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                            detail=cls.not_found_message())
-
-        return gallery
-
-    @ classmethod
     async def get_root_gallery(cls, session: Session, user_id: GalleryTypes.user_id) -> typing.Self | None:
         return await cls.get_one_by_key_values(session, {'user_id': user_id, 'parent_id': None})
 
@@ -1045,29 +1013,82 @@ class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail=cls.already_exists_message())
 
-    @ classmethod
-    async def api_delete(cls, rmtree=True, **kwargs: Unpack[ApiDeleteMethodKwargs[GalleryTypes.id]]) -> None:
+    @classmethod
+    async def _check_authorization_post(cls, **kwargs):
+        if not kwargs['admin']:
+            if kwargs['authorized_user_id'] != kwargs['create_model'].user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to post gallery for another user')
 
-        gallery = await cls._basic_api_get(kwargs['session'], kwargs['id'])
+    async def _check_authorization_existing(self, **kwargs):
 
         if not kwargs['admin']:
-            if gallery.user_id != kwargs['authorized_user_id']:
+            if kwargs['authorized_user_id'] != self.user_id:
+
+                if kwargs['method'] == 'delete':
+                    raise HTTPException(
+                        status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this gallery'.format(method=kwargs['method']))
 
                 gallery_permission = await GalleryPermission.get_one_by_id(kwargs['session'], (kwargs['id'], kwargs['authorized_user_id']))
 
-                if not gallery_permission and gallery.visibility_level == kwargs['c'].visibility_level_name_mapping['private']:
-                    raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                        detail=cls.not_found_message())
+                # if the gallery is private and user has no access, pretend it doesn't exist
+                if not gallery_permission and self.visibility_level == kwargs['c'].visibility_level_name_mapping['private']:
+                    raise HTTPException(
+                        status.HTTP_404_NOT_FOUND, detail=self.not_found_message())
 
-                raise HTTPException(
-                    status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to delete this gallery')
+                elif kwargs['method'] == 'get':
+                    if gallery_permission.permission_level < kwargs['c'].permission_level_name_mapping['viewer']:
+                        raise HTTPException(
+                            status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this gallery'.format(method=kwargs['method']))
 
+                elif kwargs['method'] == 'patch':
+                    if gallery_permission.permission_level < kwargs['c'].permission_level_name_mapping['editor']:
+                        raise HTTPException(
+                            status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this gallery'.format(method=kwargs['method']))
+
+    @classmethod
+    async def _check_validation_post(cls, **kwargs):
+        await cls.api_get_is_available(kwargs['session'], GalleryAvailableAdmin(**kwargs['create_model'].model_dump(include=GalleryAvailableAdmin.model_fields.keys(), exclude_unset=True)))
+
+    async def _check_validation_patch(self, **kwargs):
+        # take self, overwrite it with the update_model, and see if the combined model is available
+        await Gallery.api_get_is_available(kwargs['session'], GalleryAvailableAdmin(**{
+            **self.model_dump(include=list(GalleryAvailableAdmin.model_fields.keys())), **kwargs['update_model'].model_dump(include=GalleryAvailableAdmin.model_fields.keys(), exclude_unset=True)
+        }))
+
+    @classmethod
+    async def create(cls, mkdir=True, **kwargs: Unpack[ApiPostMethodKwargs[GalleryCreateAdmin]]) -> typing.Self:
+        gallery = cls(
+            id=cls.generate_id(),
+            **kwargs['create_model'].model_dump()
+        )
+
+        if mkdir:
+            (await gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)).mkdir()
+
+        return gallery
+
+    async def update(self, **kwargs) -> None:
+
+        rename_folder = False
+
+        # rename the folder
+        if 'name' in self.model_fields_set or 'date' in self.model_fields_set or 'parent_id' in self.model_fields_set:
+            rename_folder = True
+            original_dir = await self.get_dir(
+                kwargs['session'], kwargs['c'].galleries_dir)
+
+        self.sqlmodel_update(
+            kwargs['update_model'].model_dump(exclude_unset=True))
+
+        if rename_folder:
+            new_dir = (await self.get_dir(kwargs['session'], kwargs['c'].galleries_dir)).parent / self.folder_name
+            original_dir.rename(new_dir)
+
+    async def delete(self, rmtree=True, **kwargs: Unpack[ApiDeleteMethodKwargs[GalleryTypes.id]]) -> None:
         if rmtree:
-            shutil.rmtree((await gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)))
-
-        kwargs['session'].delete(gallery)
-        kwargs['session'].commit()
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
+            shutil.rmtree((await self.get_dir(kwargs['session'], kwargs['c'].galleries_dir)))
+        await super().delete(**kwargs)
 
     async def sync_with_local(self, session: Session, c: client.Client, dir: pathlib.Path) -> None:
 
@@ -1188,110 +1209,8 @@ class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
             await child.sync_with_local(session, c, dir / child.folder_name)
 
 
-type PluralGalleriesDict = dict[GalleryTypes.id, Gallery]
+PluralGalleriesDict = dict[GalleryTypes.id, Gallery]
 
-
-# Export Types
-
-
-class GalleryExport(TableExport[Gallery]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[Gallery]] = Gallery
-
-    id: GalleryTypes.id
-    user_id: GalleryTypes.user_id
-    name: GalleryTypes.name
-    parent_id: GalleryTypes.parent_id | None
-    description: GalleryTypes.description | None
-    date: GalleryTypes.date | None
-
-
-class GalleryPublic(GalleryExport):
-    pass
-
-
-class GalleryPrivate(GalleryExport):
-    visibility_level: GalleryTypes.visibility_level
-
-
-# Import Types
-
-class GalleryImport(TableImport[Gallery]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[Gallery]] = Gallery
-
-
-class GalleryUpdate(GalleryImport):
-    name: typing.Optional[GalleryTypes.name] = None
-    user_id: typing.Optional[GalleryTypes.user_id] = None
-    visibility_level: typing.Optional[GalleryTypes.visibility_level] = None
-    parent_id: typing.Optional[GalleryTypes.parent_id] = None
-    description: typing.Optional[GalleryTypes.description] = None
-    date: typing.Optional[GalleryTypes.date] = None
-
-
-class GalleryUpdateAdmin(GalleryUpdate, TableUpdateAdmin[Gallery, GalleryTypes.id]):
-
-    async def api_patch(self, **kwargs: Unpack[ApiPatchMethodKwargs[GalleryTypes.id]]) -> Gallery:
-
-        # if it doesn't exist, throw 404
-
-        gallery = await self._TABLE_MODEL._basic_api_get(kwargs['session'], kwargs['id'])
-        if not kwargs['admin']:
-            if kwargs['authorized_user_id'] != gallery.user_id:
-                gallery_permission = await GalleryPermission.get_one_by_id(kwargs['session'], (kwargs['id'], kwargs['authorized_user_id']))
-
-                # if the gallery is private and user has no access, pretend it doesn't exist
-                if not gallery_permission and gallery.visibility_level == kwargs['c'].visibility_level_name_mapping['private']:
-                    raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                        detail=self._TABLE_MODEL.not_found_message())
-
-                # for public galleries, or for private galleries where the user lacks edit access
-                if gallery_permission.permission_level < kwargs['c'].permission_level_name_mapping['editor']:
-                    raise HTTPException(
-                        status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to patch this gallery')
-
-        # raise HTTP 409 if the gallery already exists
-        await Gallery.api_get_is_available(kwargs['session'], GalleryAvailableAdmin(**{
-            **gallery.model_dump(include=GalleryAvailableAdmin.model_fields.keys()), **self.model_dump(include=list(GalleryAvailableAdmin.model_fields.keys()), exclude_unset=True)
-        }))
-
-        rename_folder = False
-
-        # rename the folder
-        if 'name' in self.model_fields_set or 'date' in self.model_fields_set or 'parent_id' in self.model_fields_set:
-            rename_folder = True
-            original_dir = await gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)
-
-        gallery.sqlmodel_update(self.model_dump(exclude_unset=True))
-
-        if rename_folder:
-            new_dir = (await gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)).parent / gallery.folder_name
-            original_dir.rename(new_dir)
-
-        await gallery.add_to_db(kwargs['session'])
-        return gallery
-
-
-class GalleryCreate(GalleryImport):
-    name: GalleryTypes.name
-    user_id: GalleryTypes.user_id
-    visibility_level: GalleryTypes.visibility_level
-    parent_id: typing.Optional[GalleryTypes.parent_id] = None
-    description: typing.Optional[GalleryTypes.description] = None
-    date: typing.Optional[GalleryTypes.date] = None
-
-
-class GalleryCreateAdmin(GalleryCreate, TableCreateAdmin[Gallery]):
-
-    async def api_post(self, mkdir=True, **kwargs: Unpack[ApiPostMethodKwargs]) -> Gallery:
-
-        await Gallery.api_get_is_available(kwargs['session'], GalleryAvailableAdmin(**self.model_dump(include=['name', 'parent_id', 'date', 'user_id'])))
-        gallery = await self.create()
-        await gallery.add_to_db(kwargs['session'])
-
-        if mkdir:
-            (await gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)).mkdir()
-
-        return gallery
 
 #
 # GalleryPermission
@@ -1304,11 +1223,11 @@ class GalleryPermissionTypes:
     permission_level = client.PermissionLevelTypes.id
 
 
-type GalleryPermissionId = typing.Annotated[tuple[GalleryPermissionTypes.gallery_id,
-                                                  GalleryPermissionTypes.user_id], '(gallery_id, user_id)']
+GalleryPermissionId = typing.Annotated[tuple[GalleryPermissionTypes.gallery_id,
+                                             GalleryPermissionTypes.user_id], '(gallery_id, user_id)']
 
 
-class GalleryPermissionIdBase(IdObject[GalleryPermissionId]):
+class GalleryPermissionIdBase(IdObject[GalleryPermissionId], BaseModel):
     _ID_COLS: typing.ClassVar[list[str]] = ['gallery_id', 'user_id']
 
     gallery_id: GalleryPermissionTypes.gallery_id = Field(
@@ -1317,53 +1236,7 @@ class GalleryPermissionIdBase(IdObject[GalleryPermissionId]):
         primary_key=True, index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0], ondelete='CASCADE')
 
 
-class GalleryPermission(Table[GalleryPermissionId], GalleryPermissionIdBase, table=True):
-    __tablename__ = 'gallery_permission'
-    __table_args__ = (
-        PrimaryKeyConstraint('gallery_id', 'user_id'),
-    )
-
-    permission_level: GalleryPermissionTypes.permission_level = Field()
-
-    gallery: Gallery = Relationship(back_populates='gallery_permissions')
-    user: User = Relationship(back_populates='gallery_permissions')
-
-    @ classmethod
-    async def api_get(cls, method='get', **kwargs: Unpack[ApiGetMethodKwargs[GalleryPermissionId]]) -> typing.Self:
-
-        gallery_permission = await cls._basic_api_get(kwargs['session'], kwargs['id'])
-
-        if not kwargs['admin']:
-            gallery = await Gallery.get_one_by_id(kwargs['session'], kwargs['id'][0])
-            if gallery.user_id != kwargs['authorized_user_id']:
-                authorized_user_gallery_permission = await cls.get_one_by_id(kwargs['session'], (kwargs['id'][0], kwargs['authorized_user_id']))
-
-                if authorized_user_gallery_permission or gallery.visibility_level == kwargs['c'].visibility_level_name_mapping['public']:
-                    raise HTTPException(
-                        status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to ' + method + ' this gallery permission')
-                else:
-                    raise HTTPException(
-                        status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
-
-        return gallery_permission
-
-    @ classmethod
-    async def api_delete(cls, **kwargs: Unpack[ApiDeleteMethodKwargs[GalleryPermissionId]]) -> None:
-
-        gallery_permission = await cls.api_get(method='delete', **kwargs)
-        kwargs['session'].delete(gallery_permission)
-        kwargs['session'].commit()
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-type PluralGalleryPermissionsDict = dict[GalleryPermissionId,
-                                         GalleryPermission]
-
-
-class GalleryPermissionExport(TableExport[GalleryPermission]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[GalleryPermission]
-                                  ] = GalleryPermission
-
+class GalleryPermissionExport(TableExport):
     gallery_id: GalleryPermissionTypes.gallery_id
     user_id: GalleryPermissionTypes.user_id
     permission_level: GalleryPermissionTypes.permission_level
@@ -1377,37 +1250,67 @@ class GalleryPermissionPrivate(GalleryPermissionExport):
     pass
 
 
-class GalleryPermissionImport(TableImport[GalleryPermission]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[GalleryPermission]
-                                  ] = GalleryPermission
+class GalleryPermissionImport(BaseModel):
+    pass
 
 
-class GalleryPermissionUpdateAdmin(GalleryPermissionImport, TableUpdateAdmin[GalleryPermission, GalleryPermissionId]):
+class GalleryPermissionUpdateAdmin(GalleryPermissionImport):
     permission_level: typing.Optional[GalleryPermissionTypes.permission_level]
 
-    async def api_patch(self, **kwargs: Unpack[ApiPatchMethodKwargs[GalleryPermissionId]]) -> GalleryPermission:
-        gallery_permission = await GalleryPermission.api_get(method='patch', **kwargs)
-        gallery_permission.sqlmodel_update(self.model_dump(exclude_unset=True))
-        await gallery_permission.add_to_db(kwargs['session'])
-        return gallery_permission
 
-
-class GalleryPermissionCreateAdmin(GalleryPermissionImport, GalleryPermissionIdBase, TableCreateAdmin[GalleryPermission]):
+class GalleryPermissionCreateAdmin(GalleryPermissionImport, GalleryPermissionIdBase):
     permission_level: GalleryPermissionTypes.permission_level
 
-    async def api_post(self, **kwargs: Unpack[ApiPostMethodKwargs]) -> GalleryPermission:
-        if await GalleryPermission.get_one_by_id(kwargs['session'], self.model_dump()):
+
+class GalleryPermission(Table['GalleryPermission', GalleryPermissionId, GalleryPermissionCreateAdmin, GalleryPermissionUpdateAdmin], GalleryPermissionIdBase, table=True):
+    __tablename__ = 'gallery_permission'
+    __table_args__ = (
+        PrimaryKeyConstraint('gallery_id', 'user_id'),
+    )
+
+    permission_level: GalleryPermissionTypes.permission_level = Field()
+
+    gallery: Gallery = Relationship(back_populates='gallery_permissions')
+    user: User = Relationship(back_populates='gallery_permissions')
+
+    @classmethod
+    async def _check_authorization_post(cls, **kwargs):
+
+        if not kwargs['admin']:
+            if not kwargs['authorized_user_id'] == kwargs['create_model'].user_id:
+                raise HTTPException(
+                    status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to post gallery permission for another user')
+
+    @classmethod
+    async def _check_validation_post(cls, **kwargs):
+        if await GalleryPermission.get_one_by_id(kwargs['session'], kwargs['create_model']._id):
             raise HTTPException(
                 status.HTTP_409_CONFLICT, detail='Gallery permission already exists')
 
-        gallery_permission = await self.create()
-        await gallery_permission.add_to_db(kwargs['session'])
-        return gallery_permission
-
-    async def create(self) -> GalleryPermission:
-        return GalleryPermission(
-            ** self.model_dump(),
+    @classmethod
+    async def create(cls, **kwargs):
+        return cls(
+            **kwargs['create_model'].model_dump()
         )
+
+    async def _check_authorization_existing(self, **kwargs):
+
+        if not kwargs['admin']:
+            if self.gallery.user != kwargs['authorized_user_id']:
+                authorized_user_gallery_permission = await self.get_one_by_id(kwargs['session'], GalleryPermissionIdBase(
+                    gallery_id=self.gallery._id, user_id=kwargs['authorized_user_id']
+                )._id)
+
+                if not authorized_user_gallery_permission:
+                    raise HTTPException(
+                        status.HTTP_404_NOT_FOUND, detail=self.not_found_message())
+
+                if kwargs['method'] == 'delete' or kwargs['method'] == 'patch':
+                    raise HTTPException(
+                        status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this gallery permission'.format(method=kwargs['method']))
+
+
+PluralGalleryPermissionsDict = dict[GalleryPermissionId, GalleryPermission]
 
 
 #
@@ -1424,12 +1327,51 @@ class FileTypes:
     gallery_id = GalleryTypes.id
 
 
-class FileIdBase(IdObject[FileTypes.id]):
+class FileIdBase(IdObject[FileTypes.id], BaseModel):
     id: FileTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
 
-class File(Table[FileTypes.id], FileIdBase, table=True):
+class FileExport(TableExport):
+    id: FileTypes.id
+    stem: FileTypes.stem
+    suffix: FileTypes.suffix | None
+    size: FileTypes.size
+
+
+class FilePublic(FileExport):
+    pass
+
+
+class FilePrivate(FileExport):
+    pass
+
+
+class FileImport(BaseModel):
+    pass
+
+
+class FileUpdate(FileImport):
+    stem: typing.Optional[FileTypes.stem] = None
+    gallery_id: typing.Optional[FileTypes.gallery_id] = None
+
+
+class FileUpdateAdmin(FileUpdate):
+    pass
+
+
+class FileCreate(FileImport):
+    stem: FileTypes.stem
+    suffix: FileTypes.suffix | None
+    gallery_id: FileTypes.gallery_id
+    size: FileTypes.size | None
+
+
+class FileCreateAdmin(FileCreate):
+    pass
+
+
+class File(Table['File', FileTypes.id, FileCreateAdmin, FileUpdateAdmin], FileIdBase, table=True):
     __tablename__ = 'file'
 
     stem: FileTypes.stem
@@ -1446,57 +1388,8 @@ class File(Table[FileTypes.id], FileIdBase, table=True):
     def name(self) -> str:
         return self.stem + self.suffix
 
-    @classmethod
-    async def api_get(cls, **kwargs: Unpack[ApiGetMethodKwargs[FileTypes.id]]) -> typing.Self:
-        return await super().api_get(**kwargs)
 
-    @classmethod
-    async def api_delete(cls, unlink=True, **kwargs: Unpack[ApiDeleteMethodKwargs[FileTypes.id]]) -> None:
-        return await super().api_delete(**kwargs)
-
-
-type PluralFilesDict = dict[FileTypes.id, File]
-
-
-class FileExport(TableExport[File]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[File]] = File
-
-    id: FileTypes.id
-    stem: FileTypes.stem
-    suffix: FileTypes.suffix | None
-    size: FileTypes.size
-
-
-class FilePublic(FileExport):
-    pass
-
-
-class FilePrivate(FileExport):
-    pass
-
-
-class FileImport(TableImport[File]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[File]] = File
-
-
-class FileUpdate(FileImport):
-    stem: typing.Optional[FileTypes.stem] = None
-    gallery_id: typing.Optional[FileTypes.gallery_id] = None
-
-
-class FileUpdateAdmin(FileUpdate, TableUpdateAdmin[File, FileTypes.id]):
-    pass
-
-
-class FileCreate(FileImport):
-    stem: FileTypes.stem
-    suffix: FileTypes.suffix | None
-    gallery_id: FileTypes.gallery_id
-    size: FileTypes.size | None
-
-
-class FileCreateAdmin(FileCreate, TableCreateAdmin[File]):
-    pass
+PluralFilesDict = dict[FileTypes.id, File]
 
 
 #
@@ -1528,7 +1421,56 @@ class ImageVersionIdBase(IdObject[ImageVersionId]):
         primary_key=True, index=True, unique=True, const=True)
 
 
-class ImageVersion(Table[ImageVersionTypes.id], ImageVersionIdBase, table=True):
+class ImageVersionExport(TableExport):
+    id: ImageVersionTypes.id
+    base_name: ImageVersionTypes.base_name | None
+    parent_id: ImageVersionTypes.parent_id | None
+    version: ImageVersionTypes.version | None
+    datetime: ImageVersionTypes.datetime | None
+    description: ImageVersionTypes.description | None
+    aspect_ratio: ImageVersionTypes.aspect_ratio | None
+
+
+class ImageVersionPublic(ImageVersionExport):
+    pass
+
+
+class ImageVersionPublic(ImageVersionExport):
+    pass
+
+
+class ImageVersionImport(BaseModel):
+    base_name: typing.Optional[ImageVersionTypes.base_name] = None
+    parent_id: typing.Optional[ImageVersionTypes.parent_id] = None
+    version: typing.Optional[ImageVersionTypes.version] = None
+    datetime: typing.Optional[ImageVersionTypes.datetime] = None
+    description: typing.Optional[ImageVersionTypes.description] = None
+
+
+class ImageVersionUpdate(ImageVersionImport, ImageVersionIdBase):
+    pass
+
+
+class ImageVersionUpdateAdmin(ImageVersionUpdate):
+    pass
+
+
+class ImageVersionCreate(ImageVersionImport):
+    pass
+
+
+class ImageVersionCreateAdmin(ImageVersionCreate):
+    gallery_id: ImageVersionTypes.gallery_id
+    base_name: typing.Optional[ImageVersionTypes.base_name] = None
+    version: typing.Optional[ImageVersionTypes.version] = None
+    parent_id: typing.Optional[ImageVersionTypes.parent_id] = None
+    datetime: typing.Optional[ImageVersionTypes.datetime] = None
+    description: typing.Optional[ImageVersionTypes.description] = None
+    aspect_ratio: typing.Optional[ImageVersionTypes.aspect_ratio] = None
+    average_color: typing.Optional[ImageVersionTypes.average_color] = None
+
+
+class ImageVersion(Table['ImageVersion', ImageVersionTypes.id, ImageVersionCreateAdmin, ImageVersionUpdateAdmin], ImageVersionIdBase, table=True):
     __tablename__ = 'image_version'
 
     base_name: ImageVersionTypes.base_name = Field(nullable=True, index=True)
@@ -1579,64 +1521,7 @@ class ImageVersion(Table[ImageVersionTypes.id], ImageVersionIdBase, table=True):
                 raise ValueError('Unnamed versions must have a parent_id')
 
 
-type PluralImageVersionsDict = dict[ImageVersionTypes.id, ImageVersion]
-
-
-# Export Types
-
-
-class ImageVersionExport(TableExport[ImageVersion]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[ImageVersion]] = ImageVersion
-
-    id: ImageVersionTypes.id
-    base_name: ImageVersionTypes.base_name | None
-    parent_id: ImageVersionTypes.parent_id | None
-    version: ImageVersionTypes.version | None
-    datetime: ImageVersionTypes.datetime | None
-    description: ImageVersionTypes.description | None
-    aspect_ratio: ImageVersionTypes.aspect_ratio | None
-
-
-class ImageVersionPublic(ImageVersionExport):
-    pass
-
-
-class ImageVersionPublic(ImageVersionExport):
-    pass
-
-
-class ImageVersionImport(TableImport[ImageVersion]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[ImageVersion]] = ImageVersion
-    base_name: typing.Optional[ImageVersionTypes.base_name] = None
-    parent_id: typing.Optional[ImageVersionTypes.parent_id] = None
-    version: typing.Optional[ImageVersionTypes.version] = None
-    datetime: typing.Optional[ImageVersionTypes.datetime] = None
-    description: typing.Optional[ImageVersionTypes.description] = None
-
-
-class ImageVersionUpdate(ImageVersionImport, ImageVersionIdBase):
-    pass
-
-
-class ImageVersionUpdateAdmin(ImageVersionUpdate, TableUpdateAdmin[ImageVersion, ImageVersionTypes.id]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[ImageVersion]] = ImageVersion
-
-
-class ImageVersionCreate(ImageVersionImport):
-    pass
-
-
-class ImageVersionCreateAdmin(ImageVersionCreate, TableCreateAdmin[ImageVersion]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[ImageVersion]] = ImageVersion
-
-    gallery_id: ImageVersionTypes.gallery_id
-    base_name: typing.Optional[ImageVersionTypes.base_name] = None
-    version: typing.Optional[ImageVersionTypes.version] = None
-    parent_id: typing.Optional[ImageVersionTypes.parent_id] = None
-    datetime: typing.Optional[ImageVersionTypes.datetime] = None
-    description: typing.Optional[ImageVersionTypes.description] = None
-    aspect_ratio: typing.Optional[ImageVersionTypes.aspect_ratio] = None
-    average_color: typing.Optional[ImageVersionTypes.average_color] = None
+PluralImageVersionsDict = dict[ImageVersionTypes.id, ImageVersion]
 
 
 #
@@ -1656,7 +1541,47 @@ class ImageFileMetadataIdBase(IdObject[ImageFileMetadataTypes.file_id]):
         primary_key=True, index=True, unique=True, const=True, foreign_key=File.__tablename__ + '.' + File._ID_COLS[0], ondelete='CASCADE')
 
 
-class ImageFileMetadata(Table[ImageFileMetadataTypes.file_id], ImageFileMetadataIdBase, table=True):
+# Export Types
+
+
+class ImageFileMetadataExport(TableExport):
+    file_id: ImageFileMetadataTypes.file_id
+    version_id: ImageFileMetadataTypes.version_id
+    scale: ImageFileMetadataTypes.scale | None
+
+
+class ImageFileMetadataPublic(ImageFileMetadataExport):
+    pass
+
+
+class ImageFileMetadataPrivate(ImageFileMetadataExport):
+    pass
+
+
+class ImageFileMetadataImport(BaseModel):
+    pass
+
+
+class ImageFileMetadataUpdate(ImageFileMetadataImport, ImageFileMetadataIdBase):
+    pass
+
+
+class ImageFileMetadataUpdateAdmin(ImageFileMetadataUpdate):
+    pass
+
+
+class ImageFileMetadataCreate(ImageFileMetadataImport):
+    file_id: ImageFileMetadataTypes.file_id
+    version_id: ImageFileMetadataTypes.version_id
+    scale: typing.Optional[ImageFileMetadataTypes.scale] = Field(
+        default=None, ge=1, le=99)
+
+
+class ImageFileMetadataCreateAdmin(ImageFileMetadataCreate):
+    pass
+
+
+class ImageFileMetadata(Table['ImageFileMetadata', ImageFileMetadataTypes.file_id, ImageFileMetadataCreateAdmin, ImageFileMetadataUpdateAdmin], ImageFileMetadataIdBase, table=True):
     __tablename__ = 'image_file_metadata'
 
     _SUFFIXES: typing.ClassVar[set[str]] = {
@@ -1685,54 +1610,15 @@ class ImageFileMetadata(Table[ImageFileMetadataTypes.file_id], ImageFileMetadata
 
         return file_stem, version, scale
 
+    @classmethod
+    async def create(cls, **kwargs):
+        return cls(
+            **kwargs['create_model'].model_dump()
+        )
+
 
 ImageFileMetadatasPluralDict = dict[ImageFileMetadataTypes.file_id,
                                     ImageFileMetadata]
-
-# Export Types
-
-
-class ImageFileMetadataExport(TableExport[ImageFileMetadata]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[ImageFileMetadata]
-                                  ] = ImageFileMetadata
-
-    file_id: ImageFileMetadataTypes.file_id
-    version_id: ImageFileMetadataTypes.version_id
-    scale: ImageFileMetadataTypes.scale | None
-
-
-class ImageFileMetadataPublic(ImageFileMetadataExport):
-    pass
-
-
-class ImageFileMetadataPrivate(ImageFileMetadataExport):
-    pass
-
-
-class ImageFileMetadataImport(TableImport[ImageFileMetadata]):
-    _TABLE_MODEL: typing.ClassVar[typing.Type[ImageFileMetadata]
-                                  ] = ImageFileMetadata
-
-
-class ImageFileMetadataUpdate(ImageFileMetadataImport, ImageFileMetadataIdBase):
-    pass
-
-
-class ImageFileMetadataUpdateAdmin(ImageFileMetadataUpdate, TableUpdateAdmin[ImageFileMetadata, ImageFileMetadataTypes.file_id]):
-    pass
-
-
-class ImageFileMetadataCreate(ImageFileMetadataImport):
-    file_id: ImageFileMetadataTypes.file_id
-    version_id: ImageFileMetadataTypes.version_id
-    scale: typing.Optional[ImageFileMetadataTypes.scale] = Field(
-        default=None, ge=1, le=99)
-
-
-class ImageFileMetadataCreateAdmin(ImageFileMetadataCreate, TableCreateAdmin[ImageFileMetadata]):
-
-    async def create(self) -> ImageFileMetadata:
-        return self._TABLE_MODEL(** self.model_dump())
 
 
 if __name__ == '__main__':
