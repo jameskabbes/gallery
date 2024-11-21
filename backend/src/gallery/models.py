@@ -268,6 +268,22 @@ class User(Table[UserTypes.id], UserIDBase, table=True):
     gallery_permissions: list['GalleryPermission'] = Relationship(
         back_populates='user', cascade_delete=True)
 
+    class Update(BaseModel):
+        email: typing.Optional[UserTypes.email] = None
+        password: typing.Optional[UserTypes.password] = None
+        username: typing.Optional[UserTypes.username] = None
+
+    class UpdateAdmin(Update):
+        test: str
+
+    class Create(BaseModel):
+        email: UserTypes.email
+        password: UserTypes.password
+        username: typing.Optional[UserTypes.username] = None
+
+    class CreateAdmin(Create):
+        user_role_id: UserTypes.user_role_id
+
     @ property
     def is_public(self) -> bool:
         return self.username is not None
