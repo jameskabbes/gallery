@@ -70,13 +70,6 @@ class IdObject[IdType]:
             return getattr(self, self._ID_COLS[0])
 
     @ classmethod
-    def export_plural_to_dict(cls, items: collections.abc.Iterable[typing.Self]) -> dict[IdType, typing.Self]:
-        return {item._id: item for item in items}
-
-
-class Table[IdType](SQLModel, IdObject[IdType]):
-
-    @ classmethod
     def generate_id(cls) -> IdType:
         """Generate a new ID for the model"""
 
@@ -84,6 +77,13 @@ class Table[IdType](SQLModel, IdObject[IdType]):
             return tuple(str(uuid.uuid4()) for _ in range(len(cls._ID_COLS)))
         else:
             return str(uuid.uuid4())
+
+    @ classmethod
+    def export_plural_to_dict(cls, items: collections.abc.Iterable[typing.Self]) -> dict[IdType, typing.Self]:
+        return {item._id: item for item in items}
+
+
+class Table[IdType](SQLModel, IdObject[IdType]):
 
     @ classmethod
     def not_found_message(cls) -> str:
@@ -267,6 +267,22 @@ class User(Table[UserTypes.id], UserIDBase, table=True):
         back_populates='user', cascade_delete=True)
     gallery_permissions: list['GalleryPermission'] = Relationship(
         back_populates='user', cascade_delete=True)
+
+    class Update(BaseModel):
+        email: typing.Optional[UserTypes.email] = None
+        password: typing.Optional[UserTypes.password] = None
+        username: typing.Optional[UserTypes.username] = None
+
+    class UpdateAdmin(Update):
+        test: str
+
+    class Create(BaseModel):
+        email: UserTypes.email
+        password: UserTypes.password
+        username: typing.Optional[UserTypes.username] = None
+
+    class CreateAdmin(Create):
+        user_role_id: UserTypes.user_role_id
 
     @ property
     def is_public(self) -> bool:
