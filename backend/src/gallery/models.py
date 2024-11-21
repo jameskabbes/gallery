@@ -954,6 +954,8 @@ class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
         back_populates='gallery', cascade_delete=True)
     files: list['File'] = Relationship(
         back_populates='gallery', cascade_delete=True)
+    image_versions: list['ImageVersion'] = Relationship(
+        back_populates='gallery', cascade_delete=True)
 
     @ property
     def folder_name(self) -> GalleryTypes.folder_name:
@@ -1082,14 +1084,14 @@ class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
         to_add = local_galleries_folder_names - db_galleries_folder_names
         to_remove = db_galleries_folder_names - local_galleries_folder_names
 
+        for folder_name in to_remove:
+            gallery = db_galleries_by_folder_name[folder_name]
+            await Gallery.api_delete(session=session, c=c, id=gallery.id, authorized_user_id=self.user_id, admin=False, rmtree=False)
+
         for folder_name in to_add:
             date, name = self.get_date_and_name_from_folder_name(folder_name)
             new_gallery = await GalleryCreateAdmin(name=name, user_id=self.user_id, visibility_level=self.visibility_level, parent_id=self.id, date=date).api_post(
                 session=session, c=c, authorized_user_id=self.user_id, admin=False, mkdir=False)
-
-        for folder_name in to_remove:
-            gallery = db_galleries_by_folder_name[folder_name]
-            await Gallery.api_delete(session=session, c=c, id=gallery.id, authorized_user_id=self.user_id, admin=False, rmtree=False)
 
         # add new files, remove old ones
         local_file_by_names = {
@@ -1103,6 +1105,19 @@ class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
         to_add = local_file_names - db_file_names
         to_remove = db_file_names - local_file_names
 
+        for file_name in to_remove:
+            file = db_files_by_names[file_name]
+
+            # if this is the last image tied to that version, delete the version too
+            if file.suffix in ImageFileMetadata._SUFFIXES:
+                image_version = await ImageVersion.get_one_by_id(session, file.image_file_metadata.version_id)
+                if len(image_version.image_file_metadatas) == 1:
+                    await ImageVersion.api_delete(session=session, c=c, id=image_version.id, authorized_user_id=self.user_id, admin=False)
+
+            await File.api_delete(session=session, c=c, id=file.id, authorized_user_id=self.user_id, admin=False, unlink=False)
+
+        image_files: list[File] = []
+
         for file_name in to_add:
             stem = local_file_by_names[file_name].stem
             suffix = ''.join(suffixes) if (
@@ -1115,9 +1130,42 @@ class Gallery(Table[GalleryTypes.id], GalleryIdBase, table=True):
             local_file_by_names[file_name].rename(
                 local_file_by_names[file_name].with_name(new_file.name))
 
-        for file_name in to_remove:
-            file = db_files_by_names[file_name]
-            await File.api_delete(session=session, c=c, id=file.id, authorized_user_id=self.user_id, admin=False, unlink=False)
+            if suffix in ImageFileMetadata._SUFFIXES:
+                image_files.append(new_file)
+
+        # loop through files twice, adding the original images first
+        for original_images in [True, False]:
+            for image_file in image_files:
+
+                base_name, version, scale = ImageFileMetadata.parse_file_stem(
+                    image_file.stem)
+
+                if original_images == (version == None):
+
+                    parent_id = None
+                    if version is not None:
+                        image_version_og = await ImageVersion.get_one_by_key_values(session, {'gallery_id': self.id, 'base_name': base_name, 'version': None})
+
+                        # if an original exists, assume the version wants to link as the parent
+                        if image_version_og:
+                            parent_id = image_version_og._id
+
+                    image_version_kwargs = {
+                        'gallery_id': self.id,
+                        'base_name': base_name if parent_id is None else None,
+                        'version': version,
+                        'parent_id': parent_id
+                    }
+
+                    image_version = await ImageVersion.get_one_by_key_values(session, image_version_kwargs)
+
+                    # this if the first file of this version
+                    if not image_version:
+                        image_version = await ImageVersionCreateAdmin(**image_version_kwargs).api_post(
+                            session=session, c=c, authorized_user_id=self.user_id, admin=False)
+
+                    image_file_metadata = await ImageFileMetadataCreateAdmin(file_id=image_file.id, version_id=image_version.id, scale=scale).api_post(
+                        session=session, c=c, authorized_user_id=self.user_id, admin=False)
 
         # recursively sync children
         for child in self.children:
@@ -1375,8 +1423,8 @@ class File(Table[FileTypes.id], FileIdBase, table=True):
     size: FileTypes.size = Field(nullable=True)
 
     gallery: Gallery = Relationship(back_populates='files')
-    image_file_metadata: 'ImageFileMetadata' = Relationship(
-        back_populates='file')
+    image_file_metadata: typing.Optional['ImageFileMetadata'] = Relationship(
+        back_populates='file', cascade_delete=True)
 
     @property
     def name(self) -> str:
@@ -1443,10 +1491,15 @@ ImageVersionId = str
 
 class ImageVersionTypes:
     id = ImageVersionId
-    base_name = str
-    parent_id = ImageVersionId
-    version = str
     gallery_id = GalleryTypes.id
+    base_name = typing.Annotated[str, StringConstraints(
+        # prohibit underscore
+        min_length=1, max_length=240, pattern=re.compile(r'^(?!.*_).+$')
+    )]
+    version = typing.Annotated[str, StringConstraints(
+        # version cannot be exactly two digits
+        pattern=re.compile(r'^(?!\d{2}$).+$'))]
+    parent_id = ImageVersionId
     datetime = datetime_module.datetime
     description = typing.Annotated[str, StringConstraints(
         min_length=0, max_length=20000)]
@@ -1464,12 +1517,12 @@ class ImageVersion(Table[ImageVersionTypes.id], ImageVersionIdBase, table=True):
 
     base_name: ImageVersionTypes.base_name = Field(nullable=True, index=True)
     parent_id: ImageVersionTypes.parent_id = Field(
-        nullable=True, index=True, foreign_key=__tablename__ + '.id')
+        nullable=True, index=True, foreign_key=__tablename__ + '.id', ondelete='SET NULL')
 
     # BW, Edit1, etc. Original version is null
     version: ImageVersionTypes.version = Field(nullable=True)
     gallery_id: ImageVersionTypes.gallery_id = Field(
-        index=True, foreign_key=Gallery.__tablename__ + '.' + Gallery._ID_COLS[0])
+        index=True, foreign_key=Gallery.__tablename__ + '.' + Gallery._ID_COLS[0], ondelete='CASCADE')
 
     datetime: ImageVersionTypes.datetime = Field(nullable=True)
     description: ImageVersionTypes.description = Field(nullable=True)
@@ -1478,10 +1531,13 @@ class ImageVersion(Table[ImageVersionTypes.id], ImageVersionIdBase, table=True):
 
     parent: typing.Optional['ImageVersion'] = Relationship(
         back_populates='children', sa_relationship_kwargs={'remote_side': 'ImageVersion.id'})
-    children: list['ImageVersion'] = Relationship(back_populates='parent')
+    children: list['ImageVersion'] = Relationship(
+        back_populates='parent')
 
     image_file_metadatas: list['ImageFileMetadata'] = Relationship(
-        back_populates='version')  # cascade_delete=True ?
+        back_populates='version')
+    gallery: Gallery = Relationship(
+        back_populates='image_versions')
 
     @model_validator(mode='after')
     def validate_model(self, info: ValidationInfo) -> None:
@@ -1496,6 +1552,15 @@ class ImageVersion(Table[ImageVersionTypes.id], ImageVersionIdBase, table=True):
     @ field_serializer('datetime')
     def serialize_datetime(value: datetime_module.datetime) -> datetime_module.datetime:
         return value.replace(tzinfo=datetime_module.timezone.utc)
+
+    async def get_root_base_name(self) -> ImageVersionTypes.base_name:
+        if self.base_name is not None:
+            return self.base_name
+        else:
+            if self.parent_id is not None:
+                return (await self.parent.get_root_base_name())
+            else:
+                raise ValueError('Unnamed versions must have a parent_id')
 
 
 type PluralImageVersionsDict = dict[ImageVersionTypes.id, ImageVersion]
@@ -1538,7 +1603,7 @@ class ImageVersionUpdate(ImageVersionImport, ImageVersionIdBase):
 
 
 class ImageVersionUpdateAdmin(ImageVersionUpdate, TableUpdateAdmin[ImageVersion, ImageVersionTypes.id]):
-    pass
+    _TABLE_MODEL: typing.ClassVar[typing.Type[ImageVersion]] = ImageVersion
 
 
 class ImageVersionCreate(ImageVersionImport):
@@ -1546,7 +1611,16 @@ class ImageVersionCreate(ImageVersionImport):
 
 
 class ImageVersionCreateAdmin(ImageVersionCreate, TableCreateAdmin[ImageVersion]):
-    pass
+    _TABLE_MODEL: typing.ClassVar[typing.Type[ImageVersion]] = ImageVersion
+
+    gallery_id: ImageVersionTypes.gallery_id
+    base_name: typing.Optional[ImageVersionTypes.base_name] = None
+    version: typing.Optional[ImageVersionTypes.version] = None
+    parent_id: typing.Optional[ImageVersionTypes.parent_id] = None
+    datetime: typing.Optional[ImageVersionTypes.datetime] = None
+    description: typing.Optional[ImageVersionTypes.description] = None
+    aspect_ratio: typing.Optional[ImageVersionTypes.aspect_ratio] = None
+    average_color: typing.Optional[ImageVersionTypes.average_color] = None
 
 
 #
@@ -1569,13 +1643,31 @@ class ImageFileMetadataIdBase(IdObject[ImageFileMetadataTypes.file_id]):
 class ImageFileMetadata(Table[ImageFileMetadataTypes.file_id], ImageFileMetadataIdBase, table=True):
     __tablename__ = 'image_file_metadata'
 
-    # ONDELETE = CASCADE?
-    version_id: ImageFileMetadataTypes.version_id = Field(
-        index=True, foreign_key=ImageVersion.__tablename__ + '.' + ImageVersion._ID_COLS[0])
-    scale: ImageFileMetadataTypes.scale = Field(nullable=True)
+    _SUFFIXES: typing.ClassVar[set[str]] = {
+        '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'}
 
+    version_id: ImageFileMetadataTypes.version_id = Field(
+        index=True, foreign_key=ImageVersion.__tablename__ + '.' + ImageVersion._ID_COLS[0], ondelete='CASCADE')
+
+    scale: ImageFileMetadataTypes.scale = Field(nullable=True, ge=1, le=99)
     version: ImageVersion = Relationship(back_populates='image_file_metadatas')
-    file: File = Relationship(back_populates='image_file_metadata')
+    file: File = Relationship(
+        back_populates='image_file_metadata')
+
+    @classmethod
+    def parse_file_stem(cls, file_stem: str) -> tuple[ImageVersionTypes.base_name, ImageVersionTypes.version | None, ImageFileMetadataTypes.scale | None]:
+
+        scale = None
+        if match := re.search(r'_(\d{2})$', file_stem):
+            scale = int(match.group(1))
+            file_stem = file_stem[:match.start()]
+
+        version = None
+        if match := re.search(r'_(.+)$', file_stem):
+            version = match.group(1)
+            file_stem = file_stem[:match.start()]
+
+        return file_stem, version, scale
 
 
 ImageFileMetadatasPluralDict = dict[ImageFileMetadataTypes.file_id,
@@ -1593,35 +1685,38 @@ class ImageFileMetadataExport(TableExport[ImageFileMetadata]):
     scale: ImageFileMetadataTypes.scale | None
 
 
-class ImageFilePublic(ImageFileMetadataExport):
+class ImageFileMetadataPublic(ImageFileMetadataExport):
     pass
 
 
-class ImageFilePrivate(ImageFileMetadataExport):
+class ImageFileMetadataPrivate(ImageFileMetadataExport):
     pass
 
 
-class ImageFileImport(TableImport[ImageFileMetadata]):
+class ImageFileMetadataImport(TableImport[ImageFileMetadata]):
     _TABLE_MODEL: typing.ClassVar[typing.Type[ImageFileMetadata]
                                   ] = ImageFileMetadata
 
 
-class ImageFileUpdate(ImageFileImport, ImageFileMetadataIdBase):
-    scale: typing.Optional[ImageFileMetadataTypes.scale] = None
-
-
-class ImageFileUpdateAdmin(ImageFileImport, TableUpdateAdmin[ImageFileMetadata, ImageFileMetadataTypes.file_id]):
+class ImageFileMetadataUpdate(ImageFileMetadataImport, ImageFileMetadataIdBase):
     pass
 
 
-class ImageFileCreate(ImageFileImport):
+class ImageFileMetadataUpdateAdmin(ImageFileMetadataUpdate, TableUpdateAdmin[ImageFileMetadata, ImageFileMetadataTypes.file_id]):
+    pass
+
+
+class ImageFileMetadataCreate(ImageFileMetadataImport):
     file_id: ImageFileMetadataTypes.file_id
     version_id: ImageFileMetadataTypes.version_id
-    scale: typing.Optional[ImageFileMetadataTypes.scale] = None
+    scale: typing.Optional[ImageFileMetadataTypes.scale] = Field(
+        default=None, ge=1, le=99)
 
 
-class ImageFileCreateAdmin(ImageFileImport, TableCreateAdmin[ImageFileMetadata]):
-    pass
+class ImageFileMetadataCreateAdmin(ImageFileMetadataCreate, TableCreateAdmin[ImageFileMetadata]):
+
+    async def create(self) -> ImageFileMetadata:
+        return self._TABLE_MODEL(** self.model_dump())
 
 
 if __name__ == '__main__':
