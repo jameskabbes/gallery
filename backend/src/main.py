@@ -122,6 +122,13 @@ def delete_access_token_cookie(response: Response):
     response.delete_cookie(c.cookie_keys['access_token'])
 
 
+class GetAuthorizationKwargs(typing.TypedDict, total=False):
+    required_scopes: typing.Optional[set[client.ScopeTypes.name]]
+    raise_exceptions: typing.Optional[bool]
+    permitted_auth_credential_types: typing.Optional[set[models.AuthCredentialTypes.type]]
+    override_lifetime: typing.Optional[datetime.timedelta]
+
+
 class GetAuthorizationReturn(BaseModel):
     isAuthorized: bool = False
     expiry: typing.Optional[datetime.datetime] = None
@@ -132,12 +139,14 @@ class GetAuthorizationReturn(BaseModel):
 
 
 def get_authorization(
-    required_scopes: set[client.ScopeTypes.name] = set(),
-    raise_exceptions: bool = True,
-    permitted_auth_credential_types: set[models.AuthCredentialTypes.type] = set(
-        key for key in models.AUTH_CREDENTIAL_MODEL_MAPPING),
-    override_lifetime: datetime.timedelta | None = None,
+    **kwargs: typing.Unpack[GetAuthorizationKwargs]
 ) -> typing.Callable[[str], GetAuthorizationReturn]:
+
+    required_scopes = kwargs.get('required_scopes', set())
+    raise_exceptions = kwargs.get('raise_exceptions', True)
+    permitted_auth_credential_types = kwargs.get('permitted_auth_credential_types', set(
+        key for key in models.AUTH_CREDENTIAL_MODEL_MAPPING))
+    override_lifetime = kwargs.get('override_lifetime', None)
 
     async def dependecy(response: Response, auth_token: typing.Annotated[str | None, Depends(oauth2_scheme)]) -> GetAuthorizationReturn:
         async def inner() -> GetAuthorizationReturn:
@@ -288,10 +297,13 @@ async def post_token(
     stay_signed_in: bool = Form(c.authentication['stay_signed_in_default'])
 ):
     with Session(c.db_engine) as session:
-        auth_credential = await models.UserAccessTokenCreateAdmin(
-            user_id=user.id, lifespan=c.authentication['default_expiry_timedelta']).api_post(session=session, c=c, authorized_user_id=None, admin=False)
+        user_access_token = await models.UserAccessToken.api_post(
+            session=session, c=c, authorized_user_id=user.id, admin=False, create_model=models.UserAccessTokenCreateAdmin(
+                user_id=user.id, lifespan=c.authentication['default_expiry_timedelta']
+            ))
+
         set_access_token_cookie(jwt_encode(
-            auth_credential.export_to_jwt()), response, stay_signed_in)
+            user_access_token.export_to_jwt()), response, stay_signed_in)
     return
 
 
@@ -308,8 +320,12 @@ async def login(
 
     with Session(c.db_engine) as session:
 
-        user_access_token = await models.UserAccessTokenCreateAdmin(
-            user_id=user.id, lifespan=c.authentication['default_expiry_timedelta']).api_post(session=session, c=c, authorized_user_id=None, admin=False)
+        user_access_token = await models.UserAccessToken.api_post(
+            session=session, c=c, authorized_user_id=user._id, admin=False, create_model=models.UserAccessTokenCreateAdmin(
+                user_id=user.id, lifespan=c.authentication['default_expiry_timedelta']
+            )
+        )
+
         set_access_token_cookie(jwt_encode(
             user_access_token.export_to_jwt()), response, stay_signed_in)
 
@@ -341,9 +357,13 @@ async def sign_up(
         email=email, password=password, user_role_id=c.user_role_name_mapping['user'])
 
     with Session(c.db_engine) as session:
-        user = await user_create_admin.api_post(session=session, c=c, authorized_user_id=None, admin=True)
-        user_access_token = await models.UserAccessTokenCreateAdmin(
-            user_id=user.id, type='access_token', lifespan=c.authentication['default_expiry_timedelta']).api_post(session=session, c=c, authorized_user_id=user.id, admin=False)
+        user = await models.User.api_post(session=session, c=c, authorized_user_id=None,
+                                          admin=False, create_model=user_create_admin)
+
+        user_access_token = await models.UserAccessToken.api_post(
+            session=session, c=c, authorized_user_id=None, admin=False, create_model=models.UserAccessTokenCreateAdmin(
+                user_id=user.id, type='access_token', lifespan=c.authentication['default_expiry_timedelta']
+            ))
 
         set_access_token_cookie(jwt_encode(
             user_access_token.export_to_jwt()), response, stay_signed_in)
@@ -370,8 +390,10 @@ async def send_magic_link_to_email(model: LoginWithEmailMagicLinkRequest):
             session, {'email': model.email})
 
         if user:
-            user_access_token = await models.UserAccessTokenCreateAdmin(
-                user_id=user.id, lifespan=c.authentication['magic_link_expiry_timedelta']).api_post(session=session, c=c, authorized_user_id=None, admin=False)
+            user_access_token = await models.UserAccessToken.api_post(
+                session=session, c=c, authorized_user_id=None, admin=False,
+                create_model=models.UserAccessTokenCreateAdmin(user_id=user.id, lifespan=c.authentication['magic_link_expiry_timedelta']
+                                                               ))
 
             link_data = {
                 'access_token': jwt_encode(user_access_token.export_to_jwt()),
@@ -404,9 +426,11 @@ async def verify_magic_link(model: VerifyMagicLinkRequest, authorization: typing
                                                                                                                                              override_lifetime=c.authentication['magic_link_expiry_timedelta']))], response: Response) -> VerifyMagicLinkResponse:
     with Session(c.db_engine) as session:
 
-        user_access_token = await models.UserAccessTokenCreateAdmin(
-            user_id=authorization.user.id, lifespan=c.authentication['default_expiry_timedelta']).create()
-        await user_access_token.add_to_db(session)
+        user_access_token = await models.UserAccessToken.api_post(
+            session=session, c=c, authorized_user_id=None, admin=False, create_model=models.UserAccessTokenCreateAdmin(
+                user_id=authorization.user.id, lifespan=c.authentication['default_expiry_timedelta']
+            )
+        )
         set_access_token_cookie(jwt_encode(
             user_access_token.export_to_jwt()), response, model.stay_signed_in
         )
@@ -450,10 +474,12 @@ async def login_with_google(request_token: GoogleAuthRequest, response: Response
     with Session(c.db_engine) as session:
         user = await models.User.get_one_by_key_values(session, {'email': email})
         if not user:
-            user = await models.UserCreateAdmin(email=email).api_post(session=session, c=c, authorized_user_id=None, admin=False)
+            user = await models.User.api_post(session=session, c=c, authorized_user_id=None, admin=False, create_model=models.UserCreateAdmin(email=email))
 
-        user_access_token = await models.UserAccessTokenCreateAdmin(
-            user_id=user.id, lifespan=c.authentication['default_expiry_timedelta']).api_post(session=session, c=c, authorized_user_id=None, admin=False)
+        user_access_token = await models.UserAccessToken.api_post(
+            session=session, c=c, authorized_user_id=None, admin=False, create_model=models.UserAccessTokenCreateAdmin(
+                user_id=user.id, lifespan=c.authentication['default_expiry_timedelta']
+            ))
 
         set_access_token_cookie(jwt_encode(
             user_access_token.export_to_jwt()), response)
@@ -485,27 +511,6 @@ async def logout(response: Response, authorization: typing.Annotated[GetAuthoriz
 # # USERS
 
 
-class CRUDBase:
-    pass
-
-
-def create_crud_router(id_key) -> APIRouter:
-
-    router = APIRouter()
-    crud = CRUDBase()
-
-    @router.get('/{id}/')
-    async def read_by_id(
-        authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-            get_authorization(required_scopes={'admin'}))]
-    ) -> int:
-        return 1
-
-
-user_router = create_crud_router()
-app.include_router(user_router, prefix='/users', tags=['users'])
-
-
 @app.get('/admin/users/{user_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
 async def get_user_by_id_admin(
     user_id: models.UserTypes.id,
@@ -523,7 +528,7 @@ async def post_user_admin(
         get_authorization(required_scopes={'admin'}))]
 ) -> models.User:
     with Session(c.db_engine) as session:
-        return await user_create_admin.api_post(session=session, c=c, authorized_user_id=authorization.user.id, admin=True)
+        return await models.User.api_post(session=session, c=c, authorized_user_id=authorization.user.id, admin=True, create_model=user_create_admin)
 
 
 @app.patch('/admin/users/{user_id}/')
@@ -534,7 +539,7 @@ async def patch_user_admin(
         get_authorization(required_scopes={'admin'}))]
 ) -> models.User:
     with Session(c.db_engine) as session:
-        return user_update_admin.api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=user_id, admin=True)
+        return models.User.api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=user_id, admin=True, update_model=user_update_admin)
 
 
 @app.delete('/admin/users/{user_id}/', status_code=status.HTTP_204_NO_CONTENT)
@@ -582,7 +587,7 @@ async def patch_user(
         get_authorization())]
 ) -> models.UserPrivate:
     with Session(c.db_engine) as session:
-        return models.UserPrivate.model_validate(await models.UserUpdateAdmin(**user_update.model_dump(exclude_unset=True)).api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=authorization.user.id, admin=False))
+        return models.UserPrivate.model_validate(await models.User.api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=authorization.user.id, admin=False, update_model=user_update.model_dump(exclude_unset=True)))
 
 
 @ app.patch('/users/{user_id}/', responses={

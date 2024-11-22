@@ -77,7 +77,7 @@ def validate_and_normalize_datetime(value: datetime_module.datetime, info: Valid
     return value.astimezone(datetime_module.timezone.utc)
 
 
-class IdObject[IdType]:
+class IdObject[IdType](BaseModel):
 
     _ID_COLS: typing.ClassVar[list[str]] = ['id']
 
@@ -117,6 +117,11 @@ def api_endpoint(func):
 
 
 class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, IdObject[IdType]):
+
+    _CREATE_ADMIN_MODEL: typing.ClassVar[BaseModel] = None
+    _CREATE_MODEL: typing.ClassVar[BaseModel] = None
+    _UPDATE_ADMIN_MODEL: typing.ClassVar[BaseModel] = None
+    _UPDATE_MODEL: typing.ClassVar[BaseModel] = None
 
     @ classmethod
     def not_found_message(cls) -> str:
@@ -245,7 +250,7 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
         await cls._check_authorization_post(**kwargs)
         await cls._check_validation_post(**kwargs)
 
-        instance = await cls.create(kwargs['create_model'])
+        instance = await cls.create(**kwargs)
         kwargs['session'].add(instance)
         kwargs['session'].commit()
         kwargs['session'].refresh(instance)
@@ -267,7 +272,7 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
         await instance._check_authorization_existing(**kwargs, method='patch')
         await instance._check_validation_patch(**kwargs)
 
-        await instance.update(kwargs['update_model'])
+        await instance.update(**kwargs)
         kwargs['session'].add(instance)
         kwargs['session'].commit()
         kwargs['session'].refresh(instance)
@@ -303,7 +308,7 @@ class UserTypes:
     user_role_id = client.UserRoleTypes.id
 
 
-class UserIDBase(IdObject[UserTypes.id], BaseModel):
+class UserIDBase(IdObject[UserTypes.id]):
     id: UserTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
@@ -367,6 +372,12 @@ class User(Table['User', UserTypes.id, UserCreateAdmin, UserUpdateAdmin], UserID
         back_populates='user', cascade_delete=True)
     gallery_permissions: list['GalleryPermission'] = Relationship(
         back_populates='user', cascade_delete=True)
+
+    _CREATE_ADMIN_MODEL: typing.ClassVar[typing.Type[UserCreateAdmin]
+                                         ] = UserCreateAdmin
+    _CREATE_MODEL: typing.ClassVar = UserCreate
+    _UPDATE_ADMIN_MODEL: typing.ClassVar = UserUpdateAdmin
+    _UPDATE_MODEL: typing.ClassVar = UserUpdate
 
     @ property
     def is_public(self) -> bool:
@@ -547,7 +558,7 @@ class AuthCredentialCreateAdmin(AuthCredentialImport):
             datetime_module.UTC) + self.lifespan
 
 
-class AuthCredential[T: 'Table', IdType, TPost: AuthCredentialCreateAdmin, TPatch: AuthCredentialUpdateAdmin](Table[T, IdType, TPost, TPatch]):
+class AuthCredential[IdType](BaseModel):
     user_id: UserTypes.id = Field(
         index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0], const=True, ondelete='CASCADE')
     issued: AuthCredentialTypes.issued = Field(const=True)
@@ -598,6 +609,43 @@ class AuthCredential[T: 'Table', IdType, TPost: AuthCredentialCreateAdmin, TPatc
     def serialize_datetime(value: datetime_module.datetime) -> datetime_module.datetime:
         return value.replace(tzinfo=datetime_module.timezone.utc)
 
+
+#
+# User Access Token
+#
+
+
+class UserAccessTokenTypes(AuthCredentialTypes):
+    id = str
+
+
+class UserAccessTokenIDBase(IdObject[UserAccessTokenTypes.id]):
+    id: UserAccessTokenTypes.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
+
+
+class UserAccessTokenUpdateAdmin(AuthCredentialUpdateAdmin):
+    pass
+
+
+class UserAccessTokenCreateAdmin(AuthCredentialCreateAdmin):
+    pass
+
+
+class UserAccessToken(Table['UserAccessToken', UserAccessTokenTypes.id, UserAccessTokenCreateAdmin, UserAccessTokenUpdateAdmin], UserAccessTokenIDBase, AuthCredential[UserAccessTokenTypes.id], table=True):
+    type: typing.ClassVar[AuthCredentialTypes.type] = 'access_token'
+    __tablename__ = 'user_access_token'
+
+    user: User = Relationship(
+        back_populates='user_access_tokens')
+
+    @classmethod
+    async def _check_authorization_post(cls, **kwargs):
+        if not kwargs['admin']:
+            if kwargs['authorized_user_id'] != kwargs['create_model'].user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to post access token for another user')
+
     @classmethod
     async def create(cls, **kwargs) -> typing.Self:
 
@@ -616,43 +664,6 @@ class AuthCredential[T: 'Table', IdType, TPost: AuthCredentialCreateAdmin, TPatc
                     status_code=status.HTTP_404_NOT_FOUND, detail=self.not_found_message())
 
 
-#
-# User Access Token
-#
-
-
-class UserAccessTokenTypes(AuthCredentialTypes):
-    id = str
-
-
-class UserAccessTokenIDBase(IdObject[UserAccessTokenTypes.id], BaseModel):
-    id: UserAccessTokenTypes.id = Field(
-        primary_key=True, index=True, unique=True, const=True)
-
-
-class UserAccessTokenUpdateAdmin(AuthCredentialUpdateAdmin):
-    pass
-
-
-class UserAccessTokenCreateAdmin(AuthCredentialCreateAdmin):
-    pass
-
-
-class UserAccessToken(Table['UserAccessToken', UserAccessTokenTypes.id, UserAccessTokenCreateAdmin, UserAccessTokenUpdateAdmin], UserAccessTokenIDBase, AuthCredential, table=True):
-    type: typing.ClassVar[AuthCredentialTypes.type] = 'access_token'
-    __tablename__ = 'user_access_token'
-
-    user: User = Relationship(
-        back_populates='user_access_tokens')
-
-    @classmethod
-    async def _check_authorization_post(cls, **kwargs):
-        if not kwargs['admin']:
-            if kwargs['authorized_user_id'] != kwargs['create_model'].user_id:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to post access token for another user')
-
-
 PluralUserAccessTokensDict = dict[UserAccessTokenTypes.id,
                                   UserAccessToken]
 
@@ -666,7 +677,7 @@ class ApiKeyTypes(AuthCredentialTypes):
         min_length=1, max_length=256)]
 
 
-class ApiKeyIdBase(IdObject[ApiKeyTypes.id], BaseModel):
+class ApiKeyIdBase(IdObject[ApiKeyTypes.id]):
     id: ApiKeyTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
@@ -711,7 +722,7 @@ class ApiKeyCreateAdmin(ApiKeyCreate, AuthCredentialCreateAdmin):
     pass
 
 
-class ApiKey(Table['ApiKey', ApiKeyTypes.id, ApiKeyCreateAdmin, ApiKeyUpdateAdmin], ApiKeyIdBase, AuthCredential, table=True):
+class ApiKey(Table['ApiKey', ApiKeyTypes.id, ApiKeyCreateAdmin, ApiKeyUpdateAdmin], ApiKeyIdBase, AuthCredential[ApiKeyTypes.id], table=True):
     __tablename__ = 'api_key'
 
     name: ApiKeyTypes.name = Field()
@@ -723,6 +734,17 @@ class ApiKey(Table['ApiKey', ApiKeyTypes.id, ApiKeyCreateAdmin, ApiKeyUpdateAdmi
 
     async def get_scope_ids(self) -> list[client.ScopeTypes.id]:
         return [api_key_scope.scope_id for api_key_scope in self.api_key_scopes]
+
+    @classmethod
+    async def create(cls, **kwargs) -> typing.Self:
+
+        return cls(
+            id=cls.generate_id(),
+            issued=datetime_module.datetime.now(
+                datetime_module.timezone.utc),
+            expiry=kwargs['create_model'].get_expiry(),
+            **kwargs['create_model'].model_dump(exclude=['lifespan', 'expiry'])
+        )
 
     @classmethod
     async def is_available(cls, session: Session, api_key_available_admin: ApiKeyAvailableAdmin) -> bool:
@@ -784,7 +806,7 @@ ApiKeyScopeID = typing.Annotated[tuple[ApiKeyScopeTypes.api_key_id,
                                  ]
 
 
-class ApiKeyScopeIdBase(IdObject[ApiKeyScopeID], BaseModel):
+class ApiKeyScopeIdBase(IdObject[ApiKeyScopeID]):
     _ID_COLS: typing.ClassVar[list[str]] = ['api_key_id', 'scope_id']
 
     api_key_id: ApiKeyScopeTypes.api_key_id = Field(
@@ -1227,7 +1249,7 @@ GalleryPermissionId = typing.Annotated[tuple[GalleryPermissionTypes.gallery_id,
                                              GalleryPermissionTypes.user_id], '(gallery_id, user_id)']
 
 
-class GalleryPermissionIdBase(IdObject[GalleryPermissionId], BaseModel):
+class GalleryPermissionIdBase(IdObject[GalleryPermissionId]):
     _ID_COLS: typing.ClassVar[list[str]] = ['gallery_id', 'user_id']
 
     gallery_id: GalleryPermissionTypes.gallery_id = Field(
@@ -1327,7 +1349,7 @@ class FileTypes:
     gallery_id = GalleryTypes.id
 
 
-class FileIdBase(IdObject[FileTypes.id], BaseModel):
+class FileIdBase(IdObject[FileTypes.id]):
     id: FileTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
