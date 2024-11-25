@@ -197,7 +197,9 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
     @classmethod
     def _build_conditions(cls, filters: dict[str, typing.Any]):
         conditions = []
-        for key, value in filters:
+        print(filters)
+        for key in filters:
+            value = filters[key]
             if isinstance(value, list):
                 conditions.append(getattr(cls, key).in_(value))
             else:

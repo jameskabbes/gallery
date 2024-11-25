@@ -4,6 +4,12 @@
 
 # email=a@a.com&password=password
 
+# token
+# POST http://localhost:8087/auth/token/
+# Content-Type: application/x-www-form-urlencoded
+
+# username=a@a.com&password=password
+
 # login 
 # POST http://localhost:8087/auth/login/password/
 # Content-Type: application/x-www-form-urlencoded
