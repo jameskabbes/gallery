@@ -37,175 +37,175 @@ export interface paths {
     /** Logout */
     post: operations["logout_auth_logout__post"];
   };
-  "/admin/users/{user_id}": {
-    /** Get User By Id Admin */
-    get: operations["get_user_by_id_admin_admin_users__user_id__get"];
+  "/users/{user_id}/": {
+    /** Get user by ID */
+    get: operations["user_read"];
+    /** Delete user by ID */
+    delete: operations["user_delete"];
+    /** Update user by ID */
+    patch: operations["user_update"];
   };
-  "/admin/users/": {
-    /** Post User Admin */
-    post: operations["post_user_admin_admin_users__post"];
+  "/users/": {
+    /** Get all users */
+    get: operations["get_users_users__get"];
+    /** Create a new user */
+    post: operations["user_create"];
+  };
+  "/available/username/{username}/": {
+    /** Check if a username is available */
+    get: operations["user_username_available_available_username__username___get"];
+  };
+  "/available/email/{email}/": {
+    /** Check if an email is available */
+    get: operations["user_email_available_available_email__email___get"];
   };
   "/admin/users/{user_id}/": {
-    /** Delete User Admin */
-    delete: operations["delete_user_admin_admin_users__user_id___delete"];
-    /** Patch User Admin */
-    patch: operations["patch_user_admin_admin_users__user_id___patch"];
+    /** Get user by ID (admin) */
+    get: operations["user_read_admin"];
+    /** Delete user by ID (admin) */
+    delete: operations["user_delete_admin"];
+    /** Update user by ID (admin) */
+    patch: operations["user_update_admin"];
   };
-  "/users/available/username/{username}/": {
-    /** User Username Available */
-    get: operations["user_username_available_users_available_username__username___get"];
-  };
-  "/users/available/email/{email}/": {
-    /** User Email Available */
-    get: operations["user_email_available_users_available_email__email___get"];
-  };
-  "/user/": {
-    /** Get User */
-    get: operations["get_user_user__get"];
-    /** Delete User */
-    delete: operations["delete_user_user__delete"];
-    /** Patch User */
-    patch: operations["patch_user_user__patch"];
-  };
-  "/users/{user_id}/": {
-    /** Get User By Id */
-    get: operations["get_user_by_id_users__user_id___get"];
-    /** Patch User By Id */
-    patch: operations["patch_user_by_id_users__user_id___patch"];
-  };
-  "/admin/user-access-tokens/{user_access_token_id}": {
-    /** Get User Access Token By Id Admin */
-    get: operations["get_user_access_token_by_id_admin_admin_user_access_tokens__user_access_token_id__get"];
-  };
-  "/admin/user-access-tokens/": {
-    /** Post User Access Token Admin */
-    post: operations["post_user_access_token_admin_admin_user_access_tokens__post"];
-  };
-  "/admin/user-access-tokens/{user_access_token_id}/": {
-    /** Delete User Admin */
-    delete: operations["delete_user_admin_admin_user_access_tokens__user_access_token_id___delete"];
-    /** Patch User Access Token Admin */
-    patch: operations["patch_user_access_token_admin_admin_user_access_tokens__user_access_token_id___patch"];
-  };
-  "/user-access-tokens/": {
-    /** Get User Access Tokens */
-    get: operations["get_user_access_tokens_user_access_tokens__get"];
+  "/admin/users/": {
+    /** Get all users (admin) */
+    get: operations["get_users_admin_users__get"];
+    /** Create a new user (admin) */
+    post: operations["user_create_admin"];
   };
   "/user-access-tokens/{user_access_token_id}/": {
-    /** Delete User Access Token */
-    delete: operations["delete_user_access_token_user_access_tokens__user_access_token_id___delete"];
+    /** Get user_access_token by ID */
+    get: operations["user_access_token_read"];
+    /** Delete user_access_token by ID */
+    delete: operations["user_access_token_delete"];
+    /** Update user_access_token by ID */
+    patch: operations["user_access_token_update"];
   };
-  "/admin/api-keys/{api_key_id}": {
-    /** Get Api Key By Id Admin */
-    get: operations["get_api_key_by_id_admin_admin_api_keys__api_key_id__get"];
+  "/user-access-tokens/": {
+    /** Create a new user_access_token */
+    post: operations["user_access_token_create"];
   };
-  "/admin/api-keys/": {
-    /** Post Api Key Admin */
-    post: operations["post_api_key_admin_admin_api_keys__post"];
+  "/users/{user_id}/access-tokens/": {
+    /** Get User Access Tokens */
+    get: operations["get_user_access_tokens_users__user_id__access_tokens__get"];
   };
-  "/admin/api-keys/available/": {
-    /** Get Is Api Key Available Admin */
-    get: operations["get_is_api_key_available_admin_admin_api_keys_available__get"];
+  "/admin/user-access-tokens/{user_access_token_id}/": {
+    /** Get user_access_token by ID (admin) */
+    get: operations["user_access_token_read_admin"];
+    /** Delete user_access_token by ID (admin) */
+    delete: operations["user_access_token_delete_admin"];
+    /** Update user_access_token by ID (admin) */
+    patch: operations["user_access_token_update_admin"];
   };
-  "/api-keys/available/": {
-    /** Get Is Api Key Available */
-    get: operations["get_is_api_key_available_api_keys_available__get"];
-  };
-  "/api-keys/": {
-    /** Get Api Keys */
-    get: operations["get_api_keys_api_keys__get"];
-    /** Post Api Key */
-    post: operations["post_api_key_api_keys__post"];
-  };
-  "/api-keys/{api_key_id}": {
-    /** Get Api Key By Id */
-    get: operations["get_api_key_by_id_api_keys__api_key_id__get"];
+  "/admin/user-access-tokens/": {
+    /** Create a new user_access_token (admin) */
+    post: operations["user_access_token_create_admin"];
   };
   "/api-keys/{api_key_id}/": {
-    /** Delete Api Key */
-    delete: operations["delete_api_key_api_keys__api_key_id___delete"];
-    /** Patch Api Key */
-    patch: operations["patch_api_key_api_keys__api_key_id___patch"];
+    /** Get api_key by ID */
+    get: operations["api_key_read"];
+    /** Delete api_key by ID */
+    delete: operations["api_key_delete"];
+    /** Update api_key by ID */
+    patch: operations["api_key_update"];
   };
-  "/api-keys/{api_key_id}/generate-jwt/": {
+  "/api-keys/": {
+    /** Create a new api_key */
+    post: operations["api_key_create"];
+  };
+  "/{api_key_id}/generate-jwt/": {
     /** Get Api Key Jwt */
-    get: operations["get_api_key_jwt_api_keys__api_key_id__generate_jwt__get"];
+    get: operations["get_api_key_jwt__api_key_id__generate_jwt__get"];
+  };
+  "/users/{user_id}/api-keys/": {
+    /** Get User Api Keys */
+    get: operations["get_user_api_keys_users__user_id__api_keys__get"];
+  };
+  "/users/{user_id}/api-keys/available/": {
+    /** Get Is Api Key Available */
+    get: operations["get_is_api_key_available_users__user_id__api_keys_available__get"];
+  };
+  "/admin/api-keys/{api_key_id}/": {
+    /** Get api_key by ID (admin) */
+    get: operations["api_key_read_admin"];
+    /** Delete api_key by ID (admin) */
+    delete: operations["api_key_delete_admin"];
+    /** Update api_key by ID (admin) */
+    patch: operations["api_key_update_admin"];
+  };
+  "/admin/api-keys/": {
+    /** Create a new api_key (admin) */
+    post: operations["api_key_create_admin"];
   };
   "/api-keys/{api_key_id}/scopes/{scope_id}/": {
-    /** Add Scope To Api Key */
+    /** Add a scope to an API key */
     post: operations["add_scope_to_api_key_api_keys__api_key_id__scopes__scope_id___post"];
-    /** Remove Scope From Api Key */
+    /** Remove a scope from an API key */
     delete: operations["remove_scope_from_api_key_api_keys__api_key_id__scopes__scope_id___delete"];
   };
-  "/admin/galleries/{gallery_id}": {
-    /** Get Gallery By Id Admin */
-    get: operations["get_gallery_by_id_admin_admin_galleries__gallery_id__get"];
-  };
-  "/admin/galleries/": {
-    /** Post Gallery Admin */
-    post: operations["post_gallery_admin_admin_galleries__post"];
-  };
-  "/admin/galleries/{gallery_id}/": {
-    /** Delete Gallery Admin */
-    delete: operations["delete_gallery_admin_admin_galleries__gallery_id___delete"];
-    /** Patch Gallery Admin */
-    patch: operations["patch_gallery_admin_admin_galleries__gallery_id___patch"];
-  };
-  "/admin/galleries/available/": {
-    /** Get Is Gallery Available Admin */
-    get: operations["get_is_gallery_available_admin_admin_galleries_available__get"];
-  };
-  "/galleries/available/": {
+  "/users/{user_id}/galleries/available/": {
     /** Get Is Gallery Available */
-    get: operations["get_is_gallery_available_galleries_available__get"];
+    get: operations["get_is_gallery_available_users__user_id__galleries_available__get"];
   };
-  "/galleries/": {
-    /** Get Galleries */
-    get: operations["get_galleries_galleries__get"];
-    /** Post Gallery */
-    post: operations["post_gallery_galleries__post"];
-  };
-  "/galleries/{gallery_id}": {
-    /** Get Gallery */
-    get: operations["get_gallery_galleries__gallery_id__get"];
+  "/users/{user_id}/galleries/": {
+    /** Get User Galleries */
+    get: operations["get_user_galleries_users__user_id__galleries__get"];
   };
   "/galleries/{gallery_id}/": {
-    /** Delete Gallery */
-    delete: operations["delete_gallery_galleries__gallery_id___delete"];
-    /** Patch Gallery */
-    patch: operations["patch_gallery_galleries__gallery_id___patch"];
+    /** Get gallery by ID */
+    get: operations["gallery_read"];
+    /** Delete gallery by ID */
+    delete: operations["gallery_delete"];
+    /** Update gallery by ID */
+    patch: operations["gallery_update"];
   };
-  "/galleries/{gallery_id}/upload/": {
+  "/galleries/": {
+    /** Create a new gallery */
+    post: operations["gallery_create"];
+  };
+  "/{gallery_id}/upload/": {
     /** Upload File To Gallery */
-    post: operations["upload_file_to_gallery_galleries__gallery_id__upload__post"];
+    post: operations["upload_file_to_gallery__gallery_id__upload__post"];
   };
-  "/galleries/{gallery_id}/sync/": {
+  "/{gallery_id}/sync/": {
     /** Sync Gallery */
-    post: operations["sync_gallery_galleries__gallery_id__sync__post"];
+    post: operations["sync_gallery__gallery_id__sync__post"];
   };
-  "/profile/page/": {
+  "/admin/galleries/{gallery_id}/": {
+    /** Get gallery by ID (admin) */
+    get: operations["gallery_read_admin"];
+    /** Delete gallery by ID (admin) */
+    delete: operations["gallery_delete_admin"];
+    /** Update gallery by ID (admin) */
+    patch: operations["gallery_update_admin"];
+  };
+  "/admin/galleries/": {
+    /** Create a new gallery (admin) */
+    post: operations["gallery_create_admin"];
+  };
+  "/pages/profile/": {
     /** Get Pages Profile */
-    get: operations["get_pages_profile_profile_page__get"];
+    get: operations["get_pages_profile_pages_profile__get"];
   };
-  "/home/page/": {
+  "/pages/home/": {
     /** Get Home Page */
-    get: operations["get_home_page_home_page__get"];
+    get: operations["get_home_page_pages_home__get"];
   };
-  "/settings/page/": {
+  "/pages/settings/": {
     /** Get Settings Page */
-    get: operations["get_settings_page_settings_page__get"];
+    get: operations["get_settings_page_pages_settings__get"];
   };
-  "/settings/api-keys/page/": {
+  "/pages/settings/api-keys/": {
     /** Get Settings Page */
-    get: operations["get_settings_page_settings_api_keys_page__get"];
+    get: operations["get_settings_page_pages_settings_api_keys__get"];
   };
-  "/styles/page/": {
+  "/pages/styles/": {
     /** Get Styles Page */
-    get: operations["get_styles_page_styles_page__get"];
+    get: operations["get_styles_page_pages_styles__get"];
   };
-  "/galleries/{gallery_id}/page/": {
+  "/pages/galleries/{gallery_id}/": {
     /** Get Gallery Page */
-    get: operations["get_gallery_page_galleries__gallery_id__page__get"];
+    get: operations["get_gallery_page_pages_galleries__gallery_id___get"];
   };
 }
 
@@ -232,39 +232,27 @@ export interface components {
       /** Name */
       name: string;
     };
-    /** ApiKeyCreate */
-    ApiKeyCreate: {
-      /** Lifespan */
-      lifespan?: string | null;
-      /** Expiry */
-      expiry?: string | null;
-      /** Name */
-      name: string;
-    };
-    /** ApiKeyCreateAdmin */
-    ApiKeyCreateAdmin: {
-      /** Lifespan */
-      lifespan?: string | null;
-      /** Expiry */
-      expiry?: string | null;
-      /** User Id */
-      user_id: string;
-      /** Name */
-      name: string;
-    };
     /** ApiKeyJWTResponse */
     ApiKeyJWTResponse: {
       /** Jwt */
       jwt: string;
     };
-    /** ApiKeyUpdate */
-    ApiKeyUpdate: {
-      /** Lifespan */
-      lifespan?: string | null;
-      /** Expiry */
-      expiry?: string | null;
+    /** ApiKeyPrivate */
+    ApiKeyPrivate: {
+      /** User Id */
+      user_id: string;
+      /**
+       * Issued
+       * Format: date-time
+       */
+      issued: string;
+      /**
+       * Expiry
+       * Format: date-time
+       */
+      expiry: string;
       /** Name */
-      name?: string | null;
+      name: string;
     };
     /** AuthCredentialIdAndType */
     AuthCredentialIdAndType: {
@@ -276,6 +264,8 @@ export interface components {
        */
       type: "access_token" | "api_key";
     };
+    /** BaseModel */
+    BaseModel: Record<string, never>;
     /** Body_login_auth_login_password__post */
     Body_login_auth_login_password__post: {
       /**
@@ -337,8 +327,8 @@ export interface components {
        */
       stay_signed_in?: boolean;
     };
-    /** Body_upload_file_to_gallery_galleries__gallery_id__upload__post */
-    Body_upload_file_to_gallery_galleries__gallery_id__upload__post: {
+    /** Body_upload_file_to_gallery__gallery_id__upload__post */
+    Body_upload_file_to_gallery__gallery_id__upload__post: {
       /**
        * File
        * Format: binary
@@ -370,53 +360,6 @@ export interface components {
        */
       date: string;
     };
-    /** GalleryCreate */
-    GalleryCreate: {
-      /** Name */
-      name: string;
-      /** User Id */
-      user_id: string;
-      /** Visibility Level */
-      visibility_level: number;
-      /** Parent Id */
-      parent_id?: string | null;
-      /** Description */
-      description?: string | null;
-      /** Date */
-      date?: string | null;
-    };
-    /** GalleryCreateAdmin */
-    GalleryCreateAdmin: {
-      /** Name */
-      name: string;
-      /** User Id */
-      user_id: string;
-      /** Visibility Level */
-      visibility_level: number;
-      /** Parent Id */
-      parent_id?: string | null;
-      /** Description */
-      description?: string | null;
-      /** Date */
-      date?: string | null;
-    };
-    /** GalleryPrivate */
-    GalleryPrivate: {
-      /** Id */
-      id: string;
-      /** User Id */
-      user_id: string;
-      /** Name */
-      name: string;
-      /** Parent Id */
-      parent_id: string | null;
-      /** Description */
-      description: string | null;
-      /** Date */
-      date: string | null;
-      /** Visibility Level */
-      visibility_level: number;
-    };
     /** GalleryPublic */
     GalleryPublic: {
       /** Id */
@@ -431,36 +374,6 @@ export interface components {
       description: string | null;
       /** Date */
       date: string | null;
-    };
-    /** GalleryUpdate */
-    GalleryUpdate: {
-      /** Name */
-      name?: string | null;
-      /** User Id */
-      user_id?: string | null;
-      /** Visibility Level */
-      visibility_level?: number | null;
-      /** Parent Id */
-      parent_id?: string | null;
-      /** Description */
-      description?: string | null;
-      /** Date */
-      date?: string | null;
-    };
-    /** GalleryUpdateAdmin */
-    GalleryUpdateAdmin: {
-      /** Name */
-      name?: string | null;
-      /** User Id */
-      user_id?: string | null;
-      /** Visibility Level */
-      visibility_level?: number | null;
-      /** Parent Id */
-      parent_id?: string | null;
-      /** Description */
-      description?: string | null;
-      /** Date */
-      date?: string | null;
     };
     /** GetAuthBaseReturn */
     GetAuthBaseReturn: {
@@ -496,7 +409,10 @@ export interface components {
     /** GetSettingsApiKeysPageResponse */
     GetSettingsApiKeysPageResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
-      api_keys: components["schemas"]["PluralApiKeysDict"];
+      /** Api Keys */
+      api_keys: {
+        [key: string]: components["schemas"]["ApiKey"];
+      };
       /** Api Key Scope Ids */
       api_key_scope_ids: {
         [key: string]: number[];
@@ -546,12 +462,6 @@ export interface components {
       /** Detail */
       detail: string;
     };
-    PluralApiKeysDict: {
-      [key: string]: components["schemas"]["ApiKey"];
-    };
-    PluralGalleriesDict: {
-      [key: string]: components["schemas"]["Gallery"];
-    };
     /** SignupResponse */
     SignupResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
@@ -594,34 +504,6 @@ export interface components {
       /** Id */
       id: string;
     };
-    /** UserAccessTokenCreateAdmin */
-    UserAccessTokenCreateAdmin: {
-      /** Lifespan */
-      lifespan?: string | null;
-      /** Expiry */
-      expiry?: string | null;
-      /** User Id */
-      user_id: string;
-    };
-    /** UserAccessTokenUpdateAdmin */
-    UserAccessTokenUpdateAdmin: {
-      /** Lifespan */
-      lifespan?: string | null;
-      /** Expiry */
-      expiry?: string | null;
-    };
-    /** UserCreateAdmin */
-    UserCreateAdmin: {
-      /**
-       * Email
-       * Format: email
-       */
-      email: string;
-      /** Password */
-      password?: string | null;
-      /** User Role Id */
-      user_role_id: number;
-    };
     /** UserPrivate */
     UserPrivate: {
       /** Id */
@@ -642,24 +524,6 @@ export interface components {
       id: string;
       /** Username */
       username: string | null;
-    };
-    /** UserUpdate */
-    UserUpdate: {
-      /** Email */
-      email?: string | null;
-      /** Password */
-      password?: string | null;
-      /** Username */
-      username?: string | null;
-    };
-    /** UserUpdateAdmin */
-    UserUpdateAdmin: {
-      /** Email */
-      email?: string | null;
-      /** Password */
-      password?: string | null;
-      /** Username */
-      username?: string | null;
     };
     /** ValidationError */
     ValidationError: {
@@ -872,212 +736,11 @@ export interface operations {
       };
     };
   };
-  /** Get User By Id Admin */
-  get_user_by_id_admin_admin_users__user_id__get: {
+  /** Get user by ID */
+  user_read: {
     parameters: {
-      path: {
-        user_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["User"];
-        };
-      };
-      /** @description User not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Post User Admin */
-  post_user_admin_admin_users__post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UserCreateAdmin"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["User"];
-        };
-      };
-      /** @description User already exists */
-      409: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Delete User Admin */
-  delete_user_admin_admin_users__user_id___delete: {
-    parameters: {
-      path: {
-        user_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      204: {
-        content: never;
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Patch User Admin */
-  patch_user_admin_admin_users__user_id___patch: {
-    parameters: {
-      path: {
-        user_id: string;
-      };
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UserUpdateAdmin"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["User"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** User Username Available */
-  user_username_available_users_available_username__username___get: {
-    parameters: {
-      path: {
-        username: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** User Email Available */
-  user_email_available_users_available_email__email___get: {
-    parameters: {
-      path: {
-        email: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Get User */
-  get_user_user__get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["UserPrivate"];
-        };
-      };
-      /** @description User not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-    };
-  };
-  /** Delete User */
-  delete_user_user__delete: {
-    responses: {
-      /** @description Successful Response */
-      204: {
-        content: never;
-      };
-      /** @description User not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-    };
-  };
-  /** Patch User */
-  patch_user_user__patch: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UserUpdate"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["UserPrivate"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Get User By Id */
-  get_user_by_id_users__user_id___get: {
-    parameters: {
-      path: {
-        user_id: string;
+      query: {
+        id_value: unknown;
       };
     };
     responses: {
@@ -1101,16 +764,38 @@ export interface operations {
       };
     };
   };
-  /** Patch User By Id */
-  patch_user_by_id_users__user_id___patch: {
+  /** Delete user by ID */
+  user_delete: {
     parameters: {
-      path: {
-        user_id: string;
+      query: {
+        id_value: unknown;
       };
     };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UserUpdate"];
+    responses: {
+      /** @description Successful Response */
+      204: {
+        content: never;
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Update user by ID */
+  user_update: {
+    parameters: {
+      query: {
+        id_value: unknown;
+        model: components["schemas"]["BaseModel"];
       };
     };
     responses: {
@@ -1126,7 +811,7 @@ export interface operations {
           "application/json": components["schemas"]["NotFoundResponse"];
         };
       };
-      /** @description Username or email already exists */
+      /** @description User already exists */
       409: {
         content: {
           "application/json": components["schemas"]["DetailOnlyResponse"];
@@ -1140,11 +825,258 @@ export interface operations {
       };
     };
   };
-  /** Get User Access Token By Id Admin */
-  get_user_access_token_by_id_admin_admin_user_access_tokens__user_access_token_id__get: {
+  /** Get all users */
+  get_users_users__get: {
+    parameters: {
+      query?: {
+        limit?: number;
+        offset?: number;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["UserPublic"][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Create a new user */
+  user_create: {
+    parameters: {
+      query: {
+        model: components["schemas"]["BaseModel"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["UserPrivate"];
+        };
+      };
+      /** @description User already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Check if a username is available */
+  user_username_available_available_username__username___get: {
     parameters: {
       path: {
-        user_access_token_id: string;
+        username: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Username already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Check if an email is available */
+  user_email_available_available_email__email___get: {
+    parameters: {
+      path: {
+        email: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Email already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get user by ID (admin) */
+  user_read_admin: {
+    parameters: {
+      query: {
+        id_value: unknown;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["User"];
+        };
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Delete user by ID (admin) */
+  user_delete_admin: {
+    parameters: {
+      query: {
+        id_value: unknown;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      204: {
+        content: never;
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Update user by ID (admin) */
+  user_update_admin: {
+    parameters: {
+      query: {
+        id_value: unknown;
+        model: components["schemas"]["BaseModel"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["User"];
+        };
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description User already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get all users (admin) */
+  get_users_admin_users__get: {
+    parameters: {
+      query?: {
+        limit?: number;
+        offset?: number;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["UserPublic"][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Create a new user (admin) */
+  user_create_admin: {
+    parameters: {
+      query: {
+        model: components["schemas"]["BaseModel"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["User"];
+        };
+      };
+      /** @description User already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get user_access_token by ID */
+  user_access_token_read: {
+    parameters: {
+      query: {
+        id_value: unknown;
       };
     };
     responses: {
@@ -1168,11 +1100,72 @@ export interface operations {
       };
     };
   };
-  /** Post User Access Token Admin */
-  post_user_access_token_admin_admin_user_access_tokens__post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UserAccessTokenCreateAdmin"];
+  /** Delete user_access_token by ID */
+  user_access_token_delete: {
+    parameters: {
+      query: {
+        id_value: unknown;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      204: {
+        content: never;
+      };
+      /** @description UserAccessToken not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Update user_access_token by ID */
+  user_access_token_update: {
+    parameters: {
+      query: {
+        id_value: unknown;
+        model: components["schemas"]["BaseModel"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["UserAccessToken"];
+        };
+      };
+      /** @description UserAccessToken not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description UserAccessToken already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Create a new user_access_token */
+  user_access_token_create: {
+    parameters: {
+      query: {
+        model: components["schemas"]["BaseModel"];
       };
     };
     responses: {
@@ -1196,11 +1189,75 @@ export interface operations {
       };
     };
   };
-  /** Delete User Admin */
-  delete_user_admin_admin_user_access_tokens__user_access_token_id___delete: {
+  /** Get User Access Tokens */
+  get_user_access_tokens_users__user_id__access_tokens__get: {
     parameters: {
-      path: {
-        user_access_token_id: string;
+      query: {
+        id_value: string;
+        limit?: number;
+        offset?: number;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["UserAccessToken"][];
+        };
+      };
+      /** @description User does not have permission to view another user's access tokens */
+      403: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get user_access_token by ID (admin) */
+  user_access_token_read_admin: {
+    parameters: {
+      query: {
+        id_value: unknown;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["UserAccessToken"];
+        };
+      };
+      /** @description UserAccessToken not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Delete user_access_token by ID (admin) */
+  user_access_token_delete_admin: {
+    parameters: {
+      query: {
+        id_value: unknown;
       };
     };
     responses: {
@@ -1222,61 +1279,32 @@ export interface operations {
       };
     };
   };
-  /** Patch User Access Token Admin */
-  patch_user_access_token_admin_admin_user_access_tokens__user_access_token_id___patch: {
+  /** Update user_access_token by ID (admin) */
+  user_access_token_update_admin: {
     parameters: {
-      path: {
-        user_access_token_id: string;
-      };
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UserAccessTokenUpdateAdmin"];
+      query: {
+        id_value: unknown;
+        model: components["schemas"]["BaseModel"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["User"];
+          "application/json": components["schemas"]["UserAccessToken"];
         };
       };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Get User Access Tokens */
-  get_user_access_tokens_user_access_tokens__get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["UserAccessToken"][];
-        };
-      };
-      /** @description User not found */
+      /** @description UserAccessToken not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
         };
       };
-    };
-  };
-  /** Delete User Access Token */
-  delete_user_access_token_user_access_tokens__user_access_token_id___delete: {
-    parameters: {
-      path: {
-        user_access_token_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      204: {
-        content: never;
+      /** @description UserAccessToken already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
       };
       /** @description Validation Error */
       422: {
@@ -1286,11 +1314,39 @@ export interface operations {
       };
     };
   };
-  /** Get Api Key By Id Admin */
-  get_api_key_by_id_admin_admin_api_keys__api_key_id__get: {
+  /** Create a new user_access_token (admin) */
+  user_access_token_create_admin: {
     parameters: {
-      path: {
-        api_key_id: string;
+      query: {
+        model: components["schemas"]["BaseModel"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["UserAccessToken"];
+        };
+      };
+      /** @description UserAccessToken already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get api_key by ID */
+  api_key_read: {
+    parameters: {
+      query: {
+        id_value: unknown;
       };
     };
     responses: {
@@ -1314,11 +1370,38 @@ export interface operations {
       };
     };
   };
-  /** Post Api Key Admin */
-  post_api_key_admin_admin_api_keys__post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["ApiKeyCreateAdmin"];
+  /** Delete api_key by ID */
+  api_key_delete: {
+    parameters: {
+      query: {
+        id_value: unknown;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      204: {
+        content: never;
+      };
+      /** @description ApiKey not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Update api_key by ID */
+  api_key_update: {
+    parameters: {
+      query: {
+        id_value: unknown;
+        model: components["schemas"]["BaseModel"];
       };
     };
     responses: {
@@ -1328,7 +1411,13 @@ export interface operations {
           "application/json": components["schemas"]["ApiKey"];
         };
       };
-      /** @description User already exists */
+      /** @description ApiKey not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description ApiKey already exists */
       409: {
         content: {
           "application/json": components["schemas"]["DetailOnlyResponse"];
@@ -1342,73 +1431,11 @@ export interface operations {
       };
     };
   };
-  /** Get Is Api Key Available Admin */
-  get_is_api_key_available_admin_admin_api_keys_available__get: {
+  /** Create a new api_key */
+  api_key_create: {
     parameters: {
       query: {
-        name: string;
-        user_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Get Is Api Key Available */
-  get_is_api_key_available_api_keys_available__get: {
-    parameters: {
-      query: {
-        name: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Get Api Keys */
-  get_api_keys_api_keys__get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["ApiKey"][];
-        };
-      };
-      /** @description User not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-    };
-  };
-  /** Post Api Key */
-  post_api_key_api_keys__post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["ApiKeyCreate"];
+        model: components["schemas"]["BaseModel"];
       };
     };
     responses: {
@@ -1418,73 +1445,10 @@ export interface operations {
           "application/json": components["schemas"]["ApiKey"];
         };
       };
-      /** @description Validation Error */
-      422: {
+      /** @description ApiKey already exists */
+      409: {
         content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Get Api Key By Id */
-  get_api_key_by_id_api_keys__api_key_id__get: {
-    parameters: {
-      path: {
-        api_key_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["ApiKey"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Delete Api Key */
-  delete_api_key_api_keys__api_key_id___delete: {
-    parameters: {
-      path: {
-        api_key_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      204: {
-        content: never;
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Patch Api Key */
-  patch_api_key_api_keys__api_key_id___patch: {
-    parameters: {
-      path: {
-        api_key_id: string;
-      };
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["ApiKeyUpdate"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["ApiKey"];
+          "application/json": components["schemas"]["DetailOnlyResponse"];
         };
       };
       /** @description Validation Error */
@@ -1496,7 +1460,7 @@ export interface operations {
     };
   };
   /** Get Api Key Jwt */
-  get_api_key_jwt_api_keys__api_key_id__generate_jwt__get: {
+  get_api_key_jwt__api_key_id__generate_jwt__get: {
     parameters: {
       path: {
         api_key_id: string;
@@ -1523,18 +1487,33 @@ export interface operations {
       };
     };
   };
-  /** Add Scope To Api Key */
-  add_scope_to_api_key_api_keys__api_key_id__scopes__scope_id___post: {
+  /** Get User Api Keys */
+  get_user_api_keys_users__user_id__api_keys__get: {
     parameters: {
-      path: {
-        api_key_id: string;
-        scope_id: number;
+      query: {
+        id_value: string;
+        limit?: number;
+        offset?: number;
       };
     };
     responses: {
       /** @description Successful Response */
-      204: {
-        content: never;
+      200: {
+        content: {
+          "application/json": components["schemas"]["ApiKeyPrivate"][];
+        };
+      };
+      /** @description User does not have permission to view another user's API keys */
+      403: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
       };
       /** @description Validation Error */
       422: {
@@ -1544,7 +1523,188 @@ export interface operations {
       };
     };
   };
-  /** Remove Scope From Api Key */
+  /** Get Is Api Key Available */
+  get_is_api_key_available_users__user_id__api_keys_available__get: {
+    parameters: {
+      query: {
+        id_value: string;
+        name: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description User does not have permission to view another user's API keys */
+      403: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get api_key by ID (admin) */
+  api_key_read_admin: {
+    parameters: {
+      query: {
+        id_value: unknown;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ApiKey"];
+        };
+      };
+      /** @description ApiKey not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Delete api_key by ID (admin) */
+  api_key_delete_admin: {
+    parameters: {
+      query: {
+        id_value: unknown;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      204: {
+        content: never;
+      };
+      /** @description ApiKey not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Update api_key by ID (admin) */
+  api_key_update_admin: {
+    parameters: {
+      query: {
+        id_value: unknown;
+        model: components["schemas"]["BaseModel"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ApiKey"];
+        };
+      };
+      /** @description ApiKey not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description ApiKey already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Create a new api_key (admin) */
+  api_key_create_admin: {
+    parameters: {
+      query: {
+        model: components["schemas"]["BaseModel"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ApiKey"];
+        };
+      };
+      /** @description ApiKey already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Add a scope to an API key */
+  add_scope_to_api_key_api_keys__api_key_id__scopes__scope_id___post: {
+    parameters: {
+      path: {
+        api_key_id: string;
+        scope_id: number;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description ApiKey not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Remove a scope from an API key */
   remove_scope_from_api_key_api_keys__api_key_id__scopes__scope_id___delete: {
     parameters: {
       path: {
@@ -1565,144 +1725,11 @@ export interface operations {
       };
     };
   };
-  /** Get Gallery By Id Admin */
-  get_gallery_by_id_admin_admin_galleries__gallery_id__get: {
-    parameters: {
-      path: {
-        gallery_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["Gallery"];
-        };
-      };
-      /** @description Gallery not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Post Gallery Admin */
-  post_gallery_admin_admin_galleries__post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["GalleryCreateAdmin"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["Gallery"];
-        };
-      };
-      /** @description Gallery already exists */
-      409: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Delete Gallery Admin */
-  delete_gallery_admin_admin_galleries__gallery_id___delete: {
-    parameters: {
-      path: {
-        gallery_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      204: {
-        content: never;
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Patch Gallery Admin */
-  patch_gallery_admin_admin_galleries__gallery_id___patch: {
-    parameters: {
-      path: {
-        gallery_id: string;
-      };
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["GalleryUpdateAdmin"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["Gallery"];
-        };
-      };
-      /** @description Gallery not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Get Is Gallery Available Admin */
-  get_is_gallery_available_admin_admin_galleries_available__get: {
-    parameters: {
-      query: {
-        name: string;
-        parent_id?: string | null;
-        date?: string | null;
-        user_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
   /** Get Is Gallery Available */
-  get_is_gallery_available_galleries_available__get: {
+  get_is_gallery_available_users__user_id__galleries_available__get: {
     parameters: {
       query: {
+        id_value: string;
         name: string;
         parent_id?: string | null;
         date?: string | null;
@@ -1715,6 +1742,12 @@ export interface operations {
           "application/json": unknown;
         };
       };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
       /** @description Validation Error */
       422: {
         content: {
@@ -1723,29 +1756,109 @@ export interface operations {
       };
     };
   };
-  /** Get Galleries */
-  get_galleries_galleries__get: {
+  /** Get User Galleries */
+  get_user_galleries_users__user_id__galleries__get: {
+    parameters: {
+      query: {
+        id_value: string;
+        limit?: number;
+        offset?: number;
+      };
+    };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["PluralGalleriesDict"];
+          "application/json": components["schemas"]["GalleryPublic"][];
+        };
+      };
+      /** @description User not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
   };
-  /** Post Gallery */
-  post_gallery_galleries__post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["GalleryCreate"];
+  /** Get gallery by ID */
+  gallery_read: {
+    parameters: {
+      query: {
+        id_value: unknown;
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["GalleryPrivate"];
+          "application/json": components["schemas"]["Gallery"];
+        };
+      };
+      /** @description Gallery not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Delete gallery by ID */
+  gallery_delete: {
+    parameters: {
+      query: {
+        id_value: unknown;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      204: {
+        content: never;
+      };
+      /** @description Gallery not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Update gallery by ID */
+  gallery_update: {
+    parameters: {
+      query: {
+        id_value: unknown;
+        model: components["schemas"]["BaseModel"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["Gallery"];
+        };
+      };
+      /** @description Gallery not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
         };
       };
       /** @description Gallery already exists */
@@ -1762,76 +1875,11 @@ export interface operations {
       };
     };
   };
-  /** Get Gallery */
-  get_gallery_galleries__gallery_id__get: {
+  /** Create a new gallery */
+  gallery_create: {
     parameters: {
-      path: {
-        gallery_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["GalleryPublic"];
-        };
-      };
-      /** @description Gallery not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Delete Gallery */
-  delete_gallery_galleries__gallery_id___delete: {
-    parameters: {
-      path: {
-        gallery_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      204: {
-        content: never;
-      };
-      /** @description User does not have permission to delete this gallery */
-      403: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Gallery not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Patch Gallery */
-  patch_gallery_galleries__gallery_id___patch: {
-    parameters: {
-      path: {
-        gallery_id: string;
-      };
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["GalleryUpdate"];
+      query: {
+        model: components["schemas"]["BaseModel"];
       };
     };
     responses: {
@@ -1839,18 +1887,6 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["Gallery"];
-        };
-      };
-      /** @description User does not have permission to update this gallery */
-      403: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Gallery not found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["NotFoundResponse"];
         };
       };
       /** @description Gallery already exists */
@@ -1868,7 +1904,7 @@ export interface operations {
     };
   };
   /** Upload File To Gallery */
-  upload_file_to_gallery_galleries__gallery_id__upload__post: {
+  upload_file_to_gallery__gallery_id__upload__post: {
     parameters: {
       path: {
         gallery_id: string;
@@ -1876,7 +1912,7 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "multipart/form-data": components["schemas"]["Body_upload_file_to_gallery_galleries__gallery_id__upload__post"];
+        "multipart/form-data": components["schemas"]["Body_upload_file_to_gallery__gallery_id__upload__post"];
       };
     };
     responses: {
@@ -1895,7 +1931,7 @@ export interface operations {
     };
   };
   /** Sync Gallery */
-  sync_gallery_galleries__gallery_id__sync__post: {
+  sync_gallery__gallery_id__sync__post: {
     parameters: {
       path: {
         gallery_id: string;
@@ -1916,8 +1952,125 @@ export interface operations {
       };
     };
   };
+  /** Get gallery by ID (admin) */
+  gallery_read_admin: {
+    parameters: {
+      query: {
+        id_value: unknown;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["Gallery"];
+        };
+      };
+      /** @description Gallery not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Delete gallery by ID (admin) */
+  gallery_delete_admin: {
+    parameters: {
+      query: {
+        id_value: unknown;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      204: {
+        content: never;
+      };
+      /** @description Gallery not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Update gallery by ID (admin) */
+  gallery_update_admin: {
+    parameters: {
+      query: {
+        id_value: unknown;
+        model: components["schemas"]["BaseModel"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["Gallery"];
+        };
+      };
+      /** @description Gallery not found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["NotFoundResponse"];
+        };
+      };
+      /** @description Gallery already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Create a new gallery (admin) */
+  gallery_create_admin: {
+    parameters: {
+      query: {
+        model: components["schemas"]["BaseModel"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["Gallery"];
+        };
+      };
+      /** @description Gallery already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   /** Get Pages Profile */
-  get_pages_profile_profile_page__get: {
+  get_pages_profile_pages_profile__get: {
     responses: {
       /** @description Successful Response */
       200: {
@@ -1928,7 +2081,7 @@ export interface operations {
     };
   };
   /** Get Home Page */
-  get_home_page_home_page__get: {
+  get_home_page_pages_home__get: {
     responses: {
       /** @description Successful Response */
       200: {
@@ -1939,7 +2092,7 @@ export interface operations {
     };
   };
   /** Get Settings Page */
-  get_settings_page_settings_page__get: {
+  get_settings_page_pages_settings__get: {
     responses: {
       /** @description Successful Response */
       200: {
@@ -1950,7 +2103,7 @@ export interface operations {
     };
   };
   /** Get Settings Page */
-  get_settings_page_settings_api_keys_page__get: {
+  get_settings_page_pages_settings_api_keys__get: {
     responses: {
       /** @description Successful Response */
       200: {
@@ -1961,7 +2114,7 @@ export interface operations {
     };
   };
   /** Get Styles Page */
-  get_styles_page_styles_page__get: {
+  get_styles_page_pages_styles__get: {
     responses: {
       /** @description Successful Response */
       200: {
@@ -1972,7 +2125,7 @@ export interface operations {
     };
   };
   /** Get Gallery Page */
-  get_gallery_page_galleries__gallery_id__page__get: {
+  get_gallery_page_pages_galleries__gallery_id___get: {
     parameters: {
       query?: {
         root?: boolean;
