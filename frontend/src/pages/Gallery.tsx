@@ -21,7 +21,7 @@ import {
   PostGallerySyncResponses,
 } from '../services/api/postGallerySync';
 
-const API_ENDPOINT = '/galleries/{gallery_id}/page/';
+const API_ENDPOINT = '/pages/galleries/{gallery_id}/';
 const API_METHOD = 'get';
 
 type ResponseTypesByStatus = ExtractResponseTypes<

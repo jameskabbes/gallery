@@ -138,14 +138,6 @@ CRUD_ROUTER_ENDPOINTS = CRUD_ROUTER_NON_ADMIN_ENDPOINTS | CRUD_ROUTER_ADMIN_ENDP
 class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, IdObject[IdType]):
 
     _ROUTER_TAG: typing.ClassVar[str]
-    _CRUD_ROUTER_ID_KEY: typing.ClassVar[str] = 'id'
-    _CRUD_ROUTER_RESPONSE_MODELS: typing.ClassVar[dict[CrudRouterEndpoint, BaseModel]] = {
-    }
-
-    _CREATE_MODEL: typing.ClassVar[BaseModel] = None
-    _CREATE_ADMIN_MODEL: typing.ClassVar[BaseModel] = None
-    _UPDATE_MODEL: typing.ClassVar[BaseModel] = None
-    _UPDATE_ADMIN_MODEL: typing.ClassVar[BaseModel] = None
 
     @ classmethod
     def not_found_message(cls) -> str:
@@ -154,6 +146,22 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
     @classmethod
     def already_exists_message(cls) -> str:
         return f'{cls.__name__} already exists'
+
+    @classmethod
+    def get_responses(cls):
+        return {}
+
+    @classmethod
+    def post_responses(cls):
+        return {}
+
+    @classmethod
+    def patch_responses(cls):
+        return {}
+
+    @classmethod
+    def delete_responses(cls):
+        return {}
 
     @ classmethod
     async def get_one_by_id(cls, session: Session, id: IdType) -> T | None:
@@ -274,14 +282,6 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
         kwargs['session'].add(instance)
         kwargs['session'].commit()
         kwargs['session'].refresh(instance)
-
-        if kwargs['admin']:
-            key = 'admin_post'
-        else:
-            key = 'post'
-
-        if key in cls._CRUD_ROUTER_RESPONSE_MODELS:
-            return cls._CRUD_ROUTER_RESPONSE_MODELS[key].model_validate(instance)
         return instance
 
     @classmethod
@@ -290,14 +290,6 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
 
         instance = await cls._basic_api_get(kwargs['session'], kwargs['id'])
         await instance._check_authorization_existing(**kwargs, method='get')
-
-        if kwargs['admin']:
-            key = 'admin_get'
-        else:
-            key = 'get'
-
-        if key in cls._CRUD_ROUTER_RESPONSE_MODELS:
-            return cls._CRUD_ROUTER_RESPONSE_MODELS[key].model_validate(instance)
         return instance
 
     @classmethod
@@ -312,15 +304,6 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
         kwargs['session'].add(instance)
         kwargs['session'].commit()
         kwargs['session'].refresh(instance)
-
-        if kwargs['admin']:
-            key = 'admin_patch'
-        else:
-            key = 'patch'
-
-        if key in self._CRUD_ROUTER_RESPONSE_MODELS:
-            return self._CRUD_ROUTER_RESPONSE_MODELS[key].model_validate(instance)
-
         return instance
 
     @classmethod
@@ -334,20 +317,6 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
         await kwargs['session'].delete(instance)
         kwargs['session'].commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-    @classmethod
-    def get_response_model(cls, router_endpoint: CrudRouterEndpoint):
-        if router_endpoint in cls._CRUD_ROUTER_RESPONSE_MODELS:
-            return cls._CRUD_ROUTER_RESPONSE_MODELS[router_endpoint]
-        else:
-            return cls
-
-    @classmethod
-    def get_required_scopes(cls, router_endpoint: CrudRouterEndpoint):
-        if router_endpoint in cls._CRUD_ROUTER_REQUIRED_SCOPES:
-            return cls._CRUD_ROUTER_REQUIRED_SCOPES[router_endpoint]
-        else:
-            return set()
 
 
 #

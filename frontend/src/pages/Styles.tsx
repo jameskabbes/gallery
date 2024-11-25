@@ -31,7 +31,7 @@ import { RadioButton1 } from '../components/Utils/RadioButton';
 import { useConfirmationModal } from '../utils/useConfirmationModal';
 import { Toggle1 } from '../components/Utils/Toggle';
 
-const API_ENDPOINT = '/styles/page/';
+const API_ENDPOINT = '/pages/styles/';
 const API_METHOD = 'get';
 
 type ResponseTypesByStatus = ExtractResponseTypes<

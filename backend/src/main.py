@@ -146,6 +146,13 @@ class GetAuthorizationReturn(BaseModel):
     scope_ids: typing.Optional[set[client.ScopeTypes.id]] = None
     auth_credential: typing.Optional[models.AUTH_CREDENTIAL_MODEL] = None
 
+    @property
+    def id_if_exists(self):
+        if self.auth_credential:
+            return self.auth_credential.id
+        else:
+            return None
+
 
 def get_authorization(
     **kwargs: typing.Unpack[GetAuthorizationKwargs]
@@ -656,16 +663,101 @@ class CRUDRouter[IdType, TPost: BaseModel, TPostAdmin: BaseModel, TPatch: BaseMo
 
 
 # Users
-user_router = APIRouter()
-user_router_crud = CRUDRouter[models.UserTypes.id, models.User._CREATE_MODEL, models.User._CREATE_ADMIN_MODEL,
-                              models.User._UPDATE_MODEL, models.User._UPDATE_ADMIN_MODEL](models.User, user_router, '/users')
+user_router = APIRouter(prefix='/users', tags=[models.User._ROUTER_TAG])
+user_admin_router = APIRouter(
+    prefix='/admin/users', tags=[models.User._ROUTER_TAG, 'Admin'])
+
+# user_router_crud = CRUDRouter[models.UserTypes.id, models.User._CREATE_MODEL, models.User._CREATE_ADMIN_MODEL,
+#                               models.User._UPDATE_MODEL, models.User._UPDATE_ADMIN_MODEL](models.User, user_router, '/users')
 
 
-user_router_crud.add_routes(('get', 'post', 'patch', 'delete'), {
-                            'get': {'get_authorization_kwargs': {'raise_exceptions': False}}})
+# user_router_crud.add_routes(('get', 'post', 'patch', 'delete'), {
+#                             'get': {'get_authorization_kwargs': {'raise_exceptions': False}}})
 
 
-@user_router.get('/users/', tags=[models.User._ROUTER_TAG], summary='Get all users')
+@user_router.get('/{user_id}/', responses=models.User.get_responses())
+async def get_user_by_id(
+    user_id: models.UserTypes.id,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization(raise_exceptions=False))]
+) -> models.UserPublic:
+    with Session(c.db_engine) as session:
+        return models.UserPublic.model_validate(await models.User.api_get(session, c=c, authorized_user_id=authorization.id_if_exists, id=user_id, admin=False))
+
+
+@user_admin_router.get('/{user_id}/', responses=models.User.get_responses())
+async def get_user_by_id_admin(
+    user_id: models.UserTypes.id,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization(required_scopes={'admin'}))]
+) -> models.UserPublic:
+    with Session(c.db_engine) as session:
+        return models.UserPublic.model_validate(await models.User.api_get(session, c=c, authorized_user_id=authorization.id_if_exists, id=user_id, admin=True))
+
+
+@user_router.post('/', responses=models.User.post_responses())
+async def post_user(
+    user_create: models.UserCreate,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization())]
+) -> models.UserPublic:
+    with Session(c.db_engine) as session:
+        return models.UserPublic.model_validate(await models.User.api_post(session, c=c, authorized_user_id=authorization.id_if_exists, admin=False, create_model=user_create))
+
+
+@user_admin_router.post('/', responses=models.User.post_responses())
+async def post_user_admin(
+    user_create_admin: models.UserCreateAdmin,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization(required_scopes={'admin'}))]
+) -> models.UserPublic:
+    with Session(c.db_engine) as session:
+        return models.UserPublic.model_validate(await models.User.api_post(session, c=c, authorized_user_id=authorization.id_if_exists, admin=True, create_model=user_create_admin))
+
+
+@user_router.patch('/{user_id}/', responses=models.User.patch_responses())
+async def patch_user(
+    user_id: models.UserTypes.id,
+    user_update: models.UserUpdate,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization())]
+) -> models.UserPublic:
+    with Session(c.db_engine) as session:
+        return models.UserPublic.model_validate(await models.User.api_patch(session, c=c, authorized_user_id=authorization.id_if_exists, id=user_id, admin=False, update_model=user_update))
+
+
+@user_admin_router.patch('/{user_id}/', responses=models.User.patch_responses())
+async def patch_user_admin(
+    user_id: models.UserTypes.id,
+    user_update_admin: models.UserUpdateAdmin,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization(required_scopes={'admin'}))]
+) -> models.UserPublic:
+    with Session(c.db_engine) as session:
+        return models.UserPublic.model_validate(await models.User.api_patch(session, c=c, authorized_user_id=authorization.id_if_exists, id=user_id, admin=True, update_model=user_update_admin))
+
+
+@user_router.delete('/{user_id}/', responses=models.User.delete_responses())
+async def delete_user(
+    user_id: models.UserTypes.id,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization())]
+):
+    with Session(c.db_engine) as session:
+        return await models.User.api_delete(session, c=c, authorized_user_id=authorization.id_if_exists, id=user_id, admin=False)
+
+
+@user_admin_router.delete('/{user_id}/', responses=models.User.delete_responses())
+async def delete_user_admin(
+    user_id: models.UserTypes.id,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization(required_scopes={'admin'}))]
+):
+    with Session(c.db_engine) as session:
+        return await models.User.api_delete(session, c=c, authorized_user_id=authorization.id_if_exists, id=user_id, admin=True)
+
+
+@user_router.get('/', responses=models.User.post_responses())
 async def get_users(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization(raise_exceptions=False))],
@@ -696,11 +788,12 @@ async def user_email_available(email: models.UserTypes.email):
     with Session(c.db_engine) as session:
         await models.User.api_get_is_email_available(session, email)
 
-user_router_crud.add_routes(
-    ('admin_get', 'admin_post', 'admin_patch', 'admin_delete'))
+
+app.include_router(user_router)
+app.include_router(user_admin_router)
 
 
-@user_router.get('/admin/users/', tags=[models.User._ROUTER_TAG], summary='Get all users (admin)')
+@user_admin_router.get('/')
 async def get_users(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization(required_scopes={'admin'}))],
@@ -713,11 +806,9 @@ async def get_users(
         return [models.UserPublic.model_validate(user) for user in users]
 
 
-app.include_router(user_router)
-
-
 # User Access Tokens
-
+"""
+ 
 user_access_token_router = APIRouter()
 user_access_token_router_crud = CRUDRouter[models.UserAccessTokenTypes.id, models.UserAccessToken._CREATE_MODEL, models.UserAccessToken._CREATE_ADMIN_MODEL,
                                            models.UserAccessToken._UPDATE_MODEL, models.UserAccessToken._UPDATE_ADMIN_MODEL](models.UserAccessToken, user_access_token_router, '/user-access-tokens')
@@ -1081,6 +1172,7 @@ async def get_gallery_page(
         )
 
 app.include_router(pages_router)
+"""
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

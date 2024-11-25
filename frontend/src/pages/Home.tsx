@@ -14,7 +14,7 @@ import { FileUploader } from '../components/Gallery/FileUploader';
 import { GlobalModalsContext } from '../contexts/GlobalModals';
 import { Link } from 'react-router-dom';
 
-const API_ENDPOINT = '/home/page/';
+const API_ENDPOINT = '/pages/home/';
 const API_METHOD = 'get';
 
 type ResponseTypesByStatus = ExtractResponseTypes<

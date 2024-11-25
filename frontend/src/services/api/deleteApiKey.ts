@@ -16,7 +16,7 @@ type DeleteApiKeyResponses = ExtractResponseTypes<
 
 async function deleteApiKey(
   authContext: AuthContextType,
-  apiKeyId: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['api_key_id']
+  apiKeyId: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['query']['id_value']
 ): Promise<ApiResponse<DeleteApiKeyResponses[keyof DeleteApiKeyResponses]>> {
   return await callApi<DeleteApiKeyResponses[keyof DeleteApiKeyResponses]>({
     url: API_ENDPOINT.replace('{api_key_id}', apiKeyId),

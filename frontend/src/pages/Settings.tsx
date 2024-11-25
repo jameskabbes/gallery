@@ -18,7 +18,7 @@ import { ApiKeys } from '../components/Settings/ApiKeys';
 import { Card1 } from '../components/Utils/Card';
 import { Surface } from '../components/Utils/Surface';
 
-const API_ENDPOINT = '/settings/page/';
+const API_ENDPOINT = '/pages/settings/';
 const API_METHOD = 'get';
 
 type ResponseTypesByStatus = ExtractResponseTypes<
