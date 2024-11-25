@@ -2,7 +2,7 @@ from pydantic import BaseModel, field_validator
 import typing
 from typing import Unpack
 import uuid
-from fastapi import HTTPException, status, Response
+from fastapi import HTTPException, status, Response, APIRouter
 from sqlmodel import SQLModel, Field, Column, Session, select, delete, Relationship
 from pydantic import BaseModel, EmailStr, constr, StringConstraints, field_validator, ValidationInfo, ValidatorFunctionWrapHandler, ValidationError, field_serializer, model_validator, conint
 from pydantic.functional_validators import WrapValidator
@@ -37,6 +37,11 @@ class ApiMethodBaseKwargsWithId[IdType](ApiMethodBaseKwargs):
 
 class ApiGetMethodKwargs[IdType](ApiMethodBaseKwargsWithId[IdType]):
     pass
+
+
+class ApiGetManyMethodKwargs(ApiMethodBaseKwargs):
+    skip: int
+    limit: int
 
 
 class ApiPostMethodKwargs[TPost](ApiMethodBaseKwargs):
@@ -116,12 +121,31 @@ def api_endpoint(func):
     return wrapper
 
 
+CrudRouterNonAdminEndpoint = typing.Literal['get', 'post', 'patch', 'delete']
+CRUD_ROUTER_NON_ADMIN_ENDPOINTS: set[CrudRouterNonAdminEndpoint] = {
+    'get', 'post', 'patch', 'delete'}
+
+CrudRouterAdminEndpoint = typing.Literal['admin_get',
+                                         'admin_post', 'admin_patch', 'admin_delete']
+CRUD_ROUTER_ADMIN_ENDPOINTS: set[CrudRouterAdminEndpoint] = {
+    'admin_get', 'admin_post', 'admin_patch', 'admin_delete'}
+
+CrudRouterEndpoint = typing.Union[CrudRouterNonAdminEndpoint,
+                                  CrudRouterAdminEndpoint]
+CRUD_ROUTER_ENDPOINTS = CRUD_ROUTER_NON_ADMIN_ENDPOINTS | CRUD_ROUTER_ADMIN_ENDPOINTS
+
+
 class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, IdObject[IdType]):
 
-    _CREATE_ADMIN_MODEL: typing.ClassVar[BaseModel] = None
+    _ROUTER_TAG: typing.ClassVar[str]
+    _CRUD_ROUTER_ID_KEY: typing.ClassVar[str] = 'id'
+    _CRUD_ROUTER_RESPONSE_MODELS: typing.ClassVar[dict[CrudRouterEndpoint, BaseModel]] = {
+    }
+
     _CREATE_MODEL: typing.ClassVar[BaseModel] = None
-    _UPDATE_ADMIN_MODEL: typing.ClassVar[BaseModel] = None
+    _CREATE_ADMIN_MODEL: typing.ClassVar[BaseModel] = None
     _UPDATE_MODEL: typing.ClassVar[BaseModel] = None
+    _UPDATE_ADMIN_MODEL: typing.ClassVar[BaseModel] = None
 
     @ classmethod
     def not_found_message(cls) -> str:
@@ -138,44 +162,40 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
         if len(cls._ID_COLS) > 1:
             assert isinstance(id, tuple)
             assert len(id) == len(cls._ID_COLS)
-            resp = await cls._get_by_key_values(session, {cls._ID_COLS[i]: id[i] for i in range(len(cls._ID_COLS))})
+            filters = {cls._ID_COLS[i]: id[i]
+                       for i in range(len(cls._ID_COLS))}
+
         else:
-            resp = await cls._get_by_key_values(session, {cls._ID_COLS[0]: id})
+            filters = {cls._ID_COLS[0]: id}
 
-        return resp.one_or_none()
-
-    @ classmethod
-    async def get_one_by_key_values(cls, session: Session, key_values: dict[str, typing.Any]) -> T | None:
-        """Get a model by its key values"""
-
-        resp = await cls._get_by_key_values(session, key_values)
-        return resp.one_or_none()
-
-    @ classmethod
-    async def get_all_by_key_values(cls, session: Session, key_values: dict[str, typing.Any]) -> list[T]:
-        """Get all models by their key values"""
-
-        resp = await cls._get_by_key_values(session, key_values)
-        return resp.all()
+        return await cls.get_one(session, filters)
 
     @classmethod
-    async def _get_by_key_values(cls, session: Session, key_values: dict[str, typing.Any]):
+    async def get_one(cls, session: Session, filters: dict[str, typing.Any] = {}) -> T | None:
+        """Get a model by its filters"""
+
+        results = session.exec(select(cls).where(
+            cls._build_conditions(filters)))
+        return results.one_or_none()
+
+    @classmethod
+    async def get_many(cls, session: Session, offset: int, limit: int, filters: dict[str, typing.Any] = {}) -> list[T]:
+        """Get models by their filters"""
+
+        results = session.exec(select(cls).where(
+            cls._build_conditions(filters)).offset(offset).limit(limit))
+        return results.all()
+
+    @classmethod
+    def _build_conditions(cls, filters: dict[str, typing.Any]):
         conditions = []
-        for key, value in key_values.items():
+        for key, value in filters:
             if isinstance(value, list):
                 conditions.append(getattr(cls, key).in_(value))
             else:
                 conditions.append(getattr(cls, key) == value)
 
-        query = select(cls).where(and_(*conditions))
-        return session.exec(query)
-
-    async def add_to_db(self, session: Session):
-        """Add the model to the database"""
-
-        session.add(self)
-        session.commit()
-        session.refresh(self)
+        return and_(*conditions)
 
     @ classmethod
     async def delete_one_by_id(cls, session: Session, id: IdType) -> int:
@@ -246,7 +266,7 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
 
     @classmethod
     @api_endpoint
-    async def api_post(cls, **kwargs: typing.Unpack[ApiPostMethodKwargs[TPost]]) -> T:
+    async def api_post(cls, **kwargs: typing.Unpack[ApiPostMethodKwargs[TPost]]):
         await cls._check_authorization_post(**kwargs)
         await cls._check_validation_post(**kwargs)
 
@@ -254,19 +274,35 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
         kwargs['session'].add(instance)
         kwargs['session'].commit()
         kwargs['session'].refresh(instance)
+
+        if kwargs['admin']:
+            key = 'admin_post'
+        else:
+            key = 'post'
+
+        if key in cls._CRUD_ROUTER_RESPONSE_MODELS:
+            return cls._CRUD_ROUTER_RESPONSE_MODELS[key].model_validate(instance)
         return instance
 
     @classmethod
     @api_endpoint
-    async def api_get(cls, **kwargs: Unpack[ApiGetMethodKwargs[IdType]]) -> T:
+    async def api_get(cls, **kwargs: Unpack[ApiGetMethodKwargs[IdType]]):
 
         instance = await cls._basic_api_get(kwargs['session'], kwargs['id'])
         await instance._check_authorization_existing(**kwargs, method='get')
+
+        if kwargs['admin']:
+            key = 'admin_get'
+        else:
+            key = 'get'
+
+        if key in cls._CRUD_ROUTER_RESPONSE_MODELS:
+            return cls._CRUD_ROUTER_RESPONSE_MODELS[key].model_validate(instance)
         return instance
 
     @classmethod
     @api_endpoint
-    async def api_patch(self, **kwargs: typing.Unpack[ApiPatchMethodKwargs[IdType, TPatch]]) -> T:
+    async def api_patch(self, **kwargs: typing.Unpack[ApiPatchMethodKwargs[IdType, TPatch]]):
 
         instance = await self._basic_api_get(kwargs['session'], kwargs['id'])
         await instance._check_authorization_existing(**kwargs, method='patch')
@@ -276,6 +312,15 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
         kwargs['session'].add(instance)
         kwargs['session'].commit()
         kwargs['session'].refresh(instance)
+
+        if kwargs['admin']:
+            key = 'admin_patch'
+        else:
+            key = 'patch'
+
+        if key in self._CRUD_ROUTER_RESPONSE_MODELS:
+            return self._CRUD_ROUTER_RESPONSE_MODELS[key].model_validate(instance)
+
         return instance
 
     @classmethod
@@ -289,6 +334,20 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
         await kwargs['session'].delete(instance)
         kwargs['session'].commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    @classmethod
+    def get_response_model(cls, router_endpoint: CrudRouterEndpoint):
+        if router_endpoint in cls._CRUD_ROUTER_RESPONSE_MODELS:
+            return cls._CRUD_ROUTER_RESPONSE_MODELS[router_endpoint]
+        else:
+            return cls
+
+    @classmethod
+    def get_required_scopes(cls, router_endpoint: CrudRouterEndpoint):
+        if router_endpoint in cls._CRUD_ROUTER_REQUIRED_SCOPES:
+            return cls._CRUD_ROUTER_REQUIRED_SCOPES[router_endpoint]
+        else:
+            return set()
 
 
 #
@@ -373,11 +432,19 @@ class User(Table['User', UserTypes.id, UserCreateAdmin, UserUpdateAdmin], UserID
     gallery_permissions: list['GalleryPermission'] = Relationship(
         back_populates='user', cascade_delete=True)
 
+    _ROUTER_TAG: typing.ClassVar[str] = 'User'
+    _CRUD_ROUTER_ID_KEY = 'user_id'
+    _CRUD_ROUTER_RESPONSE_MODELS = {
+        'get': UserPublic,
+        'post': UserPrivate,
+        'patch': UserPrivate,
+    }
+
+    _CREATE_MODEL: typing.ClassVar = UserCreate
     _CREATE_ADMIN_MODEL: typing.ClassVar[typing.Type[UserCreateAdmin]
                                          ] = UserCreateAdmin
-    _CREATE_MODEL: typing.ClassVar = UserCreate
-    _UPDATE_ADMIN_MODEL: typing.ClassVar = UserUpdateAdmin
     _UPDATE_MODEL: typing.ClassVar = UserUpdate
+    _UPDATE_ADMIN_MODEL: typing.ClassVar = UserUpdateAdmin
 
     @ property
     def is_public(self) -> bool:
@@ -392,10 +459,10 @@ class User(Table['User', UserTypes.id, UserCreateAdmin, UserUpdateAdmin], UserID
     @ classmethod
     async def authenticate(cls, session: Session, username_or_email: UserTypes.email | UserTypes.username, password: UserTypes.password) -> typing.Self | None:
 
-        user = await cls.get_one_by_key_values(session, {'email': username_or_email})
+        user = await cls.get_one(session, {'email': username_or_email})
 
         if not user:
-            user = await cls.get_one_by_key_values(
+            user = await cls.get_one(
                 session, {'username': username_or_email})
         if not user:
             return None
@@ -408,7 +475,7 @@ class User(Table['User', UserTypes.id, UserCreateAdmin, UserUpdateAdmin], UserID
     @ classmethod
     @api_endpoint
     async def is_username_available(cls, session: Session, username: UserTypes.username) -> bool:
-        if await cls.get_one_by_key_values(session, {'username': username}):
+        if await cls.get_one(session, filters={'username': username}):
             return False
         return True
 
@@ -420,7 +487,7 @@ class User(Table['User', UserTypes.id, UserCreateAdmin, UserUpdateAdmin], UserID
 
     @ classmethod
     async def is_email_available(cls, session: Session, email: UserTypes.email) -> bool:
-        if await cls.get_one_by_key_values(session, {'email': email}):
+        if await cls.get_one(session, filters={'email': email}):
             return False
         return True
 
@@ -639,6 +706,14 @@ class UserAccessToken(Table['UserAccessToken', UserAccessTokenTypes.id, UserAcce
     user: User = Relationship(
         back_populates='user_access_tokens')
 
+    _ROUTER_TAG: typing.ClassVar[str] = 'User Access Token'
+    _CRUD_ROUTER_ID_KEY = 'user_access_token_id'
+    _CRUD_ROUTER_RESPONSE_MODELS = {
+    }
+
+    _CREATE_ADMIN_MODEL: typing.ClassVar = UserAccessTokenCreateAdmin
+    _UPDATE_ADMIN_MODEL: typing.ClassVar = UserAccessTokenUpdateAdmin
+
     @classmethod
     async def _check_authorization_post(cls, **kwargs):
         if not kwargs['admin']:
@@ -734,6 +809,12 @@ class ApiKey(Table['ApiKey', ApiKeyTypes.id, ApiKeyCreateAdmin, ApiKeyUpdateAdmi
 
     async def get_scope_ids(self) -> list[client.ScopeTypes.id]:
         return [api_key_scope.scope_id for api_key_scope in self.api_key_scopes]
+
+    _ROUTER_TAG: typing.ClassVar[str] = 'Api Key'
+    _CRUD_ROUTER_ID_KEY: typing.ClassVar[str] = 'api_key_id'
+    _CRUD_ROUTER_RESPONSE_MODELS: typing.ClassVar[dict[CrudRouterEndpoint, BaseModel]] = {
+    }
+    _CREATE_ADMIN_MODEL: typing.ClassVar[BaseModel] = ApiKeyCreateAdmin
 
     @classmethod
     async def create(cls, **kwargs) -> typing.Self:
@@ -842,6 +923,8 @@ class ApiKeyScope(Table['ApiKeyScope', ApiKeyScopeID, ApiKeyScopeCreateAdmin, Ap
 
     api_key: ApiKey = Relationship(
         back_populates='api_key_scopes')
+
+    _ROUTER_TAG: typing.ClassVar[str] = 'Api Key Scope'
 
     @classmethod
     async def create(cls, **kwargs):
@@ -987,6 +1070,16 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
     image_versions: list['ImageVersion'] = Relationship(
         back_populates='gallery', cascade_delete=True)
 
+    _ROUTER_TAG: typing.ClassVar[str] = 'Gallery'
+    _CRUD_ROUTER_ID_KEY: typing.ClassVar[str] = 'gallery_id'
+    _CRUD_ROUTER_RESPONSE_MODELS: typing.ClassVar[dict[CrudRouterEndpoint, BaseModel]] = {
+    }
+
+    _CREATE_MODEL: typing.ClassVar[BaseModel] = GalleryCreate
+    _CREATE_ADMIN_MODEL: typing.ClassVar[BaseModel] = GalleryCreateAdmin
+    _UPDATE_MODEL: typing.ClassVar[BaseModel] = GalleryUpdate
+    _UPDATE_ADMIN_MODEL: typing.ClassVar[BaseModel] = GalleryUpdateAdmin
+
     @ property
     def folder_name(self) -> GalleryTypes.folder_name:
         if self.parent_id is None and self.name == 'root':
@@ -1023,11 +1116,11 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
 
     @ classmethod
     async def get_root_gallery(cls, session: Session, user_id: GalleryTypes.user_id) -> typing.Self | None:
-        return await cls.get_one_by_key_values(session, {'user_id': user_id, 'parent_id': None})
+        return await cls.get_one(session, filters={'user_id': user_id, 'parent_id': None})
 
     @ classmethod
     async def is_available(cls, session: Session, gallery_available_admin: GalleryAvailableAdmin) -> bool:
-        return not await cls.get_one_by_key_values(session, gallery_available_admin.model_dump())
+        return not await cls.get_one(session, filters=gallery_available_admin.model_dump())
 
     @ classmethod
     async def api_get_is_available(cls, session: Session, gallery_available_admin: GalleryAvailableAdmin) -> None:
@@ -1203,7 +1296,7 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
 
                     parent_id = None
                     if version is not None:
-                        image_version_og = await ImageVersion.get_one_by_key_values(session, {'gallery_id': self.id, 'base_name': base_name, 'version': None})
+                        image_version_og = await ImageVersion.get_one(session, filters={'gallery_id': self.id, 'base_name': base_name, 'version': None})
 
                         # if an original exists, assume the version wants to link as the parent
                         if image_version_og:
@@ -1216,7 +1309,7 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
                         'parent_id': parent_id
                     }
 
-                    image_version = await ImageVersion.get_one_by_key_values(session, image_version_kwargs)
+                    image_version = await ImageVersion.get_one(session, filters=image_version_kwargs)
 
                     # this if the first file of this version
                     if not image_version:

@@ -46,6 +46,15 @@ def jwt_decode(token: str):
     return jwt.decode(token, c.jwt_secret_key, algorithms=[c.jwt_algorithm])
 
 
+class PaginationParams(BaseModel):
+    limit: int
+    offset: int
+
+
+def get_pagination_params(limit: int = Query(10, ge=1, le=100), offset: int = Query(0, ge=0)):
+    return PaginationParams(limit=limit, offset=offset)
+
+
 class OAuth2PasswordBearerMultiSource(OAuth2):
     def __init__(
         self,
@@ -386,8 +395,8 @@ class LoginWithEmailMagicLinkRequest(BaseModel):
 async def send_magic_link_to_email(model: LoginWithEmailMagicLinkRequest):
 
     with Session(c.db_engine) as session:
-        user = await models.User.get_one_by_key_values(
-            session, {'email': model.email})
+        user = session.exec(select(models.User).where(
+            models.User.email == model.email)).one_or_none()
 
         if user:
             user_access_token = await models.UserAccessToken.api_post(
@@ -472,7 +481,9 @@ async def login_with_google(request_token: GoogleAuthRequest, response: Response
         raise HTTPException(status.HTTP_400_BAD_REQUEST,
                             detail='Invalid token')
     with Session(c.db_engine) as session:
-        user = await models.User.get_one_by_key_values(session, {'email': email})
+
+        user = session.exec(select(models.User).where(
+            models.User.email == email)).one_or_none()
         if not user:
             user = await models.User.api_post(session=session, c=c, authorized_user_id=None, admin=False, create_model=models.UserCreateAdmin(email=email))
 
@@ -511,266 +522,252 @@ async def logout(response: Response, authorization: typing.Annotated[GetAuthoriz
 # # USERS
 
 
-@app.get('/admin/users/{user_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
-async def get_user_by_id_admin(
-    user_id: models.UserTypes.id,
+class B(typing.TypedDict):
+    get_authorization_kwargs: GetAuthorizationKwargs
+
+
+A = dict[models.CrudRouterEndpoint, B]
+
+
+class CRUDRouter[IdType, TPost: BaseModel, TPostAdmin: BaseModel, TPatch: BaseModel, TPatchAdmin: BaseModel]:
+
+    def __init__(self, table: models.Table, router: APIRouter, prefix: str = ''):
+        self.table = table
+        self.router = router
+        self.prefix = prefix
+        pass
+
+    def add_routes(self, endpoints: tuple[models.CrudRouterEndpoint], config: A = {}):
+
+        for endpoint in endpoints:
+
+            admin = True if endpoint in models.CRUD_ROUTER_ADMIN_ENDPOINTS else False
+            response_model = self.table.get_response_model(endpoint)
+            get_authorization_kwargs: GetAuthorizationKwargs = config.get(
+                endpoint, {}).get('get_authorization_kwargs', {})
+
+            path = '{}/'.format(self.prefix)
+            tags = [self.table._ROUTER_TAG]
+
+            if admin:
+                path = '/admin{}'.format(path)
+                required_scopes = get_authorization_kwargs.get(
+                    'required_scopes', set())
+                required_scopes.add('admin')
+                get_authorization_kwargs['required_scopes'] = required_scopes
+                tags += ['Admin']
+
+            if endpoint.endswith('get') or endpoint.endswith('delete') or endpoint.endswith('patch'):
+                path += f'{{{self.table._CRUD_ROUTER_ID_KEY}}}/'
+
+            if endpoint in {'get', 'admin_get'}:
+                summary = 'Get {} by ID'.format(self.table.__tablename__)
+                summary += ' (admin)' if admin else ''
+                operation_id = '{}_read'.format(
+                    self.table.__tablename__) + ('_admin' if admin else '')
+
+                @self.router.get(path,
+                                 response_model=response_model,
+                                 responses={status.HTTP_404_NOT_FOUND: {
+                                     "description": self.table.not_found_message(), 'model': NotFoundResponse}},
+                                 summary=summary,
+                                 tags=tags,
+                                 operation_id=operation_id
+                                 )
+                async def read(
+                    id_value: IdType,
+                    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+                        get_authorization(**get_authorization_kwargs))]
+                ):
+                    with Session(c.db_engine) as session:
+                        return await self.table.api_get(session=session, c=c, authorized_user_id=None if not authorization.isAuthorized else authorization.auth_credential._id, id=id_value, admin=admin)
+
+            elif endpoint in {'post', 'admin_post'}:
+                summary = 'Create a new {}'.format(self.table.__tablename__)
+                summary += ' (admin)' if admin else ''
+                operation_id = '{}_create'.format(
+                    self.table.__tablename__) + ('_admin' if admin else '')
+
+                @self.router.post(path,
+                                  response_model=response_model,
+                                  responses={status.HTTP_409_CONFLICT: {
+                                      "description": self.table.already_exists_message(), 'model': DetailOnlyResponse}},
+                                  summary=summary,
+                                  tags=tags,
+                                  operation_id=operation_id
+                                  )
+                async def create(
+                    model: TPost,
+                    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+                        get_authorization(**get_authorization_kwargs))]
+                ):
+                    with Session(c.db_engine) as session:
+                        return await self.table.api_post(session=session, c=c, authorized_user_id=None if not authorization.isAuthorized else authorization.auth_credential._id, admin=admin, create_model=self.table._CREATE_ADMIN_MODEL(**model.model_dump(exclude_unset=True)))
+
+            elif endpoint in {'patch', 'admin_patch'}:
+                summary = 'Update {} by ID'.format(self.table.__tablename__)
+                summary += ' (admin)' if admin else ''
+                operation_id = '{}_update'.format(
+                    self.table.__tablename__) + ('_admin' if admin else '')
+
+                @self.router.patch(path,
+                                   response_model=response_model,
+                                   responses={status.HTTP_404_NOT_FOUND: {"description": self.table.not_found_message(), 'model': NotFoundResponse}, status.HTTP_409_CONFLICT: {
+                                       "description": self.table.already_exists_message(), 'model': DetailOnlyResponse}},
+                                   summary=summary,
+                                   tags=tags,
+                                   operation_id=operation_id
+                                   )
+                async def update(
+                    id_value: IdType,
+                    model: TPatch,
+                    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+                        get_authorization(**get_authorization_kwargs))]
+
+                ):
+                    with Session(c.db_engine) as session:
+                        return await self.table.api_patch(session=session, c=c, authorized_user_id=None if not authorization.isAuthorized else authorization.auth_credential._id, id=id_value, admin=admin, update_model=self.table._UPDATE_ADMIN_MODEL(**model.model_dump(exclude_unset=True)))
+
+            elif endpoint in {'delete', 'admin_delete'}:
+                summary = 'Delete {} by ID'.format(self.table.__tablename__)
+                summary += ' (admin)' if admin else ''
+                operation_id = '{}_delete'.format(
+                    self.table.__tablename__) + ('_admin' if admin else '')
+
+                @self.router.delete(path,
+                                    status_code=status.HTTP_204_NO_CONTENT,
+                                    responses={status.HTTP_404_NOT_FOUND: {
+                                        "description": self.table.not_found_message(), 'model': NotFoundResponse}},
+                                    summary=summary,
+                                    tags=tags,
+                                    operation_id=operation_id
+                                    )
+                async def delete(
+                    id_value: IdType,
+                    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+                        get_authorization(**get_authorization_kwargs))]
+                ):
+                    with Session(c.db_engine) as session:
+                        return await self.table.api_delete(session=session, c=c, authorized_user_id=None if not authorization.isAuthorized else authorization.auth_credential._id, id=id_value, admin=admin)
+
+            else:
+                raise Exception(
+                    'invalid endpoint type of type {}'.format(endpoint))
+
+
+# Users
+user_router = APIRouter()
+user_router_crud = CRUDRouter[models.UserTypes.id, models.User._CREATE_MODEL, models.User._CREATE_ADMIN_MODEL,
+                              models.User._UPDATE_MODEL, models.User._UPDATE_ADMIN_MODEL](models.User, user_router, '/users')
+
+
+user_router_crud.add_routes(('get', 'post', 'patch', 'delete'), {
+                            'get': {'get_authorization_kwargs': {'raise_exceptions': False}}})
+
+
+@user_router.get('/users/', tags=[models.User._ROUTER_TAG], summary='Get all users')
+async def get_users(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(required_scopes={'admin'}))]
-) -> models.User:
+        get_authorization(raise_exceptions=False))],
+    pagination: PaginationParams = Depends(get_pagination_params),
+) -> list[models.UserPublic]:
+
     with Session(c.db_engine) as session:
-        return await models.User.api_get(session=session, c=c, authorized_user_id=authorization.user.id, id=user_id, admin=True)
+
+        users = session.exec(select(models.User).where(
+            models.User.username != None).offset(pagination.offset).limit(pagination.limit)).all()
+        return [models.UserPublic.model_validate(user) for user in users]
 
 
-@app.post('/admin/users/', responses={status.HTTP_409_CONFLICT: {"description": 'User already exists', 'model': DetailOnlyResponse}})
-async def post_user_admin(
-    user_create_admin: models.UserCreateAdmin,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(required_scopes={'admin'}))]
-) -> models.User:
-    with Session(c.db_engine) as session:
-        return await models.User.api_post(session=session, c=c, authorized_user_id=authorization.user.id, admin=True, create_model=user_create_admin)
-
-
-@app.patch('/admin/users/{user_id}/')
-async def patch_user_admin(
-    user_id: models.UserTypes.id,
-    user_update_admin: models.UserUpdateAdmin,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(required_scopes={'admin'}))]
-) -> models.User:
-    with Session(c.db_engine) as session:
-        return models.User.api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=user_id, admin=True, update_model=user_update_admin)
-
-
-@app.delete('/admin/users/{user_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user_admin(
-    user_id: models.UserTypes.id,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(required_scopes={'admin'}))]
-):
-    with Session(c.db_engine) as session:
-        return await models.User.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=user_id, admin=True)
-
-
-@ app.get('/users/available/username/{username}/')
+@ user_router.get('/available/username/{username}/',
+                  responses={status.HTTP_409_CONFLICT: {
+                      "description": 'Username already exists', 'model': DetailOnlyResponse}},
+                  summary='Check if a username is available')
 async def user_username_available(username: models.UserTypes.username):
     with Session(c.db_engine) as session:
         return await models.User.api_get_is_username_available(session, username)
 
 
-@ app.get('/users/available/email/{email}/')
+@ user_router.get('/available/email/{email}/',
+                  responses={status.HTTP_409_CONFLICT: {
+                      "description": 'Email already exists', 'model': DetailOnlyResponse}},
+                  summary='Check if an email is available')
 async def user_email_available(email: models.UserTypes.email):
     with Session(c.db_engine) as session:
         await models.User.api_get_is_email_available(session, email)
 
-
-@app.get('/user/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
-async def get_user(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> models.UserPrivate:
-    with Session(c.db_engine) as session:
-        return models.UserPrivate.model_validate(await models.User.api_get(session=session, c=c, authorized_user_id=authorization.user.id, id=authorization.user.id))
+user_router_crud.add_routes(
+    ('admin_get', 'admin_post', 'admin_patch', 'admin_delete'))
 
 
-@app.get('/users/{user_id}/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
-async def get_user_by_id(
-    user_id: models.UserTypes.id,
+@user_router.get('/admin/users/', tags=[models.User._ROUTER_TAG], summary='Get all users (admin)')
+async def get_users(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=False))]
-) -> models.UserPublic:
+        get_authorization(required_scopes={'admin'}))],
+    pagination: PaginationParams = Depends(get_pagination_params),
+) -> list[models.UserPublic]:
+
     with Session(c.db_engine) as session:
-        return models.UserPublic.model_validate(await models.User.api_get(session=session, c=c, authorized_user_id=None if not authorization.isAuthorized else authorization.user.id, id=user_id, admin=False))
+        users = session.exec(select(models.User).offset(
+            pagination.offset).limit(pagination.limit)).all()
+        return [models.UserPublic.model_validate(user) for user in users]
 
 
-@app.patch('/user/')
-async def patch_user(
-    user_update: models.UserUpdate,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization())]
-) -> models.UserPrivate:
-    with Session(c.db_engine) as session:
-        return models.UserPrivate.model_validate(await models.User.api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=authorization.user.id, admin=False, update_model=user_update.model_dump(exclude_unset=True)))
+app.include_router(user_router)
 
 
-@ app.patch('/users/{user_id}/', responses={
-    status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse},
-    status.HTTP_409_CONFLICT: {"description": 'Username or email already exists', 'model': DetailOnlyResponse},
-})
-async def patch_user_by_id(
-    user_id: models.UserTypes.id,
-    user_update: models.UserUpdate,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization())]
-) -> models.UserPrivate:
-    with Session(c.db_engine) as session:
-        return models.UserPrivate.model_validate(await models.UserUpdateAdmin(**user_update.model_dump(exclude_unset=True)).api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=user_id, admin=True))
-
-
-@ app.delete('/user/', status_code=status.HTTP_204_NO_CONTENT, responses={
-    status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}}
-)
-async def delete_user(
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization())]
-) -> Response:
-    with Session(c.db_engine) as session:
-        return await models.User.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=authorization.user.id, admin=False)
-
-#
 # User Access Tokens
-#
+
+user_access_token_router = APIRouter()
+user_access_token_router_crud = CRUDRouter[models.UserAccessTokenTypes.id, models.UserAccessToken._CREATE_MODEL, models.UserAccessToken._CREATE_ADMIN_MODEL,
+                                           models.UserAccessToken._UPDATE_MODEL, models.UserAccessToken._UPDATE_ADMIN_MODEL](models.UserAccessToken, user_access_token_router, '/user-access-tokens')
+user_access_token_router_crud.add_routes(
+    ('get', 'post', 'patch', 'delete'))
+
+WrongUserPermissionUserAccessToken = HTTPException(
+    status.HTTP_403_FORBIDDEN, detail='User does not have permission to view another user\'s access tokens')
 
 
-@app.get('/admin/user-access-tokens/{user_access_token_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.UserAccessToken.not_found_message(), 'model': NotFoundResponse}})
-async def get_user_access_token_by_id_admin(
-    user_access_token_id: models.UserAccessTokenTypes.id,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(required_scopes={'admin'}))]
-) -> models.UserAccessToken:
-    with Session(c.db_engine) as session:
-        return await models.UserAccessToken.api_get(session=session, c=c, authorized_user_id=authorization.user.id, id=user_access_token_id, admin=True)
-
-
-@app.post('/admin/user-access-tokens/', responses={status.HTTP_409_CONFLICT: {"description": models.UserAccessToken.already_exists_message(), 'model': DetailOnlyResponse}})
-async def post_user_access_token_admin(
-    user_access_token_create_admin: models.UserAccessTokenCreateAdmin,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(required_scopes={'admin'}))]
-) -> models.UserAccessToken:
-    with Session(c.db_engine) as session:
-        return user_access_token_create_admin.api_post(session=session, c=c, authorized_user_id=authorization.user.id, admin=True)
-
-
-@app.patch('/admin/user-access-tokens/{user_access_token_id}/')
-async def patch_user_access_token_admin(
-    user_access_token_id: models.UserAccessTokenTypes.id,
-    user_access_token_update_admin: models.UserAccessTokenUpdateAdmin,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(required_scopes={'admin'}))]
-) -> models.User:
-    with Session(c.db_engine) as session:
-        return user_access_token_update_admin.api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=user_access_token_id, admin=True)
-
-
-@app.delete('/admin/user-access-tokens/{user_access_token_id}/', status_code=status.HTTP_204_NO_CONTENT, responses={status.HTTP_404_NOT_FOUND: {"description": models.UserAccessToken.not_found_message(), 'model': NotFoundResponse}})
-async def delete_user_admin(
-    user_access_token_id: models.UserAccessTokenTypes.id,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(required_scopes={'admin'}))]
-):
-    with Session(c.db_engine) as session:
-        return await models.UserAccessToken.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=user_access_token_id, admin=True)
-
-
-@ app.get('/user-access-tokens/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+@ user_access_token_router.get(f'/users/{{{models.User._CRUD_ROUTER_ID_KEY}}}/access-tokens/', tags=[models.UserAccessToken._ROUTER_TAG, models.User._ROUTER_TAG], responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}, WrongUserPermissionUserAccessToken.status_code: {'description': WrongUserPermissionUserAccessToken.detail, 'model': DetailOnlyResponse}})
 async def get_user_access_tokens(
-        authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> list[models.UserAccessToken]:
-    with Session(c.db_engine) as session:
-        return (await models.User.api_get(session=session, c=c, authorized_user_id=authorization.user.id, id=authorization.user.id, admin=False)).user_access_tokens
-
-
-@app.delete('/user-access-tokens/{user_access_token_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user_access_token(
-        user_access_token_id: models.UserAccessTokenTypes.id,
-        authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]):
-
-    with Session(c.db_engine) as session:
-        return await models.UserAccessToken.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=user_access_token_id, admin=False)
-
-#
-# API Keys
-#
-
-
-@app.get('/admin/api-keys/{api_key_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.ApiKey.not_found_message(), 'model': NotFoundResponse}})
-async def get_api_key_by_id_admin(
-    api_key_id: models.ApiKeyTypes.id,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(required_scopes={'admin'}))]
-) -> models.ApiKey:
-    with Session(c.db_engine) as session:
-        return await models.ApiKey.api_get(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=True)
-
-
-@app.post('/admin/api-keys/', responses={status.HTTP_409_CONFLICT: {"description": 'User already exists', 'model': DetailOnlyResponse}})
-async def post_api_key_admin(
-    api_key_create_admin: models.ApiKeyCreateAdmin,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(required_scopes={'admin'}))],
-) -> models.ApiKey:
-    with Session(c.db_engine) as session:
-        return await api_key_create_admin.api_post(session=session, c=c, authorized_user_id=authorization.user.id, admin=True)
-
-
-@app.get('/admin/api-keys/available/')
-async def get_is_api_key_available_admin(
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(required_scopes={'admin'}))],
-    api_key_available_admin: models.ApiKeyAvailableAdmin = Depends(),
-):
-    with Session(c.db_engine) as session:
-        return await models.ApiKey.api_get_is_available(session=session, c=c, authorized_user_id=authorization.user.id, model=api_key_available_admin, admin=True)
-
-
-@app.get('/api-keys/available/')
-async def get_is_api_key_available(
+    id_value: models.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())],
-    api_key_available: models.ApiKeyAvailable = Depends(),
-):
+    pagination: PaginationParams = Depends(get_pagination_params),
+) -> list[models.UserAccessToken]:
     with Session(c.db_engine) as session:
-        await models.ApiKey.api_get_is_available(session, models.ApiKeyAvailableAdmin(
-            **api_key_available.model_dump(exclude_unset=True), user_id=authorization.user.id
-        ))
+
+        if c.scope_name_mapping['admin'] not in authorization.scope_ids:
+            if id_value != authorization.user.id:
+                raise HTTPException(status.HTTP_403_FORBIDDEN,
+                                    detail='User does not have permission to view another user\'s access tokens')
+
+        user_access_tokens = session.exec(select(models.UserAccessToken).where(
+            models.UserAccessToken.user_id == id_value).offset(pagination.offset).limit(pagination.limit)).all()
+
+        return user_access_tokens
 
 
-@ app.get('/api-keys/', responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
-async def get_api_keys(
-        authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> list[models.ApiKey]:
-    with Session(c.db_engine) as session:
-        return (await models.User.api_get(session=session, c=c, authorized_user_id=authorization.user.id, id=authorization.user.id, admin=False)).api_keys
+user_access_token_router_crud.add_routes(
+    ('admin_get', 'admin_post', 'admin_patch', 'admin_delete'))
 
 
-@app.get('/api-keys/{api_key_id}')
-async def get_api_key_by_id(
-    api_key_id: models.ApiKeyTypes.id,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization())]
-) -> models.ApiKey:
-    with Session(c.db_engine) as session:
-        return await models.ApiKey.api_get(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=False)
+app.include_router(user_access_token_router)
 
+# API Keys
 
-@app.post('/api-keys/')
-async def post_api_key(
-        api_key_create: models.ApiKeyCreate,
-        authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> models.ApiKey:
+api_key_router = APIRouter()
+api_key_router_crud = CRUDRouter[models.ApiKeyTypes.id, models.ApiKey._CREATE_MODEL, models.ApiKey._CREATE_ADMIN_MODEL,
+                                 models.ApiKey._UPDATE_MODEL, models.ApiKey._UPDATE_ADMIN_MODEL](models.ApiKey, api_key_router, '/api-keys')
 
-    with Session(c.db_engine) as session:
-        return await models.ApiKeyCreateAdmin(**api_key_create.model_dump(exclude_unset=True), user_id=authorization.user.id).api_post(session=session, c=c, authorized_user_id=authorization.user.id, admin=False)
-
-
-@app.patch('/api-keys/{api_key_id}/')
-async def patch_api_key(
-        api_key_id: models.ApiKeyTypes.id,
-        api_key_update: models.ApiKeyUpdate,
-        authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> models.ApiKey:
-
-    with Session(c.db_engine) as session:
-        return await models.ApiKeyUpdateAdmin(**api_key_update.model_dump(exclude_unset=True)).api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=False)
-
-
-@ app.delete('/api-keys/{api_key_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_api_key(
-    api_key_id: models.ApiKeyTypes.id,
-        authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]):
-    with Session(c.db_engine) as session:
-        return await models.ApiKey.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=False)
+api_key_router_crud.add_routes(('get', 'post', 'patch', 'delete'))
 
 
 class ApiKeyJWTResponse(BaseModel):
     jwt: str
 
 
-@app.get('/api-keys/{api_key_id}/generate-jwt/', responses={status.HTTP_404_NOT_FOUND: {"description": models.ApiKey.not_found_message(), 'model': NotFoundResponse}})
+@ api_key_router.get('/{api_key_id}/generate-jwt/', responses={status.HTTP_404_NOT_FOUND: {"description": models.ApiKey.not_found_message(), 'model': NotFoundResponse}})
 async def get_api_key_jwt(
     api_key_id: models.ApiKeyTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
@@ -782,22 +779,77 @@ async def get_api_key_jwt(
             jwt=jwt_encode(api_key.export_to_jwt())
         )
 
+UserNotPermittedToViewAnotherUserApiKeys = HTTPException(
+    status.HTTP_403_FORBIDDEN, detail='User does not have permission to view another user\'s API keys')
 
-@app.post('/api-keys/{api_key_id}/scopes/{scope_id}/', status_code=status.HTTP_204_NO_CONTENT)
+
+@api_key_router.get(f'/users/{{{models.User._CRUD_ROUTER_ID_KEY}}}/api-keys/', tags=[models.User._ROUTER_TAG], responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}, UserNotPermittedToViewAnotherUserApiKeys.status_code: {'description': UserNotPermittedToViewAnotherUserApiKeys.detail, 'model': DetailOnlyResponse}})
+async def get_user_api_keys(
+    id_value: models.UserTypes.id,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization())],
+    pagination: PaginationParams = Depends(get_pagination_params),
+) -> list[models.ApiKeyPrivate]:
+
+    if c.scope_name_mapping['admin'] not in authorization.scope_ids:
+        if id_value != authorization.user.id:
+            raise UserNotPermittedToViewAnotherUserApiKeys
+
+    with Session(c.db_engine) as session:
+        user_api_keys = session.exec(select(models.ApiKey).where(
+            models.ApiKey.user_id == id_value).offset(pagination.offset).limit(pagination.limit)).all()
+        return [models.ApiKeyPrivate.model_validate(api_key) for api_key in user_api_keys]
+
+
+@api_key_router.get(f'/users/{{{models.User._CRUD_ROUTER_ID_KEY}}}/api-keys/available/', tags=[models.ApiKey._ROUTER_TAG, models.User._ROUTER_TAG], responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}, UserNotPermittedToViewAnotherUserApiKeys.status_code: {'description': UserNotPermittedToViewAnotherUserApiKeys.detail, 'model': DetailOnlyResponse}})
+async def get_is_api_key_available(
+    id_value: models.UserTypes.id,
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization())],
+    api_key_available: models.ApiKeyAvailable = Depends(),
+):
+
+    if c.scope_name_mapping['admin'] not in authorization.scope_ids:
+        if id_value != authorization.user.id:
+            raise UserNotPermittedToViewAnotherUserApiKeys
+
+    with Session(c.db_engine) as session:
+        await models.ApiKey.api_get_is_available(session, models.ApiKeyAvailableAdmin(
+            **api_key_available.model_dump(exclude_unset=True), user_id=authorization.user.id
+        ))
+
+
+api_key_router_crud.add_routes(
+    ('admin_get', 'admin_post', 'admin_patch', 'admin_delete'))
+
+app.include_router(api_key_router)
+
+# API Key Scope
+
+api_key_scope_router = APIRouter()
+
+
+@ api_key_scope_router.post('/api-keys/{api_key_id}/scopes/{scope_id}/',
+                            responses={status.HTTP_404_NOT_FOUND: {
+                                "description": models.ApiKey.not_found_message(), 'model': NotFoundResponse}},
+                            summary='Add a scope to an API key',
+                            tags=[models.ApiKeyScope._ROUTER_TAG]
+                            )
 async def add_scope_to_api_key(
     api_key_id: models.ApiKeyTypes.id,
     scope_id: client.ScopeTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())]
 ):
-
     with Session(c.db_engine) as session:
-        api_key_scope = await models.ApiKeyScopeCreateAdmin(api_key_id=api_key_id, scope_id=scope_id).api_post(
-            session=session, c=c, authorized_user_id=authorization.user.id, admin=False)
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
+        return await models.ApiKeyScope.api_post(session=session, c=c, authorized_user_id=authorization.user.id, create_model=models.ApiKeyScopeCreateAdmin(api_key_id=api_key_id, scope_id=scope_id), admin=c.scope_name_mapping['admin'] in authorization.scope_ids)
 
 
-@app.delete('/api-keys/{api_key_id}/scopes/{scope_id}/', status_code=status.HTTP_204_NO_CONTENT)
+@ api_key_scope_router.delete('/api-keys/{api_key_id}/scopes/{scope_id}/',
+                              status_code=status.HTTP_204_NO_CONTENT,
+                              summary='Remove a scope from an API key',
+                              tags=[models.ApiKeyScope._ROUTER_TAG]
+                              )
 async def remove_scope_from_api_key(
     api_key_id: models.ApiKeyTypes.id,
     scope_id: client.ScopeTypes.id,
@@ -805,149 +857,68 @@ async def remove_scope_from_api_key(
         get_authorization())]
 ):
     with Session(c.db_engine) as session:
-        return await models.ApiKeyScope.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=(api_key_id, scope_id), admin=False)
+        return await models.ApiKeyScope.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=models.ApiKeyScopeIdBase(api_key_id=api_key_id, scope_id=scope_id)._id, admin=c.scope_name_mapping['admin'] in authorization.scope_ids)
+
+
+app.include_router(api_key_scope_router)
+
 
 # galleries
 
 
-@app.get('/admin/galleries/{gallery_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.Gallery.not_found_message(), 'model': NotFoundResponse}})
-async def get_gallery_by_id_admin(
-    gallery_id: models.GalleryTypes.id,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(required_scopes={'admin'}))]
-) -> models.Gallery:
-    with Session(c.db_engine) as session:
-        return await models.Gallery.api_get(session=session, c=c, authorized_user_id=authorization.user.id, id=gallery_id, admin=True)
+gallery_router = APIRouter()
+
+gallery_router_crud = CRUDRouter[models.GalleryTypes.id, models.GalleryCreate, models.GalleryCreateAdmin,
+                                 models.GalleryUpdate, models.GalleryUpdateAdmin](models.Gallery, gallery_router, '/galleries')
 
 
-@app.post('/admin/galleries/', responses={status.HTTP_409_CONFLICT: {"description": 'Gallery already exists', 'model': DetailOnlyResponse}})
-async def post_gallery_admin(
-    gallery_create_admin: models.GalleryCreateAdmin,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(required_scopes={'admin'}))]
-) -> models.Gallery:
-    with Session(c.db_engine) as session:
-        return await gallery_create_admin.api_post(session=session, c=c, authorized_user_id=authorization.user.id, admin=True)
+gallery_router_crud.add_routes(('get', 'post', 'patch', 'delete'))
 
 
-@app.patch('/admin/galleries/{gallery_id}/', responses={status.HTTP_404_NOT_FOUND: {"description": models.Gallery.not_found_message(), 'model': NotFoundResponse}})
-async def patch_gallery_admin(
-    gallery_id: models.GalleryTypes.id,
-    gallery_update_admin: models.GalleryUpdateAdmin,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(required_scopes={'admin'}))]
-) -> models.Gallery:
-    with Session(c.db_engine) as session:
-        return gallery_update_admin.api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=gallery_id, admin=True)
-
-
-@app.delete('/admin/galleries/{gallery_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_gallery_admin(
-    gallery_id: models.GalleryTypes.id,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(required_scopes={'admin'}))]
-) -> Response:
-    with Session(c.db_engine) as session:
-        return await models.Gallery.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=gallery_id, admin=True)
-
-
-@app.get('/admin/galleries/available/')
-async def get_is_gallery_available_admin(
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(required_scopes={'admin'}))],
-    gallery_available_admin: models.GalleryAvailableAdmin = Depends(),
-):
-    with Session(c.db_engine) as session:
-        return await models.Gallery.api_get_is_available(session, gallery_available_admin)
-
-
-@app.get('/galleries/available/')
+@app.get(f'/users/{{{models.User._CRUD_ROUTER_ID_KEY}}}/galleries/available/', tags=[models.Gallery._ROUTER_TAG, models.User._ROUTER_TAG], responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
 async def get_is_gallery_available(
+    id_value: models.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())],
     gallery_available: models.GalleryAvailable = Depends(),
 ):
+
+    if c.scope_name_mapping['admin'] not in authorization.scope_ids:
+        if id_value != authorization.user.id:
+            raise HTTPException(status.HTTP_403_FORBIDDEN,
+                                detail='User does not have permission to check gallery availability for another user')
+
     with Session(c.db_engine) as session:
         return await models.Gallery.api_get_is_available(session, models.GalleryAvailableAdmin(
-            **gallery_available.model_dump(exclude_unset=True), user_id=authorization.user.id
+            **gallery_available.model_dump(exclude_unset=True), user_id=id_value
         ))
 
 
-@ app.get('/galleries/')
-async def get_galleries(
+@app.get(f'/users/{{{models.User._CRUD_ROUTER_ID_KEY}}}/galleries/', tags=[models.Gallery._ROUTER_TAG, models.User._ROUTER_TAG], responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+async def get_user_galleries(
+    id_value: models.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization())]
-) -> models.PluralGalleriesDict:
+        get_authorization(raise_exceptions=False))],
+    pagination: PaginationParams = Depends(get_pagination_params),
+) -> list[models.GalleryPublic]:
 
     with Session(c.db_engine) as session:
 
-        user = await models.User.api_get(session=session, c=c, authorized_user_id=authorization.user.id, id=authorization.user.id, admin=False)
+        if id_value != authorization.user.id and c.scope_name_mapping['admin'] not in authorization.scope_ids:
+            galleries = session.exec(select(models.Gallery).where(
+                models.Gallery.user_id == id_value).where(models.Gallery.visibility_level == c.visibility_level_name_mapping['public']).offset(pagination.offset).limit(pagination.limit)).all()
+        else:
+            galleries = session.exec(select(models.Gallery).where(
+                models.Gallery.user_id == id_value).offset(pagination.offset).limit(pagination.limit)).all()
 
-        galleries = user.galleries
-        gallery_permissions = user.gallery_permissions
-
-        galleries.append(
-            [gallery_permission.gallery for gallery_permission in gallery_permissions])
-
-        return models.Gallery.export_plural_to_dict(galleries)
-
-
-@ app.get('/galleries/{gallery_id}', responses={status.HTTP_404_NOT_FOUND: {"description": models.Gallery.not_found_message(), 'model': NotFoundResponse}})
-async def get_gallery(
-    gallery_id: models.GalleryTypes.id,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization(raise_exceptions=False))]
-) -> models.GalleryPublic:
-    with Session(c.db_engine) as session:
-        return models.GalleryPublic.model_validate(await models.Gallery.api_get(session=session, c=c, authorized_user_id=None if not authorization.isAuthorized else authorization.user.id, id=gallery_id))
-
-
-@ app.post('/galleries/', responses={status.HTTP_409_CONFLICT: {"description": models.Gallery.already_exists_message(), 'model': DetailOnlyResponse}})
-async def post_gallery(
-    gallery_create: models.GalleryCreate,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization())]
-) -> models.GalleryPrivate:
-    with Session(c.db_engine) as session:
-        return models.GalleryPrivate.model_validate(await models.GalleryCreateAdmin(
-            **gallery_create.model_dump(exclude_unset=True)).api_post(session=session, c=c, authorized_user_id=authorization.user.id, admin=False))
-
-
-@ app.patch('/galleries/{gallery_id}/', responses={
-    status.HTTP_403_FORBIDDEN: {"description": 'User does not have permission to update this gallery', 'model': DetailOnlyResponse},
-    status.HTTP_404_NOT_FOUND: {"description": models.Gallery.not_found_message(), 'model': NotFoundResponse},
-    status.HTTP_409_CONFLICT: {"description": models.Gallery.already_exists_message(), 'model': DetailOnlyResponse}}
-)
-async def patch_gallery(
-    gallery_id: models.GalleryTypes.id,
-    gallery_update: models.GalleryUpdate,
-    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-        get_authorization())]
-) -> models.Gallery:
-
-    with Session(c.db_engine) as session:
-        return await models.GalleryUpdateAdmin(**gallery_update.model_dump(exclude_unset=True)).api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=gallery_id, admin=False)
-
-
-@ app.delete('/galleries/{gallery_id}/', status_code=status.HTTP_204_NO_CONTENT, responses={
-    status.HTTP_403_FORBIDDEN: {"description": 'User does not have permission to delete this gallery', 'model': DetailOnlyResponse},
-    status.HTTP_404_NOT_FOUND: {
-        "description": models.Gallery.not_found_message(), 'model': NotFoundResponse}
-}
-)
-async def delete_gallery(gallery_id: models.GalleryTypes.id,
-                         authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-                             get_authorization())]
-                         ) -> Response:
-    with Session(c.db_engine) as session:
-        return await models.Gallery.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=gallery_id, admin=False)
+        return [models.GalleryPublic.model_validate(gallery) for gallery in galleries]
 
 
 class UploadFileToGalleryResponse(BaseModel):
     message: str
 
 
-@ app.post("/galleries/{gallery_id}/upload/", status_code=status.HTTP_201_CREATED)
+@ gallery_router.post("/{gallery_id}/upload/", status_code=status.HTTP_201_CREATED)
 async def upload_file_to_gallery(
     gallery_id: models.GalleryTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
@@ -979,7 +950,7 @@ async def upload_file_to_gallery(
     return UploadFileToGalleryResponse(message="Files uploaded successfully")
 
 
-@app.post('/galleries/{gallery_id}/sync/')
+@ gallery_router.post('/{gallery_id}/sync/')
 async def sync_gallery(
     gallery_id: models.GalleryTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
@@ -987,19 +958,28 @@ async def sync_gallery(
 ) -> DetailOnlyResponse:
 
     with Session(c.db_engine) as session:
-        gallery = await models.Gallery.api_get(session=session, c=c, authorized_user_id=authorization.user.id, id=gallery_id, admin=False)
+        gallery = await models.Gallery.api_get(session=session, c=c, authorized_user_id=authorization.user.id, id=gallery_id, admin=c.scope_name_mapping['admin'] in authorization.scope_ids)
         dir = await gallery.get_dir(session, c.galleries_dir)
         await gallery.sync_with_local(session, c, dir)
         return DetailOnlyResponse(detail='Synced gallery')
 
+
+gallery_router_crud.add_routes(
+    ('admin_get', 'admin_post', 'admin_patch', 'admin_delete'))
+app.include_router(gallery_router)
+
+
 # Pages
+
+
+pages_router = APIRouter(prefix='/pages')
 
 
 class GetProfilePageResponse(GetAuthReturn):
     user: models.UserPrivate | None = None
 
 
-@ app.get('/profile/page/')
+@ pages_router.get('/profile/')
 async def get_pages_profile(authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())]) -> GetProfilePageResponse:
 
@@ -1013,9 +993,8 @@ class GetHomePageResponse(GetAuthReturn):
     pass
 
 
-@ app.get('/home/page/')
+@ pages_router.get('/home/')
 async def get_home_page(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=False))]) -> GetHomePageResponse:
-
     return GetHomePageResponse(
         **get_auth(authorization).model_dump()
     )
@@ -1025,7 +1004,7 @@ class GetSettingsPageResponse(GetAuthReturn):
     pass
 
 
-@ app.get('/settings/page/')
+@ pages_router.get('/settings/')
 async def get_settings_page(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=False))]) -> GetSettingsPageResponse:
     return GetSettingsPageResponse(
         **get_auth(authorization).model_dump()
@@ -1037,7 +1016,7 @@ class GetSettingsApiKeysPageResponse(GetAuthReturn):
     api_key_scope_ids: dict[models.ApiKeyTypes.id, list[client.ScopeTypes.id]]
 
 
-@ app.get('/settings/api-keys/page/')
+@ pages_router.get('/settings/api-keys/')
 async def get_settings_page(
         authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> GetSettingsApiKeysPageResponse:
 
@@ -1058,7 +1037,7 @@ class GetStylesPageResponse(GetAuthReturn):
     pass
 
 
-@ app.get('/styles/page/')
+@pages_router.get('/styles/')
 async def get_styles_page(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=False))]) -> GetStylesPageResponse:
     return GetStylesPageResponse(
         **get_auth(authorization).model_dump()
@@ -1071,7 +1050,7 @@ class GetGalleryPageResponse(GetAuthReturn):
     children: list[models.GalleryPublic]
 
 
-@ app.get('/galleries/{gallery_id}/page/', responses={status.HTTP_404_NOT_FOUND: {"description": models.Gallery.not_found_message(), 'model': NotFoundResponse}})
+@ pages_router.get('/galleries/{gallery_id}/', responses={status.HTTP_404_NOT_FOUND: {"description": models.Gallery.not_found_message(), 'model': NotFoundResponse}})
 async def get_gallery_page(
     gallery_id: models.GalleryTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
@@ -1081,6 +1060,10 @@ async def get_gallery_page(
 
     if root:
         with Session(c.db_engine) as session:
+            if not authorization.isAuthorized:
+                raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                    detail=models.Gallery.not_found_message())
+
             gallery = await models.Gallery.get_root_gallery(session, authorization.user.id)
             gallery_id = gallery._id
 
@@ -1097,6 +1080,7 @@ async def get_gallery_page(
                 child) for child in gallery.children]
         )
 
+app.include_router(pages_router)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
