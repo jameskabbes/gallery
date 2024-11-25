@@ -48,11 +48,23 @@ class ApiPostMethodKwargs[TPost](ApiMethodBaseKwargs):
     create_model: TPost
 
 
+class CreateMethodKwargs[TPost](ApiMethodBaseKwargs):
+    create_model: TPost
+
+
 class ApiPatchMethodKwargs[IdType, TPatch](ApiMethodBaseKwargsWithId[IdType]):
     update_model: TPatch
 
 
+class UpdateMethodKwargs[TPatch](ApiMethodBaseKwargs):
+    update_model: TPatch
+
+
 class ApiDeleteMethodKwargs[IdType](ApiMethodBaseKwargsWithId[IdType]):
+    pass
+
+
+class DeleteMethodKwargs(ApiMethodBaseKwargs):
     pass
 
 
@@ -197,7 +209,6 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
     @classmethod
     def _build_conditions(cls, filters: dict[str, typing.Any]):
         conditions = []
-        print(filters)
         for key in filters:
             value = filters[key]
             if isinstance(value, list):
@@ -228,7 +239,7 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
         return result.rowcount
 
     @classmethod
-    async def create(cls, **kwargs: Unpack[ApiPostMethodKwargs[TPost]]) -> T:
+    async def create(cls, **kwargs: Unpack[CreateMethodKwargs[TPost]]) -> T:
 
         id = cls.generate_id()
         if len(cls._ID_COLS) == 1:
@@ -240,11 +251,11 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
             ** kwargs['create_model'].model_dump(),
         )
 
-    async def update(self, **kwargs: Unpack[ApiPatchMethodKwargs[IdType, TPatch]]):
+    async def update(self, **kwargs: Unpack[UpdateMethodKwargs[TPatch]]):
         self.sqlmodel_update(
             kwargs['update_model'].model_dump(exclude_unset=True))
 
-    async def delete(self, **kwargs: Unpack[ApiDeleteMethodKwargs[IdType]]):
+    async def delete(self, **kwargs: Unpack[DeleteMethodKwargs]):
         pass
 
     @ classmethod
@@ -280,7 +291,7 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
         await cls._check_authorization_post(**kwargs)
         await cls._check_validation_post(**kwargs)
 
-        instance = await cls.create(**kwargs)
+        instance = await cls.create(session=kwargs['session'], c=kwargs['c'], authorized_user_id=kwargs['authorized_user_id'], admin=kwargs['admin'], create_model=kwargs['create_model'])
         kwargs['session'].add(instance)
         kwargs['session'].commit()
         kwargs['session'].refresh(instance)
@@ -299,10 +310,10 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
     async def api_patch(self, **kwargs: typing.Unpack[ApiPatchMethodKwargs[IdType, TPatch]]):
 
         instance = await self._basic_api_get(kwargs['session'], kwargs['id'])
-        await instance._check_authorization_existing(**kwargs, method='patch')
+        await instance._check_authorization_existing(session=kwargs['session'], c=kwargs['c'], authorized_user_id=kwargs['authorized_user_id'], admin=kwargs['admin'], method='patch')
         await instance._check_validation_patch(**kwargs)
 
-        await instance.update(**kwargs)
+        await instance.update(session=kwargs['session'], c=kwargs['c'], authorized_user_id=kwargs['authorized_user_id'], admin=kwargs['admin'], update_model=kwargs['update_model'])
         kwargs['session'].add(instance)
         kwargs['session'].commit()
         kwargs['session'].refresh(instance)
@@ -316,8 +327,10 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
         await instance._check_authorization_existing(**kwargs, method='delete')
         await instance._check_validation_delete(**kwargs)
 
-        await kwargs['session'].delete(instance)
+        await instance.delete(session=kwargs['session'], c=kwargs['c'], authorized_user_id=kwargs['authorized_user_id'], admin=kwargs['admin'])
+        kwargs['session'].delete(instance)
         kwargs['session'].commit()
+
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -475,7 +488,7 @@ class User(Table['User', UserTypes.id, UserCreateAdmin, UserUpdateAdmin], UserID
 
     async def _check_authorization_existing(self, **kwargs: Unpack[CheckAuthorizationExistingKwargs[typing.Self]]):
         if not kwargs['admin']:
-            if self.id != kwargs['authorized_user_id']:
+            if self._id != kwargs['authorized_user_id']:
                 if self.is_public:
                     if kwargs['method'] == 'delete' or kwargs['method'] == 'patch':
                         raise HTTPException(
@@ -516,8 +529,9 @@ class User(Table['User', UserTypes.id, UserCreateAdmin, UserUpdateAdmin], UserID
             **kwargs['create_model'].model_dump(exclude=['password'])
         )
 
-        # root_gallery = await GalleryCreateAdmin(name='root', user_id=new_user.id, visibility_level=kwargs['c'].visibility_level_name_mapping['private']).api_post(**kwargs)
-        # deleted_gallery = await GalleryCreateAdmin(name='deleted', user_id=new_user.id, visibility_level=kwargs['c'].visibility_level_name_mapping['private'], parent_id=root_gallery._id).api_post(**kwargs)
+        root_gallery = await Gallery.api_post(session=kwargs['session'], c=kwargs['c'], authorized_user_id=new_user._id, admin=kwargs['admin'], create_model=GalleryCreateAdmin(
+            name='root', user_id=new_user._id, visibility_level=kwargs['c'].visibility_level_name_mapping['private']
+        ))
 
         return new_user
 
@@ -529,18 +543,16 @@ class User(Table['User', UserTypes.id, UserCreateAdmin, UserUpdateAdmin], UserID
             self.hashed_password = self.hash_password(
                 kwargs['update_model'].password)
 
-        # if 'username' in kwargs['update_model'].model_fields_set:
-        #     await GalleryUpdateAdmin(name=user.id).api_patch(
-        #                 **{**kwargs, **{'id': root_gallery.id}})
-
-        #     await GalleryUpdateAdmin(name=self.username).api_patch(
-        #                 **{**kwargs, **{'id': root_gallery.id}})
+        # rename the root gallery if the username is updated
+        if 'username' in kwargs['update_model'].model_fields_set:
+            root_gallery = await Gallery.get_root_gallery(kwargs['session'], self._id)
+            await root_gallery.update(session=kwargs['session'], c=kwargs['c'], authorized_user_id=kwargs['authorized_user_id'], admin=kwargs['admin'], update_model=GalleryUpdateAdmin(
+                name=self._id if self.username == None else self.username
+            ))
 
     async def delete(self, **kwargs):
-        # root_gallery = await Gallery.get_root_gallery(
-        #     kwargs['session'], kwargs['id'])
-        # shutil.rmtree((await root_gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)))
-        pass
+        (await Gallery.get_root_gallery(kwargs['session'], self._id)).delete(session=kwargs['session'], c=kwargs['c'],
+                                                                             authorized_user_id=kwargs['authorized_user_id'], admin=kwargs['admin'])
 
 
 PluralUsersDict = dict[UserTypes.id, User]
@@ -788,6 +800,11 @@ class ApiKey(Table['ApiKey', ApiKeyTypes.id, ApiKeyCreateAdmin, ApiKeyUpdateAdmi
     _CREATE_ADMIN_MODEL: typing.ClassVar[BaseModel] = ApiKeyCreateAdmin
 
     @classmethod
+    def not_found_message(cls):
+        print('calling not found message')
+        return 'Testing not found message'
+
+    @classmethod
     async def create(cls, **kwargs) -> typing.Self:
 
         return cls(
@@ -800,7 +817,11 @@ class ApiKey(Table['ApiKey', ApiKeyTypes.id, ApiKeyCreateAdmin, ApiKeyUpdateAdmi
 
     @classmethod
     async def is_available(cls, session: Session, api_key_available_admin: ApiKeyAvailableAdmin) -> bool:
-        return not await cls.get_one_by_key_values(session, api_key_available_admin.model_dump())
+
+        a = await cls.get_one(session, filters=api_key_available_admin.model_dump())
+        print(a)
+
+        return not a
 
     @classmethod
     async def api_get_is_available(cls, session: Session, api_key_available_admin: ApiKeyAvailableAdmin) -> None:
@@ -1143,7 +1164,7 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
         }))
 
     @classmethod
-    async def create(cls, mkdir=True, **kwargs: Unpack[ApiPostMethodKwargs[GalleryCreateAdmin]]) -> typing.Self:
+    async def create(cls, mkdir=True, **kwargs: Unpack[CreateMethodKwargs[GalleryCreateAdmin]]) -> typing.Self:
         gallery = cls(
             id=cls.generate_id(),
             **kwargs['create_model'].model_dump()
@@ -1156,10 +1177,11 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
 
     async def update(self, **kwargs) -> None:
 
+        update_model = kwargs['update_model']
         rename_folder = False
 
         # rename the folder
-        if 'name' in self.model_fields_set or 'date' in self.model_fields_set or 'parent_id' in self.model_fields_set:
+        if 'name' in update_model.model_fields_set or 'date' in update_model.model_fields_set or 'parent_id' in update_model.model_fields_set:
             rename_folder = True
             original_dir = await self.get_dir(
                 kwargs['session'], kwargs['c'].galleries_dir)
@@ -1168,10 +1190,11 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
             kwargs['update_model'].model_dump(exclude_unset=True))
 
         if rename_folder:
+            print('renaming folder')
             new_dir = (await self.get_dir(kwargs['session'], kwargs['c'].galleries_dir)).parent / self.folder_name
             original_dir.rename(new_dir)
 
-    async def delete(self, rmtree=True, **kwargs: Unpack[ApiDeleteMethodKwargs[GalleryTypes.id]]) -> None:
+    async def delete(self, rmtree=True, **kwargs: Unpack[DeleteMethodKwargs[GalleryTypes.id]]) -> None:
         if rmtree:
             shutil.rmtree((await self.get_dir(kwargs['session'], kwargs['c'].galleries_dir)))
         await super().delete(**kwargs)
@@ -1246,8 +1269,8 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
             suffix = ''.join(suffixes) if (
                 suffixes := local_file_by_names[file_name].suffixes) else None
 
-            new_file = await FileCreateAdmin(stem=stem, suffix=suffix, gallery_id=self.id, size=local_file_by_names[file_name].stat().st_size).api_post(
-                session=session, c=c, authorized_user_id=self.user_id, admin=False)
+            new_file = await File.api_post(
+                session=session, c=c, authorized_user_id=self.user_id, admin=False, create_model=FileCreateAdmin(stem=stem, suffix=suffix, gallery_id=self.id, size=local_file_by_names[file_name].stat().st_size))
 
             # rename the file, just to make sure the suffix is lowercase
             local_file_by_names[file_name].rename(
@@ -1284,11 +1307,9 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
 
                     # this if the first file of this version
                     if not image_version:
-                        image_version = await ImageVersionCreateAdmin(**image_version_kwargs).api_post(
-                            session=session, c=c, authorized_user_id=self.user_id, admin=False)
+                        image_version = await ImageVersion.api_post(session=session, c=c, authorized_user_id=self.user_id, admin=False, create_model=ImageVersionCreateAdmin(**image_version_kwargs))
 
-                    image_file_metadata = await ImageFileMetadataCreateAdmin(file_id=image_file.id, version_id=image_version.id, scale=scale).api_post(
-                        session=session, c=c, authorized_user_id=self.user_id, admin=False)
+                    image_file_metadata = await ImageFileMetadata.api_post(session=session, c=c, authorized_user_id=self.user_id, admin=False, create_model=ImageFileMetadataCreateAdmin(file_id=image_file.id, version_id=image_version.id, scale=scale))
 
         # recursively sync children
         for child in self.children:

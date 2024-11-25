@@ -7,7 +7,7 @@ import {
   ExtractResponseTypes,
 } from '../../types';
 
-const API_ENDPOINT = '/api-keys/{api_key_id}/scopes/{scope_id}/';
+const API_ENDPOINT = '/api-key-scopes/api-keys/{api_key_id}/scopes/{scope_id}/';
 const API_METHOD = 'delete';
 
 type DeleteApiKeyScopeResponses = ExtractResponseTypes<

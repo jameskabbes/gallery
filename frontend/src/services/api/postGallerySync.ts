@@ -16,7 +16,7 @@ type PostGallerySyncResponses = ExtractResponseTypes<
 
 async function postGallerySync(
   authContext: AuthContextType,
-  galleryId: components['schemas']['Gallery']['id']
+  galleryId: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['path']['gallery_id']
 ): Promise<
   ApiResponse<PostGallerySyncResponses[keyof PostGallerySyncResponses]>
 > {

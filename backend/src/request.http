@@ -113,3 +113,11 @@
 
 # GET http://localhost:8087/settings/api-keys/page
 # Authorization: Bearer token
+
+POST http://localhost:8087/api-keys/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWJiODEyMy02M2VjLTQyNDAtOWI2ZC01NGNjZjgyMzlhMWIiLCJleHAiOjE3MzMxODAxNDMsImlhdCI6MTczMjU3NTM0MywidHlwZSI6ImFjY2Vzc190b2tlbiJ9.XEAO-ZmNmvDpffkVWv8NQWaNssHilcwOoSf4jKDcBZ4
+
+{
+    "name": "new api key",
+    "lifespan": 100
+}

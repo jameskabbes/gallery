@@ -7,7 +7,7 @@ import {
   ExtractResponseTypes,
 } from '../../types';
 
-const API_ENDPOINT = '/user/';
+const API_ENDPOINT = '/users/me/';
 const API_METHOD = 'delete';
 
 type DeleteUserResponses = ExtractResponseTypes<

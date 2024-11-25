@@ -7,7 +7,7 @@ import {
 } from '../../types';
 import { callApi } from '../../utils/api';
 
-const API_ENDPOINT = '/user/';
+const API_ENDPOINT = '/users/me/';
 const API_METHOD = 'patch';
 
 type PatchUserResponses = ExtractResponseTypes<
