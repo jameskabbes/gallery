@@ -25,15 +25,9 @@ import shutil
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
-import logging
-logging.basicConfig(level=logging.INFO)
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    for route in app.routes:
-        logging.info(route.url_path_for)
-
     print('startingup')
     yield
     print('closingdown')
@@ -669,6 +663,9 @@ async def get_user_email_available(email: models.UserTypes.email):
     with Session(c.db_engine) as session:
         await models.User.api_get_is_email_available(session, email)
 
+app.include_router(user_router)
+app.include_router(user_admin_router)
+
 
 # User Access Tokens
 
@@ -755,6 +752,10 @@ async def get_user_access_tokens_admin(
         user_access_tokens = session.exec(select(models.UserAccessToken).where(
             models.UserAccessToken.user_id == user_id).offset(pagination.offset).limit(pagination.limit)).all()
         return user_access_tokens
+
+
+app.include_router(user_access_token_router)
+app.include_router(user_access_token_admin_router)
 
 
 # API Keys
@@ -893,28 +894,30 @@ async def get_user_api_keys_admin(
         return user_api_keys
 
 
-@api_key_router.get('/available/', responses={status.HTTP_409_CONFLICT: {"description": models.ApiKey.already_exists_message(), 'model': DetailOnlyResponse}})
+@api_key_router.get('/available/check/', responses={status.HTTP_409_CONFLICT: {"description": models.ApiKey.already_exists_message(), 'model': DetailOnlyResponse}})
 async def get_api_key_available(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())],
     api_key_available: models.ApiKeyAvailable = Depends(),
 ):
-    print('asdasd')
     with Session(c.db_engine) as session:
         await models.ApiKey.api_get_is_available(session, models.ApiKeyAvailableAdmin(
             **api_key_available.model_dump(exclude_unset=True), user_id=authorization.user.id
         ))
 
 
-@api_key_admin_router.get('/available/', responses={status.HTTP_409_CONFLICT: {"description": models.ApiKey.already_exists_message(), 'model': DetailOnlyResponse}})
+@api_key_admin_router.get('/available/check/', responses={status.HTTP_409_CONFLICT: {"description": models.ApiKey.already_exists_message(), 'model': DetailOnlyResponse}})
 async def get_api_key_available_admin(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization(required_scopes={'admin'}))],
     api_key_available_admin: models.ApiKeyAvailableAdmin = Depends(),
 ):
-    print('asdasdasd')
     with Session(c.db_engine) as session:
         await models.ApiKey.api_get_is_available(session, api_key_available_admin)
+
+
+app.include_router(api_key_router)
+app.include_router(api_key_admin_router)
 
 
 # API Key Scope
@@ -982,6 +985,9 @@ async def remove_scope_from_api_key_admin(
 ):
     with Session(c.db_engine) as session:
         return await models.ApiKeyScope.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=models.ApiKeyScopeIdBase(api_key_id=api_key_id, scope_id=scope_id)._id, admin=True)
+
+app.include_router(api_key_scope_router)
+app.include_router(api_key_scope_admin_router)
 
 
 # galleries
@@ -1075,7 +1081,7 @@ async def delete_gallery_admin(
         return await models.Gallery.api_delete(session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id, admin=True)
 
 
-@gallery_router.get('/available/')
+@gallery_router.get('/available/check/')
 async def get_gallery_available(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())],
@@ -1087,7 +1093,7 @@ async def get_gallery_available(
         ))
 
 
-@gallery_admin_router.get('/available/')
+@gallery_admin_router.get('/available/check/')
 async def get_gallery_available_admin(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization(required_scopes={'admin'}))],
@@ -1188,6 +1194,9 @@ async def sync_gallery(
         dir = await gallery.get_dir(session, c.galleries_dir)
         await gallery.sync_with_local(session, c, dir)
         return DetailOnlyResponse(detail='Synced gallery')
+
+app.include_router(gallery_router)
+app.include_router(gallery_admin_router)
 
 
 # Pages
@@ -1303,21 +1312,11 @@ async def get_gallery_page(
 
 
 # add the non admin routers first
-app.include_router(user_router)
-app.include_router(user_access_token_router)
-app.include_router(api_key_router)
-app.include_router(api_key_scope_router)
-app.include_router(gallery_router)
 
 app.include_router(pages_router)
 
 
 # add the admin routers last
-app.include_router(user_admin_router)
-app.include_router(user_access_token_admin_router)
-app.include_router(api_key_admin_router)
-app.include_router(api_key_scope_admin_router)
-app.include_router(gallery_admin_router)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -7,7 +7,7 @@ import {
   ExtractResponseTypes,
 } from '../../types';
 
-const API_ENDPOINT = '/galleries/available/';
+const API_ENDPOINT = '/galleries/available/check/';
 const API_METHOD = 'get';
 
 type GetIsGalleryAvailableResponses = ExtractResponseTypes<
