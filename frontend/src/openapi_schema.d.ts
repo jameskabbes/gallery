@@ -250,6 +250,10 @@ export interface components {
     };
     /** ApiKeyCreate */
     ApiKeyCreate: {
+      /** Lifespan */
+      lifespan?: string | null;
+      /** Expiry */
+      expiry?: string | null;
       /** Name */
       name: string;
     };
@@ -288,11 +292,19 @@ export interface components {
     };
     /** ApiKeyUpdate */
     ApiKeyUpdate: {
+      /** Lifespan */
+      lifespan?: string | null;
+      /** Expiry */
+      expiry?: string | null;
       /** Name */
       name?: string | null;
     };
     /** ApiKeyUpdateAdmin */
     ApiKeyUpdateAdmin: {
+      /** Lifespan */
+      lifespan?: string | null;
+      /** Expiry */
+      expiry?: string | null;
       /** Name */
       name?: string | null;
     };
@@ -916,10 +928,8 @@ export interface operations {
   delete_self_users_me__delete: {
     responses: {
       /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": unknown;
-        };
+      204: {
+        content: never;
       };
     };
   };
@@ -1077,10 +1087,8 @@ export interface operations {
     };
     responses: {
       /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": unknown;
-        };
+      204: {
+        content: never;
       };
       /** @description Validation Error */
       422: {
@@ -1463,7 +1471,7 @@ export interface operations {
           "application/json": components["schemas"]["ApiKeyJWTResponse"];
         };
       };
-      /** @description Testing not found message */
+      /** @description ApiKey not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
@@ -1666,7 +1674,7 @@ export interface operations {
           "application/json": unknown;
         };
       };
-      /** @description Testing not found message */
+      /** @description ApiKey not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
@@ -1693,7 +1701,7 @@ export interface operations {
       204: {
         content: never;
       };
-      /** @description Testing not found message */
+      /** @description ApiKey not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
@@ -1722,7 +1730,7 @@ export interface operations {
           "application/json": unknown;
         };
       };
-      /** @description Testing not found message */
+      /** @description ApiKey not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
@@ -1749,7 +1757,7 @@ export interface operations {
       204: {
         content: never;
       };
-      /** @description Testing not found message */
+      /** @description ApiKey not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];

@@ -46,15 +46,6 @@ def jwt_decode(token: str):
     return jwt.decode(token, c.jwt_secret_key, algorithms=[c.jwt_algorithm])
 
 
-class PaginationParams(BaseModel):
-    limit: int
-    offset: int
-
-
-def get_pagination_params(limit: int = Query(10, ge=1, le=100), offset: int = Query(0, ge=0)):
-    return PaginationParams(limit=limit, offset=offset)
-
-
 class OAuth2PasswordBearerMultiSource(OAuth2):
     def __init__(
         self,
@@ -196,6 +187,9 @@ def get_authorization(
                     session, auth_credential_dict['id']
                 )
 
+                print(auth_credential)
+                print(auth_credential_dict)
+
                 # not in the db, raise exception
                 if not auth_credential:
                     return GetAuthorizationReturn(exception='authorization_expired')
@@ -207,8 +201,8 @@ def get_authorization(
                 dt_exp = min(dt_exp_jwt, dt_exp_db)
 
                 if dt_now > dt_exp:
-                    await auth_credential.delete_one_by_id(
-                        session, auth_credential.id)
+                    session.delete(auth_credential)
+                    session.commit()
                     return GetAuthorizationReturn(exception='authorization_expired')
 
                 # if there was an overriden lifetime, check if it has expired
@@ -221,8 +215,8 @@ def get_authorization(
                         tzinfo=datetime.UTC)
 
                     if dt_now > (min(dt_ait_jwt, dt_ait_db) + override_lifetime):
-                        await auth_credential.delete_one_by_id(
-                            session, auth_credential.id)
+                        session.delete(auth_credential)
+                        session.commit()
                         return GetAuthorizationReturn(exception='authorization_expired')
 
                 user = auth_credential.user
@@ -463,8 +457,8 @@ async def verify_magic_link(model: VerifyMagicLinkRequest, authorization: typing
         )
 
         # one time link, delete the auth_credential
-        await models.UserAccessToken.delete_one_by_id(
-            session, authorization.auth_credential.id)
+        session.delete(authorization.auth_credential)
+        session.commit()
 
         return VerifyMagicLinkResponse(
             auth=GetAuthBaseReturn(
@@ -540,6 +534,28 @@ async def logout(response: Response, authorization: typing.Annotated[GetAuthoriz
 app.include_router(auth_router)
 
 
+def get_pagination(max_limit: int = 100, default_limit: int = 10):
+    def dependency(limit: int = Query(default_limit, ge=1, le=max_limit), offset: int = Query(0, ge=0)):
+        return models.Pagination(limit=limit, offset=offset)
+    return dependency
+
+
+def parse_order_bys[T](order_by: list[str] = Query([])) -> list[models.OrderBy[T]]:
+
+    parsed_order_bys = []
+    for field in order_by:
+        try:
+            descending = False
+            if ':' in field:
+                field, direction = field.split(":")
+                descending = direction.lower() == "desc"
+            parsed_order_bys.append(models.OrderBy(
+                field=field, descending=descending))
+        except:
+            raise ValueError(f"Invalid order_by format: {field}")
+    return parsed_order_bys
+
+
 # Users
 user_router = APIRouter(prefix='/users', tags=[models.User._ROUTER_TAG])
 user_admin_router = APIRouter(
@@ -605,7 +621,7 @@ async def patch_user_admin(
         return await models.User.api_patch(session=session, c=c, authorized_user_id=authorization._user_id, id=user_id, admin=True, update_model=user_update_admin)
 
 
-@user_router.delete('/me/', responses=models.User.delete_responses())
+@user_router.delete('/me/', responses=models.User.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
 async def delete_self(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())]
@@ -614,7 +630,7 @@ async def delete_self(
         return await models.User.api_delete(session=session, c=c, authorized_user_id=authorization._user_id, id=authorization._user_id, admin=False)
 
 
-@user_admin_router.delete('/{user_id}/', responses=models.User.delete_responses())
+@user_admin_router.delete('/{user_id}/', responses=models.User.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user_admin(
     user_id: models.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
@@ -626,12 +642,13 @@ async def delete_user_admin(
 
 @user_router.get('/', responses=models.User.post_responses())
 async def get_users(
-    pagination: PaginationParams = Depends(get_pagination_params),
+    pagination: typing.Annotated[models.Pagination, Depends(get_pagination())]
 ) -> list[models.UserPublic]:
 
     with Session(c.db_engine) as session:
-        users = session.exec(select(models.User).where(
-            models.User.username != None).offset(pagination.offset).limit(pagination.limit)).all()
+        query = select(models.User).where(models.User.username != None)
+        query = models.build_pagination(query, pagination)
+        users = session.exec(query).all()
         return [models.UserPublic.model_validate(user) for user in users]
 
 
@@ -639,12 +656,13 @@ async def get_users(
 async def get_users_admin(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization(required_scopes={'admin'}))],
-    pagination: PaginationParams = Depends(get_pagination_params),
+    pagination: typing.Annotated[models.Pagination, Depends(get_pagination())]
 ) -> list[models.User]:
 
     with Session(c.db_engine) as session:
-        users = session.exec(select(models.User).offset(
-            pagination.offset).limit(pagination.limit)).all()
+        query = select(models.User)
+        query = models.build_pagination(query, pagination)
+        users = session.exec(query).all()
         return users
 
 
@@ -733,11 +751,15 @@ WrongUserPermissionUserAccessToken = HTTPException(
 async def get_user_access_tokens(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())],
-    pagination: PaginationParams = Depends(get_pagination_params),
+    pagination: typing.Annotated[models.Pagination, Depends(
+        get_pagination())]
+
 ) -> list[models.UserAccessToken]:
     with Session(c.db_engine) as session:
-        user_access_tokens = session.exec(select(models.UserAccessToken).where(
-            models.UserAccessToken.user_id == authorization._user_id).offset(pagination.offset).limit(pagination.limit)).all()
+        query = select(models.UserAccessToken).where(
+            models.UserAccessToken.user_id == authorization._user_id)
+        query = models.build_pagination(query, pagination)
+        user_access_tokens = session.exec(query).all()
         return user_access_tokens
 
 
@@ -746,11 +768,15 @@ async def get_user_access_tokens_admin(
     user_id: models.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization(required_scopes={'admin'}))],
-    pagination: PaginationParams = Depends(get_pagination_params),
+    pagination: typing.Annotated[models.Pagination, Depends(
+        get_pagination())]
 ) -> list[models.UserAccessToken]:
     with Session(c.db_engine) as session:
-        user_access_tokens = session.exec(select(models.UserAccessToken).where(
-            models.UserAccessToken.user_id == user_id).offset(pagination.offset).limit(pagination.limit)).all()
+
+        query = select(models.UserAccessToken).where(
+            models.UserAccessToken.user_id == user_id)
+        query = models.build_pagination(query, pagination)
+        user_access_tokens = session.exec(query).all()
         return user_access_tokens
 
 
@@ -793,8 +819,10 @@ async def post_api_key_to_user(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())]
 ) -> models.ApiKeyPrivate:
+
     with Session(c.db_engine) as session:
-        return models.ApiKeyPrivate.model_validate(await models.ApiKey.api_post(session=session, c=c, authorized_user_id=authorization.user.id, admin=False, create_model=models.ApiKeyCreateAdmin(**api_key_create.model_dump(exclude_unset=True), user_id=authorization._user_id)))
+        return models.ApiKeyPrivate.model_validate(await models.ApiKey.api_post(session=session, c=c, authorized_user_id=authorization._user_id, admin=False, create_model=models.ApiKeyCreateAdmin(
+            **api_key_create.model_dump(exclude_unset=True), user_id=authorization._user_id)))
 
 
 @api_key_admin_router.post('/', responses=models.ApiKey.post_responses())
@@ -873,11 +901,21 @@ UserNotPermittedToViewAnotherUserApiKeys = HTTPException(
 async def get_user_api_keys(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())],
-    pagination: PaginationParams = Depends(get_pagination_params),
+    pagination: typing.Annotated[models.Pagination, Depends(get_pagination())],
+    order_bys: typing.Annotated[list[models.OrderBy[models.ApiKeyTypes.order_by]], Depends(parse_order_bys)],
 ) -> list[models.ApiKeyPrivate]:
     with Session(c.db_engine) as session:
-        user_api_keys = session.exec(select(models.ApiKey).where(
-            models.ApiKey.user_id == authorization._user_id).offset(pagination.offset).limit(pagination.limit)).all()
+
+        query = select(models.ApiKey).where(
+            models.ApiKey.user_id == authorization._user_id)
+        query = models.build_pagination(query, pagination)
+        query = models.ApiKey._build_order_by(query, order_bys)
+
+        print(order_bys)
+
+        print(query)
+
+        user_api_keys = session.exec(query).all()
         return [models.ApiKeyPrivate.model_validate(api_key) for api_key in user_api_keys]
 
 
@@ -886,11 +924,15 @@ async def get_user_api_keys_admin(
     user_id: models.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization(required_scopes={'admin'}))],
-    pagination: PaginationParams = Depends(get_pagination_params),
+    pagination: typing.Annotated[models.Pagination, Depends(get_pagination())],
 ) -> list[models.ApiKey]:
     with Session(c.db_engine) as session:
-        user_api_keys = session.exec(select(models.ApiKey).where(
-            models.ApiKey.user_id == user_id).offset(pagination.offset).limit(pagination.limit)).all()
+
+        query = select(models.ApiKey).where(
+            models.ApiKey.user_id == user_id)
+        query = models.build_pagination(query, pagination)
+
+        user_api_keys = session.exec(query).all()
         return user_api_keys
 
 
@@ -1107,12 +1149,13 @@ async def get_gallery_available_admin(
 async def get_galleries(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())],
-    pagination: PaginationParams = Depends(get_pagination_params),
+    limit: int = Query(10, ge=1, le=100),
+    offset: int = Query(0, ge=0),
 ) -> list[models.GalleryPrivate]:
 
     with Session(c.db_engine) as session:
         galleries = session.exec(select(models.Gallery).where(
-            models.Gallery.user_id == authorization._user_id).offset(pagination.offset).limit(pagination.limit)).all()
+            models.Gallery.user_id == authorization._user_id).offset(offset).limit(limit)).all()
         return [models.GalleryPrivate.model_validate(gallery) for gallery in galleries]
 
 
@@ -1137,12 +1180,13 @@ async def get_galleries_by_user_admin(
     user_id: models.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization(required_scopes={'admin'}))],
-    pagination: PaginationParams = Depends(get_pagination_params),
+    limit: int = Query(10, ge=1, le=100),
+    offset: int = Query(0, ge=0),
 ) -> list[models.Gallery]:
 
     with Session(c.db_engine) as session:
         galleries = session.exec(select(models.Gallery).where(
-            models.Gallery.user_id == user_id).offset(pagination.offset).limit(pagination.limit)).all()
+            models.Gallery.user_id == user_id).offset(offset).limit(limit)).all()
         return galleries
 
 
@@ -1244,23 +1288,6 @@ async def get_settings_page(authorization: typing.Annotated[GetAuthorizationRetu
 class GetSettingsApiKeysPageResponse(GetAuthReturn):
     api_keys: models.PluralApiKeysDict
     api_key_scope_ids: dict[models.ApiKeyTypes.id, list[client.ScopeTypes.id]]
-
-
-@ pages_router.get('/settings/api-keys/', tags=[models.ApiKey._ROUTER_TAG])
-async def get_settings_page(
-        authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())]) -> GetSettingsApiKeysPageResponse:
-
-    with Session(c.db_engine) as session:
-
-        user = await models.User._basic_api_get(session, authorization.user.id)
-        api_keys = user.api_keys
-
-        return GetSettingsApiKeysPageResponse(
-            **get_auth(authorization).model_dump(),
-            api_keys=models.ApiKey.export_plural_to_dict(api_keys),
-            api_key_scope_ids={
-                api_key.id: await api_key.get_scope_ids() for api_key in api_keys}
-        )
 
 
 class GetStylesPageResponse(GetAuthReturn):

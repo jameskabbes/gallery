@@ -4,6 +4,9 @@ from typing import Unpack
 import uuid
 from fastapi import HTTPException, status, Response, APIRouter
 from sqlmodel import SQLModel, Field, Column, Session, select, delete, Relationship
+from sqlalchemy.sql import Select
+from sqlalchemy.orm.attributes import InstrumentedAttribute
+from sqlalchemy.engine import Result
 from pydantic import BaseModel, EmailStr, constr, StringConstraints, field_validator, ValidationInfo, ValidatorFunctionWrapHandler, ValidationError, field_serializer, model_validator, conint
 from pydantic.functional_validators import WrapValidator
 from sqlalchemy import PrimaryKeyConstraint, and_, or_, event
@@ -88,6 +91,20 @@ class CheckValidationPostKwargs[TPost](ApiPostMethodKwargs[TPost]):
     pass
 
 
+class Pagination(BaseModel):
+    limit: int
+    offset: int
+
+
+def build_pagination[TQuery: Select](query: TQuery, pagination: Pagination):
+    return query.offset(pagination.offset).limit(pagination.limit)
+
+
+class OrderBy[T](BaseModel):
+    field: T
+    descending: bool = False
+
+
 def validate_and_normalize_datetime(value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime:
     if value.tzinfo == None:
         raise ValueError(info.field_name + ' must have a timezone')
@@ -133,20 +150,6 @@ def api_endpoint(func):
     return wrapper
 
 
-CrudRouterNonAdminEndpoint = typing.Literal['get', 'post', 'patch', 'delete']
-CRUD_ROUTER_NON_ADMIN_ENDPOINTS: set[CrudRouterNonAdminEndpoint] = {
-    'get', 'post', 'patch', 'delete'}
-
-CrudRouterAdminEndpoint = typing.Literal['admin_get',
-                                         'admin_post', 'admin_patch', 'admin_delete']
-CRUD_ROUTER_ADMIN_ENDPOINTS: set[CrudRouterAdminEndpoint] = {
-    'admin_get', 'admin_post', 'admin_patch', 'admin_delete'}
-
-CrudRouterEndpoint = typing.Union[CrudRouterNonAdminEndpoint,
-                                  CrudRouterAdminEndpoint]
-CRUD_ROUTER_ENDPOINTS = CRUD_ROUTER_NON_ADMIN_ENDPOINTS | CRUD_ROUTER_ADMIN_ENDPOINTS
-
-
 class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, IdObject[IdType]):
 
     _ROUTER_TAG: typing.ClassVar[str]
@@ -179,64 +182,42 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
     async def get_one_by_id(cls, session: Session, id: IdType) -> T | None:
         """Get a model by its ID"""
 
-        if len(cls._ID_COLS) > 1:
-            assert isinstance(id, tuple)
-            assert len(id) == len(cls._ID_COLS)
-            filters = {cls._ID_COLS[i]: id[i]
-                       for i in range(len(cls._ID_COLS))}
+        query = select(cls)
 
-        else:
-            filters = {cls._ID_COLS[0]: id}
+        if len(cls._ID_COLS) == 1:
+            id = [id]
 
-        return await cls.get_one(session, filters)
+        for i in range(len(cls._ID_COLS)):
+            field: InstrumentedAttribute = getattr(cls, cls._ID_COLS[i])
+            query = query.where(field == id[i])
 
-    @classmethod
-    async def get_one(cls, session: Session, filters: dict[str, typing.Any] = {}) -> T | None:
-        """Get a model by its filters"""
-
-        results = session.exec(select(cls).where(
-            cls._build_conditions(filters)))
-        return results.one_or_none()
-
-    @classmethod
-    async def get_many(cls, session: Session, offset: int, limit: int, filters: dict[str, typing.Any] = {}) -> list[T]:
-        """Get models by their filters"""
-
-        results = session.exec(select(cls).where(
-            cls._build_conditions(filters)).offset(offset).limit(limit))
-        return results.all()
+        return session.exec(query).one_or_none()
 
     @classmethod
     def _build_conditions(cls, filters: dict[str, typing.Any]):
+
         conditions = []
         for key in filters:
             value = filters[key]
+            field: InstrumentedAttribute = getattr(cls, key)
+
             if isinstance(value, list):
-                conditions.append(getattr(cls, key).in_(value))
+                conditions.append(field.in_(value))
             else:
-                conditions.append(getattr(cls, key) == value)
+                conditions.append(field == value)
 
         return and_(*conditions)
 
-    @ classmethod
-    async def delete_one_by_id(cls, session: Session, id: IdType) -> int:
-        """Delete a model by its ID"""
+    @classmethod
+    def _build_order_by[TQuery: Select](cls, query: TQuery, order_by: list[OrderBy]):
+        for order in order_by:
+            field: InstrumentedAttribute = getattr(cls, order.field)
+            if order.descending:
+                query = query.order_by(field.desc())
+            else:
+                query = query.order_by(field.asc())
 
-        return await cls.delete_many_by_ids(session, [id])
-
-    @ classmethod
-    async def delete_many_by_ids(cls, session: Session, ids: list[IdType]) -> int:
-        """Delete models by their IDs"""
-
-        if len(cls._ID_COLS) > 1:
-            conditions = [and_(*[getattr(cls, cls._ID_COLS[i]) == id[i]
-                               for i in range(len(cls._ID_COLS))]) for id in ids]
-        else:
-            conditions = [getattr(cls, cls._ID_COLS[0]) == id for id in ids]
-
-        result = session.exec(delete(cls).where(or_(*conditions)))
-        session.commit()
-        return result.rowcount
+        return query
 
     @classmethod
     async def create(cls, **kwargs: Unpack[CreateMethodKwargs[TPost]]) -> T:
@@ -443,11 +424,10 @@ class User(Table['User', UserTypes.id, UserCreateAdmin, UserUpdateAdmin], UserID
     @ classmethod
     async def authenticate(cls, session: Session, username_or_email: UserTypes.email | UserTypes.username, password: UserTypes.password) -> typing.Self | None:
 
-        user = await cls.get_one(session, {'email': username_or_email})
+        query = select(cls).where(
+            or_(cls.email == username_or_email, cls.username == username_or_email))
+        user = session.exec(query).one_or_none()
 
-        if not user:
-            user = await cls.get_one(
-                session, {'username': username_or_email})
         if not user:
             return None
         if user.hashed_password is None:
@@ -457,13 +437,14 @@ class User(Table['User', UserTypes.id, UserCreateAdmin, UserUpdateAdmin], UserID
         return user
 
     @ classmethod
-    @api_endpoint
+    @ api_endpoint
     async def is_username_available(cls, session: Session, username: UserTypes.username) -> bool:
-        if await cls.get_one(session, filters={'username': username}):
+
+        if session.exec(select(cls).where(User.username == username)).one_or_none():
             return False
         return True
 
-    @classmethod
+    @ classmethod
     async def api_get_is_username_available(cls, session: Session, username: UserTypes.username) -> None:
         if not await cls.is_username_available(session, username):
             raise HTTPException(
@@ -471,18 +452,18 @@ class User(Table['User', UserTypes.id, UserCreateAdmin, UserUpdateAdmin], UserID
 
     @ classmethod
     async def is_email_available(cls, session: Session, email: UserTypes.email) -> bool:
-        if await cls.get_one(session, filters={'email': email}):
+        if session.exec(select(cls).where(User.email == email)).one_or_none():
             return False
         return True
 
-    @classmethod
-    @api_endpoint
+    @ classmethod
+    @ api_endpoint
     async def api_get_is_email_available(cls, session: Session, email: UserTypes.email) -> None:
         if not await cls.is_email_available(session, email):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail='Email already exists')
 
-    @classmethod
+    @ classmethod
     def hash_password(cls, password: UserTypes.password) -> UserTypes.hashed_password:
         return utils.hash_password(password)
 
@@ -497,7 +478,7 @@ class User(Table['User', UserTypes.id, UserCreateAdmin, UserUpdateAdmin], UserID
                     raise HTTPException(
                         status_code=status.HTTP_404_NOT_FOUND, detail=self.not_found_message())
 
-    @classmethod
+    @ classmethod
     async def _check_validation_post(cls, **kwargs):
 
         model = kwargs['create_model']
@@ -519,7 +500,7 @@ class User(Table['User', UserTypes.id, UserCreateAdmin, UserUpdateAdmin], UserID
             if model.email != None:
                 await User.api_get_is_email_available(kwargs['session'], model.email)
 
-    @classmethod
+    @ classmethod
     async def create(cls, **kwargs) -> typing.Self:
 
         new_user = cls(
@@ -551,8 +532,8 @@ class User(Table['User', UserTypes.id, UserCreateAdmin, UserUpdateAdmin], UserID
             ))
 
     async def delete(self, **kwargs):
-        (await Gallery.get_root_gallery(kwargs['session'], self._id)).delete(session=kwargs['session'], c=kwargs['c'],
-                                                                             authorized_user_id=kwargs['authorized_user_id'], admin=kwargs['admin'])
+        await (await Gallery.get_root_gallery(kwargs['session'], self._id)).delete(session=kwargs['session'], c=kwargs['c'],
+                                                                                   authorized_user_id=kwargs['authorized_user_id'], admin=kwargs['admin'])
 
 
 PluralUsersDict = dict[UserTypes.id, User]
@@ -650,12 +631,12 @@ class AuthCredential[IdType](BaseModel):
     def export_to_jwt(self) -> JwtExport:
         return {key: getattr(self, value) for key, value in self._JWT_CLAIMS_TO_ATTRIBUTES.items()}
 
-    @field_validator('issued', 'expiry')
-    @classmethod
+    @ field_validator('issued', 'expiry')
+    @ classmethod
     def validate_datetime(cls, value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime:
         return validate_and_normalize_datetime(value, info)
 
-    @field_serializer('issued', 'expiry')
+    @ field_serializer('issued', 'expiry')
     def serialize_datetime(value: datetime_module.datetime) -> datetime_module.datetime:
         return value.replace(tzinfo=datetime_module.timezone.utc)
 
@@ -690,21 +671,15 @@ class UserAccessToken(Table['UserAccessToken', UserAccessTokenTypes.id, UserAcce
         back_populates='user_access_tokens')
 
     _ROUTER_TAG: typing.ClassVar[str] = 'User Access Token'
-    _CRUD_ROUTER_ID_KEY = 'user_access_token_id'
-    _CRUD_ROUTER_RESPONSE_MODELS = {
-    }
 
-    _CREATE_ADMIN_MODEL: typing.ClassVar = UserAccessTokenCreateAdmin
-    _UPDATE_ADMIN_MODEL: typing.ClassVar = UserAccessTokenUpdateAdmin
-
-    @classmethod
+    @ classmethod
     async def _check_authorization_post(cls, **kwargs):
         if not kwargs['admin']:
             if kwargs['authorized_user_id'] != kwargs['create_model'].user_id:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to post access token for another user')
 
-    @classmethod
+    @ classmethod
     async def create(cls, **kwargs) -> typing.Self:
 
         return cls(
@@ -733,6 +708,7 @@ class ApiKeyTypes(AuthCredentialTypes):
     id = str
     name = typing.Annotated[str, StringConstraints(
         min_length=1, max_length=256)]
+    order_by = typing.Literal['issued', 'expiry', 'name']
 
 
 class ApiKeyIdBase(IdObject[ApiKeyTypes.id]):
@@ -749,6 +725,7 @@ class ApiKeyAvailableAdmin(ApiKeyAvailable):
 
 
 class ApiKeyExport(AuthCredentialExport):
+    id: ApiKeyTypes.id
     name: ApiKeyTypes.name
 
 
@@ -761,7 +738,8 @@ class ApiKeyPrivate(ApiKeyExport):
 
 
 class ApiKeyImport(AuthCredentialImport):
-    pass
+    lifespan: typing.Optional[AuthCredentialTypes.lifespan] = None
+    expiry: typing.Optional[AuthCredentialTypes.expiry] = None
 
 
 class ApiKeyUpdate(ApiKeyImport):
@@ -794,17 +772,8 @@ class ApiKey(Table['ApiKey', ApiKeyTypes.id, ApiKeyCreateAdmin, ApiKeyUpdateAdmi
         return [api_key_scope.scope_id for api_key_scope in self.api_key_scopes]
 
     _ROUTER_TAG: typing.ClassVar[str] = 'Api Key'
-    _CRUD_ROUTER_ID_KEY: typing.ClassVar[str] = 'api_key_id'
-    _CRUD_ROUTER_RESPONSE_MODELS: typing.ClassVar[dict[CrudRouterEndpoint, BaseModel]] = {
-    }
-    _CREATE_ADMIN_MODEL: typing.ClassVar[BaseModel] = ApiKeyCreateAdmin
 
-    @classmethod
-    def not_found_message(cls):
-        print('calling not found message')
-        return 'Testing not found message'
-
-    @classmethod
+    @ classmethod
     async def create(cls, **kwargs) -> typing.Self:
 
         return cls(
@@ -815,21 +784,17 @@ class ApiKey(Table['ApiKey', ApiKeyTypes.id, ApiKeyCreateAdmin, ApiKeyUpdateAdmi
             **kwargs['create_model'].model_dump(exclude=['lifespan', 'expiry'])
         )
 
-    @classmethod
+    @ classmethod
     async def is_available(cls, session: Session, api_key_available_admin: ApiKeyAvailableAdmin) -> bool:
+        return not session.exec(select(cls).where(cls._build_conditions(api_key_available_admin.model_dump()))).one_or_none()
 
-        a = await cls.get_one(session, filters=api_key_available_admin.model_dump())
-        print(a)
-
-        return not a
-
-    @classmethod
+    @ classmethod
     async def api_get_is_available(cls, session: Session, api_key_available_admin: ApiKeyAvailableAdmin) -> None:
         if not await cls.is_available(session, api_key_available_admin):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail=cls.already_exists_message())
 
-    @classmethod
+    @ classmethod
     async def _check_authorization_post(cls, **kwargs):
         if not kwargs['admin']:
             if kwargs['authorized_user_id'] != kwargs['create_model'].user_id:
@@ -842,10 +807,11 @@ class ApiKey(Table['ApiKey', ApiKeyTypes.id, ApiKeyCreateAdmin, ApiKeyUpdateAdmi
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail=self.not_found_message())
 
-    @classmethod
+    @ classmethod
     async def _check_validation_post(cls, **kwargs):
         await cls.api_get_is_available(kwargs['session'], ApiKeyAvailableAdmin(
-            name=kwargs['create_model'].name, user_id=kwargs['create_model']))
+            name=kwargs['create_model'].name, user_id=kwargs['create_model'].user_id)
+        )
 
     async def _check_validation_patch(self, **kwargs):
         if 'name' in kwargs['update_model'].model_fields_set:
@@ -918,13 +884,13 @@ class ApiKeyScope(Table['ApiKeyScope', ApiKeyScopeID, ApiKeyScopeCreateAdmin, Ap
 
     _ROUTER_TAG: typing.ClassVar[str] = 'Api Key Scope'
 
-    @classmethod
+    @ classmethod
     async def create(cls, **kwargs):
         return ApiKeyScope(
             **kwargs['create_model'].model_dump(),
         )
 
-    @classmethod
+    @ classmethod
     async def _check_authorization_post(cls, **kwargs):
         api_key = await ApiKey._basic_api_get(kwargs['session'], kwargs['create_model']._id)
         if not kwargs['admin']:
@@ -932,7 +898,7 @@ class ApiKeyScope(Table['ApiKeyScope', ApiKeyScopeID, ApiKeyScopeCreateAdmin, Ap
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
 
-    @classmethod
+    @ classmethod
     async def _check_validation_post(cls, **kwargs):
         if await ApiKeyScope.get_one_by_id(kwargs['session'], kwargs['create_model']._id):
             raise HTTPException(
@@ -1063,14 +1029,6 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
         back_populates='gallery', cascade_delete=True)
 
     _ROUTER_TAG: typing.ClassVar[str] = 'Gallery'
-    _CRUD_ROUTER_ID_KEY: typing.ClassVar[str] = 'gallery_id'
-    _CRUD_ROUTER_RESPONSE_MODELS: typing.ClassVar[dict[CrudRouterEndpoint, BaseModel]] = {
-    }
-
-    _CREATE_MODEL: typing.ClassVar[BaseModel] = GalleryCreate
-    _CREATE_ADMIN_MODEL: typing.ClassVar[BaseModel] = GalleryCreateAdmin
-    _UPDATE_MODEL: typing.ClassVar[BaseModel] = GalleryUpdate
-    _UPDATE_ADMIN_MODEL: typing.ClassVar[BaseModel] = GalleryUpdateAdmin
 
     @ property
     def folder_name(self) -> GalleryTypes.folder_name:
@@ -1081,7 +1039,7 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
         else:
             return self.date.isoformat() + ' ' + self.name
 
-    @classmethod
+    @ classmethod
     def get_date_and_name_from_folder_name(cls, folder_name: GalleryTypes.folder_name) -> tuple[GalleryTypes.date | None, GalleryTypes.name]:
 
         match = re.match(r'^(\d{4}-\d{2}-\d{2}) (.+)$', folder_name)
@@ -1108,11 +1066,11 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
 
     @ classmethod
     async def get_root_gallery(cls, session: Session, user_id: GalleryTypes.user_id) -> typing.Self | None:
-        return await cls.get_one(session, filters={'user_id': user_id, 'parent_id': None})
+        return session.exec(select(cls).where(cls.user_id == user_id).where(cls.parent_id == None)).one_or_none()
 
     @ classmethod
     async def is_available(cls, session: Session, gallery_available_admin: GalleryAvailableAdmin) -> bool:
-        return not await cls.get_one(session, filters=gallery_available_admin.model_dump())
+        return not session.exec(select(cls).where(cls._build_conditions(gallery_available_admin.model_dump()))).one_or_none()
 
     @ classmethod
     async def api_get_is_available(cls, session: Session, gallery_available_admin: GalleryAvailableAdmin) -> None:
@@ -1120,7 +1078,7 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail=cls.already_exists_message())
 
-    @classmethod
+    @ classmethod
     async def _check_authorization_post(cls, **kwargs):
         if not kwargs['admin']:
             if kwargs['authorized_user_id'] != kwargs['create_model'].user_id:
@@ -1153,7 +1111,7 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
                         raise HTTPException(
                             status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this gallery'.format(method=kwargs['method']))
 
-    @classmethod
+    @ classmethod
     async def _check_validation_post(cls, **kwargs):
         await cls.api_get_is_available(kwargs['session'], GalleryAvailableAdmin(**kwargs['create_model'].model_dump(include=GalleryAvailableAdmin.model_fields.keys(), exclude_unset=True)))
 
@@ -1163,7 +1121,7 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
             **self.model_dump(include=list(GalleryAvailableAdmin.model_fields.keys())), **kwargs['update_model'].model_dump(include=GalleryAvailableAdmin.model_fields.keys(), exclude_unset=True)
         }))
 
-    @classmethod
+    @ classmethod
     async def create(cls, mkdir=True, **kwargs: Unpack[CreateMethodKwargs[GalleryCreateAdmin]]) -> typing.Self:
         gallery = cls(
             id=cls.generate_id(),
@@ -1197,7 +1155,6 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
     async def delete(self, rmtree=True, **kwargs: Unpack[DeleteMethodKwargs[GalleryTypes.id]]) -> None:
         if rmtree:
             shutil.rmtree((await self.get_dir(kwargs['session'], kwargs['c'].galleries_dir)))
-        await super().delete(**kwargs)
 
     async def sync_with_local(self, session: Session, c: client.Client, dir: pathlib.Path) -> None:
 
@@ -1290,7 +1247,8 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
 
                     parent_id = None
                     if version is not None:
-                        image_version_og = await ImageVersion.get_one(session, filters={'gallery_id': self.id, 'base_name': base_name, 'version': None})
+                        image_version_og = session.exec(select(ImageVersion).where(ImageVersion.gallery_id == self._id).where(
+                            ImageVersion.base_name == base_name).where(ImageVersion.version == None)).one_or_none()
 
                         # if an original exists, assume the version wants to link as the parent
                         if image_version_og:
@@ -1303,7 +1261,8 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
                         'parent_id': parent_id
                     }
 
-                    image_version = await ImageVersion.get_one(session, filters=image_version_kwargs)
+                    image_version = session.exec(select(ImageVersion).where(
+                        ImageVersion._build_conditions(image_version_kwargs))).one_or_none()
 
                     # this if the first file of this version
                     if not image_version:
@@ -1380,7 +1339,7 @@ class GalleryPermission(Table['GalleryPermission', GalleryPermissionId, GalleryP
     gallery: Gallery = Relationship(back_populates='gallery_permissions')
     user: User = Relationship(back_populates='gallery_permissions')
 
-    @classmethod
+    @ classmethod
     async def _check_authorization_post(cls, **kwargs):
 
         if not kwargs['admin']:
@@ -1388,13 +1347,13 @@ class GalleryPermission(Table['GalleryPermission', GalleryPermissionId, GalleryP
                 raise HTTPException(
                     status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to post gallery permission for another user')
 
-    @classmethod
+    @ classmethod
     async def _check_validation_post(cls, **kwargs):
         if await GalleryPermission.get_one_by_id(kwargs['session'], kwargs['create_model']._id):
             raise HTTPException(
                 status.HTTP_409_CONFLICT, detail='Gallery permission already exists')
 
-    @classmethod
+    @ classmethod
     async def create(cls, **kwargs):
         return cls(
             **kwargs['create_model'].model_dump()
@@ -1491,7 +1450,7 @@ class File(Table['File', FileTypes.id, FileCreateAdmin, FileUpdateAdmin], FileId
     image_file_metadata: typing.Optional['ImageFileMetadata'] = Relationship(
         back_populates='file', cascade_delete=True)
 
-    @property
+    @ property
     def name(self) -> str:
         return self.stem + self.suffix
 
@@ -1604,7 +1563,7 @@ class ImageVersion(Table['ImageVersion', ImageVersionTypes.id, ImageVersionCreat
     gallery: Gallery = Relationship(
         back_populates='image_versions')
 
-    @model_validator(mode='after')
+    @ model_validator(mode='after')
     def validate_model(self, info: ValidationInfo) -> None:
         if self.base_name is None and self.parent_id is None:
             raise ValueError('Unnamed versions must have a parent_id')
@@ -1702,7 +1661,7 @@ class ImageFileMetadata(Table['ImageFileMetadata', ImageFileMetadataTypes.file_i
     file: File = Relationship(
         back_populates='image_file_metadata')
 
-    @classmethod
+    @ classmethod
     def parse_file_stem(cls, file_stem: str) -> tuple[ImageVersionTypes.base_name, ImageVersionTypes.version | None, ImageFileMetadataTypes.scale | None]:
 
         scale = None
@@ -1717,7 +1676,7 @@ class ImageFileMetadata(Table['ImageFileMetadata', ImageFileMetadataTypes.file_i
 
         return file_stem, version, scale
 
-    @classmethod
+    @ classmethod
     async def create(cls, **kwargs):
         return cls(
             **kwargs['create_model'].model_dump()

@@ -70,15 +70,16 @@
 # "user_role_id": "2"
 # }
 
-# GET http://localhost:8087/api-keys/
-# Authorization: Bearer token
+GET http://localhost:8087/api-keys/?order_by=name:desc
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGM2MmYxMi0xOGQzLTQxM2MtOWUxNC01YTdjYjVjYTFlYzAiLCJleHAiOjE3MzQwODcxNzQsImlhdCI6MTczMzQ4MjM3NCwidHlwZSI6ImFjY2Vzc190b2tlbiJ9.9fRMULl5lnc7dZLaqwoDimE68DviZkSFI-JcdYLej6w
 
 # POST http://localhost:8087/api-keys/
 # Content-Type: application/json
-# Authorization: Bearer 
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGM2MmYxMi0xOGQzLTQxM2MtOWUxNC01YTdjYjVjYTFlYzAiLCJleHAiOjE3MzQwODcxNzQsImlhdCI6MTczMzQ4MjM3NCwidHlwZSI6ImFjY2Vzc190b2tlbiJ9.9fRMULl5lnc7dZLaqwoDimE68DviZkSFI-JcdYLej6w
 
 # {
-#     "name": "new api key"
+#     "name": "Key4",
+#     "expiry": "2023-12-31T23:59:59Z"
 # }
 
 
@@ -114,10 +115,10 @@
 # GET http://localhost:8087/settings/api-keys/page
 # Authorization: Bearer token
 
-POST http://localhost:8087/api-keys/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWJiODEyMy02M2VjLTQyNDAtOWI2ZC01NGNjZjgyMzlhMWIiLCJleHAiOjE3MzMxODAxNDMsImlhdCI6MTczMjU3NTM0MywidHlwZSI6ImFjY2Vzc190b2tlbiJ9.XEAO-ZmNmvDpffkVWv8NQWaNssHilcwOoSf4jKDcBZ4
+# POST http://localhost:8087/api-keys/
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWJiODEyMy02M2VjLTQyNDAtOWI2ZC01NGNjZjgyMzlhMWIiLCJleHAiOjE3MzMxODAxNDMsImlhdCI6MTczMjU3NTM0MywidHlwZSI6ImFjY2Vzc190b2tlbiJ9.XEAO-ZmNmvDpffkVWv8NQWaNssHilcwOoSf4jKDcBZ4
 
-{
-    "name": "new api key",
-    "lifespan": 100
-}
+# {
+#     "name": "new api key",
+#     "lifespan": 100
+# }

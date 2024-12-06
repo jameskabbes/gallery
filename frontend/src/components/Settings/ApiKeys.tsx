@@ -45,15 +45,16 @@ import {
 import { useValidatedInput } from '../../utils/useValidatedInput';
 import { isApiKeyAvailable } from '../../services/api/getIsApiKeyAvailable';
 import { CheckOrX } from '../Form/CheckOrX';
+import {
+  getApiKeys,
+  GetApiKeysResponses,
+  PaginationParams,
+} from '../../services/api/getApiKeys';
 
-const API_ENDPOINT = '/settings/api-keys/page/';
-const API_METHOD = 'get';
-
-type ResponseTypesByStatus = ExtractResponseTypes<
-  paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
+type TApiKeys = Record<
+  components['schemas']['ApiKey']['id'],
+  components['schemas']['ApiKey']
 >;
-
-type TApiKeys = ResponseTypesByStatus['200']['api_keys'];
 type TSetApiKeys = React.Dispatch<React.SetStateAction<TApiKeys>>;
 type TApiKeyScopeIds = {
   [key: string]: Set<number>;
@@ -653,17 +654,26 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
   const globalModalsContext = useContext(GlobalModalsContext);
   const { checkButtonConfirmation } = useConfirmationModal();
 
-  const [apiKeys, setApiKeys] = useState<TApiKeys>({});
+  const [loading, setLoading] = useState<boolean>(false);
+  const [pagination, setPagination] = useState<PaginationParams>({
+    limit: 100,
+    offset: 0,
+  });
+
+  const [apiKeys, setApiKeys] = useState<GetApiKeysResponses['200']>([]);
   const [apiKeyScopeIds, setApiKeyScopeIds] = useState<TApiKeyScopeIds>({});
 
-  const {
-    data: apiData,
-    loading,
-    status,
-  } = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>({
-    url: API_ENDPOINT,
-    method: API_METHOD,
-  });
+  async function fetchApiKeys() {
+    setLoading(true);
+    const { data, status } = await getApiKeys(authContext, pagination);
+
+    if (status === 200) {
+      data as GetApiKeysResponses['200'];
+      setApiKeys((prev) => {});
+    }
+
+    setLoading(false);
+  }
 
   useEffect(() => {
     if (apiData && status === 200) {
