@@ -70,7 +70,7 @@
 # "user_role_id": "2"
 # }
 
-GET http://localhost:8087/api-keys/?order_by=name:desc
+GET http://localhost:8087/api-keys/?order_by=name&order_by=issued&order_by_desc=name
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGM2MmYxMi0xOGQzLTQxM2MtOWUxNC01YTdjYjVjYTFlYzAiLCJleHAiOjE3MzQwODcxNzQsImlhdCI6MTczMzQ4MjM3NCwidHlwZSI6ImFjY2Vzc190b2tlbiJ9.9fRMULl5lnc7dZLaqwoDimE68DviZkSFI-JcdYLej6w
 
 # POST http://localhost:8087/api-keys/
@@ -78,7 +78,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGM2MmYxM
 # Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGM2MmYxMi0xOGQzLTQxM2MtOWUxNC01YTdjYjVjYTFlYzAiLCJleHAiOjE3MzQwODcxNzQsImlhdCI6MTczMzQ4MjM3NCwidHlwZSI6ImFjY2Vzc190b2tlbiJ9.9fRMULl5lnc7dZLaqwoDimE68DviZkSFI-JcdYLej6w
 
 # {
-#     "name": "Key4",
+#     "name": "Key0",
 #     "expiry": "2023-12-31T23:59:59Z"
 # }
 

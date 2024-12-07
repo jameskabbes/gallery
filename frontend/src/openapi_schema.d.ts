@@ -211,10 +211,6 @@ export interface paths {
     /** Get Settings Page */
     get: operations["get_settings_page_pages_settings__get"];
   };
-  "/pages/settings/api-keys/": {
-    /** Get Settings Page */
-    get: operations["get_settings_page_pages_settings_api_keys__get"];
-  };
   "/pages/styles/": {
     /** Get Styles Page */
     get: operations["get_styles_page_pages_styles__get"];
@@ -287,6 +283,8 @@ export interface components {
        * Format: date-time
        */
       expiry: string;
+      /** Id */
+      id: string;
       /** Name */
       name: string;
     };
@@ -534,18 +532,6 @@ export interface components {
     GetProfilePageResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
       user?: components["schemas"]["UserPrivate"] | null;
-    };
-    /** GetSettingsApiKeysPageResponse */
-    GetSettingsApiKeysPageResponse: {
-      auth: components["schemas"]["GetAuthBaseReturn"];
-      /** Api Keys */
-      api_keys: {
-        [key: string]: components["schemas"]["ApiKey"];
-      };
-      /** Api Key Scope Ids */
-      api_key_scope_ids: {
-        [key: string]: number[];
-      };
     };
     /** GetSettingsPageResponse */
     GetSettingsPageResponse: {
@@ -981,7 +967,9 @@ export interface operations {
   get_users_users__get: {
     parameters: {
       query?: {
+        /** @description Quantity of results */
         limit?: number;
+        /** @description Index of the first result */
         offset?: number;
       };
     };
@@ -1129,7 +1117,9 @@ export interface operations {
   get_users_admin_admin_users__get: {
     parameters: {
       query?: {
+        /** @description Quantity of results */
         limit?: number;
+        /** @description Index of the first result */
         offset?: number;
       };
     };
@@ -1216,7 +1206,9 @@ export interface operations {
   get_user_access_tokens_user_access_tokens__get: {
     parameters: {
       query?: {
+        /** @description Quantity of results */
         limit?: number;
+        /** @description Index of the first result */
         offset?: number;
       };
     };
@@ -1315,7 +1307,9 @@ export interface operations {
   get_user_access_tokens_admin_admin_user_access_tokens_users__user_id___get: {
     parameters: {
       query?: {
+        /** @description Quantity of results */
         limit?: number;
+        /** @description Index of the first result */
         offset?: number;
       };
       path: {
@@ -1416,8 +1410,14 @@ export interface operations {
   get_user_api_keys_api_keys__get: {
     parameters: {
       query?: {
+        /** @description Quantity of results */
         limit?: number;
+        /** @description Index of the first result */
         offset?: number;
+        /** @description Ordered series of fields to sort the results by, in the order they should be applied */
+        order_by?: ("issued" | "expiry" | "name")[];
+        /** @description Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields */
+        order_by_desc?: ("issued" | "expiry" | "name")[];
       };
     };
     responses: {
@@ -1608,8 +1608,14 @@ export interface operations {
   get_user_api_keys_admin_admin_api_keys_users__user_id___get: {
     parameters: {
       query?: {
+        /** @description Quantity of results */
         limit?: number;
+        /** @description Index of the first result */
         offset?: number;
+        /** @description Ordered series of fields to sort the results by, in the order they should be applied */
+        order_by?: ("issued" | "expiry" | "name")[];
+        /** @description Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields */
+        order_by_desc?: ("issued" | "expiry" | "name")[];
       };
       path: {
         user_id: string;
@@ -2129,17 +2135,6 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["GetSettingsPageResponse"];
-        };
-      };
-    };
-  };
-  /** Get Settings Page */
-  get_settings_page_pages_settings_api_keys__get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["GetSettingsApiKeysPageResponse"];
         };
       };
     };

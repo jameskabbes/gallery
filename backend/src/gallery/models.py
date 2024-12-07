@@ -2,7 +2,7 @@ from pydantic import BaseModel, field_validator
 import typing
 from typing import Unpack
 import uuid
-from fastapi import HTTPException, status, Response, APIRouter
+from fastapi import HTTPException, status, Response, APIRouter, Query
 from sqlmodel import SQLModel, Field, Column, Session, select, delete, Relationship
 from sqlalchemy.sql import Select
 from sqlalchemy.orm.attributes import InstrumentedAttribute
@@ -102,7 +102,7 @@ def build_pagination[TQuery: Select](query: TQuery, pagination: Pagination):
 
 class OrderBy[T](BaseModel):
     field: T
-    descending: bool = False
+    ascending: bool
 
 
 def validate_and_normalize_datetime(value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime:
@@ -153,6 +153,7 @@ def api_endpoint(func):
 class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, IdObject[IdType]):
 
     _ROUTER_TAG: typing.ClassVar[str]
+    _ORDER_BY_OPTIONS: typing.ClassVar = str
 
     @ classmethod
     def not_found_message(cls) -> str:
@@ -177,6 +178,24 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
     @classmethod
     def delete_responses(cls):
         return {}
+
+    @classmethod
+    def get_order_by_depends(cls):
+        def order_by_depends(order_by: list[cls._ORDER_BY_OPTIONS] = Query([], description='Ordered series of fields to sort the results by, in the order they should be applied'), order_by_desc: list[cls._ORDER_BY_OPTIONS] = Query([], description='Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields')) -> list[OrderBy[cls._ORDER_BY_OPTIONS]]:
+            order_by_set = set(order_by)
+            order_by_desc_set = set(order_by_desc)
+
+            if not order_by_desc_set.issubset(order_by_set):
+                raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                                    detail='"order_by_desc" fields must be a subset of "order_by" fields')
+
+            return [
+                OrderBy[cls._ORDER_BY_OPTIONS](
+                    field=field, ascending=field not in order_by_desc_set)
+                for field in order_by
+            ]
+
+        return order_by_depends
 
     @ classmethod
     async def get_one_by_id(cls, session: Session, id: IdType) -> T | None:
@@ -212,10 +231,10 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
     def _build_order_by[TQuery: Select](cls, query: TQuery, order_by: list[OrderBy]):
         for order in order_by:
             field: InstrumentedAttribute = getattr(cls, order.field)
-            if order.descending:
-                query = query.order_by(field.desc())
-            else:
+            if order.ascending:
                 query = query.order_by(field.asc())
+            else:
+                query = query.order_by(field.desc())
 
         return query
 
@@ -398,18 +417,6 @@ class User(Table['User', UserTypes.id, UserCreateAdmin, UserUpdateAdmin], UserID
         back_populates='user', cascade_delete=True)
 
     _ROUTER_TAG: typing.ClassVar[str] = 'User'
-    _CRUD_ROUTER_ID_KEY = 'user_id'
-    _CRUD_ROUTER_RESPONSE_MODELS = {
-        'get': UserPublic,
-        'post': UserPrivate,
-        'patch': UserPrivate,
-    }
-
-    _CREATE_MODEL: typing.ClassVar = UserCreate
-    _CREATE_ADMIN_MODEL: typing.ClassVar[typing.Type[UserCreateAdmin]
-                                         ] = UserCreateAdmin
-    _UPDATE_MODEL: typing.ClassVar = UserUpdate
-    _UPDATE_ADMIN_MODEL: typing.ClassVar = UserUpdateAdmin
 
     @ property
     def is_public(self) -> bool:
@@ -768,10 +775,11 @@ class ApiKey(Table['ApiKey', ApiKeyTypes.id, ApiKeyCreateAdmin, ApiKeyUpdateAdmi
     api_key_scopes: list['ApiKeyScope'] = Relationship(
         back_populates='api_key', cascade_delete=True)
 
+    _ROUTER_TAG: typing.ClassVar[str] = 'Api Key'
+    _ORDER_BY_OPTIONS: typing.ClassVar = ApiKeyTypes.order_by
+
     async def get_scope_ids(self) -> list[client.ScopeTypes.id]:
         return [api_key_scope.scope_id for api_key_scope in self.api_key_scopes]
-
-    _ROUTER_TAG: typing.ClassVar[str] = 'Api Key'
 
     @ classmethod
     async def create(cls, **kwargs) -> typing.Self:

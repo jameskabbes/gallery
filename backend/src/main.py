@@ -187,9 +187,6 @@ def get_authorization(
                     session, auth_credential_dict['id']
                 )
 
-                print(auth_credential)
-                print(auth_credential_dict)
-
                 # not in the db, raise exception
                 if not auth_credential:
                     return GetAuthorizationReturn(exception='authorization_expired')
@@ -535,25 +532,9 @@ app.include_router(auth_router)
 
 
 def get_pagination(max_limit: int = 100, default_limit: int = 10):
-    def dependency(limit: int = Query(default_limit, ge=1, le=max_limit), offset: int = Query(0, ge=0)):
+    def dependency(limit: int = Query(default_limit, ge=1, le=max_limit, description='Quantity of results'), offset: int = Query(0, ge=0, description='Index of the first result')):
         return models.Pagination(limit=limit, offset=offset)
     return dependency
-
-
-def parse_order_bys[T](order_by: list[str] = Query([])) -> list[models.OrderBy[T]]:
-
-    parsed_order_bys = []
-    for field in order_by:
-        try:
-            descending = False
-            if ':' in field:
-                field, direction = field.split(":")
-                descending = direction.lower() == "desc"
-            parsed_order_bys.append(models.OrderBy(
-                field=field, descending=descending))
-        except:
-            raise ValueError(f"Invalid order_by format: {field}")
-    return parsed_order_bys
 
 
 # Users
@@ -902,7 +883,7 @@ async def get_user_api_keys(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())],
     pagination: typing.Annotated[models.Pagination, Depends(get_pagination())],
-    order_bys: typing.Annotated[list[models.OrderBy[models.ApiKeyTypes.order_by]], Depends(parse_order_bys)],
+    order_bys: typing.Annotated[list[models.OrderBy[models.ApiKeyTypes.order_by]], Depends(models.ApiKey.get_order_by_depends())],
 ) -> list[models.ApiKeyPrivate]:
     with Session(c.db_engine) as session:
 
@@ -910,8 +891,6 @@ async def get_user_api_keys(
             models.ApiKey.user_id == authorization._user_id)
         query = models.build_pagination(query, pagination)
         query = models.ApiKey._build_order_by(query, order_bys)
-
-        print(order_bys)
 
         print(query)
 
@@ -925,12 +904,14 @@ async def get_user_api_keys_admin(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization(required_scopes={'admin'}))],
     pagination: typing.Annotated[models.Pagination, Depends(get_pagination())],
+    order_bys: typing.Annotated[list[models.OrderBy[models.ApiKeyTypes.order_by]], Depends(models.ApiKey.get_order_by_depends())],
 ) -> list[models.ApiKey]:
     with Session(c.db_engine) as session:
 
         query = select(models.ApiKey).where(
             models.ApiKey.user_id == user_id)
         query = models.build_pagination(query, pagination)
+        query = models.ApiKey._build_order_by(query, order_bys)
 
         user_api_keys = session.exec(query).all()
         return user_api_keys
