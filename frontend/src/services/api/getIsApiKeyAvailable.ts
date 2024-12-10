@@ -7,7 +7,7 @@ import {
   ExtractResponseTypes,
 } from '../../types';
 
-const API_ENDPOINT = '/api-keys/available/check/';
+const API_ENDPOINT = '/api-keys/details/available/';
 const API_METHOD = 'get';
 
 type GetIsApiKeyAvailableResponses = ExtractResponseTypes<
