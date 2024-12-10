@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '../contexts/Auth';
 import { ToastContext } from '../contexts/Toast';
 import { Appearance } from '../components/Settings/Appearance';
@@ -41,6 +41,7 @@ function Settings(): JSX.Element {
     profile: {
       icon: <IoPersonOutline />,
       name: 'Profile',
+      requiresAuth: true,
       component: (
         <Profile authContext={authContext} toastContext={toastContext} />
       ),
@@ -48,11 +49,13 @@ function Settings(): JSX.Element {
     appearance: {
       icon: <IoBrush />,
       name: 'Appearance',
+      requiresAuth: false,
       component: <Appearance />,
     },
     sessions: {
       icon: <IoRadioOutline />,
       name: 'Sessions',
+      requiresAuth: true,
       component: (
         <UserAccessTokens
           authContext={authContext}
@@ -63,60 +66,57 @@ function Settings(): JSX.Element {
     'api-keys': {
       icon: <IoKeyOutline />,
       name: 'API Keys',
+      requiresAuth: true,
       component: (
         <ApiKeys authContext={authContext} toastContext={toastContext} />
       ),
     },
   };
 
-  type SelectionComponentKeys = keyof typeof selectionComponentMapping;
-  const loggedInComponentKeys = new Set<SelectionComponentKeys>([
-    'profile',
-    'sessions',
-    'api-keys',
-  ]);
+  type SelectionComponentKey = keyof typeof selectionComponentMapping;
 
-  const defaultLoggedInSelection: SelectionComponentKeys = 'profile';
-  const defaultLoggedOutSelection: SelectionComponentKeys = 'appearance';
+  function navigateToSelection(selection: SelectionComponentKey) {
+    navigate(`/settings/${selection}`);
+  }
 
-  const [selection, setSelection] = useState<SelectionComponentKeys>(
-    useParams<{ selection: string }>().selection as SelectionComponentKeys
-  );
-
-  useEffect(() => {
-    if (!loading && selection in selectionComponentMapping) {
-      navigate(`/settings/${selection}`);
-    }
-  }, [selection, loading]);
+  const selection = useParams<{ selection: string }>()
+    .selection as SelectionComponentKey;
+  const [validated, setValidated] = useState(false);
 
   useEffect(() => {
     if (!loading) {
-      // logged out
       if (authContext.state.user === null) {
         if (
-          loggedInComponentKeys.has(selection) ||
-          !(selection in selectionComponentMapping)
+          !(selection in selectionComponentMapping) ||
+          selectionComponentMapping[selection].requiresAuth
         ) {
-          setSelection(defaultLoggedOutSelection);
+          navigateToSelection('appearance');
+        } else {
+          setValidated(true);
         }
       } else {
         if (!(selection in selectionComponentMapping)) {
-          setSelection(defaultLoggedInSelection);
+          navigateToSelection('profile');
+        } else {
+          setValidated(true);
         }
       }
     }
-  }, [authContext.state.user, selection, loading]);
+  }, [authContext.state.user, loading, selection]);
 
   return (
     <div className="max-w-screen-2xl mx-auto w-full">
-      {loading || !selection ? (
+      {loading || !validated ? (
         'loading'
       ) : (
         <div>
           <div className="flex flex-row overflow-x-auto ">
             {Object.keys(selectionComponentMapping).map(
-              (key: SelectionComponentKeys) => {
-                if (authContext.state.user || !loggedInComponentKeys.has(key)) {
+              (key: SelectionComponentKey) => {
+                if (
+                  authContext.state.user ||
+                  !selectionComponentMapping[key].requiresAuth
+                ) {
                   {
                     selectionComponentMapping[key].component;
                   }
@@ -124,7 +124,7 @@ function Settings(): JSX.Element {
                   return (
                     <Surface key={key}>
                       <button
-                        onClick={() => setSelection(key)}
+                        onClick={() => navigateToSelection(key)}
                         className={`${
                           selection === key ? 'border-color-primary' : ''
                         } border-[1px] hover:border-color-primary py-1 px-2 mx-1 my-2 rounded-full `}
