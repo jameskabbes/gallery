@@ -4,18 +4,16 @@ import { AuthContext } from '../contexts/Auth';
 import { ToastContext } from '../contexts/Toast';
 import { Appearance } from '../components/Settings/Appearance';
 import { UserAccessTokens } from '../components/Settings/UserAccessTokens';
-import { paths, operations, components } from '../openapi_schema';
-import { ExtractResponseTypes } from '../types';
-import { useApiCall } from '../utils/api';
 import { Profile } from '../components/Settings/Profile';
-import { DeviceContext } from '../contexts/Device';
+import { paths, operations, components } from '../openapi_schema';
 
 import { IoBrush } from 'react-icons/io5';
 import { IoRadioOutline } from 'react-icons/io5';
 import { IoPersonOutline } from 'react-icons/io5';
 import { IoKeyOutline } from 'react-icons/io5';
 import { ApiKeys } from '../components/Settings/ApiKeys';
-import { Card1 } from '../components/Utils/Card';
+import { useApiCall } from '../utils/api';
+import { ExtractResponseTypes } from '../types';
 import { Surface } from '../components/Utils/Surface';
 
 const API_ENDPOINT = '/pages/settings/';
@@ -29,13 +27,6 @@ function Settings(): JSX.Element {
   const authContext = useContext(AuthContext);
   const toastContext = useContext(ToastContext);
   const navigate = useNavigate();
-
-  const { data, loading, status } = useApiCall<
-    ResponseTypesByStatus[keyof ResponseTypesByStatus]
-  >({
-    url: API_ENDPOINT,
-    method: API_METHOD,
-  });
 
   const selectionComponentMapping = {
     profile: {
@@ -83,6 +74,15 @@ function Settings(): JSX.Element {
     .selection as SelectionComponentKey;
   const [validated, setValidated] = useState(false);
 
+  console.log(selection);
+
+  const { loading } = useApiCall<
+    ResponseTypesByStatus[keyof ResponseTypesByStatus]
+  >({
+    url: API_ENDPOINT,
+    method: API_METHOD,
+  });
+
   useEffect(() => {
     if (!loading) {
       if (authContext.state.user === null) {
@@ -105,54 +105,54 @@ function Settings(): JSX.Element {
   }, [authContext.state.user, loading, selection]);
 
   return (
-    <div className="max-w-screen-2xl mx-auto w-full">
-      {loading || !validated ? (
-        'loading'
-      ) : (
-        <div>
-          <div className="flex flex-row overflow-x-auto ">
-            {Object.keys(selectionComponentMapping).map(
-              (key: SelectionComponentKey) => {
-                if (
-                  authContext.state.user ||
-                  !selectionComponentMapping[key].requiresAuth
-                ) {
-                  {
-                    selectionComponentMapping[key].component;
-                  }
+    <>
+      {validated && (
+        <div className="max-w-screen-2xl mx-auto w-full">
+          <div>
+            <div className="flex flex-row overflow-x-auto ">
+              {Object.keys(selectionComponentMapping).map(
+                (key: SelectionComponentKey) => {
+                  if (
+                    authContext.state.user ||
+                    !selectionComponentMapping[key].requiresAuth
+                  ) {
+                    {
+                      selectionComponentMapping[key].component;
+                    }
 
-                  return (
-                    <Surface key={key}>
-                      <button
-                        onClick={() => navigateToSelection(key)}
-                        className={`${
-                          selection === key ? 'border-color-primary' : ''
-                        } border-[1px] hover:border-color-primary py-1 px-2 mx-1 my-2 rounded-full `}
-                      >
-                        <h5>
-                          <div className="flex flex-row space-x-1 items-center">
-                            {selectionComponentMapping[key].icon}
-                            <span className="whitespace-nowrap">
-                              {selectionComponentMapping[key].name}
-                            </span>
-                          </div>
-                        </h5>
-                      </button>
-                    </Surface>
-                  );
+                    return (
+                      <Surface key={key}>
+                        <button
+                          onClick={() => navigateToSelection(key)}
+                          className={`${
+                            selection === key ? 'border-color-primary' : ''
+                          } border-[1px] hover:border-color-primary py-1 px-2 mx-1 my-2 rounded-full `}
+                        >
+                          <h5>
+                            <div className="flex flex-row space-x-1 items-center">
+                              {selectionComponentMapping[key].icon}
+                              <span className="whitespace-nowrap">
+                                {selectionComponentMapping[key].name}
+                              </span>
+                            </div>
+                          </h5>
+                        </button>
+                      </Surface>
+                    );
+                  }
                 }
-              }
-            )}
-          </div>
-          <Surface>
-            <hr />
-          </Surface>
-          <div className="p-2">
-            {selectionComponentMapping[selection].component}
+              )}
+            </div>
+            <Surface>
+              <hr />
+            </Surface>
+            <div className="p-2">
+              {selectionComponentMapping[selection].component}
+            </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 

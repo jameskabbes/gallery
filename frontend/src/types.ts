@@ -19,6 +19,9 @@ interface UseApiCallReturn<T> extends ApiResponse<T> {
   refetch: () => void;
 }
 
+type ArrayElement<ArrayType extends readonly unknown[]> =
+  ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
+
 type ExtractResponseTypes<T> = {
   [K in keyof T]: T[K] extends {
     content: infer ContentTypes;
@@ -237,7 +240,10 @@ interface SurfaceContextValue {
   mode: 'a' | 'b';
 }
 
+type OrderByState = 'off' | 'asc' | 'desc';
+
 export {
+  ArrayElement,
   ExtractResponseTypes,
   CallApiOptions,
   ApiResponse,
@@ -267,4 +273,5 @@ export {
   EscapeKeyContextType,
   ConfirmationModalBaseProps,
   SurfaceContextValue,
+  OrderByState,
 };

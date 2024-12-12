@@ -7,7 +7,9 @@ from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from fastapi.security import OAuth2, OAuth2PasswordRequestForm, OAuth2PasswordBearer, APIKeyHeader
 from fastapi.security.utils import get_authorization_scheme_param
 from contextlib import asynccontextmanager
+from sqlalchemy import and_
 from sqlalchemy.orm import selectinload
+from sqlalchemy.sql import func
 from gallery import get_client, models, utils, auth, client
 import datetime
 from sqlmodel import Session, SQLModel, select
@@ -15,7 +17,6 @@ import typing
 import httpx
 import jwt
 from jwt.exceptions import InvalidTokenError, MissingRequiredClaimError, DecodeError
-from sqlalchemy import and_
 from pydantic import BaseModel
 import datetime
 from functools import wraps
@@ -802,7 +803,7 @@ async def post_api_key_to_user(
 ) -> models.ApiKeyPrivate:
 
     with Session(c.db_engine) as session:
-        return models.ApiKeyPrivate.model_validate(await models.ApiKey.api_post(session=session, c=c, authorized_user_id=authorization._user_id, admin=False, create_model=models.ApiKeyCreateAdmin(
+        return models.ApiKeyPrivate.from_api_key(await models.ApiKey.api_post(session=session, c=c, authorized_user_id=authorization._user_id, admin=False, create_model=models.ApiKeyCreateAdmin(
             **api_key_create.model_dump(exclude_unset=True), user_id=authorization._user_id)))
 
 
@@ -878,24 +879,48 @@ UserNotPermittedToViewAnotherUserApiKeys = HTTPException(
     status.HTTP_403_FORBIDDEN, detail='User does not have permission to view another user\'s API keys')
 
 
+class GetApiKeysQueryParamsReturn(BaseModel):
+    pagination: models.Pagination
+    order_bys: list[models.OrderBy[models.ApiKeyTypes.order_by]]
+
+
+def get_api_keys_query_params(
+    pagination: typing.Annotated[models.Pagination, Depends(get_pagination())],
+    order_bys: typing.Annotated[list[models.OrderBy[models.ApiKeyTypes.order_by]], Depends(
+        models.ApiKey.get_order_by_depends())]
+):
+    return GetApiKeysQueryParamsReturn(pagination=pagination, order_bys=order_bys)
+
+
 @api_key_router.get('/')
 async def get_user_api_keys(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())],
-    pagination: typing.Annotated[models.Pagination, Depends(get_pagination())],
-    order_bys: typing.Annotated[list[models.OrderBy[models.ApiKeyTypes.order_by]], Depends(models.ApiKey.get_order_by_depends())],
+    get_api_keys_query_params: GetApiKeysQueryParamsReturn = Depends(
+        get_api_keys_query_params)
 ) -> list[models.ApiKeyPrivate]:
     with Session(c.db_engine) as session:
 
-        query = select(models.ApiKey).where(
+        query = select(models.ApiKey).options(selectinload(models.ApiKey.api_key_scopes)).where(
             models.ApiKey.user_id == authorization._user_id)
-        query = models.build_pagination(query, pagination)
-        query = models.ApiKey._build_order_by(query, order_bys)
-
-        print(query)
+        query = models.build_pagination(
+            query, get_api_keys_query_params.pagination)
+        query = models.ApiKey._build_order_by(
+            query, get_api_keys_query_params.order_bys)
 
         user_api_keys = session.exec(query).all()
-        return [models.ApiKeyPrivate.model_validate(api_key) for api_key in user_api_keys]
+        return [models.ApiKeyPrivate.from_api_key(api_key) for api_key in user_api_keys]
+
+
+@api_key_router.get('/details/count/')
+async def get_user_api_keys_count(
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization())],
+) -> int:
+    with Session(c.db_engine) as session:
+        query = select(func.count()).select_from(models.ApiKey).where(
+            models.ApiKey.user_id == authorization._user_id)
+        return session.exec(query).one()
 
 
 @api_key_admin_router.get('/users/{user_id}/', tags=[models.User._ROUTER_TAG])
@@ -903,21 +928,23 @@ async def get_user_api_keys_admin(
     user_id: models.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization(required_scopes={'admin'}))],
-    pagination: typing.Annotated[models.Pagination, Depends(get_pagination())],
-    order_bys: typing.Annotated[list[models.OrderBy[models.ApiKeyTypes.order_by]], Depends(models.ApiKey.get_order_by_depends())],
+    get_api_keys_query_params: GetApiKeysQueryParamsReturn = Depends(
+        get_api_keys_query_params)
 ) -> list[models.ApiKey]:
     with Session(c.db_engine) as session:
 
         query = select(models.ApiKey).where(
             models.ApiKey.user_id == user_id)
-        query = models.build_pagination(query, pagination)
-        query = models.ApiKey._build_order_by(query, order_bys)
+        query = models.build_pagination(
+            query, get_api_keys_query_params.pagination)
+        query = models.ApiKey._build_order_by(
+            query, get_api_keys_query_params.order_bys)
 
         user_api_keys = session.exec(query).all()
         return user_api_keys
 
 
-@api_key_router.get('/available/check/', responses={status.HTTP_409_CONFLICT: {"description": models.ApiKey.already_exists_message(), 'model': DetailOnlyResponse}})
+@api_key_router.get('/details/available/', responses={status.HTTP_409_CONFLICT: {"description": models.ApiKey.already_exists_message(), 'model': DetailOnlyResponse}})
 async def get_api_key_available(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())],
@@ -929,7 +956,7 @@ async def get_api_key_available(
         ))
 
 
-@api_key_admin_router.get('/available/check/', responses={status.HTTP_409_CONFLICT: {"description": models.ApiKey.already_exists_message(), 'model': DetailOnlyResponse}})
+@api_key_admin_router.get('/details/available/', responses={status.HTTP_409_CONFLICT: {"description": models.ApiKey.already_exists_message(), 'model': DetailOnlyResponse}})
 async def get_api_key_available_admin(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization(required_scopes={'admin'}))],
@@ -1104,7 +1131,7 @@ async def delete_gallery_admin(
         return await models.Gallery.api_delete(session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id, admin=True)
 
 
-@gallery_router.get('/available/check/')
+@gallery_router.get('/details/available/')
 async def get_gallery_available(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())],
@@ -1116,7 +1143,7 @@ async def get_gallery_available(
         ))
 
 
-@gallery_admin_router.get('/available/check/')
+@gallery_admin_router.get('/details/available/')
 async def get_gallery_available_admin(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization(required_scopes={'admin'}))],
@@ -1259,23 +1286,39 @@ class GetSettingsPageResponse(GetAuthReturn):
     pass
 
 
-@ pages_router.get('/settings/')
-async def get_settings_page(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=False))]) -> GetSettingsPageResponse:
+@pages_router.get('/settings/')
+async def get_settings_page(
+        authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+            get_authorization(raise_exceptions=False))]
+) -> GetSettingsPageResponse:
     return GetSettingsPageResponse(
         **get_auth(authorization).model_dump()
     )
 
 
 class GetSettingsApiKeysPageResponse(GetAuthReturn):
-    api_keys: models.PluralApiKeysDict
-    api_key_scope_ids: dict[models.ApiKeyTypes.id, list[client.ScopeTypes.id]]
+    api_key_count: int
+    api_keys: list[models.ApiKeyPrivate]
+
+
+@pages_router.get('/settings/api-keys/', tags=[models.ApiKey._ROUTER_TAG])
+async def get_settings_api_keys_page(
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())],
+    get_api_keys_query_params: GetApiKeysQueryParamsReturn = Depends(
+        get_api_keys_query_params)
+) -> GetSettingsApiKeysPageResponse:
+    return GetSettingsApiKeysPageResponse(
+        **get_auth(authorization).model_dump(),
+        api_key_count=await get_user_api_keys_count(authorization),
+        api_keys=await get_user_api_keys(authorization, get_api_keys_query_params)
+    )
 
 
 class GetStylesPageResponse(GetAuthReturn):
     pass
 
 
-@pages_router.get('/styles/')
+@ pages_router.get('/styles/')
 async def get_styles_page(authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=False))]) -> GetStylesPageResponse:
     return GetStylesPageResponse(
         **get_auth(authorization).model_dump()

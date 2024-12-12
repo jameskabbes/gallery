@@ -14,19 +14,19 @@ type GetApiKeysResponses = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
-type PaginationParams =
+type QueryParams =
   paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['query'];
 
 async function getApiKeys(
   authContext: AuthContextType,
-  pagination: PaginationParams
+  params: Partial<QueryParams>
 ): Promise<ApiResponse<GetApiKeysResponses[keyof GetApiKeysResponses]>> {
   return await callApi<GetApiKeysResponses[keyof GetApiKeysResponses]>({
     url: API_ENDPOINT,
     method: API_METHOD,
     authContext: authContext,
-    params: pagination,
+    params: params,
   });
 }
 
-export { getApiKeys, PaginationParams, GetApiKeysResponses };
+export { getApiKeys, QueryParams, GetApiKeysResponses };

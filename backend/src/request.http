@@ -70,8 +70,16 @@
 # "user_role_id": "2"
 # }
 
-GET http://localhost:8087/api-keys/?order_by=name&order_by=issued&order_by_desc=name
+# GET http://localhost:8087/api-keys/?order_by=name&order_by=issued&order_by_desc=name
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGM2MmYxMi0xOGQzLTQxM2MtOWUxNC01YTdjYjVjYTFlYzAiLCJleHAiOjE3MzQwODcxNzQsImlhdCI6MTczMzQ4MjM3NCwidHlwZSI6ImFjY2Vzc190b2tlbiJ9.9fRMULl5lnc7dZLaqwoDimE68DviZkSFI-JcdYLej6w
+
+# GET http://localhost:8087/api-keys/details/count/
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGM2MmYxMi0xOGQzLTQxM2MtOWUxNC01YTdjYjVjYTFlYzAiLCJleHAiOjE3MzQwODcxNzQsImlhdCI6MTczMzQ4MjM3NCwidHlwZSI6ImFjY2Vzc190b2tlbiJ9.9fRMULl5lnc7dZLaqwoDimE68DviZkSFI-JcdYLej6w
+
+GET http://localhost:8087/pages/settings/api-keys/
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGM2MmYxMi0xOGQzLTQxM2MtOWUxNC01YTdjYjVjYTFlYzAiLCJleHAiOjE3MzQwODcxNzQsImlhdCI6MTczMzQ4MjM3NCwidHlwZSI6ImFjY2Vzc190b2tlbiJ9.9fRMULl5lnc7dZLaqwoDimE68DviZkSFI-JcdYLej6w
+
+
 
 # POST http://localhost:8087/api-keys/
 # Content-Type: application/json

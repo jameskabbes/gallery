@@ -117,9 +117,13 @@ export interface paths {
     /** Get Api Key Jwt */
     get: operations["get_api_key_jwt_api_keys__api_key_id__generate_jwt__get"];
   };
-  "/api-keys/available/check/": {
+  "/api-keys/details/count/": {
+    /** Get User Api Keys Count */
+    get: operations["get_user_api_keys_count_api_keys_details_count__get"];
+  };
+  "/api-keys/details/available/": {
     /** Get Api Key Available */
-    get: operations["get_api_key_available_api_keys_available_check__get"];
+    get: operations["get_api_key_available_api_keys_details_available__get"];
   };
   "/admin/api-keys/{api_key_id}/": {
     /** Get Api Key By Id Admin */
@@ -137,9 +141,9 @@ export interface paths {
     /** Get User Api Keys Admin */
     get: operations["get_user_api_keys_admin_admin_api_keys_users__user_id___get"];
   };
-  "/admin/api-keys/available/check/": {
+  "/admin/api-keys/details/available/": {
     /** Get Api Key Available Admin */
-    get: operations["get_api_key_available_admin_admin_api_keys_available_check__get"];
+    get: operations["get_api_key_available_admin_admin_api_keys_details_available__get"];
   };
   "/api-key-scopes/api-keys/{api_key_id}/scopes/{scope_id}/": {
     /** Add Scope To Api Key */
@@ -167,9 +171,9 @@ export interface paths {
     /** Post Gallery */
     post: operations["post_gallery_galleries__post"];
   };
-  "/galleries/available/check/": {
+  "/galleries/details/available/": {
     /** Get Gallery Available */
-    get: operations["get_gallery_available_galleries_available_check__get"];
+    get: operations["get_gallery_available_galleries_details_available__get"];
   };
   "/galleries/{gallery_id}/upload/": {
     /** Upload File To Gallery */
@@ -191,9 +195,9 @@ export interface paths {
     /** Post Gallery Admin */
     post: operations["post_gallery_admin_admin_galleries__post"];
   };
-  "/admin/galleries/available/check/": {
+  "/admin/galleries/details/available/": {
     /** Get Gallery Available Admin */
-    get: operations["get_gallery_available_admin_admin_galleries_available_check__get"];
+    get: operations["get_gallery_available_admin_admin_galleries_details_available__get"];
   };
   "/admin/galleries/users/{user_id}": {
     /** Get Galleries By User Admin */
@@ -210,6 +214,10 @@ export interface paths {
   "/pages/settings/": {
     /** Get Settings Page */
     get: operations["get_settings_page_pages_settings__get"];
+  };
+  "/pages/settings/api-keys/": {
+    /** Get Settings Api Keys Page */
+    get: operations["get_settings_api_keys_page_pages_settings_api_keys__get"];
   };
   "/pages/styles/": {
     /** Get Styles Page */
@@ -287,6 +295,8 @@ export interface components {
       id: string;
       /** Name */
       name: string;
+      /** Scope Ids */
+      scope_ids: number[];
     };
     /** ApiKeyUpdate */
     ApiKeyUpdate: {
@@ -532,6 +542,14 @@ export interface components {
     GetProfilePageResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
       user?: components["schemas"]["UserPrivate"] | null;
+    };
+    /** GetSettingsApiKeysPageResponse */
+    GetSettingsApiKeysPageResponse: {
+      auth: components["schemas"]["GetAuthBaseReturn"];
+      /** Api Key Count */
+      api_key_count: number;
+      /** Api Keys */
+      api_keys: components["schemas"]["ApiKeyPrivate"][];
     };
     /** GetSettingsPageResponse */
     GetSettingsPageResponse: {
@@ -1485,8 +1503,19 @@ export interface operations {
       };
     };
   };
+  /** Get User Api Keys Count */
+  get_user_api_keys_count_api_keys_details_count__get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": number;
+        };
+      };
+    };
+  };
   /** Get Api Key Available */
-  get_api_key_available_api_keys_available_check__get: {
+  get_api_key_available_api_keys_details_available__get: {
     parameters: {
       query: {
         name: string;
@@ -1637,7 +1666,7 @@ export interface operations {
     };
   };
   /** Get Api Key Available Admin */
-  get_api_key_available_admin_admin_api_keys_available_check__get: {
+  get_api_key_available_admin_admin_api_keys_details_available__get: {
     parameters: {
       query: {
         name: string;
@@ -1892,7 +1921,7 @@ export interface operations {
     };
   };
   /** Get Gallery Available */
-  get_gallery_available_galleries_available_check__get: {
+  get_gallery_available_galleries_details_available__get: {
     parameters: {
       query: {
         name: string;
@@ -2056,7 +2085,7 @@ export interface operations {
     };
   };
   /** Get Gallery Available Admin */
-  get_gallery_available_admin_admin_galleries_available_check__get: {
+  get_gallery_available_admin_admin_galleries_details_available__get: {
     parameters: {
       query: {
         name: string;
@@ -2135,6 +2164,35 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["GetSettingsPageResponse"];
+        };
+      };
+    };
+  };
+  /** Get Settings Api Keys Page */
+  get_settings_api_keys_page_pages_settings_api_keys__get: {
+    parameters: {
+      query?: {
+        /** @description Quantity of results */
+        limit?: number;
+        /** @description Index of the first result */
+        offset?: number;
+        /** @description Ordered series of fields to sort the results by, in the order they should be applied */
+        order_by?: ("issued" | "expiry" | "name")[];
+        /** @description Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields */
+        order_by_desc?: ("issued" | "expiry" | "name")[];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["GetSettingsApiKeysPageResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };

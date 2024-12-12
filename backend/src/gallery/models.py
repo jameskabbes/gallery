@@ -741,7 +741,11 @@ class ApiKeyPublic(ApiKeyExport):
 
 
 class ApiKeyPrivate(ApiKeyExport):
-    pass
+    scope_ids: list[client.ScopeTypes.id]
+
+    @classmethod
+    def from_api_key(cls, api_key: 'ApiKey') -> typing.Self:
+        return cls.model_construct(**api_key.model_dump(), scope_ids=[api_key_scope.scope_id for api_key_scope in api_key.api_key_scopes])
 
 
 class ApiKeyImport(AuthCredentialImport):
@@ -900,7 +904,7 @@ class ApiKeyScope(Table['ApiKeyScope', ApiKeyScopeID, ApiKeyScopeCreateAdmin, Ap
 
     @ classmethod
     async def _check_authorization_post(cls, **kwargs):
-        api_key = await ApiKey._basic_api_get(kwargs['session'], kwargs['create_model']._id)
+        api_key = await ApiKey._basic_api_get(kwargs['session'], kwargs['create_model'].api_key_id)
         if not kwargs['admin']:
             if api_key.user_id != kwargs['authorized_user_id']:
                 raise HTTPException(

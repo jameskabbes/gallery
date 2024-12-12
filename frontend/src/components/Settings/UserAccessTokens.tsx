@@ -13,6 +13,7 @@ import {
 import { Card1 } from '../Utils/Card';
 import { Button1 } from '../Utils/Button';
 import { useConfirmationModal } from '../../utils/useConfirmationModal';
+import { Loader1 } from '../Utils/Loader';
 
 const API_ENDPOINT = '/user-access-tokens/';
 const API_METHOD = 'get';
@@ -103,6 +104,7 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
       <>
         <h2 className="mb-4">Sessions</h2>
         <div className="flex flex-col space-y-4">
+          {loading && <Loader1 />}
           {Object.keys(userAccessTokens).map((key) => {
             const session = userAccessTokens[key];
             return (

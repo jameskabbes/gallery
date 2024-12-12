@@ -9,6 +9,7 @@ import { setDeleteAccountModal } from '../User/DeleteAccount';
 import { GlobalModalsContext } from '../../contexts/GlobalModals';
 import { useConfirmationModal } from '../../utils/useConfirmationModal';
 import { UpdateEmail } from '../User/UpdateEmail';
+import { Surface } from '../Utils/Surface';
 
 interface Props {
   authContext: AuthContextType;
@@ -25,19 +26,27 @@ function Profile({ authContext, toastContext }: Props) {
         <h2 className="mb-4">Profile</h2>
         <div className="flex flex-col max-w-md space-y-6">
           <div className="flex flex-col space-y-2">
-            <hr />
+            <Surface>
+              <hr />
+            </Surface>
             <UpdateEmail user={authContext.state.user} />
           </div>
           <div className="flex flex-col space-y-2">
-            <hr />
+            <Surface>
+              <hr />
+            </Surface>
             <UpdateUsername user={authContext.state.user} />
           </div>
           <div className="flex flex-col space-y-2">
-            <hr />
+            <Surface>
+              <hr />
+            </Surface>
             <UpdatePassword />
           </div>
           <div className="flex flex-col space-y-2">
-            <hr />
+            <Surface>
+              <hr />
+            </Surface>
             <h4>Delete Account</h4>
             <p>
               Delete your entire account. All galleries, images, videos, api

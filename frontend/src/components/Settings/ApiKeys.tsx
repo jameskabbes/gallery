@@ -6,6 +6,8 @@ import {
   AuthContextType,
   defaultValidatedInputState,
   GlobalModalsContextType,
+  OrderByState,
+  ArrayElement,
 } from '../../types';
 import { useApiCall } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
@@ -29,6 +31,7 @@ import { IoChevronDownOutline } from 'react-icons/io5';
 import { ValidatedInputString } from '../Form/ValidatedInputString';
 
 import openapi_schema from '../../../../openapi_schema.json';
+
 import { ValidatedInputDatetimeLocal } from '../Form/ValidatedInputDatetimeLocal';
 import { Button1, Button2, ButtonSubmit } from '../Utils/Button';
 import { Card1, CardButton } from '../Utils/Card';
@@ -48,181 +51,27 @@ import { CheckOrX } from '../Form/CheckOrX';
 import {
   getApiKeys,
   GetApiKeysResponses,
-  PaginationParams,
+  QueryParams,
 } from '../../services/api/getApiKeys';
+import {
+  IoCaretUp,
+  IoCaretDown,
+  IoArrowForwardSharp,
+  IoArrowBackSharp,
+} from 'react-icons/io5';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Loader1 } from '../Utils/Loader';
 
-type TApiKeys = Record<
-  components['schemas']['ApiKey']['id'],
-  components['schemas']['ApiKey']
->;
+type ScopeID = number;
+type TApiKey = components['schemas']['ApiKeyPrivate'];
+type TApiKeys = Record<TApiKey['id'], TApiKey>;
 type TSetApiKeys = React.Dispatch<React.SetStateAction<TApiKeys>>;
 type TApiKeyScopeIds = {
-  [key: string]: Set<number>;
+  [key: TApiKey['id']]: Set<ScopeID>;
 };
 type TSetApiKeyScopeIds = React.Dispatch<React.SetStateAction<TApiKeyScopeIds>>;
-type ScopeID = number;
 
 const loadingApiKeyName = 'loading...';
-
-async function handleAddApiKeyScope(
-  scopeId: ScopeID,
-  apiKey: components['schemas']['ApiKey'],
-  setApiKeyScopeIds: TSetApiKeyScopeIds,
-  toastContext: ToastContextType,
-  authContext: AuthContextType
-) {
-  const scopeName = scopeIdToName[scopeId];
-
-  let toastId = toastContext.makePending({
-    message: `Adding ${scopeName} to ${apiKey.name}`,
-  });
-
-  setApiKeyScopeIds((prev) => {
-    const updatedSet = new Set(prev[apiKey.id]);
-    updatedSet.add(scopeId);
-    return {
-      ...prev,
-      [apiKey.id]: updatedSet,
-    };
-  });
-
-  const { data, status } = await postApiKeyScope(
-    authContext,
-    apiKey.id,
-    scopeId
-  );
-  if (status === 204) {
-    toastContext.update(toastId, {
-      message: `Added ${scopeName} to ${apiKey.name}`,
-      type: 'success',
-    });
-  } else {
-    toastContext.update(toastId, {
-      message: `Error adding ${scopeName} to ${apiKey.name}`,
-      type: 'error',
-    });
-    setApiKeyScopeIds((prev) => {
-      const updatedSet = new Set(prev[apiKey.id]);
-      updatedSet.delete(scopeId);
-      return {
-        ...prev,
-        [apiKey.id]: updatedSet,
-      };
-    });
-  }
-}
-
-async function handleDeleteApiKeyScope(
-  scopeId: ScopeID,
-  apiKey: components['schemas']['ApiKey'],
-  setApiKeyScopeIds: TSetApiKeyScopeIds,
-  toastContext: ToastContextType,
-  authContext: AuthContextType
-) {
-  const scopeName = scopeIdToName[scopeId];
-
-  let toastId = toastContext.makePending({
-    message: `Removing ${scopeName} from ${apiKey.name}`,
-  });
-
-  setApiKeyScopeIds((prev) => {
-    const updatedSet = new Set(prev[apiKey.id]);
-    updatedSet.delete(scopeId);
-    return {
-      ...prev,
-      [apiKey.id]: updatedSet,
-    };
-  });
-
-  const { data, status } = await deleteApiKeyScope(
-    authContext,
-    apiKey.id,
-    scopeId
-  );
-
-  if (status === 204) {
-    toastContext.update(toastId, {
-      message: `Removed ${scopeName} from ${apiKey.name}`,
-      type: 'success',
-    });
-  } else {
-    toastContext.update(toastId, {
-      message: `Error removing ${scopeName} from ${apiKey.name}`,
-      type: 'error',
-    });
-    setApiKeyScopeIds((prev) => {
-      const updatedSet = new Set(prev[apiKey.id]);
-      updatedSet.add(scopeId);
-      return {
-        ...prev,
-        [apiKey.id]: updatedSet,
-      };
-    });
-  }
-}
-
-interface ApiKeyScopeRowProps {
-  scopeId: ScopeID;
-  apiKey: components['schemas']['ApiKey'];
-  apiKeyScopeIds: TApiKeyScopeIds;
-  setApiKeyScopeIds: TSetApiKeyScopeIds;
-  toastContext: ToastContextType;
-  authContext: AuthContextType;
-}
-
-function ApiKeyScopeRow({
-  scopeId,
-  apiKey,
-  apiKeyScopeIds,
-  setApiKeyScopeIds,
-  toastContext,
-  authContext,
-}: ApiKeyScopeRowProps) {
-  const [loading, setLoading] = useState<boolean>(false);
-
-  async function handleToggle() {
-    setLoading(true);
-
-    if (apiKeyScopeIds[apiKey.id].has(scopeId)) {
-      // was on, now turning off
-      await handleDeleteApiKeyScope(
-        scopeId,
-        apiKey,
-        setApiKeyScopeIds,
-        toastContext,
-        authContext
-      );
-    } else {
-      // was off, now turning on
-      await handleAddApiKeyScope(
-        scopeId,
-        apiKey,
-        setApiKeyScopeIds,
-        toastContext,
-        authContext
-      );
-    }
-    setLoading(false);
-  }
-
-  return (
-    <div
-      className="flex flex-row items-center space-x-1"
-      key={`${apiKey.id}-${scopeId}`}
-    >
-      <Toggle1
-        onClick={(e) => {
-          e.stopPropagation();
-          handleToggle();
-        }}
-        state={apiKeyScopeIds[apiKey.id].has(scopeId)}
-        disabled={loading}
-      />
-
-      <p>{scopeIdToName[scopeId]}</p>
-    </div>
-  );
-}
 
 interface ApiKeyCodeModalProps {
   authContext: AuthContextType;
@@ -280,183 +129,6 @@ function ApiKeyCodeModal({ authContext, apiKey }: ApiKeyCodeModalProps) {
         </Button1>
       </div>
     </div>
-  );
-}
-
-interface ApiKeyRowProps {
-  apiKeyId: components['schemas']['ApiKey']['id'];
-  apiKeys: TApiKeys;
-  setApiKeys: TSetApiKeys;
-  apiKeyScopeIds: TApiKeyScopeIds;
-  setApiKeyScopeIds: TSetApiKeyScopeIds;
-  toastContext: ToastContextType;
-  authContext: AuthContextType;
-  globalModalsContext: GlobalModalsContextType;
-  checkButtonConfirmation: ReturnType<
-    typeof useConfirmationModal
-  >['checkButtonConfirmation'];
-}
-
-function ApiKeyRow({
-  apiKeyId,
-  apiKeys,
-  setApiKeys,
-  apiKeyScopeIds,
-  setApiKeyScopeIds,
-  toastContext,
-  authContext,
-  globalModalsContext,
-  checkButtonConfirmation,
-}: ApiKeyRowProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  async function handleDeleteApiKey(
-    apiKeyId: components['schemas']['ApiKey']['id']
-  ) {
-    let toastId = toastContext.makePending({
-      message: `Deleting API Key ${apiKeys[apiKeyId].name}`,
-    });
-
-    const apiKeyToDelete = apiKeys[apiKeyId];
-    const newApiKeys = { ...apiKeys };
-    delete newApiKeys[apiKeyId];
-    setApiKeys(newApiKeys);
-
-    const apiKeyScopesToDelete = apiKeyScopeIds[apiKeyId];
-    const newApiKeyScopes = { ...apiKeyScopeIds };
-    delete newApiKeyScopes[apiKeyId];
-    setApiKeyScopeIds(newApiKeyScopes);
-
-    const { data, status } = await deleteApiKey(authContext, apiKeyId);
-
-    if (status === 204) {
-      const apiData = data as DeleteApiKeyResponses['204'];
-      toastContext.update(toastId, {
-        message: `Deleted API Key ${apiKeyToDelete.name}`,
-        type: 'success',
-      });
-    } else {
-      toastContext.update(toastId, {
-        message: `Error deleting API Key ${apiKeyToDelete.name}`,
-        type: 'error',
-      });
-      setApiKeys({ ...apiKeys, [apiKeyId]: apiKeyToDelete });
-      setApiKeyScopeIds({
-        ...apiKeyScopeIds,
-        [apiKeyId]: apiKeyScopesToDelete,
-      });
-    }
-  }
-
-  return (
-    <Card1
-      onClick={() =>
-        setIsEditing((prev) => {
-          if (apiKeys[apiKeyId].name !== loadingApiKeyName) {
-            return !prev;
-          }
-        })
-      }
-      className="flex flex-col cursor-pointer"
-    >
-      <div className="flex flex-row w-full items-center space-x-2">
-        <span>
-          {isEditing ? <IoChevronDownOutline /> : <IoChevronForwardOutline />}
-        </span>
-        <div className="flex flex-col flex-1 overflow-x-auto">
-          <h3 className="mb-4 ml-4 text-left break-words">
-            <code>{apiKeys[apiKeyId].name}</code>
-          </h3>
-          <div className="flex flex-row items-center space-x-2">
-            <p>
-              <CiClock2 />
-            </p>
-            <p>
-              Issued:{' '}
-              {new Date(apiKeys[apiKeyId].issued).toLocaleString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: 'numeric',
-              })}
-            </p>
-          </div>
-          <div className="flex flex-row items-center space-x-2">
-            <p>
-              <IoHourglassOutline />
-            </p>
-            <p>
-              Expires:{' '}
-              {new Date(apiKeys[apiKeyId].expiry).toLocaleString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: 'numeric',
-              })}
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-col flex-shrink-0 space-y-2">
-          <Button1
-            className="flex-shrink-0"
-            onClick={(e) => {
-              e.stopPropagation();
-              globalModalsContext.setModal({
-                component: (
-                  <ApiKeyCodeModal
-                    authContext={authContext}
-                    apiKey={apiKeys[apiKeyId]}
-                  />
-                ),
-                className: 'max-w-[400px] w-full',
-              });
-            }}
-          >
-            View Key
-          </Button1>
-          <Button2
-            onClick={(e) => {
-              e.stopPropagation();
-              checkButtonConfirmation(
-                {
-                  title: 'Delete API Key?',
-                  confirmText: 'Delete',
-                  message: `Are you sure you want to delete the API Key ${apiKeys[apiKeyId].name}?`,
-                  onConfirm: () => {
-                    handleDeleteApiKey(apiKeyId);
-                  },
-                  onCancel: () => {},
-                },
-                {
-                  key: 'delete-api-key',
-                }
-              );
-            }}
-          >
-            <span className="text-error-500">Delete</span>
-          </Button2>
-        </div>
-      </div>
-      {isEditing && (
-        <div className="flex flex-col">
-          {/* map through all scopes */}
-          {config['user_role_scopes'][
-            userRoleIdToName[authContext.state.user.user_role_id]
-          ].map((user_role_scope) => (
-            <ApiKeyScopeRow
-              key={user_role_scope}
-              scopeId={config['scope_name_mapping'][user_role_scope]}
-              apiKey={apiKeys[apiKeyId]}
-              apiKeyScopeIds={apiKeyScopeIds}
-              toastContext={toastContext}
-              setApiKeyScopeIds={setApiKeyScopeIds}
-              authContext={authContext}
-            />
-          ))}
-        </div>
-      )}
-    </Card1>
   );
 }
 
@@ -532,12 +204,13 @@ function AddApiKey({
     // make a random 16 character string
     const tempId = Math.random().toString();
 
-    const tempApiKey: PostApiKeyResponses['200'] = {
+    const tempApiKey: TApiKey = {
       id: tempId,
       user_id: authContext.state.user.id,
       issued: new Date().toISOString(),
       name: loadingApiKeyName,
       expiry: new Date(expiry['value']).toISOString(),
+      scope_ids: [],
     };
 
     setApiKeys((prevApiKeys) => ({
@@ -645,48 +318,473 @@ function AddApiKey({
   );
 }
 
+async function handleAddApiKeyScope(
+  scopeId: ScopeID,
+  apiKey: components['schemas']['ApiKey'],
+  setApiKeyScopeIds: TSetApiKeyScopeIds,
+  toastContext: ToastContextType,
+  authContext: AuthContextType
+) {
+  const scopeName = scopeIdToName[scopeId];
+
+  let toastId = toastContext.makePending({
+    message: `Adding ${scopeName} to ${apiKey.name}`,
+  });
+
+  setApiKeyScopeIds((prev) => {
+    const updatedSet = new Set(prev[apiKey.id]);
+    updatedSet.add(scopeId);
+    return {
+      ...prev,
+      [apiKey.id]: updatedSet,
+    };
+  });
+
+  const { data, status } = await postApiKeyScope(
+    authContext,
+    apiKey.id,
+    scopeId
+  );
+  if (status === 200) {
+    toastContext.update(toastId, {
+      message: `Added ${scopeName} to ${apiKey.name}`,
+      type: 'success',
+    });
+  } else {
+    toastContext.update(toastId, {
+      message: `Error adding ${scopeName} to ${apiKey.name}`,
+      type: 'error',
+    });
+    setApiKeyScopeIds((prev) => {
+      const updatedSet = new Set(prev[apiKey.id]);
+      updatedSet.delete(scopeId);
+      return {
+        ...prev,
+        [apiKey.id]: updatedSet,
+      };
+    });
+  }
+}
+
+async function handleDeleteApiKeyScope(
+  scopeId: ScopeID,
+  apiKey: TApiKey,
+  setApiKeyScopeIds: TSetApiKeyScopeIds,
+  toastContext: ToastContextType,
+  authContext: AuthContextType
+) {
+  const scopeName = scopeIdToName[scopeId];
+
+  let toastId = toastContext.makePending({
+    message: `Removing ${scopeName} from ${apiKey.name}`,
+  });
+
+  setApiKeyScopeIds((prev) => {
+    const updatedSet = new Set(prev[apiKey.id]);
+    updatedSet.delete(scopeId);
+    return {
+      ...prev,
+      [apiKey.id]: updatedSet,
+    };
+  });
+
+  const { data, status } = await deleteApiKeyScope(
+    authContext,
+    apiKey.id,
+    scopeId
+  );
+
+  if (status === 204) {
+    toastContext.update(toastId, {
+      message: `Removed ${scopeName} from ${apiKey.name}`,
+      type: 'success',
+    });
+  } else {
+    toastContext.update(toastId, {
+      message: `Error removing ${scopeName} from ${apiKey.name}`,
+      type: 'error',
+    });
+    setApiKeyScopeIds((prev) => {
+      const updatedSet = new Set(prev[apiKey.id]);
+      updatedSet.add(scopeId);
+      return {
+        ...prev,
+        [apiKey.id]: updatedSet,
+      };
+    });
+  }
+}
+
+interface ApiKeyTableRowScopeProps {
+  scopeId: ScopeID;
+  apiKey: TApiKey;
+  apiKeyScopeIds: TApiKeyScopeIds;
+  setApiKeyScopeIds: TSetApiKeyScopeIds;
+  toastContext: ToastContextType;
+  authContext: AuthContextType;
+}
+
+function ApiKeyTableRowScope({
+  scopeId,
+  apiKey,
+  apiKeyScopeIds,
+  setApiKeyScopeIds,
+  toastContext,
+  authContext,
+}: ApiKeyTableRowScopeProps) {
+  const [loading, setLoading] = useState<boolean>(false);
+
+  async function handleToggle() {
+    setLoading(true);
+
+    if (apiKeyScopeIds[apiKey.id].has(scopeId)) {
+      // was on, now turning off
+      await handleDeleteApiKeyScope(
+        scopeId,
+        apiKey,
+        setApiKeyScopeIds,
+        toastContext,
+        authContext
+      );
+    } else {
+      // was off, now turning on
+      await handleAddApiKeyScope(
+        scopeId,
+        apiKey,
+        setApiKeyScopeIds,
+        toastContext,
+        authContext
+      );
+    }
+    setLoading(false);
+  }
+
+  return (
+    <Toggle1
+      onClick={(e) => {
+        e.stopPropagation();
+        handleToggle();
+      }}
+      state={apiKeyScopeIds[apiKey.id].has(scopeId)}
+      disabled={loading}
+    />
+  );
+}
+
+interface ApiKeyTableRowProps {
+  apiKey: TApiKey;
+  apiKeyScopeIds: TApiKeyScopeIds;
+  availableScopeIds: ScopeID[];
+  setApiKeyScopeIds: TSetApiKeyScopeIds;
+  toastContext: ToastContextType;
+  authContext: AuthContextType;
+}
+
+function ApiKeyTableRow({
+  apiKey,
+  apiKeyScopeIds,
+  availableScopeIds,
+  setApiKeyScopeIds,
+  toastContext,
+  authContext,
+}: ApiKeyTableRowProps) {
+  return (
+    <tr>
+      <td>{apiKey.name}</td>
+      <td>
+        {new Date(apiKey.issued).toLocaleString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: 'numeric',
+        })}
+      </td>
+      <td>
+        {new Date(apiKey.expiry).toLocaleString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: 'numeric',
+        })}
+      </td>
+      {availableScopeIds.map((scopeId) => (
+        <td key={scopeId}>
+          <ApiKeyTableRowScope
+            scopeId={scopeId}
+            apiKey={apiKey}
+            apiKeyScopeIds={apiKeyScopeIds}
+            setApiKeyScopeIds={setApiKeyScopeIds}
+            toastContext={toastContext}
+            authContext={authContext}
+          />
+        </td>
+      ))}
+    </tr>
+  );
+}
+
 interface ApiKeysProps {
   authContext: AuthContextType;
   toastContext: ToastContextType;
 }
 
+const API_ENDPOINT = '/pages/settings/api-keys/';
+const API_METHOD = 'get';
+
+type ResponseTypesByStatus = ExtractResponseTypes<
+  paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
+>;
+
 function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
   const globalModalsContext = useContext(GlobalModalsContext);
   const { checkButtonConfirmation } = useConfirmationModal();
 
-  const [loading, setLoading] = useState<boolean>(false);
-  const [pagination, setPagination] = useState<PaginationParams>({
-    limit: 100,
-    offset: 0,
-  });
+  const navigate = useNavigate();
+  const query = new URLSearchParams(useLocation().search);
 
-  const [apiKeys, setApiKeys] = useState<GetApiKeysResponses['200']>([]);
-  const [apiKeyScopeIds, setApiKeyScopeIds] = useState<TApiKeyScopeIds>({});
+  type QueryParamKey = keyof paths['/api-keys/']['get']['parameters']['query'];
+  const queryParameters =
+    openapi_schema['paths']['/api-keys/']['get']['parameters'];
 
-  async function fetchApiKeys() {
-    setLoading(true);
-    const { data, status } = await getApiKeys(authContext, pagination);
+  const queryParamObjects: Record<QueryParamKey, any> = queryParameters.reduce(
+    (acc, param) => {
+      acc[param.name as QueryParamKey] = param;
+      return acc;
+    },
+    {} as Record<QueryParamKey, any>
+  );
 
-    if (status === 200) {
-      data as GetApiKeysResponses['200'];
-      setApiKeys((prev) => {});
+  const orderByFields = new Set(
+    queryParamObjects['order_by'].schema.items.enum as OrderByField[]
+  );
+
+  function getLimitFromQuery(limit: string): QueryParams['limit'] {
+    if (!limit) {
+      return queryParamObjects['limit'].schema.default;
+    } else {
+      const limitInt = parseInt(limit, 10);
+      if (isNaN(limitInt)) {
+        return queryParamObjects['limit'].schema.default;
+      } else {
+        return Math.min(
+          queryParamObjects['limit'].schema.maximum,
+          Math.max(queryParamObjects['limit'].schema.minimum, limitInt)
+        );
+      }
     }
-
-    setLoading(false);
   }
 
-  useEffect(() => {
-    if (apiData && status === 200) {
-      const data = apiData as ResponseTypesByStatus['200'];
-      setApiKeys(data.api_keys);
-
-      const transformedScopes: TApiKeyScopeIds = {};
-      for (const key in data.api_key_scope_ids) {
-        transformedScopes[key] = new Set(data.api_key_scope_ids[key]);
+  function getOffsetFromQuery(offset: string): QueryParams['offset'] {
+    if (!offset) {
+      return queryParamObjects['offset'].schema.default;
+    } else {
+      const offsetInt = parseInt(offset, 10);
+      if (isNaN(offsetInt)) {
+        return queryParamObjects['offset'].schema.default;
+      } else {
+        return Math.max(queryParamObjects['offset'].schema.minimum, offsetInt);
       }
-      setApiKeyScopeIds(transformedScopes);
     }
-  }, [apiData, status]);
+  }
+
+  function getOrderByFromQuery(orderBy: string[]): QueryParams['order_by'] {
+    return orderBy.filter((field: OrderByField) =>
+      orderByFields.has(field)
+    ) as QueryParams['order_by'];
+  }
+
+  const [limit, setLimit] = useState<QueryParams['limit']>(
+    getLimitFromQuery(query.get('limit'))
+  );
+
+  const [offset, setOffset] = useState<QueryParams['offset']>(
+    getOffsetFromQuery(query.get('offset'))
+  );
+
+  const [orderBy, setOrderBy] = useState<QueryParams['order_by']>(
+    getOrderByFromQuery(query.getAll('order_by'))
+  );
+
+  const [orderByDesc, setOrderByDesc] = useState<QueryParams['order_by_desc']>(
+    getOrderByFromQuery(query.getAll('order_by_desc'))
+  );
+
+  //   Update URL when state changes
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (limit !== queryParamObjects['limit'].schema.default)
+      params.set('limit', limit.toString());
+    if (offset !== queryParamObjects['offset'].schema.default)
+      params.set('offset', offset.toString());
+    orderBy.forEach((field) => params.append('order_by', field));
+    orderByDesc.forEach((field) => params.append('order_by_desc', field));
+
+    const newSearch = params.toString();
+    if (newSearch !== location.search) {
+      navigate({ search: newSearch });
+    }
+  }, [limit, offset, orderBy, orderByDesc]);
+
+  const [apiKeyCount, setApiKeyCount] = useState<number>(0);
+  const [apiKeys, setApiKeys] = useState<TApiKeys>({});
+  const [fetchTrigger, setFetchTrigger] = useState<number>(0);
+  const [apiKeyIdIndex, setApiKeyIdIndex] = useState<TApiKey['id'][]>([]);
+  const [apiKeyScopeIds, setApiKeyScopeIds] = useState<TApiKeyScopeIds>({});
+  const [availableScopeIds, setAvailableScopeIds] = useState<ScopeID[]>([]);
+
+  type OrderByField = ArrayElement<
+    paths['/api-keys/']['get']['parameters']['query']['order_by']
+  >;
+
+  // show the available scopes based on the user's role
+  useEffect(() => {
+    if (authContext.state.user !== null) {
+      setAvailableScopeIds(
+        config['user_role_scopes'][
+          userRoleIdToName[authContext.state.user.user_role_id]
+        ].map((user_role_scope: string) => {
+          return config['scope_name_mapping'][user_role_scope];
+        })
+      );
+    }
+  }, [authContext]);
+
+  const { data, status, loading } = useApiCall<
+    ResponseTypesByStatus[keyof ResponseTypesByStatus]
+  >(
+    {
+      url: API_ENDPOINT,
+      method: API_METHOD,
+      params: {
+        limit: limit,
+        offset: offset,
+        order_by: orderBy,
+        order_by_desc: orderByDesc,
+      },
+    },
+    [fetchTrigger]
+  );
+
+  useEffect(() => {
+    setFetchTrigger((prev) => prev + 1);
+  }, [offset, limit, orderBy, orderByDesc]);
+
+  useEffect(() => {
+    if (!loading) {
+      if (status === 200) {
+        const apiData = data as ResponseTypesByStatus['200'];
+        setApiKeys(() => {
+          const keys = {};
+          for (const apiKey of apiData.api_keys) {
+            keys[apiKey.id] = apiKey;
+          }
+          return keys;
+        });
+        setApiKeyScopeIds(() => {
+          const keys = {};
+          for (const apiKey of apiData.api_keys) {
+            keys[apiKey.id] = new Set(apiKey.scope_ids);
+          }
+          return keys;
+        });
+        setApiKeyIdIndex((prev) => {
+          const keys = [];
+          for (const apiKey of apiData.api_keys) {
+            keys.push(apiKey.id);
+          }
+          return keys;
+        });
+        setApiKeyCount(apiData.api_key_count);
+      }
+    }
+  }, [data, status, loading]);
+
+  async function handleDeleteApiKey(index: number) {
+    const apiKeyToDelete = apiKeys[apiKeyIdIndex[index]];
+
+    let toastId = toastContext.makePending({
+      message: `Deleting API Key ${apiKeyToDelete.name}`,
+    });
+
+    // delete the api key from showing up
+    const newApiKeyIdIndex = [...apiKeyIdIndex];
+    newApiKeyIdIndex.splice(index, 1);
+    setApiKeyIdIndex(newApiKeyIdIndex);
+
+    const { data, status } = await deleteApiKey(authContext, apiKeyToDelete.id);
+
+    if (status === 204) {
+      const apiData = data as DeleteApiKeyResponses['204'];
+      toastContext.update(toastId, {
+        message: `Deleted API Key ${apiKeyToDelete.name}`,
+        type: 'success',
+      });
+
+      // now, actually delete the api key from the state
+      setApiKeys((prev) => {
+        const updated = { ...prev };
+        delete updated[apiKeyToDelete.id];
+        return updated;
+      });
+      setApiKeyScopeIds((prev) => {
+        const updated = { ...prev };
+        delete updated[apiKeyToDelete.id];
+        return updated;
+      });
+    } else {
+      toastContext.update(toastId, {
+        message: `Error deleting API Key ${apiKeyToDelete.name}`,
+        type: 'error',
+      });
+      // re-add the api key to the index state
+      const newApiKeyIdIndex = [...apiKeyIdIndex];
+      newApiKeyIdIndex.splice(index, 0, apiKeyToDelete.id);
+      setApiKeyIdIndex(newApiKeyIdIndex);
+    }
+  }
+  {
+    /* <Button1
+              className="flex-shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                globalModalsContext.setModal({
+                  component: (
+                    <ApiKeyCodeModal
+                      authContext={authContext}
+                      apiKey={apiKeys[apiKeyId]}
+                    />
+                  ),
+                  className: 'max-w-[400px] w-full',
+                });
+              }}
+            >
+              View Key
+            </Button1> */
+  }
+
+  //   <Button2
+  //     onClick={(e) => {
+  //       e.stopPropagation();
+  //       checkButtonConfirmation(
+  //         {
+  //           title: 'Delete API Key?',
+  //           confirmText: 'Delete',
+  //           message: `Are you sure you want to delete the API Key ${apiKeys[apiKeyId].name}?`,
+  //           onConfirm: () => {
+  //             handleDeleteApiKey(apiKeyId);
+  //           },
+  //           onCancel: () => {},
+  //         },
+  //         {
+  //           key: 'delete-api-key',
+  //         }
+  //       );
+  //     }}
+  //   >
+  //     <span className="text-error-500">Delete</span>
+  //   </Button2>;
 
   if (authContext.state.user !== null) {
     return (
@@ -713,21 +811,126 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
             Add API Key
           </Button1>
         </div>
-        <div className="flex flex-col space-y-4">
-          {Object.keys(apiKeys).map((apiKeyId) => (
-            <ApiKeyRow
-              key={apiKeyId}
-              apiKeyId={apiKeyId}
-              apiKeys={apiKeys}
-              setApiKeys={setApiKeys}
-              apiKeyScopeIds={apiKeyScopeIds}
-              setApiKeyScopeIds={setApiKeyScopeIds}
-              toastContext={toastContext}
-              authContext={authContext}
-              globalModalsContext={globalModalsContext}
-              checkButtonConfirmation={checkButtonConfirmation}
-            />
-          ))}
+        <table>
+          <thead>
+            <tr>
+              {['name', 'issued', 'expiry'].map((field) => (
+                <th key={field}>
+                  {(() => {
+                    const typedField = field as OrderByField; // Type assertion
+                    let orderByState: OrderByState = 'off';
+
+                    // get index of field in orderBy
+                    const orderByIndex = orderBy.indexOf(typedField);
+                    if (orderByIndex !== -1) {
+                      orderByState = 'asc';
+                    }
+                    const orderByDescIndex = orderByDesc.indexOf(typedField);
+                    if (orderByDescIndex !== -1) {
+                      orderByState = 'desc';
+                    }
+
+                    return (
+                      <>
+                        {orderByFields.has(typedField) ? (
+                          <Button2
+                            onClick={() => {
+                              if (orderByState === 'off') {
+                                setOrderBy((prev) => {
+                                  const updated = [...prev, typedField];
+                                  return updated;
+                                });
+                              } else if (orderByState === 'asc') {
+                                setOrderByDesc((prev) => {
+                                  const updated = [...prev, typedField];
+                                  return updated;
+                                });
+                              } else if (orderByState === 'desc') {
+                                setOrderBy((prev) => {
+                                  const updated = prev.filter(
+                                    (item) => item !== typedField
+                                  );
+                                  return updated;
+                                });
+                                setOrderByDesc((prev) => {
+                                  const updated = prev.filter(
+                                    (item) => item !== typedField
+                                  );
+                                  return updated;
+                                });
+                              }
+                            }}
+                          >
+                            <div className="flex flex-row items-center">
+                              {typedField}
+                              {orderByState !== 'off' && (
+                                <>
+                                  {orderByState === 'asc' ? (
+                                    <IoCaretDown />
+                                  ) : (
+                                    <IoCaretUp />
+                                  )}
+                                  {(() => {
+                                    const index = orderBy.indexOf(typedField);
+                                    return index + 1;
+                                  })()}
+                                </>
+                              )}
+                            </div>
+                          </Button2>
+                        ) : (
+                          typedField
+                        )}
+                      </>
+                    );
+                  })()}
+                </th>
+              ))}
+              {availableScopeIds.map((scopeId) => (
+                <th key={scopeId}>{scopeIdToName[scopeId]}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {apiKeyIdIndex.map((apiKeyId) => (
+              <ApiKeyTableRow
+                key={apiKeyId}
+                apiKey={apiKeys[apiKeyId]}
+                apiKeyScopeIds={apiKeyScopeIds}
+                availableScopeIds={availableScopeIds}
+                setApiKeyScopeIds={setApiKeyScopeIds}
+                toastContext={toastContext}
+                authContext={authContext}
+              />
+            ))}
+          </tbody>
+        </table>
+        {loading && <Loader1 />}
+        <div className="flex flex-row">
+          <button
+            disabled={offset === 0}
+            onClick={() =>
+              setOffset((prev) =>
+                Math.max(
+                  queryParamObjects['offset'].schema.minimum,
+                  prev - limit
+                )
+              )
+            }
+          >
+            <IoArrowBackSharp />
+          </button>
+          <button
+            onClick={() => setOffset((prev) => prev + limit)}
+            disabled={offset + limit >= apiKeyCount}
+          >
+            <IoArrowForwardSharp />
+          </button>
+          <p>
+            {loading ? 'x' : offset + 1}-
+            {loading ? 'x' : offset + Object.keys(apiKeys).length} of{' '}
+            {loading ? 'x' : apiKeyCount}
+          </p>
         </div>
       </>
     );
