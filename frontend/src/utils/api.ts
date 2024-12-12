@@ -63,7 +63,6 @@ function useApiCall<TResponseData extends object, TRequestData = any>(
       setLoading(false);
       authContext.updateFromApiResponse(response.data);
     };
-    await new Promise((resolve) => setTimeout(resolve, 1000));
     await fetchData();
   }
 
