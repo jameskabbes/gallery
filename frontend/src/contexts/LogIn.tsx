@@ -1,9 +1,5 @@
 import React, { useEffect, useState, useReducer, createContext } from 'react';
-import {
-  LogInContextType,
-  ValidatedInputState,
-  defaultValidatedInputState,
-} from '../types';
+import { LogInContextType, defaultValidatedInputState } from '../types';
 
 const LogInContext = createContext<LogInContextType>({
   username: null,
@@ -20,11 +16,7 @@ const LogInContext = createContext<LogInContextType>({
   setError: () => {},
 });
 
-interface Props {
-  children: React.ReactNode;
-}
-
-function LogInContextProvider({ children }: Props) {
+function LogInContextProvider({ children }: { children: React.ReactNode }) {
   const [username, setUsername] = useState<LogInContextType['username']>({
     ...defaultValidatedInputState<LogInContextType['username']['value']>(''),
   });

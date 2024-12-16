@@ -13,17 +13,13 @@ const defaultState: AuthContextState = {
 };
 
 const AuthContext = createContext<AuthContextType>({
-  state: null,
+  state: { ...defaultState },
   setState: () => {},
   logOut: () => {},
   updateFromApiResponse: (data: any) => {},
 });
 
-interface Props {
-  children: React.ReactNode;
-}
-
-function AuthContextProvider({ children }: Props) {
+function AuthContextProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthContextState>(defaultState);
   const toastContext = useContext(ToastContext);
 

@@ -21,7 +21,11 @@ interface Props {
   children: React.ReactNode;
 }
 
-function LogInWithEmailContextProvider({ children }: Props) {
+function LogInWithEmailContextProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [email, setEmail] = useState<LogInWithEmailContextType['email']>({
     ...defaultValidatedInputState<LogInWithEmailContextType['email']['value']>(
       ''

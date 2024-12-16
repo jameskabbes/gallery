@@ -7,12 +7,13 @@ import {
   ValidatedInputState,
 } from '../types';
 import { useApiCall } from '../utils/api';
-import { Button1 } from '../components/Utils/Button';
+import { Button1, Button2 } from '../components/Utils/Button';
 import { AuthModalsContext } from '../contexts/AuthModals';
 import { FileUploader } from '../components/Gallery/FileUploader';
 
 import { GlobalModalsContext } from '../contexts/GlobalModals';
 import { Link } from 'react-router-dom';
+import { Modal } from '../components/Modal/Modal';
 
 const API_ENDPOINT = '/pages/home/';
 const API_METHOD = 'get';
@@ -32,12 +33,27 @@ function Home() {
     method: API_METHOD,
   });
 
+  const [showModal, setShowModal] = useState(false);
+
   return (
-    <div>
-      <Link to="/styles/">
-        <Button1>Styles</Button1>
-      </Link>
-    </div>
+    <>
+      <div>
+        <Link to="/styles/">
+          <Button1>Styles</Button1>
+        </Link>
+        <Button2 onClick={() => setShowModal(true)}>Show Modal</Button2>
+      </div>
+      <Modal onExit={() => setShowModal(false)} key="asdf">
+        {showModal && (
+          <div>
+            <p>hello</p>
+            <Button1 onClick={() => authModalsContext.activate('logIn')}>
+              Open Login
+            </Button1>
+          </div>
+        )}
+      </Modal>
+    </>
   );
 }
 

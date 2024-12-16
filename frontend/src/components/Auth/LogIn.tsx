@@ -6,8 +6,6 @@ import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { LogInContext } from '../../contexts/LogIn';
 import { ToastContext } from '../../contexts/Toast';
 import { AuthModalsContext } from '../../contexts/AuthModals';
-import { ExtractResponseTypes } from '../../types';
-import { callApi } from '../../utils/api';
 import { IoWarning } from 'react-icons/io5';
 import { IoPersonAddSharp } from 'react-icons/io5';
 import { IoMail } from 'react-icons/io5';
@@ -17,11 +15,13 @@ import { Button2, ButtonSubmit } from '../Utils/Button';
 import { Loader1, Loader2 } from '../Utils/Loader';
 import { Surface } from '../Utils/Surface';
 import { postLogin, PostLogInResponses } from '../../services/api/postLogIn';
+import { GlobalModalsContext } from '../../contexts/GlobalModals';
 
 function LogIn() {
   const logInContext = useContext(LogInContext);
   const authContext = useContext(AuthContext);
   const authModalsContext = useContext(AuthModalsContext);
+  const globalModalsContext = useContext(GlobalModalsContext);
   const toastContext = useContext(ToastContext);
   const { logInWithGoogle } = useLogInWithGoogle();
 
@@ -63,7 +63,7 @@ function LogIn() {
       if (status == 200) {
         const apiData = data as PostLogInResponses['200'];
         authContext.updateFromApiResponse(apiData);
-        authModalsContext.setActiveModalType(null);
+        globalModalsContext.clearModal();
         toastContext.make({
           message: `Welcome ${
             apiData.auth.user.username === null
@@ -110,9 +110,7 @@ function LogIn() {
                 <div className="flex flex-row items-center justify-between">
                   <label htmlFor="login-password">Password</label>
                   <span
-                    onClick={() =>
-                      authModalsContext.setActiveModalType('logInWithEmail')
-                    }
+                    onClick={() => authModalsContext.activate('logInWithEmail')}
                     className="underline cursor-pointer"
                   >
                     Forgot Password?
@@ -180,7 +178,7 @@ function LogIn() {
             <Button2
               className="w-full relative"
               onClick={() => {
-                authModalsContext.setActiveModalType('signUp');
+                authModalsContext.activate('signUp');
               }}
             >
               <h6 className="text-center mb-0 ">Sign Up</h6>
@@ -190,7 +188,7 @@ function LogIn() {
             <Button2
               className="w-full relative"
               onClick={() => {
-                authModalsContext.setActiveModalType('logInWithEmail');
+                authModalsContext.activate('logInWithEmail');
               }}
             >
               <h6 className="text-center mb-0 ">Login with email</h6>

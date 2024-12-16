@@ -1,7 +1,7 @@
 {
   "zIndex": {
+    "globalModalOverlay": 110,
     "modalOverlay": 100,
-    "modalContent": 105,
     "header": 95,
     "toast": 90
   },

@@ -19,6 +19,7 @@ import { IoWarning } from 'react-icons/io5';
 import { ButtonSubmit } from '../Utils/Button';
 import { Loader1, Loader3 } from '../Utils/Loader';
 import { postSignUp } from '../../services/api/postSignUp';
+import { GlobalModalsContext } from '../../contexts/GlobalModals';
 
 const API_ENDPOINT = '/auth/signup/';
 const API_METHOD = 'post';
@@ -31,6 +32,7 @@ function SignUp() {
   const signUpContext = useContext(SignUpContext);
   const authContext = useContext(AuthContext);
   const authModalsContext = useContext(AuthModalsContext);
+  const globalModalsContext = useContext(GlobalModalsContext);
   const toastContext = useContext(ToastContext);
 
   useEffect(() => {
@@ -103,7 +105,7 @@ function SignUp() {
           message: 'Created new user',
           type: 'success',
         });
-        authModalsContext.setActiveModalType(null);
+        globalModalsContext.clearModal();
       } else {
         console.error('Error creating user:', status, data);
         signUpContext.setError('Error creating user');
@@ -209,7 +211,7 @@ function SignUp() {
             <h6
               className="cursor-pointer underline mb-0"
               onClick={() => {
-                authModalsContext.setActiveModalType('logIn');
+                authModalsContext.activate('logIn');
               }}
             >
               Log In

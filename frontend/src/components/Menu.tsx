@@ -21,7 +21,7 @@ function Menu() {
   const { checkButtonConfirmation } = useConfirmationModal();
 
   const toggleMenu = () => {
-    setIsMenuVisible(!isMenuVisible);
+    setIsMenuVisible((prev) => !prev);
   };
 
   const menuItems = authContext.state.user
@@ -58,14 +58,14 @@ function Menu() {
           element: <span>Log In</span>,
           onClick: () => {
             setIsMenuVisible(false);
-            authModalsContext.setActiveModalType('logIn');
+            authModalsContext.activate('logIn');
           },
         },
         {
           element: <span>Sign Up</span>,
           onClick: () => {
             setIsMenuVisible(false);
-            authModalsContext.setActiveModalType('signUp');
+            authModalsContext.activate('signUp');
           },
         },
       ];

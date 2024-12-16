@@ -1,11 +1,10 @@
 import React, { useContext } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
-import { callApi } from '../../utils/api';
 import { ExtractResponseTypes } from '../../types';
 import { paths, operations, components } from '../../openapi_schema';
 import { AuthContext } from '../../contexts/Auth';
-import { AuthModalsContext } from '../../contexts/AuthModals';
 import { postLogInGoogle } from '../../services/api/postLogInGoogle';
+import { GlobalModalsContext } from '../../contexts/GlobalModals';
 
 const API_ENDPOINT = '/auth/login/google/';
 const API_METHOD = 'post';
@@ -19,14 +18,14 @@ type TRequestData =
 
 function useLogInWithGoogle() {
   const authContext = useContext(AuthContext);
-  const authModalsContext = useContext(AuthModalsContext);
+  const globalModalsContext = useContext(GlobalModalsContext);
 
   async function call(request_data: TRequestData) {
     const { data, status } = await postLogInGoogle(authContext, request_data);
     if (status == 200) {
       const apiData = data as ResponseTypesByStatus['200'];
       authContext.updateFromApiResponse(apiData);
-      authModalsContext.setActiveModalType(null);
+      globalModalsContext.clearModal();
     }
   }
 

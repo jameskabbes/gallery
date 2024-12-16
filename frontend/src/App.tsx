@@ -7,7 +7,6 @@ import { ApplicationContextProvider } from './contexts/Application';
 import { Toast } from './components/Toast/Toast';
 import { Gallery } from './pages/Gallery';
 import { Settings } from './pages/Settings';
-import { AuthModals } from './components/Auth/AuthModals';
 import { GlobalModals } from './components/GlobalModals';
 import { VerifyMagicLink } from './components/Auth/VerifyMagicLink';
 import { Surface } from './components/Utils/Surface';
@@ -22,7 +21,6 @@ function App(): JSX.Element {
       <Surface>
         <main id="app">
           <Toast />
-          <AuthModals />
           <GlobalModals />
           <BrowserRouter>
             <Header />

@@ -51,11 +51,7 @@ const ToastContext = createContext<ToastContextType>({
   update: () => {},
 });
 
-interface Props {
-  children: React.ReactNode;
-}
-
-function ToastContextProvider({ children }: Props) {
+function ToastContextProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(toastReducer, toastReducerDefaultState);
 
   function make(toast: Toast): ToastId {

@@ -8,7 +8,6 @@ import { IoCheckmark } from 'react-icons/io5';
 import { IoAlert } from 'react-icons/io5';
 import { IoWarning } from 'react-icons/io5';
 import { Toast } from '../../types';
-import './Toast.css';
 import tailwindConfig from '../../../tailwind.config';
 import { Card1 } from '../Utils/Card';
 import { Loader2 } from '../Utils/Loader';

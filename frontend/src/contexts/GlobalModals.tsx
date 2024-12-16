@@ -1,41 +1,35 @@
 import React, { useState, useReducer, createContext } from 'react';
 import { GlobalModalsContextType } from '../types';
 
-import { Modal, defaultModal } from '../types';
-
 const GlobalModalsContext = createContext<GlobalModalsContextType>({
-  activeModal: { ...defaultModal },
-  clearModal: () => null,
-  setModal: (modal) => null,
+  modal: null,
+  setModal: (modal) => {},
+  updateModal: (modal) => {},
+  clearModal: () => {},
 });
 
-interface Props {
+function GlobalModalsContextProvider({
+  children,
+}: {
   children: React.ReactNode;
-}
+}) {
+  const [modal, setModal] = useState<GlobalModalsContextType['modal']>(null);
 
-function GlobalModalsContextProvider({ children }: Props) {
-  const [activeModal, setActiveModal] = useState<
-    GlobalModalsContextType['activeModal']
-  >({ ...defaultModal });
+  const updateModal: GlobalModalsContextType['updateModal'] = (modal) => {
+    setModal((prev) => ({ ...prev, ...modal }));
+  };
 
-  function clearModal() {
-    setActiveModal({ ...defaultModal });
-  }
-
-  function setModal(modal: Partial<Modal>) {
-    setActiveModal({
-      ...defaultModal,
-      onExit: clearModal,
-      ...modal,
-    });
-  }
+  const clearModal: GlobalModalsContextType['clearModal'] = () => {
+    setModal(null);
+  };
 
   return (
     <GlobalModalsContext.Provider
       value={{
-        activeModal,
-        clearModal,
+        modal,
         setModal,
+        updateModal,
+        clearModal,
       }}
     >
       {children}

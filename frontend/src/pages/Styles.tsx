@@ -1,4 +1,4 @@
-import React, { useEffect, useContext, useState } from 'react';
+import React, { useEffect, useContext, useState, Children } from 'react';
 import { DeviceContext } from '../contexts/Device';
 import { paths, operations, components } from '../openapi_schema';
 import {
@@ -30,6 +30,7 @@ import { Checkbox1 } from '../components/Utils/Checkbox';
 import { RadioButton1 } from '../components/Utils/RadioButton';
 import { useConfirmationModal } from '../utils/useConfirmationModal';
 import { Toggle1 } from '../components/Utils/Toggle';
+import { AuthModalsContext } from '../contexts/AuthModals';
 
 const API_ENDPOINT = '/pages/styles/';
 const API_METHOD = 'get';
@@ -43,6 +44,7 @@ function Styles() {
   let toastContext = useContext(ToastContext);
   const authContext = useContext(AuthContext);
   const globalModalsContext = useContext(GlobalModalsContext);
+  const authModalsContext = useContext(AuthModalsContext);
   const { checkButtonConfirmation } = useConfirmationModal();
 
   const [toggleState, setToggleState] = useState<ValidatedInputState<boolean>>({
@@ -67,25 +69,56 @@ function Styles() {
     method: API_METHOD,
   });
 
-  function displayModal() {
-    const key = Math.random().toString();
-    globalModalsContext.setModal({
-      component: (
-        <div>
-          <h2>Modal</h2>
-          <p>Key: {key}</p>
-          <Button1
-            onClick={() => {
-              displayModal();
-            }}
-          >
-            Swap modal
-          </Button1>
-        </div>
-      ),
-      key: key,
-    });
+  const [counter, setCounter] = useState<number>(0);
+  const [modalVersion, setModalVersion] = useState<number>(0);
+
+  function ModalDemo({ counter }: { counter: number }) {
+    return (
+      <div>
+        <h2>Modal</h2>
+        <p>Counter: {counter}</p>
+        <Button2
+          onClick={() => {
+            setCounter((prev) => prev + 1);
+          }}
+        >
+          Increment
+        </Button2>
+        <Button1
+          onClick={() => {
+            setModalVersion((prev) => prev + 1);
+          }}
+        >
+          Swap modal
+        </Button1>
+        <Button1
+          onClick={() => {
+            authModalsContext.activate('logIn');
+          }}
+        >
+          Open Login
+        </Button1>
+      </div>
+    );
   }
+
+  useEffect(() => {
+    if (modalVersion > 0) {
+      globalModalsContext.updateModal({
+        children: <ModalDemo counter={counter} />,
+      });
+    }
+  }, [counter, modalVersion]);
+
+  useEffect(() => {
+    if (modalVersion > 0) {
+      const key = Math.random().toString();
+      globalModalsContext.setModal({
+        children: <ModalDemo counter={counter} />,
+        modalKey: key,
+      });
+    }
+  }, [modalVersion]);
 
   return (
     <div>
@@ -155,9 +188,10 @@ function Styles() {
           </Card1>
           <Card1 className="flex flex-col space-y-2 m-2 ">
             <h2>Modals</h2>
+            <p>Counter: {counter}</p>
             <Button1
               onClick={() => {
-                displayModal();
+                setModalVersion((prev) => prev + 1);
               }}
             >
               Generate a Modal

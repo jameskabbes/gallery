@@ -3,11 +3,7 @@ import { DeviceContextType } from '../types';
 
 const DeviceContext = createContext<DeviceContextType>({ isMobile: false });
 
-interface Props {
-  children: React.ReactNode;
-}
-
-function DeviceContextProvider({ children }: Props) {
+function DeviceContextProvider({ children }: { children: React.ReactNode }) {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {

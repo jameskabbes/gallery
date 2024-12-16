@@ -1,10 +1,17 @@
 import React, { useContext } from 'react';
 import { GlobalModalsContext } from '../contexts/GlobalModals';
-import { Modals } from './Modal/Modals';
+import { Modal } from './Modal/Modal';
+import siteConfig from '../../siteConfig.json';
 
 function GlobalModals() {
   const globalModalsContext = useContext(GlobalModalsContext);
-  return <Modals activeModal={globalModalsContext.activeModal} />;
+  return (
+    <Modal
+      overlayAdditionalStyle={{ zIndex: siteConfig.zIndex.globalModalOverlay }}
+      onExit={globalModalsContext.clearModal}
+      {...globalModalsContext.modal}
+    />
+  );
 }
 
 export { GlobalModals };

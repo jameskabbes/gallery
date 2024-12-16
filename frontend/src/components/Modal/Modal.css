@@ -1,6 +1,6 @@
 :root {
-  --animation-enter-duration: 200ms;
-  --animation-exit-duration: 200ms;
+  --modal-animation-enter-duration: 200ms;
+  --modal-animation-exit-duration: 200ms;
 }
 
 /* Initial state */
@@ -11,7 +11,7 @@
 /* Entering state */
 .modal-enter-active {
   transform: translateY(0);
-  transition: transform var(--animation-enter-duration);
+  transition: transform var(--modal-animation-enter-duration);
 }
 
 /* Exiting state */
@@ -22,5 +22,5 @@
 /* Exiting state */
 .modal-exit-active {
   transform: translateY(-100%);
-  transition: transform var(--animation-exit-duration);
+  transition: transform var(--modal-animation-exit-duration);
 }

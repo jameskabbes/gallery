@@ -1,7 +1,6 @@
 :root {
-  --animation-enter-duration: 100ms;
-  --animation-exit-duration: 0ms;
-  --animation-move-duration: 0ms;
+  --toast-animation-enter-duration: 100ms;
+  --toast-animation-exit-duration: 0ms;
 }
 
 .toast-enter {
@@ -9,5 +8,5 @@
 }
 .toast-enter-active {
   transform: translateX(0);
-  transition: transform var(--animation-enter-duration) ease-in-out;
+  transition: transform var(--toast-animation-enter-duration) ease-in-out;
 }

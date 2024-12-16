@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ModalType } from '../../types';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
-import './Modal.css';
 import { useEscapeKey } from '../../contexts/EscapeKey';
 import { useClickOutside } from '../../utils/useClickOutside';
 import { IoClose } from 'react-icons/io5';
 import { Card1 } from '../Utils/Card';
 import siteConfig from '../../../siteConfig.json';
+import './Modal.css';
 
 const timeouts = {
   enter: 200,
@@ -38,20 +38,22 @@ function Modal({
       unmountOnExit
     >
       <TransitionGroup
-        className={`modal-overlay relative ${overlayAdditionalClassName}`}
+        className={`fixed top-0 left-0 w-full h-full ${overlayAdditionalClassName}`}
         style={{
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
           zIndex: siteConfig.zIndex.modalOverlay,
           ...overlayAdditionalStyle,
         }}
       >
         <CSSTransition
           in={!!children}
-          key={modalKey}
+          // if no children are provided, set key to null to trigger transition
+          key={!!children ? modalKey : null}
           timeout={timeouts}
           classNames="modal"
         >
           <div className="absolute h-full w-full flex flex-col justify-center items-center p-2">
-            {!!children && (
+            {children && (
               <Card1
                 style={{
                   ...contentAdditionalStyle,
@@ -62,7 +64,7 @@ function Modal({
                 {includeExitButton && (
                   <div className="flex flex-row justify-end">
                     <button onClick={() => onExit()}>
-                      <IoClose onClick={() => onExit()} />
+                      <IoClose />
                     </button>
                   </div>
                 )}

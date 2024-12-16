@@ -13,11 +13,7 @@ const EscapeKeyContext = createContext<EscapeKeyContextType>({
   removeCallback: () => {},
 });
 
-interface Props {
-  children: React.ReactNode;
-}
-
-function EscapeKeyContextProvider({ children }: Props) {
+function EscapeKeyContextProvider({ children }: { children: React.ReactNode }) {
   const callbacks = useRef<Set<() => void>>(new Set());
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {

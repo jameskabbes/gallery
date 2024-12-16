@@ -13,11 +13,13 @@ import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { ButtonSubmit } from '../Utils/Button';
 import { ValidatedInputCheckbox } from '../Form/ValidatedInputCheckbox';
 import { postEmailMagicLink } from '../../services/api/postEmailMagicLink';
+import { GlobalModalsContext } from '../../contexts/GlobalModals';
 
 function LogInWithEmail() {
   const authContext = useContext(AuthContext);
   const logInWithEmailContext = useContext(LogInWithEmailContext);
   const authModalsContext = useContext(AuthModalsContext);
+  const globalModalsContext = useContext(GlobalModalsContext);
   const [loading, setLoading] = useState<boolean>(false);
 
   const okayButtonRef = useRef<HTMLButtonElement>(null);
@@ -100,7 +102,7 @@ function LogInWithEmail() {
           <h6
             className="cursor-pointer underline text-center mt-2"
             onClick={() => {
-              authModalsContext.setActiveModalType('logIn');
+              authModalsContext.activate('logIn');
             }}
           >
             Back to Login
@@ -111,7 +113,7 @@ function LogInWithEmail() {
           className="flex flex-col"
           onSubmit={(e) => {
             e.preventDefault();
-            authModalsContext.setActiveModalType(null);
+            globalModalsContext.clearModal();
             logInWithEmailContext.setScreen('email');
           }}
         >

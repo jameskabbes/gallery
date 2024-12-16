@@ -825,7 +825,7 @@ async def patch_api_key(
         get_authorization())]
 ) -> models.ApiKeyPrivate:
     with Session(c.db_engine) as session:
-        return models.ApiKeyPrivate.model_validate(await models.ApiKey.api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=False, update_model=models.ApiKeyUpdateAdmin(**api_key_update.model_dump(exclude_unset=True))))
+        return models.ApiKeyPrivate.from_api_key(await models.ApiKey.api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=False, update_model=models.ApiKeyUpdateAdmin(**api_key_update.model_dump(exclude_unset=True))))
 
 
 @api_key_admin_router.patch('/{api_key_id}/', responses=models.ApiKey.patch_responses())

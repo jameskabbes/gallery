@@ -1,7 +1,3 @@
-import React, { Component } from 'react';
-import { paths, operations, components } from '../../openapi_schema';
-import { callApi } from '../../utils/api';
-import { useConfirmationModal } from '../../utils/useConfirmationModal';
 import { PostLogOutResponses, postLogOut } from '../../services/api/postLogOut';
 import { ApiResponse, AuthContextType, ToastContextType } from '../../types';
 

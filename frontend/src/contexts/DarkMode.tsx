@@ -15,11 +15,7 @@ const DarkModeContext = createContext<DarkModeContextType>({
   setPreference: (preference: DarkModeContextType['preference']) => {},
 });
 
-interface Props {
-  children: React.ReactNode;
-}
-
-function DarkModeContextProvider({ children }: Props) {
+function DarkModeContextProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState(false);
   const [systemState, setSystemState] = useState(false);
   const [preference, setPreference] = useState<

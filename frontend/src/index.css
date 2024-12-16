@@ -2,24 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
-  font-family: 'Noto Sans';
-  font-style: normal;
-  src: url('/Noto_Sans/NotoSans-VariableFont_wdth,wght.ttf')
-    format('truetype-variations');
-  font-weight: 100 900; /* Defines the range of weights available */
-}
-
-@font-face {
-  font-family: 'Noto Sans';
-  font-style: italic;
-  src: url('/Noto_Sans/NotoSans-Italic-VariableFont_wdth,wght.ttf')
-    format('truetype-variations');
-  font-weight: 100 900; /* Defines the range of weights available */
-}
-
 /* Base Layer */
 @layer base {
+  @font-face {
+    font-family: 'Noto Sans';
+    font-style: normal;
+    src: url('/Noto_Sans/NotoSans-VariableFont_wdth,wght.ttf')
+      format('truetype-variations');
+    font-weight: 100 900; /* Defines the range of weights available */
+  }
+
+  @font-face {
+    font-family: 'Noto Sans';
+    font-style: italic;
+    src: url('/Noto_Sans/NotoSans-Italic-VariableFont_wdth,wght.ttf')
+      format('truetype-variations');
+    font-weight: 100 900; /* Defines the range of weights available */
+  }
+
   #app * {
     @apply scrollbar-thin scrollbar-thumb-a-border-light dark:scrollbar-thumb-a-border-dark scrollbar-track-transparent;
   }
@@ -107,6 +107,33 @@
 }
 
 @layer components {
+  .button-base {
+    @apply rounded-xl p-2;
+    transition: 0.1s;
+  }
+  .button-base:hover {
+    @apply transform scale-95;
+  }
+  .button-base:active {
+    @apply transform scale-90;
+  }
+  .button-base:disabled {
+    @apply opacity-50 pointer-events-none;
+  }
+
+  .button1 {
+    @apply button-base bg-color-primary text-light-lighter;
+  }
+  .button2 {
+    @apply button-base border-[1px];
+  }
+  .button3 {
+    @apply button-base bg-color-invert text-color-invert;
+  }
+  .button-submit {
+    @apply button-base bg-color-primary text-light-lighter flex flex-row justify-center p-4 rounded-3xl mb-0 h4;
+  }
+
   .loader-base {
     @apply block rounded-full border-transparent dark:border-transparent bg-transparent dark:bg-transparent;
     border-width: 0.15em;
@@ -127,30 +154,35 @@
   .loader3 {
     @apply loader-base border-t-light-lighter dark:border-t-light;
   }
-
-  .button-base {
-    @apply rounded-xl p-2;
-    transition: 0.1s;
-  }
-  .button-base:hover {
-    @apply transform scale-95;
-  }
-  .button-base:active {
-    @apply transform scale-90;
-  }
-  .button-base:disabled {
-    @apply opacity-50 pointer-events-none;
-  }
 }
 
 @layer utilities {
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8); /* Semi-transparent black */
+  @keyframes rotation {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes scaleUp {
+    0% {
+      transform: scale(0);
+    }
+    100% {
+      transform: scale(1);
+    }
   }
 }
 
@@ -200,32 +232,4 @@ form label {
 .input-toggle-container {
   @apply focus-within:border-color-primary hover:border-color-primary;
   transition: border-color 0.2s;
-}
-
-@keyframes rotation {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes scaleUp {
-  0% {
-    transform: scale(0);
-  }
-  100% {
-    transform: scale(1);
-  }
 }

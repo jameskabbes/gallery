@@ -18,11 +18,7 @@ const SignUpContext = createContext<SignUpContextType>({
   setError: () => {},
 });
 
-interface Props {
-  children: React.ReactNode;
-}
-
-function SignUpContextProvider({ children }: Props) {
+function SignUpContextProvider({ children }: { children: React.ReactNode }) {
   const [email, setEmail] = useState<SignUpContextType['email']>({
     ...defaultValidatedInputState<SignUpContextType['email']['value']>(''),
   });

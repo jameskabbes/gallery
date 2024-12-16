@@ -56,10 +56,7 @@ interface DarkModeContextType {
 type AuthModalsType = 'logIn' | 'signUp' | 'logInWithEmail';
 
 interface AuthModalsContextType {
-  activeModalType: AuthModalsType | null;
-  setActiveModalType: React.Dispatch<
-    React.SetStateAction<AuthModalsContextType['activeModalType']>
-  >;
+  activate: (authModalType: AuthModalsType) => void;
 }
 
 interface LogInContextType {
@@ -131,28 +128,24 @@ interface SignUpContextType {
   >;
 }
 
-interface Modal {
-  component: React.ReactNode;
-  contentStyle: React.CSSProperties;
-  includeExitButton: boolean;
-  onExit: () => void;
-  className: string;
-  key: string;
+interface ModalType {
+  overlayAdditionalClassName?: string;
+  overlayAdditionalStyle?: React.CSSProperties;
+  contentAdditionalClassName?: string;
+  contentAdditionalStyle?: React.CSSProperties;
+  includeExitButton?: boolean;
+  onExit?: () => void;
+  modalKey?: string;
+  children?: React.ReactNode;
 }
 
-const defaultModal: Modal = {
-  component: null,
-  className: '',
-  onExit: () => null,
-  includeExitButton: true,
-  contentStyle: {},
-  key: null,
-};
-
 interface GlobalModalsContextType {
-  activeModal: Modal | null;
+  modal: ModalType;
+  setModal: React.Dispatch<
+    React.SetStateAction<GlobalModalsContextType['modal']>
+  >;
+  updateModal: (modal: Partial<ModalType>) => void;
   clearModal: () => void;
-  setModal: (modal: Partial<Modal>) => void;
 }
 
 interface DeviceContextType {
@@ -264,8 +257,7 @@ export {
   AuthContextState,
   AuthContextType,
   DeviceContextType,
-  Modal,
-  defaultModal,
+  ModalType,
   GlobalModalsContextType,
   AuthModalsContextType,
   AuthModalsType,
