@@ -76,6 +76,7 @@ import { Surface } from '../Utils/Surface';
 import { patchApiKey } from '../../services/api/patchApiKey';
 import { useClickOutside } from '../../utils/useClickOutside';
 import { Modal } from '../Modal/Modal';
+import { Pagination } from '../Utils/Pagination';
 
 type ScopeID = number;
 type TApiKey = components['schemas']['ApiKeyPrivate'];
@@ -510,10 +511,6 @@ function ApiKeyView({
     setApiKeyName(apiKeys[apiKeyId].name);
   }, [apiKeys, apiKeyId]);
 
-  useEffect(() => {
-    console.log('apikeys changed');
-  }, [apiKeys]);
-
   return (
     <div className="flex flex-col space-y-4">
       <div className="overflow-x-auto overflow-y-clip">
@@ -732,25 +729,6 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
     }
   }, [data, status, loading]);
 
-  useEffect(() => {
-    if (selectedIndex === null) {
-      globalModalsContext.clearModal();
-    } else {
-      globalModalsContext.setModal({
-        contentAdditionalClassName: 'max-w-[400px] w-full',
-        children: (
-          <ApiKeyView
-            apiKeyId={apiKeyIdIndex[selectedIndex]}
-            apiKeys={apiKeys}
-            authContext={authContext}
-            updateApiKeyFunc={updateApiKeyFunc}
-            globalModalsContext={globalModalsContext}
-          />
-        ),
-      });
-    }
-  }, [selectedIndex, apiKeyIdIndex, apiKeys]);
-
   const addApiKeyScopeFunc: TModifyApiKeyScopeFunc = async (
     apiKey,
     scopeId
@@ -901,7 +879,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
         onCancel: () => {},
       },
       {
-        key: 'delete-api-key',
+        modalKey: 'delete-api-key',
       }
     );
   }
@@ -909,6 +887,20 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
   if (authContext.state.user !== null) {
     return (
       <>
+        <Modal
+          contentAdditionalClassName="max-w-[400px] w-full"
+          onExit={() => setSelectedIndex(null)}
+        >
+          {selectedIndex !== null && (
+            <ApiKeyView
+              apiKeyId={apiKeyIdIndex[selectedIndex]}
+              apiKeys={apiKeys}
+              authContext={authContext}
+              updateApiKeyFunc={updateApiKeyFunc}
+              globalModalsContext={globalModalsContext}
+            />
+          )}
+        </Modal>
         <div className="flex flex-row space-x-4 mb-4">
           <h2>API Keys</h2>
         </div>
@@ -933,46 +925,15 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
                 Add API Key
               </Button1>
             </div>
-            {apiKeyIdIndex.length < apiKeyCount && (
-              <div className="flex flex-row items-center space-x-1">
-                {loading ? (
-                  <Loader1 />
-                ) : (
-                  <p>
-                    {loading ? 'x' : offset + 1}-
-                    {loading ? 'x' : offset + Object.keys(apiKeys).length} of{' '}
-                    {loading ? 'x' : apiKeyCount}
-                  </p>
-                )}
-                <button
-                  disabled={offset === 0 || loading}
-                  onClick={() =>
-                    setOffset((prev) =>
-                      Math.max(
-                        queryParamObjects['offset'].schema.minimum,
-                        prev - limit
-                      )
-                    )
-                  }
-                >
-                  <IoArrowBackSharp
-                    className={offset === 0 || loading ? 'opacity-50' : ''}
-                  />
-                </button>
-                <button
-                  onClick={() => setOffset((prev) => prev + limit)}
-                  disabled={offset + limit >= apiKeyCount || loading}
-                >
-                  <IoArrowForwardSharp
-                    className={
-                      offset + limit >= apiKeyCount || loading
-                        ? 'opacity-50'
-                        : ''
-                    }
-                  />
-                </button>
-              </div>
-            )}
+            <Pagination
+              loading={loading}
+              offset={offset}
+              setOffset={setOffset}
+              limit={limit}
+              setLimit={setLimit}
+              nCurrent={apiKeyIdIndex.length}
+              nTotal={apiKeyCount}
+            />
           </div>
 
           <div className="overflow-x-auto mt-4 overflow-y-visible">
