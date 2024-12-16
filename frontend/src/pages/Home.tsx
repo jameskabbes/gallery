@@ -43,7 +43,7 @@ function Home() {
         </Link>
         <Button2 onClick={() => setShowModal(true)}>Show Modal</Button2>
       </div>
-      <Modal onExit={() => setShowModal(false)} key="asdf">
+      <Modal onExit={() => setShowModal(false)} modalKey="asdf">
         {showModal && (
           <div>
             <p>hello</p>
