@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Modal } from '../../types';
+import { ModalType } from '../../types';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import './Modal.css';
 import { useEscapeKey } from '../../contexts/EscapeKey';
@@ -13,59 +13,60 @@ const timeouts = {
   exit: 200,
 };
 
-interface Props {
-  activeModal: Modal | null;
-  overlayStyle?: React.CSSProperties;
-}
-
-function Modals({ activeModal, overlayStyle = {} }: Props) {
+function Modal({
+  contentAdditionalClassName = '',
+  contentAdditionalStyle = {},
+  overlayAdditionalClassName = '',
+  overlayAdditionalStyle = {},
+  includeExitButton = true,
+  onExit = () => null,
+  modalKey = 'modal-content',
+  children,
+}: ModalType) {
   const [ref, setRef] = useState<HTMLElement | null>(null);
   const refCallback = (node: HTMLElement | null) => {
     setRef(node);
   };
-  useEscapeKey(() => activeModal.onExit());
-  useClickOutside({ current: ref }, () => activeModal.onExit());
+  useEscapeKey(() => onExit());
+  useClickOutside({ current: ref }, () => onExit());
 
   return (
     <CSSTransition
-      in={activeModal.component !== null}
+      in={!!children}
       timeout={timeouts}
       classNames="modal"
       unmountOnExit
     >
       <TransitionGroup
-        className="modal-overlay relative"
-        style={{ zIndex: siteConfig.zIndex.modalOverlay, ...overlayStyle }}
+        className={`modal-overlay relative ${overlayAdditionalClassName}`}
+        style={{
+          zIndex: siteConfig.zIndex.modalOverlay,
+          ...overlayAdditionalStyle,
+        }}
       >
         <CSSTransition
-          in={activeModal.component !== null}
-          key={activeModal.key || 'modal-content'}
+          in={!!children}
+          key={modalKey}
           timeout={timeouts}
           classNames="modal"
         >
           <div className="absolute h-full w-full flex flex-col justify-center items-center p-2">
-            {activeModal.component && (
+            {!!children && (
               <Card1
                 style={{
-                  zIndex: siteConfig.zIndex.modalContent,
-                  ...activeModal.contentStyle,
+                  ...contentAdditionalStyle,
                 }}
                 ref={refCallback}
-                className={'overflow-y-auto ' + activeModal.className}
+                className={`overflow-y-auto ${contentAdditionalClassName}`}
               >
-                {activeModal.includeExitButton && (
+                {includeExitButton && (
                   <div className="flex flex-row justify-end">
-                    <button>
-                      <p>
-                        <IoClose
-                          onClick={() => activeModal.onExit()}
-                          className="cursor-pointer"
-                        />
-                      </p>
+                    <button onClick={() => onExit()}>
+                      <IoClose onClick={() => onExit()} />
                     </button>
                   </div>
                 )}
-                {activeModal.component}
+                {children}
               </Card1>
             )}
           </div>
@@ -75,4 +76,4 @@ function Modals({ activeModal, overlayStyle = {} }: Props) {
   );
 }
 
-export { Modals };
+export { Modal };
