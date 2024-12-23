@@ -11,9 +11,7 @@ import { Button1, Button2 } from '../components/Utils/Button';
 import { AuthModalsContext } from '../contexts/AuthModals';
 import { FileUploader } from '../components/Gallery/FileUploader';
 
-import { GlobalModalsContext } from '../contexts/GlobalModals';
 import { Link } from 'react-router-dom';
-import { Modal } from '../components/Modal/Modal';
 
 const API_ENDPOINT = '/pages/home/';
 const API_METHOD = 'get';
@@ -24,7 +22,6 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 
 function Home() {
   const authModalsContext = useContext(AuthModalsContext);
-  const globalModalsContext = useContext(GlobalModalsContext);
 
   const { data } = useApiCall<
     ResponseTypesByStatus[keyof ResponseTypesByStatus]
@@ -43,16 +40,6 @@ function Home() {
         </Link>
         <Button2 onClick={() => setShowModal(true)}>Show Modal</Button2>
       </div>
-      <Modal onExit={() => setShowModal(false)} modalKey="asdf">
-        {showModal && (
-          <div>
-            <p>hello</p>
-            <Button1 onClick={() => authModalsContext.activate('logIn')}>
-              Open Login
-            </Button1>
-          </div>
-        )}
-      </Modal>
     </>
   );
 }

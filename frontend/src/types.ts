@@ -53,10 +53,10 @@ interface DarkModeContextType {
   setPreference: (preference: 'light' | 'dark' | 'system') => void;
 }
 
-type AuthModalsType = 'logIn' | 'signUp' | 'logInWithEmail';
+type AuthModalType = 'logIn' | 'signUp' | 'logInWithEmail';
 
 interface AuthModalsContextType {
-  activate: (authModalType: AuthModalsType) => void;
+  activate: (modal: AuthModalType | null) => void;
 }
 
 interface LogInContextType {
@@ -128,33 +128,31 @@ interface SignUpContextType {
   >;
 }
 
-interface ModalType {
-  overlayAdditionalClassName?: string;
-  overlayAdditionalStyle?: React.CSSProperties;
+interface ModalType<T = Record<string, any>> {
+  key: string;
+  Component: React.ComponentType<any>;
+  componentProps?: T;
   contentAdditionalClassName?: string;
-  contentAdditionalStyle?: React.CSSProperties;
   includeExitButton?: boolean;
   onExit?: () => void;
-  modalKey?: string;
-  children?: React.ReactNode;
 }
 
-interface GlobalModalsContextType {
-  modal: ModalType;
-  setModal: React.Dispatch<
-    React.SetStateAction<GlobalModalsContextType['modal']>
-  >;
-  updateModal: (modal: Partial<ModalType>) => void;
-  clearModal: () => void;
+type ModalUpdateType<T = Record<string, any>> = Partial<
+  Omit<ModalType<Partial<T>>, 'key'>
+> &
+  Pick<ModalType<T>, 'key'>;
+
+interface ModalsContextType {
+  activeModal: ModalType | null;
+  pushModals: (modals: ModalType[]) => void;
+  deleteModals: (modalKeys: ModalType['key'][]) => void;
+  updateModals: (modals: ModalUpdateType[]) => void;
+  upsertModals: (modals: ModalType[]) => void;
+  swapActiveModal: (modal: ModalType) => void;
 }
 
 interface DeviceContextType {
   isMobile: boolean;
-}
-
-interface Reducer<State, Dispatch> {
-  state: State;
-  dispatch: (action: Dispatch) => void;
 }
 
 interface DataContextType {
@@ -223,12 +221,7 @@ interface EscapeKeyContextType {
   removeCallback: (callback: () => void) => void;
 }
 
-interface ConfirmationModalBaseProps {
-  onConfirm: () => void;
-  onCancel?: () => void;
-}
-
-interface SurfaceContextValue {
+interface SurfaceContextType {
   level: number;
   mode: 'a' | 'b';
 }
@@ -258,12 +251,12 @@ export {
   AuthContextType,
   DeviceContextType,
   ModalType,
-  GlobalModalsContextType,
+  ModalUpdateType,
+  ModalsContextType,
   AuthModalsContextType,
-  AuthModalsType,
+  AuthModalType,
   DataContextType,
   EscapeKeyContextType,
-  ConfirmationModalBaseProps,
-  SurfaceContextValue,
+  SurfaceContextType,
   OrderByState,
 };

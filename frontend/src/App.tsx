@@ -7,7 +7,7 @@ import { ApplicationContextProvider } from './contexts/Application';
 import { Toast } from './components/Toast/Toast';
 import { Gallery } from './pages/Gallery';
 import { Settings } from './pages/Settings';
-import { GlobalModals } from './components/GlobalModals';
+import { Modals } from './components/Modal/Modals';
 import { VerifyMagicLink } from './components/Auth/VerifyMagicLink';
 import { Surface } from './components/Utils/Surface';
 import Styles from './pages/Styles';
@@ -21,7 +21,7 @@ function App(): JSX.Element {
       <Surface>
         <main id="app">
           <Toast />
-          <GlobalModals />
+          <Modals />
           <BrowserRouter>
             <Header />
             <Routes>

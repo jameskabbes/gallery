@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
-import { ExtractResponseTypes } from '../../types';
+import { AuthModalType, ExtractResponseTypes } from '../../types';
 import { callApi } from '../../utils/api';
 
 import openapi_schema from '../../../../openapi_schema.json';
@@ -19,7 +19,7 @@ import { IoWarning } from 'react-icons/io5';
 import { ButtonSubmit } from '../Utils/Button';
 import { Loader1, Loader3 } from '../Utils/Loader';
 import { postSignUp } from '../../services/api/postSignUp';
-import { GlobalModalsContext } from '../../contexts/GlobalModals';
+import { ModalsContext } from '../../contexts/Modals';
 
 const API_ENDPOINT = '/auth/signup/';
 const API_METHOD = 'post';
@@ -32,8 +32,10 @@ function SignUp() {
   const signUpContext = useContext(SignUpContext);
   const authContext = useContext(AuthContext);
   const authModalsContext = useContext(AuthModalsContext);
-  const globalModalsContext = useContext(GlobalModalsContext);
+  const modalsContext = useContext(ModalsContext);
   const toastContext = useContext(ToastContext);
+
+  const key: AuthModalType = 'signUp';
 
   useEffect(() => {
     signUpContext.setError(null);
@@ -105,7 +107,7 @@ function SignUp() {
           message: 'Created new user',
           type: 'success',
         });
-        globalModalsContext.clearModal();
+        modalsContext.deleteModal(key);
       } else {
         console.error('Error creating user:', status, data);
         signUpContext.setError('Error creating user');

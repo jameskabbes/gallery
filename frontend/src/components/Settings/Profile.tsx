@@ -6,7 +6,7 @@ import { UpdateUsername } from '../User/UpdateUsername';
 import { UpdatePassword } from '../User/UpdatePassword';
 import { Button1 } from '../Utils/Button';
 import { setDeleteAccountModal } from '../User/DeleteAccount';
-import { GlobalModalsContext } from '../../contexts/GlobalModals';
+import { ModalsContext } from '../../contexts/Modals';
 import { useConfirmationModal } from '../../utils/useConfirmationModal';
 import { UpdateEmail } from '../User/UpdateEmail';
 import { Surface } from '../Utils/Surface';
@@ -17,7 +17,7 @@ interface Props {
 }
 
 function Profile({ authContext, toastContext }: Props) {
-  const globalModalsContext = useContext(GlobalModalsContext);
+  const modalsContext = useContext(ModalsContext);
   const { checkTextConfirmation } = useConfirmationModal();
 
   if (authContext.state.user !== null) {
@@ -59,7 +59,7 @@ function Profile({ authContext, toastContext }: Props) {
                   checkTextConfirmation,
                   authContext,
                   toastContext,
-                  globalModalsContext,
+                  modalsContext,
                 })
               }
             >

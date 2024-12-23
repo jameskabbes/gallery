@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
-import { ExtractResponseTypes } from '../../types';
+import { AuthModalType, ExtractResponseTypes } from '../../types';
 import { callApi } from '../../utils/api';
 import openapi_schema from '../../../../openapi_schema.json';
 
@@ -13,16 +13,18 @@ import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { ButtonSubmit } from '../Utils/Button';
 import { ValidatedInputCheckbox } from '../Form/ValidatedInputCheckbox';
 import { postEmailMagicLink } from '../../services/api/postEmailMagicLink';
-import { GlobalModalsContext } from '../../contexts/GlobalModals';
+import { ModalsContext } from '../../contexts/Modals';
 
 function LogInWithEmail() {
   const authContext = useContext(AuthContext);
   const logInWithEmailContext = useContext(LogInWithEmailContext);
   const authModalsContext = useContext(AuthModalsContext);
-  const globalModalsContext = useContext(GlobalModalsContext);
+  const modalsContext = useContext(ModalsContext);
   const [loading, setLoading] = useState<boolean>(false);
 
   const okayButtonRef = useRef<HTMLButtonElement>(null);
+
+  const key: AuthModalType = 'logInWithEmail';
 
   useEffect(() => {
     logInWithEmailContext.setValid(
@@ -113,7 +115,7 @@ function LogInWithEmail() {
           className="flex flex-col"
           onSubmit={(e) => {
             e.preventDefault();
-            globalModalsContext.clearModal();
+            modalsContext.deleteModal(key);
             logInWithEmailContext.setScreen('email');
           }}
         >

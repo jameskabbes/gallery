@@ -18,7 +18,7 @@ function Menu() {
   const authModalsContext = useContext(AuthModalsContext);
   const toastContext = useContext(ToastContext);
   useClickOutside(menuRef, () => setIsMenuVisible(false));
-  const { checkButtonConfirmation } = useConfirmationModal();
+  const { activateButtonConfirmation } = useConfirmationModal();
 
   const toggleMenu = () => {
     setIsMenuVisible((prev) => !prev);
@@ -37,13 +37,15 @@ function Menu() {
         {
           element: <span>Log Out</span>,
           onClick: () => {
-            checkButtonConfirmation({
-              title: 'Log Out?',
-              confirmText: 'Log Out',
-              message: 'Are you sure you want to log out?',
-              onConfirm: () => {
-                setIsMenuVisible(false);
-                logOut(authContext, toastContext);
+            activateButtonConfirmation({
+              componentProps: {
+                title: 'Log Out?',
+                confirmText: 'Log Out',
+                message: 'Are you sure you want to log out?',
+                onConfirm: () => {
+                  setIsMenuVisible(false);
+                  logOut(authContext, toastContext);
+                },
               },
             });
           },

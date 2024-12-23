@@ -3,24 +3,40 @@
   --modal-animation-exit-duration: 200ms;
 }
 
-/* Initial state */
+/* Forward transitions */
 .modal-enter {
   transform: translateY(100%);
 }
 
-/* Entering state */
 .modal-enter-active {
   transform: translateY(0);
   transition: transform var(--modal-animation-enter-duration);
 }
 
-/* Exiting state */
 .modal-exit {
   transform: translateY(0);
 }
 
-/* Exiting state */
 .modal-exit-active {
   transform: translateY(-100%);
+  transition: transform var(--modal-animation-exit-duration);
+}
+
+/* Reverse transitions */
+.modal-reverse-enter {
+  transform: translateY(-100%);
+}
+
+.modal-reverse-enter-active {
+  transform: translateY(0);
+  transition: transform var(--modal-animation-enter-duration);
+}
+
+.modal-reverse-exit {
+  transform: translateY(0);
+}
+
+.modal-reverse-exit-active {
+  transform: translateY(100%);
   transition: transform var(--modal-animation-exit-duration);
 }

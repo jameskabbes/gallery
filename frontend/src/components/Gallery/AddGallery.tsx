@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import {
-  GlobalModalsContextType,
+  ModalsContextType,
   ValidatedInputState,
   defaultValidatedInputState,
 } from '../../types';
@@ -12,7 +12,6 @@ import {
 
 import { AuthContext } from '../../contexts/Auth';
 import { ToastContext } from '../../contexts/Toast';
-import { GlobalModalsContext } from '../../contexts/GlobalModals';
 
 import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { ButtonSubmit } from '../Utils/Button';
@@ -25,17 +24,18 @@ import { CheckOrX } from '../Form/CheckOrX';
 
 interface AddGalleryProps {
   onSuccess: (gallery: PostGalleryResponses['200']) => void;
-  globalModalsContext: GlobalModalsContextType;
+  modalsContext: ModalsContextType;
   parentGalleryId: components['schemas']['Gallery']['id'];
 }
 
 function AddGallery({
   onSuccess,
-  globalModalsContext,
+  modalsContext,
   parentGalleryId,
 }: AddGalleryProps) {
   const authContext = useContext(AuthContext);
   const toastContext = useContext(ToastContext);
+  const modalKey = 'add-gallery';
 
   const [name, setName] = useState<ValidatedInputState<string>>({
     ...defaultValidatedInputState<string>(''),
@@ -96,7 +96,6 @@ function AddGallery({
 
   async function addGallery(event: React.FormEvent) {
     event.preventDefault();
-    globalModalsContext.clearModal();
 
     const toastId = toastContext.makePending({
       message: 'Adding gallery...',
@@ -118,7 +117,7 @@ function AddGallery({
         message: 'Gallery added',
         type: 'success',
       });
-      console.log(data);
+      modalsContext.deleteModal('add-gallery');
       onSuccess(data as PostGalleryResponses['200']);
     } else {
       toastContext.update(toastId, {
@@ -232,15 +231,13 @@ function AddGallery({
 interface SetAddGalleryModalProps extends AddGalleryProps {}
 
 function setAddGalleryModal({
-  globalModalsContext,
+  modalsContext,
   ...rest
 }: SetAddGalleryModalProps) {
-  globalModalsContext.setModal({
-    component: (
-      <AddGallery globalModalsContext={globalModalsContext} {...rest} />
-    ),
-    key: 'add-gallery',
-    className: 'max-w-[400px] w-full',
+  modalsContext.pushModal({
+    children: <AddGallery modalsContext={modalsContext} {...rest} />,
+    modalKey: 'add-gallery',
+    contentAdditionalClassName: 'max-w-[400px] w-full',
   });
 }
 

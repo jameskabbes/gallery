@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { deleteUser, DeleteUserResponses } from '../../services/api/deleteUser';
 import {
   AuthContextType,
-  GlobalModalsContextType,
+  ModalsContextType,
   ToastContextType,
 } from '../../types';
 import { useConfirmationModal } from '../../utils/useConfirmationModal';
@@ -13,17 +13,17 @@ interface Props {
   >['checkTextConfirmation'];
   authContext: AuthContextType;
   toastContext: ToastContextType;
-  globalModalsContext: GlobalModalsContextType;
+  modalsContext: ModalsContextType;
 }
 
 function setDeleteAccountModal({
   checkTextConfirmation,
   authContext,
   toastContext,
-  globalModalsContext,
+  modalsContext,
 }: Props) {
   async function handleDeleteUser() {
-    globalModalsContext.clearModal();
+    modalsContext.deleteModal('delete-account');
     const toastId = toastContext.makePending({
       message: 'Deleting account...',
     });
@@ -58,7 +58,7 @@ function setDeleteAccountModal({
       onConfirm: () => handleDeleteUser(),
     },
     {
-      key: 'delete-account-modal',
+      modalKey: 'delete-account',
     }
   );
 }

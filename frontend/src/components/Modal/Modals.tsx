@@ -1,11 +1,12 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ModalType } from '../../types';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
+import { ModalsContext } from '../../contexts/Modals';
+import siteConfig from '../../../siteConfig.json';
+import './Modal.css';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
-import { useEscapeKey } from '../../contexts/EscapeKey';
-import { useClickOutside } from '../../utils/useClickOutside';
 import { IoClose } from 'react-icons/io5';
 import { Card1 } from '../Utils/Card';
-import siteConfig from '../../../siteConfig.json';
+import { useClickOutside } from '../../utils/useClickOutside';
+import { useEscapeKey } from '../../contexts/EscapeKey';
 import './Modal.css';
 
 const timeouts = {
@@ -13,62 +14,67 @@ const timeouts = {
   exit: 200,
 };
 
-function Modal({
-  contentAdditionalClassName = '',
-  contentAdditionalStyle = {},
-  overlayAdditionalClassName = '',
-  overlayAdditionalStyle = {},
-  includeExitButton = true,
-  onExit = () => null,
-  modalKey = 'modal-content',
-  children,
-}: ModalType) {
+function Modals() {
+  const { activeModal, deleteModals } = useContext(ModalsContext);
+  const {
+    key = null,
+    Component = null,
+    componentProps = {},
+    includeExitButton = true,
+    contentAdditionalClassName = '',
+    onExit = () => {},
+  } = activeModal || {};
+
   const [ref, setRef] = useState<HTMLElement | null>(null);
   const refCallback = (node: HTMLElement | null) => {
     setRef(node);
   };
-  useEscapeKey(() => onExit());
-  useClickOutside({ current: ref }, () => onExit());
+
+  function handleExit() {
+    if (!!activeModal) {
+      onExit();
+      deleteModals([key]);
+    }
+  }
+
+  useEscapeKey(() => handleExit());
+  useClickOutside({ current: ref }, handleExit);
 
   return (
     <CSSTransition
-      in={!!children}
+      in={!!activeModal}
       timeout={timeouts}
       classNames="modal"
       unmountOnExit
     >
       <TransitionGroup
-        className={`fixed top-0 left-0 w-full h-full ${overlayAdditionalClassName}`}
+        className="fixed top-0 left-0 w-full h-full "
         style={{
           backgroundColor: 'rgba(0, 0, 0, 0.8)',
           zIndex: siteConfig.zIndex.modalOverlay,
-          ...overlayAdditionalStyle,
         }}
       >
         <CSSTransition
-          in={!!children}
+          in={!!activeModal}
           // if no children are provided, set key to null to trigger transition
-          key={!!children ? modalKey : null}
+          key={key}
           timeout={timeouts}
           classNames="modal"
         >
-          <div className="absolute h-full w-full flex flex-col justify-center items-center p-2">
-            {children && (
+          <div className="absolute flex flex-col h-full w-full justify-center items-center p-2">
+            {activeModal && (
               <Card1
-                style={{
-                  ...contentAdditionalStyle,
-                }}
-                ref={refCallback}
                 className={`overflow-y-auto ${contentAdditionalClassName}`}
+                ref={refCallback}
               >
                 {includeExitButton && (
                   <div className="flex flex-row justify-end">
-                    <button onClick={() => onExit()}>
+                    <button onClick={handleExit}>
                       <IoClose />
                     </button>
                   </div>
                 )}
-                {children}
+                {Component && <Component {...componentProps} />}
               </Card1>
             )}
           </div>
@@ -78,4 +84,4 @@ function Modal({
   );
 }
 
-export { Modal };
+export { Modals };

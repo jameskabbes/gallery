@@ -4,7 +4,7 @@ import { DeviceContext } from '../contexts/Device';
 import { paths, operations, components } from '../openapi_schema';
 import { defaultValidatedInputState, ExtractResponseTypes } from '../types';
 import { useApiCall } from '../utils/api';
-import { GlobalModalsContext } from '../contexts/GlobalModals';
+import { ModalsContext } from '../contexts/Modals';
 import { AuthContext } from '../contexts/Auth';
 import { Button1 } from '../components/Utils/Button';
 import { setFileUploaderModal } from '../components/Gallery/FileUploader';
@@ -33,7 +33,7 @@ interface Props {
 }
 
 function Gallery({ root = false }: Props) {
-  const globalModalsContext = useContext(GlobalModalsContext);
+  const modalsContext = useContext(ModalsContext);
   const authContext = useContext(AuthContext);
   const toastContext = useContext(ToastContext);
   const navigate = useNavigate();
@@ -122,7 +122,7 @@ function Gallery({ root = false }: Props) {
             <Button1
               onClick={() =>
                 setAddGalleryModal({
-                  globalModalsContext,
+                  modalsContext,
                   onSuccess: (gallery) => {
                     refetch();
                   },
@@ -134,7 +134,7 @@ function Gallery({ root = false }: Props) {
             </Button1>
             <Button1
               onClick={() =>
-                setFileUploaderModal(globalModalsContext, apiData.gallery)
+                setFileUploaderModal(modalsContext, apiData.gallery)
               }
             >
               <div className="flex flex-row items-center space-x-2">

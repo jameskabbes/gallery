@@ -1,6 +1,6 @@
 import React from 'react';
 import { DarkModeContextProvider } from './DarkMode';
-import { GlobalModalsContextProvider } from './GlobalModals';
+import { ModalsContextProvider } from './Modals';
 import { DeviceContextProvider } from './Device';
 import { AuthContextProvider } from './Auth';
 import { AuthModalsContextProvider } from './AuthModals';
@@ -17,7 +17,7 @@ const ApplicationContextProvider = ({ children }) => {
       <EscapeKeyContextProvider>
         <AuthContextProvider>
           <DeviceContextProvider>
-            <GlobalModalsContextProvider>
+            <ModalsContextProvider>
               <DarkModeContextProvider>
                 <LogInContextProvider>
                   <LogInWithGoogleProvider>
@@ -31,7 +31,7 @@ const ApplicationContextProvider = ({ children }) => {
                   </LogInWithGoogleProvider>
                 </LogInContextProvider>
               </DarkModeContextProvider>
-            </GlobalModalsContextProvider>
+            </ModalsContextProvider>
           </DeviceContextProvider>
         </AuthContextProvider>
       </EscapeKeyContextProvider>

@@ -5,15 +5,14 @@ import { AxiosProgressEvent } from 'axios';
 import {
   AuthContextType,
   defaultValidatedInputState,
-  GlobalModalsContextType,
   ValidatedInputState,
 } from '../../types';
 import { paths, operations, components } from '../../openapi_schema';
-import { GlobalModalsContext } from '../../contexts/GlobalModals';
 import { Button2, ButtonSubmit } from '../Utils/Button';
 import { Surface } from '../Utils/Surface';
 import { CheckOrX } from '../Form/CheckOrX';
 import { IoClose } from 'react-icons/io5';
+import { ModalsContext } from '../../contexts/Modals';
 
 interface FileProgressProps {
   file: File;
@@ -111,14 +110,14 @@ interface FileUploaderProps {
 
 function FileUploader({ gallery }: FileUploaderProps) {
   const authContext = useContext(AuthContext);
-  const globalModalsContext = useContext(GlobalModalsContext);
+  const modalsContext = useContext(ModalsContext);
 
   const [files, setFiles] = useState<File[]>([]);
   const [dragging, setDragging] = useState(false);
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    globalModalsContext.clearModal();
+    modalsContext.popModal();
   }
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {

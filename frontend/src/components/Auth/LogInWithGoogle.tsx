@@ -4,7 +4,7 @@ import { ExtractResponseTypes } from '../../types';
 import { paths, operations, components } from '../../openapi_schema';
 import { AuthContext } from '../../contexts/Auth';
 import { postLogInGoogle } from '../../services/api/postLogInGoogle';
-import { GlobalModalsContext } from '../../contexts/GlobalModals';
+import { ModalsContext } from '../../contexts/Modals';
 
 const API_ENDPOINT = '/auth/login/google/';
 const API_METHOD = 'post';
@@ -18,14 +18,14 @@ type TRequestData =
 
 function useLogInWithGoogle() {
   const authContext = useContext(AuthContext);
-  const globalModalsContext = useContext(GlobalModalsContext);
+  const modalsContext = useContext(ModalsContext);
 
   async function call(request_data: TRequestData) {
     const { data, status } = await postLogInGoogle(authContext, request_data);
     if (status == 200) {
       const apiData = data as ResponseTypesByStatus['200'];
       authContext.updateFromApiResponse(apiData);
-      globalModalsContext.clearModal();
+      modalsContext.deleteModal('logIn');
     }
   }
 

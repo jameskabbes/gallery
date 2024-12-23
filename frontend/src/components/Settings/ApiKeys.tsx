@@ -5,9 +5,11 @@ import {
   ExtractResponseTypes,
   AuthContextType,
   defaultValidatedInputState,
-  GlobalModalsContextType,
+  ModalsContextType,
   OrderByState,
   ArrayElement,
+  ModalType,
+  ModalUpdateType,
 } from '../../types';
 import { useApiCall } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
@@ -21,7 +23,7 @@ import { postApiKey, PostApiKeyResponses } from '../../services/api/postApiKey';
 import { postApiKeyScope } from '../../services/api/postApiKeyScope';
 import { deleteApiKeyScope } from '../../services/api/deleteApiKeyScope';
 
-import { GlobalModalsContext } from '../../contexts/GlobalModals';
+import { ModalsContext } from '../../contexts/Modals';
 import { useConfirmationModal } from '../../utils/useConfirmationModal';
 
 import { CiClock2 } from 'react-icons/ci';
@@ -75,7 +77,6 @@ import { Loader1 } from '../Utils/Loader';
 import { Surface } from '../Utils/Surface';
 import { patchApiKey } from '../../services/api/patchApiKey';
 import { useClickOutside } from '../../utils/useClickOutside';
-import { Modal } from '../Modal/Modal';
 import { Pagination } from '../Utils/Pagination';
 
 type ScopeID = number;
@@ -96,6 +97,7 @@ type TUpdateApiKeyFunc = (
   apiKeyId: Parameters<typeof patchApiKey>[1],
   apiKeyUpdate: Parameters<typeof patchApiKey>[2]
 ) => Promise<boolean>;
+type TDeleteApiKeyFunc = (apiKey: TApiKey) => Promise<boolean>;
 
 interface ApiKeyCodeModalProps {
   authContext: AuthContextType;
@@ -176,6 +178,8 @@ function UpdateApiKey({
     name: ValidatedInputState<string>;
   }
 
+  const [loading, setLoading] = useState<boolean>(false);
+
   const [name, setName] = useState<ValidatedInputState<string>>({
     ...defaultValidatedInputState<string>(apiKeys[apiKeyId].name),
   });
@@ -236,6 +240,7 @@ function UpdateApiKey({
       <form
         onSubmit={async (e) => {
           e.preventDefault();
+          setLoading(true);
           if (
             await updateApiKeyFunc(apiKeyId, {
               name: nameModified ? name.value : undefined,
@@ -245,6 +250,7 @@ function UpdateApiKey({
             })
           ) {
           }
+          setLoading(false);
         }}
         className="flex flex-col space-y-4"
       >
@@ -282,7 +288,9 @@ function UpdateApiKey({
         </fieldset>
 
         <div className="h-[2rem] flex flex-row justify-center space-x-2 items-center">
-          {modified && (
+          {loading ? (
+            <Loader1 />
+          ) : modified ? (
             <>
               <p className="text-center">
                 {apiKeyAvailable.status === 'valid'
@@ -293,7 +301,7 @@ function UpdateApiKey({
               </p>
               <CheckOrX status={apiKeyAvailable.status} />
             </>
-          )}
+          ) : null}
         </div>
         <div className="flex flex-row space-x-4">
           <Button2
@@ -315,7 +323,9 @@ function UpdateApiKey({
           </Button2>
           <Button1
             className="flex-1"
-            disabled={apiKeyAvailable.status !== 'valid' || !modified}
+            disabled={
+              apiKeyAvailable.status !== 'valid' || !modified || loading
+            }
             type="submit"
           >
             Submit
@@ -329,13 +339,15 @@ function UpdateApiKey({
 interface AddApiKeyProps {
   authContext: AuthContextType;
   addApiKeyFunc: TAddApiKeyFunc;
-  globalModalsContext: GlobalModalsContextType;
+  modalsContext: ModalsContextType;
 }
+
+const addApiKeyModalKey = 'modal-add-api-key';
 
 function AddApiKey({
   authContext,
   addApiKeyFunc,
-  globalModalsContext,
+  modalsContext,
 }: AddApiKeyProps) {
   interface ValidatedApiKeyAvailable {
     name: ValidatedInputState<string>;
@@ -394,7 +406,7 @@ function AddApiKey({
               name: name.value,
             })
           ) {
-            globalModalsContext.clearModal();
+            modalsContext.deleteModals([addApiKeyModalKey]);
           }
         }}
         className="flex flex-col space-y-4"
@@ -486,35 +498,73 @@ function ApiKeyTableRowScope({
   );
 }
 
+const deleteApiKeyModalKey = 'modal-confirmation-delete-api-key';
+
 interface ApiKeyViewProps {
   apiKeyId: TApiKey['id'];
   apiKeys: TApiKeys;
-  authContext: AuthContextType;
+  apiKeyScopeIds: TApiKeyScopeIds;
+  availableScopeIds: ScopeID[];
   updateApiKeyFunc: TUpdateApiKeyFunc;
-  globalModalsContext: GlobalModalsContextType;
+  deleteApiKeyScopeFunc: TModifyApiKeyScopeFunc;
+  addApiKeyScopeFunc: TModifyApiKeyScopeFunc;
+  deleteApiKeyFunc: TDeleteApiKeyFunc;
+  authContext: AuthContextType;
+  modalsContext: ModalsContextType;
+  activateButtonConfirmation: ReturnType<
+    typeof useConfirmationModal
+  >['activateButtonConfirmation'];
+}
+
+function makeApiKeyModalViewKey(id: TApiKey['id']): string {
+  return `modal-api-key-view-${id}`;
 }
 
 function ApiKeyView({
   apiKeys,
   apiKeyId,
-  authContext,
+  apiKeyScopeIds,
+  availableScopeIds,
   updateApiKeyFunc,
-  globalModalsContext,
+  deleteApiKeyScopeFunc,
+  addApiKeyScopeFunc,
+  deleteApiKeyFunc,
+  authContext,
+  modalsContext,
+  activateButtonConfirmation,
 }: ApiKeyViewProps) {
   type Mode = 'code' | 'scopes' | 'edit';
 
   const modes: Mode[] = ['code', 'scopes', 'edit'];
   const [mode, setMode] = useState<Mode>('code');
-  const [apiKeyName, setApiKeyName] = useState<string>(apiKeys[apiKeyId].name);
-
-  useEffect(() => {
-    setApiKeyName(apiKeys[apiKeyId].name);
-  }, [apiKeys, apiKeyId]);
 
   return (
     <div className="flex flex-col space-y-4">
-      <div className="overflow-x-auto overflow-y-clip">
-        <h3 className="break-words">{apiKeyName}</h3>
+      <div className="flex flex-row justify-between items-center space-x-4">
+        <div className="overflow-x-auto overflow-y-clip">
+          <h3 className="break-words">{apiKeys[apiKeyId].name}</h3>
+        </div>
+        <Button2
+          onClick={() => {
+            activateButtonConfirmation({
+              key: deleteApiKeyModalKey,
+              componentProps: {
+                title: 'Delete API Key?',
+                confirmText: 'Delete',
+                message: `Are you sure you want to delete the API Key ${apiKeys[apiKeyId].name}?`,
+                onConfirm: async () => {
+                  if (await deleteApiKeyFunc(apiKeys[apiKeyId])) {
+                    modalsContext.deleteModals([
+                      makeApiKeyModalViewKey(apiKeyId),
+                    ]);
+                  }
+                },
+              },
+            });
+          }}
+        >
+          <span className="text-red-500">Delete</span>
+        </Button2>
       </div>
       <div className="flex flex-row space-x-4">
         {modes.map((m) => (
@@ -532,7 +582,22 @@ function ApiKeyView({
       {mode === 'code' && (
         <ApiKeyCodeModal apiKey={apiKeys[apiKeyId]} authContext={authContext} />
       )}
-      {mode === 'scopes' && <p>scopes</p>}
+      {mode === 'scopes' && (
+        <div className="flex flex-col">
+          {availableScopeIds.map((scopeId) => (
+            <div className="flex flex-row items-center space-x-4" key={scopeId}>
+              <ApiKeyTableRowScope
+                scopeId={scopeId}
+                apiKey={apiKeys[apiKeyId]}
+                apiKeyScopeIds={apiKeyScopeIds}
+                addApiKeyScopeFunc={addApiKeyScopeFunc}
+                deleteApiKeyScopeFunc={deleteApiKeyScopeFunc}
+              />
+              {scopeIdToName[scopeId]}
+            </div>
+          ))}
+        </div>
+      )}
       {mode === 'edit' && (
         <>
           <UpdateApiKey
@@ -560,8 +625,8 @@ type ResponseTypesByStatus = ExtractResponseTypes<
 >;
 
 function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
-  const globalModalsContext = useContext(GlobalModalsContext);
-  const { checkButtonConfirmation } = useConfirmationModal();
+  const modalsContext = useContext(ModalsContext);
+  const { activateButtonConfirmation } = useConfirmationModal();
 
   const navigate = useNavigate();
   const query = new URLSearchParams(useLocation().search);
@@ -826,6 +891,14 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
       message: 'Updating API Key...',
     });
 
+    // optimistic update
+    const apiKey = apiKeys[apiKeyId];
+    setApiKeys((prev) => {
+      const updated = { ...prev };
+      updated[apiKeyId] = { ...updated[apiKeyId], ...apiKeyUpdate };
+      return updated;
+    });
+
     const { data, status } = await patchApiKey(
       authContext,
       apiKeyId,
@@ -845,62 +918,90 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
         message: 'Error creating API Key',
         type: 'error',
       });
+
+      // revert optimistic update
+      setApiKeys((prev) => {
+        const updated = { ...prev };
+        updated[apiKeyId] = { ...apiKey };
+        return updated;
+      });
+
       return false;
     }
   };
 
-  function handleDelete(apiKey: TApiKey) {
-    checkButtonConfirmation(
-      {
-        title: 'Delete API Key?',
-        confirmText: 'Delete',
-        message: `Are you sure you want to delete the API Key ${apiKey.name}?`,
-        onConfirm: async () => {
-          let toastId = toastContext.makePending({
-            message: `Deleting API Key ${apiKey.name}`,
-          });
+  const deleteApiKeyFunc: TDeleteApiKeyFunc = async (apiKey) => {
+    let toastId = toastContext.makePending({
+      message: `Deleting API Key ${apiKey.name}`,
+    });
 
-          const { data, status } = await deleteApiKey(authContext, apiKey.id);
+    const { data, status } = await deleteApiKey(authContext, apiKey.id);
 
-          if (status === 204) {
-            const apiData = data as DeleteApiKeyResponses['204'];
-            toastContext.update(toastId, {
-              message: `Deleted API Key ${apiKey.name}`,
-              type: 'success',
-            });
-            refetch();
-          } else {
-            toastContext.update(toastId, {
-              message: `Error deleting API Key ${apiKey.name}`,
-              type: 'error',
-            });
-          }
+    if (status === 204) {
+      const apiData = data as DeleteApiKeyResponses['204'];
+      toastContext.update(toastId, {
+        message: `Deleted API Key ${apiKey.name}`,
+        type: 'success',
+      });
+      refetch();
+      return true;
+    } else {
+      toastContext.update(toastId, {
+        message: `Error deleting API Key ${apiKey.name}`,
+        type: 'error',
+      });
+      return false;
+    }
+  };
+
+  const selectedIndexRef = useRef(selectedIndex);
+  useEffect(() => {
+    selectedIndexRef.current = selectedIndex;
+  }, [selectedIndex]);
+
+  useEffect(() => {
+    if (selectedIndex !== null) {
+      const modal: ModalType<ApiKeyViewProps> = {
+        key: makeApiKeyModalViewKey(apiKeyIdIndex[selectedIndex]),
+        Component: ApiKeyView,
+        componentProps: {
+          apiKeyId: apiKeyIdIndex[selectedIndex],
+          apiKeys,
+          apiKeyScopeIds,
+          availableScopeIds,
+          updateApiKeyFunc,
+          deleteApiKeyScopeFunc,
+          deleteApiKeyFunc,
+          addApiKeyScopeFunc,
+          authContext,
+          modalsContext,
+          activateButtonConfirmation,
         },
-        onCancel: () => {},
-      },
-      {
-        modalKey: 'delete-api-key',
-      }
-    );
-  }
+        contentAdditionalClassName: 'max-w-[400px] w-full',
+        onExit: () => setSelectedIndex(null),
+      };
+      modalsContext.pushModals([modal]);
+    }
+  }, [selectedIndex]);
+
+  useEffect(() => {
+    if (selectedIndexRef.current !== null) {
+      const modal: ModalUpdateType<ApiKeyViewProps> = {
+        key: makeApiKeyModalViewKey(apiKeyIdIndex[selectedIndex]),
+        componentProps: {
+          apiKeyId: apiKeyIdIndex[selectedIndex],
+          apiKeys,
+          apiKeyScopeIds,
+          availableScopeIds,
+        },
+      };
+      modalsContext.updateModals([modal]);
+    }
+  }, [apiKeys, apiKeyScopeIds, availableScopeIds]);
 
   if (authContext.state.user !== null) {
     return (
       <>
-        <Modal
-          contentAdditionalClassName="max-w-[400px] w-full"
-          onExit={() => setSelectedIndex(null)}
-        >
-          {selectedIndex !== null && (
-            <ApiKeyView
-              apiKeyId={apiKeyIdIndex[selectedIndex]}
-              apiKeys={apiKeys}
-              authContext={authContext}
-              updateApiKeyFunc={updateApiKeyFunc}
-              globalModalsContext={globalModalsContext}
-            />
-          )}
-        </Modal>
         <div className="flex flex-row space-x-4 mb-4">
           <h2>API Keys</h2>
         </div>
@@ -909,17 +1010,18 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
             <div className="flex flex-row items-center space-x-4">
               <Button1
                 onClick={() => {
-                  globalModalsContext.setModal({
-                    children: (
-                      <AddApiKey
-                        addApiKeyFunc={addApiKeyFunc}
-                        authContext={authContext}
-                        globalModalsContext={globalModalsContext}
-                      />
-                    ),
-                    contentAdditionalClassName: 'max-w-[350px] w-full',
-                    modalKey: 'modal-make-api-key',
-                  });
+                  modalsContext.pushModals([
+                    {
+                      key: addApiKeyModalKey,
+                      Component: AddApiKey,
+                      componentProps: {
+                        authContext,
+                        addApiKeyFunc,
+                        modalsContext,
+                      },
+                      contentAdditionalClassName: 'max-w-[350px] w-full',
+                    },
+                  ]);
                 }}
               >
                 Add API Key

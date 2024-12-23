@@ -15,15 +15,18 @@ import { Button2, ButtonSubmit } from '../Utils/Button';
 import { Loader1, Loader2 } from '../Utils/Loader';
 import { Surface } from '../Utils/Surface';
 import { postLogin, PostLogInResponses } from '../../services/api/postLogIn';
-import { GlobalModalsContext } from '../../contexts/GlobalModals';
+import { ModalsContext } from '../../contexts/Modals';
+import { AuthModalType } from '../../types';
 
 function LogIn() {
   const logInContext = useContext(LogInContext);
   const authContext = useContext(AuthContext);
   const authModalsContext = useContext(AuthModalsContext);
-  const globalModalsContext = useContext(GlobalModalsContext);
+  const modalsContext = useContext(ModalsContext);
   const toastContext = useContext(ToastContext);
   const { logInWithGoogle } = useLogInWithGoogle();
+
+  const key: AuthModalType = 'logIn';
 
   useEffect(() => {
     logInContext.setError(null);
@@ -63,7 +66,7 @@ function LogIn() {
       if (status == 200) {
         const apiData = data as PostLogInResponses['200'];
         authContext.updateFromApiResponse(apiData);
-        globalModalsContext.clearModal();
+        modalsContext.deleteModals([key]);
         toastContext.make({
           message: `Welcome ${
             apiData.auth.user.username === null
@@ -82,133 +85,131 @@ function LogIn() {
   }
 
   return (
-    <div id="login">
-      <div className="flex">
-        <div className="flex-1">
-          <form onSubmit={handleLogin} className="flex flex-col space-y-6">
-            <header>Login</header>
-            <fieldset className="flex flex-col space-y-4">
-              <section className="space-y-2">
-                <label htmlFor="login-username">Username or Email</label>
-                <ValidatedInputString
-                  state={logInContext.username}
-                  setState={logInContext.setUsername}
-                  id="login-username"
-                  minLength={1}
-                  maxLength={Math.max(
-                    openapi_schema.components.schemas.UserCreateAdmin.properties
-                      .email.maxLength,
-                    openapi_schema.components.schemas.User.properties.username
-                      .maxLength
-                  )}
-                  type="text"
-                  checkValidity={true}
-                  showStatus={true}
-                />
-              </section>
-              <section className="space-y-2">
-                <div className="flex flex-row items-center justify-between">
-                  <label htmlFor="login-password">Password</label>
-                  <span
-                    onClick={() => authModalsContext.activate('logInWithEmail')}
-                    className="underline cursor-pointer"
-                  >
-                    Forgot Password?
-                  </span>
-                </div>
-
-                <ValidatedInputString
-                  state={logInContext.password}
-                  setState={logInContext.setPassword}
-                  id="login-password"
-                  minLength={
-                    openapi_schema.components.schemas.UserCreateAdmin.properties
-                      .password.anyOf[0].minLength
-                  }
-                  maxLength={
-                    openapi_schema.components.schemas.UserCreateAdmin.properties
-                      .password.anyOf[0].maxLength
-                  }
-                  type="password"
-                  checkValidity={true}
-                  showStatus={true}
-                />
-              </section>
-              <section className="flex flex-row items-center justify-center space-x-2">
-                <ValidatedInputCheckbox
-                  state={logInContext.staySignedIn}
-                  setState={logInContext.setStaySignedIn}
-                  id="login-stay-signed-in"
-                />
-                <label htmlFor="login-stay-signed-in">Remember Me</label>
-              </section>
-            </fieldset>
-
-            <div className="h-[2em] flex flex-col justify-center">
-              {logInContext.loading ? (
-                <div className="flex flex-row justify-center items-center space-x-2">
-                  <Loader1 />
-                  <span className="mb-0">logging in</span>
-                </div>
-              ) : logInContext.error ? (
-                <div className="flex flex-row justify-center items-center space-x-2">
-                  <span className="rounded-full p-1 text-light leading-none bg-error-500">
-                    <IoWarning
-                      style={{
-                        animation: 'scaleUp 0.2s ease-in-out',
-                      }}
-                    />
-                  </span>
-                  <span>{logInContext.error}</span>
-                </div>
-              ) : null}
-            </div>
-
-            <ButtonSubmit disabled={!logInContext.valid}>Login</ButtonSubmit>
-          </form>
-          <Surface keepParentMode={true}>
-            <div className="flex flex-row items-center space-x-2 my-2">
-              <div className="flex-1 border-inherit border-t-[1px]" />
-              <p>or</p>
-              <div className="flex-1 border-inherit border-t-[1px]" />
-            </div>
-          </Surface>
-
-          <div className="space-y-1">
-            <Button2
-              className="w-full relative"
-              onClick={() => {
-                authModalsContext.activate('signUp');
-              }}
-            >
-              <h6 className="text-center mb-0 ">Sign Up</h6>
-              <IoPersonAddSharp className="absolute left-4 top-1/2 transform -translate-y-1/2" />
-            </Button2>
-
-            <Button2
-              className="w-full relative"
-              onClick={() => {
-                authModalsContext.activate('logInWithEmail');
-              }}
-            >
-              <h6 className="text-center mb-0 ">Login with email</h6>
-              <IoMail className="absolute left-4 top-1/2 transform -translate-y-1/2" />
-            </Button2>
-            <Button2
-              className="w-full relative"
-              onClick={() => {
-                logInWithGoogle();
-              }}
-            >
-              <h6 className="text-center mb-0 ">Login with Google</h6>
-              <img
-                src="/google_g_logo.svg"
-                alt="google_logo"
-                className="absolute left-4 top-1/2 transform -translate-y-1/2"
-                style={{ width: '1rem', height: '1rem' }}
+    <div className="flex" id="login">
+      <div className="flex-1">
+        <form onSubmit={handleLogin} className="flex flex-col space-y-6">
+          <header>Login</header>
+          <fieldset className="flex flex-col space-y-4">
+            <section className="space-y-2">
+              <label htmlFor="login-username">Username or Email</label>
+              <ValidatedInputString
+                state={logInContext.username}
+                setState={logInContext.setUsername}
+                id="login-username"
+                minLength={1}
+                maxLength={Math.max(
+                  openapi_schema.components.schemas.UserCreateAdmin.properties
+                    .email.maxLength,
+                  openapi_schema.components.schemas.User.properties.username
+                    .maxLength
+                )}
+                type="text"
+                checkValidity={true}
+                showStatus={true}
               />
-            </Button2>
+            </section>
+            <section className="space-y-2">
+              <div className="flex flex-row items-center justify-between">
+                <label htmlFor="login-password">Password</label>
+                <span
+                  onClick={() => authModalsContext.activate('logInWithEmail')}
+                  className="underline cursor-pointer"
+                >
+                  Forgot Password?
+                </span>
+              </div>
+
+              <ValidatedInputString
+                state={logInContext.password}
+                setState={logInContext.setPassword}
+                id="login-password"
+                minLength={
+                  openapi_schema.components.schemas.UserCreateAdmin.properties
+                    .password.anyOf[0].minLength
+                }
+                maxLength={
+                  openapi_schema.components.schemas.UserCreateAdmin.properties
+                    .password.anyOf[0].maxLength
+                }
+                type="password"
+                checkValidity={true}
+                showStatus={true}
+              />
+            </section>
+            <section className="flex flex-row items-center justify-center space-x-2">
+              <ValidatedInputCheckbox
+                state={logInContext.staySignedIn}
+                setState={logInContext.setStaySignedIn}
+                id="login-stay-signed-in"
+              />
+              <label htmlFor="login-stay-signed-in">Remember Me</label>
+            </section>
+          </fieldset>
+
+          <div className="h-[2em] flex flex-col justify-center">
+            {logInContext.loading ? (
+              <div className="flex flex-row justify-center items-center space-x-2">
+                <Loader1 />
+                <span className="mb-0">logging in</span>
+              </div>
+            ) : logInContext.error ? (
+              <div className="flex flex-row justify-center items-center space-x-2">
+                <span className="rounded-full p-1 text-light leading-none bg-error-500">
+                  <IoWarning
+                    style={{
+                      animation: 'scaleUp 0.2s ease-in-out',
+                    }}
+                  />
+                </span>
+                <span>{logInContext.error}</span>
+              </div>
+            ) : null}
           </div>
+
+          <ButtonSubmit disabled={!logInContext.valid}>Login</ButtonSubmit>
+        </form>
+        <Surface keepParentMode={true}>
+          <div className="flex flex-row items-center space-x-2 my-2">
+            <div className="flex-1 border-inherit border-t-[1px]" />
+            <p>or</p>
+            <div className="flex-1 border-inherit border-t-[1px]" />
+          </div>
+        </Surface>
+
+        <div className="space-y-1">
+          <Button2
+            className="w-full relative"
+            onClick={() => {
+              authModalsContext.activate('signUp');
+            }}
+          >
+            <h6 className="text-center mb-0 ">Sign Up</h6>
+            <IoPersonAddSharp className="absolute left-4 top-1/2 transform -translate-y-1/2" />
+          </Button2>
+
+          <Button2
+            className="w-full relative"
+            onClick={() => {
+              authModalsContext.activate('logInWithEmail');
+            }}
+          >
+            <h6 className="text-center mb-0 ">Login with email</h6>
+            <IoMail className="absolute left-4 top-1/2 transform -translate-y-1/2" />
+          </Button2>
+          <Button2
+            className="w-full relative"
+            onClick={() => {
+              logInWithGoogle();
+            }}
+          >
+            <h6 className="text-center mb-0 ">Login with Google</h6>
+            <img
+              src="/google_g_logo.svg"
+              alt="google_logo"
+              className="absolute left-4 top-1/2 transform -translate-y-1/2"
+              style={{ width: '1rem', height: '1rem' }}
+            />
+          </Button2>
         </div>
       </div>
     </div>

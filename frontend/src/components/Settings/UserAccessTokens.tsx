@@ -28,7 +28,7 @@ interface Props {
 }
 
 function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
-  const { checkButtonConfirmation } = useConfirmationModal();
+  const { activateButtonConfirmation } = useConfirmationModal();
 
   const [userAccessTokens, setUserAccessTokens] = useState<{
     [key: string]: ResponseTypesByStatus['200'][number];
@@ -130,12 +130,14 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
                 <Button1
                   onClick={() => {
                     if (authContext.state.auth_credential?.id === session.id) {
-                      checkButtonConfirmation({
-                        title: 'Sign Out?',
-                        message:
-                          'This will sign you out of your current session.',
-                        onConfirm: () => handleDeleteSession(key),
-                        confirmText: 'Sign Out',
+                      activateButtonConfirmation({
+                        componentProps: {
+                          title: 'Sign Out?',
+                          message:
+                            'This will sign you out of your current session.',
+                          onConfirm: () => handleDeleteSession(key),
+                          confirmText: 'Sign Out',
+                        },
                       });
                     } else {
                       handleDeleteSession(key);

@@ -1,17 +1,16 @@
 import React, { useContext, useState, useRef, useEffect } from 'react';
-import {
-  ConfirmationModalBaseProps,
-  defaultValidatedInputState,
-  ValidatedInputState,
-} from '../../types';
+import { defaultValidatedInputState, ValidatedInputState } from '../../types';
 import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { ButtonSubmit } from '../Utils/Button';
+import { Surface } from '../Utils/Surface';
+import { Card1 } from '../Utils/Card';
 
-interface TextConfirmationModalProps extends ConfirmationModalBaseProps {
+interface TextConfirmationModalProps {
   title: string;
   message: React.ReactNode;
   target: string;
   confirmText?: string;
+  onConfirm?: () => void;
 }
 
 function TextConfirmationModal({
@@ -31,17 +30,11 @@ function TextConfirmationModal({
         e.preventDefault();
         onConfirm();
       }}
-      className="flex flex-col space-y-8"
+      className="flex flex-col space-y-6"
     >
-      <header>{title}</header>
+      <header className="mb-4">{title}</header>
       {message}
-      <p className="text-center">
-        To proceed, type{' '}
-        <code>
-          <strong>{target}</strong>
-        </code>{' '}
-        in the field below.
-      </p>
+
       <ValidatedInputString
         state={confirm}
         setState={setConfirm}
@@ -52,6 +45,13 @@ function TextConfirmationModal({
             : { valid: false, message: 'Input does not match target' }
         }
       />
+      <p className="text-center">
+        To proceed, type{' '}
+        <code>
+          <strong>{target}</strong>
+        </code>{' '}
+        in the field above.
+      </p>
       <ButtonSubmit disabled={confirm.status !== 'valid'}>
         {confirmText}
       </ButtonSubmit>

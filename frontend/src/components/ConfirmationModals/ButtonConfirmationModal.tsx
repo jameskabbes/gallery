@@ -1,14 +1,14 @@
 import React, { useContext, useRef, useEffect } from 'react';
-import { ConfirmationModalBaseProps } from '../../types';
 import { Button1, Button2 } from '../Utils/Button';
-import { GlobalModalsContext } from '../../contexts/GlobalModals';
 
-interface ButtonConfirmationModalProps extends ConfirmationModalBaseProps {
+interface ButtonConfirmationModalProps {
   title: string;
   message: string;
   confirmText?: string;
   cancelText?: string;
   showCancel?: boolean;
+  onConfirm?: () => void;
+  onCancel?: () => void;
 }
 
 function ButtonConfirmationModal({
@@ -40,6 +40,7 @@ function ButtonConfirmationModal({
       <div className="flex flex-row justify-center space-x-2">
         {showCancel && (
           <Button2
+            type="reset"
             className="flex-1"
             onClick={() => {
               onCancel();

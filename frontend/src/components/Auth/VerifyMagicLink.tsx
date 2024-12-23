@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { callApi, useApiCall } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
 import { ExtractResponseTypes } from '../../types';
-import { GlobalModalsContext } from '../../contexts/GlobalModals';
+import { ModalsContext } from '../../contexts/Modals';
 import { Loader1 } from '../Utils/Loader';
 import { IoWarning } from 'react-icons/io5';
 import { IoCheckmark } from 'react-icons/io5';
@@ -20,7 +20,7 @@ function VerifyMagicLink() {
   const searchParams = new URLSearchParams(location.search);
   const access_token: string = searchParams.get('access_token');
   const stay_signed_in = searchParams.get('stay_signed_in') === 'True';
-  const globalModalsContext = useContext(GlobalModalsContext);
+  const modalsContext = useContext(ModalsContext);
 
   const { data, loading, status } = useApiCall<
     PostVerifyMagicLinkResponses[keyof PostVerifyMagicLinkResponses],
@@ -71,11 +71,10 @@ function VerifyMagicLink() {
   }
 
   useEffect(() => {
-    globalModalsContext.setModal({
-      component: <Component />,
-      contentStyle: { maxWidth: '400px', width: '100%' },
-      includeExitButton: true,
-      key: 'verify-magic-link-loading',
+    modalsContext.pushModal({
+      children: <Component />,
+      modalKey: 'verify-magic-link-loading',
+      contentAdditionalStyle: { maxWidth: '400px', width: '100%' },
     });
   }, [loading]);
 

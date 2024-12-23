@@ -1,9 +1,18 @@
-import React, { useEffect, useContext, useState, Children } from 'react';
+import React, {
+  useEffect,
+  useContext,
+  useState,
+  Children,
+  useCallback,
+  useMemo,
+  useRef,
+} from 'react';
 import { DeviceContext } from '../contexts/Device';
 import { paths, operations, components } from '../openapi_schema';
 import {
   defaultValidatedInputState,
   ExtractResponseTypes,
+  ModalType,
   ValidatedInputState,
 } from '../types';
 import { useApiCall } from '../utils/api';
@@ -14,7 +23,7 @@ import { ValidatedInputDatetimeLocal } from '../components/Form/ValidatedInputDa
 import { ValidatedInputToggle } from '../components/Form/ValidatedInputToggle';
 import { ValidatedInputString } from '../components/Form/ValidatedInputString';
 import { Surface } from '../components/Utils/Surface';
-import { GlobalModalsContext } from '../contexts/GlobalModals';
+import { ModalsContext } from '../contexts/Modals';
 
 import {
   Button1,
@@ -43,9 +52,10 @@ function Styles() {
   let deviceContext = useContext(DeviceContext);
   let toastContext = useContext(ToastContext);
   const authContext = useContext(AuthContext);
-  const globalModalsContext = useContext(GlobalModalsContext);
   const authModalsContext = useContext(AuthModalsContext);
-  const { checkButtonConfirmation } = useConfirmationModal();
+  const modalsContext = useContext(ModalsContext);
+  const { activateButtonConfirmation, activateTextConfirmation } =
+    useConfirmationModal();
 
   const [toggleState, setToggleState] = useState<ValidatedInputState<boolean>>({
     ...defaultValidatedInputState<boolean>(false),
@@ -70,55 +80,83 @@ function Styles() {
   });
 
   const [counter, setCounter] = useState<number>(0);
-  const [modalVersion, setModalVersion] = useState<number>(0);
+  const [modalKey, setModalKey] = useState<number>(null);
+  const modalKeyRef = useRef<number>(modalKey);
 
-  function ModalDemo({ counter }: { counter: number }) {
+  useEffect(() => {
+    modalKeyRef.current = modalKey;
+  }, [modalKey]);
+
+  const firstModalRender = useRef(true);
+
+  function ModalTest({
+    modalKey,
+    counter,
+  }: {
+    modalKey: number;
+    counter: number;
+  }) {
     return (
-      <div>
+      <div id={`modal-test-${modalKey}`}>
         <h2>Modal</h2>
         <p>Counter: {counter}</p>
-        <Button2
-          onClick={() => {
-            setCounter((prev) => prev + 1);
-          }}
-        >
-          Increment
-        </Button2>
-        <Button1
-          onClick={() => {
-            setModalVersion((prev) => prev + 1);
-          }}
-        >
-          Swap modal
-        </Button1>
-        <Button1
-          onClick={() => {
-            authModalsContext.activate('logIn');
-          }}
-        >
-          Open Login
-        </Button1>
+        <p>modalKey: {modalKey}</p>
+        <div className="flex flex-row space-x-2">
+          <Button2
+            onClick={() => {
+              setCounter((prev) => prev + 1);
+            }}
+          >
+            Increment
+          </Button2>
+          <Button1 onClick={() => setModalKey((prev) => prev + 1)}>
+            Swap modal
+          </Button1>
+          <Button1
+            onClick={() => {
+              authModalsContext.activate('logIn');
+            }}
+          >
+            Open Login
+          </Button1>
+        </div>
       </div>
     );
   }
 
   useEffect(() => {
-    if (modalVersion > 0) {
-      globalModalsContext.updateModal({
-        children: <ModalDemo counter={counter} />,
-      });
+    if (modalKey !== null) {
+      const key = `modal-test-${modalKey}`;
+      const modal: ModalType = {
+        key: key,
+        Component: ModalTest,
+        componentProps: { modalKey, counter },
+        onExit: () => {
+          setModalKey(null);
+        },
+      };
+      if (modalKey === 0) {
+        modalsContext.pushModals([modal]);
+      } else {
+        modalsContext.swapActiveModal(modal);
+      }
+      firstModalRender.current = false;
+    } else {
+      firstModalRender.current = true;
     }
-  }, [counter, modalVersion]);
+  }, [modalKey]);
 
   useEffect(() => {
-    if (modalVersion > 0) {
-      const key = Math.random().toString();
-      globalModalsContext.setModal({
-        children: <ModalDemo counter={counter} />,
-        modalKey: key,
-      });
+    if (!firstModalRender.current) {
+      const key = `modal-test-${modalKey}`;
+      modalsContext.updateModals([
+        {
+          key: key,
+          componentProps: { modalKey, counter },
+        },
+      ]);
     }
-  }, [modalVersion]);
+  }, [counter]);
 
   return (
     <div>
@@ -189,13 +227,51 @@ function Styles() {
           <Card1 className="flex flex-col space-y-2 m-2 ">
             <h2>Modals</h2>
             <p>Counter: {counter}</p>
+            <Button2 onClick={() => setCounter((prev) => prev + 1)}>
+              Counter ++
+            </Button2>
             <Button1
               onClick={() => {
-                setModalVersion((prev) => prev + 1);
+                setModalKey(0);
               }}
             >
               Generate a Modal
             </Button1>
+            <Card1>
+              <h3 className="mb-2">Confirmation Modals</h3>
+              <div className="flex flex-row space-x-2 p-[0.5]">
+                <Button2
+                  className="flex-1"
+                  onClick={() => {
+                    activateButtonConfirmation({
+                      componentProps: {
+                        title: 'Are you sure?',
+                        message: 'Example button confirmation modal.',
+                        onConfirm: () => {
+                          console.log('confirmed');
+                        },
+                      },
+                    });
+                  }}
+                >
+                  Button
+                </Button2>
+                <Button2
+                  className="flex-1"
+                  onClick={() => {
+                    activateTextConfirmation({
+                      componentProps: {
+                        message: 'Example text confirmation modal.',
+                        target: 'example',
+                        title: 'Are you sure?',
+                      },
+                    });
+                  }}
+                >
+                  Text
+                </Button2>
+              </div>
+            </Card1>
           </Card1>
         </section>
         <section className="flex-1 flex-col">
