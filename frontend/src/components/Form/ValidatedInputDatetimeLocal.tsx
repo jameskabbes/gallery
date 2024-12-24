@@ -9,7 +9,7 @@ import {
 } from '../../utils/useValidatedInput';
 import { Surface } from '../Utils/Surface';
 
-type T = Date;
+type T = Date | null;
 
 interface ValidatedInputDatetimeLocalProps
   extends UseValidatedInputProps<T>,
@@ -41,13 +41,13 @@ function ValidatedInputDatetimeLocal({
 
   useEffect(() => {
     if (state.value) {
-      setDateString(
-        new Date(
+      setDateString(() => {
+        return new Date(
           state.value.getTime() - state.value.getTimezoneOffset() * 60000
         )
           .toISOString()
-          .slice(0, 16)
-      );
+          .slice(0, 16);
+      });
     }
   }, [state.value]);
 
@@ -58,22 +58,22 @@ function ValidatedInputDatetimeLocal({
           value={dateString}
           setValue={(value: string) => {
             setDateString(value);
-            const checkValidReturn = isDatetimeValid(value);
 
+            const checkValidReturn = isDatetimeValid(value);
             if (checkValidReturn.valid) {
-              setState({
-                ...state,
+              setState((prev) => ({
+                ...prev,
                 value: new Date(value),
                 status: 'valid',
                 error: null,
-              });
+              }));
             } else {
-              setState({
-                ...state,
+              setState((prev) => ({
+                ...prev,
                 value: null,
                 status: 'invalid',
                 error: checkValidReturn.message,
-              });
+              }));
             }
           }}
           type="datetime-local"

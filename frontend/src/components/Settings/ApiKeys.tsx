@@ -109,8 +109,9 @@ function ApiKeyCodeModal({ apiKey, authContext }: ApiKeyCodeModalProps) {
   const [jwt, setJwt] = useState<TJwt>(null);
   const [copySuccess, setCopySuccess] = useState<boolean>(false);
 
-  async function fetchJwt() {
+  async function fetchJwt(apiKeyId: TApiKey['id']) {
     setLoading(true);
+    setCopySuccess(false);
     const { data, status } = await getApiKeyJWT(authContext, apiKey.id);
     if (status === 200) {
       const apiData = data as GetApiKeyJwtResponses['200'];
@@ -122,40 +123,52 @@ function ApiKeyCodeModal({ apiKey, authContext }: ApiKeyCodeModalProps) {
   }
 
   useEffect(() => {
-    fetchJwt();
-  }, []);
+    setCopySuccess(false);
+    fetchJwt(apiKey.id);
+  }, [apiKey]);
+
+  useEffect(() => {
+    if (copySuccess) {
+      const timeout = setTimeout(() => {
+        setCopySuccess(false);
+      }, 2000);
+      return () => clearTimeout(timeout);
+    }
+  }, [copySuccess]);
+
+  function copyCode() {
+    navigator.clipboard.writeText(jwt).then(
+      () => {
+        setCopySuccess(true);
+      },
+      (err) => {
+        console.error('Failed to copy text: ', err);
+      }
+    );
+  }
 
   return (
-    <div id="api-key-code" className="flex flex-col space-y-4">
-      <Card1>
-        <div>
-          {loading ? (
-            <Loader1 />
-          ) : jwt ? (
-            <code className="break-words">{jwt}</code>
-          ) : (
-            <p>Error generating code</p>
-          )}
-        </div>
+    <div
+      id="api-key-code"
+      className="flex flex-col justify-between space-y-2 h-full"
+    >
+      <Card1
+        onClick={() => copyCode()}
+        className="hover:border-primary-light dark:hover:border-primary-dark cursor-pointer"
+      >
+        {loading ? (
+          <Loader1 />
+        ) : jwt ? (
+          <code className="break-words">{jwt}</code>
+        ) : (
+          <p>Error generating code</p>
+        )}
       </Card1>
-      <div className="h-[2rem] flex flex-col justify-center items-center">
-        {copySuccess && <p>Copied to clipboard</p>}
-      </div>
-      <div className="flex flex-row justify-center">
-        <Button1
-          onClick={(e) => {
-            navigator.clipboard.writeText(jwt).then(
-              () => {
-                setCopySuccess(true);
-              },
-              (err) => {
-                console.error('Failed to copy text: ', err);
-              }
-            );
-          }}
-        >
-          Copy API Key
-        </Button1>
+      <div className="flex flex-col space-y-4">
+        <p className="text-center h-4">
+          {copySuccess ? 'Copied to clipboard' : null}
+        </p>
+        <Button1 onClick={() => copyCode()}>Copy Code</Button1>
       </div>
     </div>
   );
@@ -163,176 +176,166 @@ function ApiKeyCodeModal({ apiKey, authContext }: ApiKeyCodeModalProps) {
 
 interface UpdateApiKeyProps {
   authContext: AuthContextType;
-  apiKeyId: TApiKey['id'];
-  apiKeys: TApiKeys;
+  apiKey: TApiKey;
   updateApiKeyFunc: TUpdateApiKeyFunc;
 }
 
 function UpdateApiKey({
   authContext,
-  apiKeyId,
-  apiKeys,
+  apiKey,
   updateApiKeyFunc,
 }: UpdateApiKeyProps) {
   interface ValidatedApiKeyAvailable {
     name: ValidatedInputState<string>;
+    expiry: ValidatedInputState<Date | null>;
   }
 
   const [loading, setLoading] = useState<boolean>(false);
 
   const [name, setName] = useState<ValidatedInputState<string>>({
-    ...defaultValidatedInputState<string>(apiKeys[apiKeyId].name),
+    ...defaultValidatedInputState<string>(apiKey.name),
   });
   const [nameModified, setNameModified] = useState<boolean>(false);
-  const [expiry, setExpiry] = useState<ValidatedInputState<Date>>({
-    ...defaultValidatedInputState<Date>(new Date(apiKeys[apiKeyId].expiry)),
+  const [expiry, setExpiry] = useState<ValidatedInputState<Date | null>>({
+    ...defaultValidatedInputState<Date | null>(new Date(apiKey.expiry)),
   });
   const [expiryModified, setExpiryModified] = useState<boolean>(false);
   const [modified, setModified] = useState<boolean>(false);
 
-  const [apiKeyAvailable, setApiKeyAvailable] = useState<
-    ValidatedInputState<ValidatedApiKeyAvailable>
-  >({
-    ...defaultValidatedInputState<ValidatedApiKeyAvailable>({
-      name: name,
-    }),
-  });
+  const [updateApiKeyInputStatus, setUpdateApiKeyInputStatus] =
+    useState<ValidatedInputState<any>['status']>(null);
 
   useEffect(() => {
-    setNameModified(apiKeys[apiKeyId].name !== name.value);
-  }, [name.value, apiKeys]);
+    setNameModified(apiKey.name !== name.value);
+  }, [name.value, apiKey]);
+
   useEffect(() => {
     setExpiryModified(
-      new Date(apiKeys[apiKeyId].expiry).getTime() !== expiry.value.getTime()
+      expiry.value === null
+        ? true
+        : new Date(apiKey.expiry).getTime() !== new Date(expiry.value).getTime()
     );
-  }, [expiry.value, apiKeys]);
+  }, [expiry.value, apiKey]);
+
   useEffect(() => {
     setModified(nameModified || expiryModified);
   }, [nameModified, expiryModified]);
 
-  useValidatedInput<ValidatedApiKeyAvailable>({
-    state: apiKeyAvailable,
-    setState: setApiKeyAvailable,
-    checkAvailability: nameModified,
-    checkValidity: true,
-    isAvailable: () =>
-      isApiKeyAvailable(authContext, {
-        name: name.value,
-      }),
-    isValid: (value) => {
-      return value.name.status === 'valid'
-        ? { valid: true }
-        : { valid: false, message: 'Invalid name' };
-    },
-  });
-
   useEffect(() => {
-    setApiKeyAvailable((prev) => ({
-      ...prev,
-      value: {
-        name: name,
-      },
-    }));
-  }, [name]);
+    setUpdateApiKeyInputStatus((prev) =>
+      name.status === 'invalid' || expiry.status === 'invalid'
+        ? 'invalid'
+        : name.status === 'loading' || expiry.status === 'loading'
+        ? 'loading'
+        : 'valid'
+    );
+  }, [name, expiry]);
 
   return (
-    <div id="update-api-key">
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          setLoading(true);
-          if (
-            await updateApiKeyFunc(apiKeyId, {
-              name: nameModified ? name.value : undefined,
-              expiry: expiryModified
-                ? new Date(expiry.value).toISOString()
-                : undefined,
-            })
-          ) {
-          }
-          setLoading(false);
-        }}
-        className="flex flex-col space-y-4"
-      >
-        <fieldset className="flex flex-col space-y-4">
-          <section>
-            <label htmlFor="api-key-name">Name</label>
-            <ValidatedInputString
-              state={name}
-              setState={setName}
-              id="api-key-name"
-              type="text"
-              minLength={
-                openapi_schema.components.schemas.ApiKeyCreate.properties.name
-                  .minLength
-              }
-              maxLength={
-                openapi_schema.components.schemas.ApiKeyCreate.properties.name
-                  .maxLength
-              }
-              required={true}
-              checkValidity={true}
-              showStatus={nameModified}
-            />
-          </section>
-          <section>
-            <label htmlFor="api-key-expiry">Expiry</label>
-            <ValidatedInputDatetimeLocal
-              state={expiry}
-              setState={setExpiry}
-              id="api-key-expiry"
-              required={true}
-              showStatus={expiryModified}
-            />
-          </section>
-        </fieldset>
+    <form
+      id="update-api-key"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        setLoading(true);
 
-        <div className="h-[2rem] flex flex-row justify-center space-x-2 items-center">
-          {loading ? (
-            <Loader1 />
-          ) : modified ? (
-            <>
-              <p className="text-center">
-                {apiKeyAvailable.status === 'valid'
-                  ? 'Available'
-                  : apiKeyAvailable.status === 'loading'
-                  ? 'Checking'
-                  : 'Not available'}
-              </p>
-              <CheckOrX status={apiKeyAvailable.status} />
-            </>
-          ) : null}
-        </div>
-        <div className="flex flex-row space-x-4">
-          <Button2
-            className="flex-1"
-            disabled={!modified}
-            onClick={(e) => {
-              e.preventDefault();
-              setName({
-                ...defaultValidatedInputState<string>(apiKeys[apiKeyId].name),
-              });
-              setExpiry({
-                ...defaultValidatedInputState<Date>(
-                  new Date(apiKeys[apiKeyId].expiry)
-                ),
-              });
+        const apiKeyUpdate = {};
+        if (nameModified) {
+          apiKeyUpdate['name'] = name.value;
+        }
+        if (expiryModified) {
+          apiKeyUpdate['expiry'] = new Date(expiry.value).toISOString();
+        }
+        if (await updateApiKeyFunc(apiKey.id, apiKeyUpdate)) {
+        }
+        setLoading(false);
+      }}
+      className="flex flex-col h-full"
+    >
+      <fieldset className="flex flex-col space-y-4">
+        <section className="space-y-2">
+          <label htmlFor="api-key-name">Name</label>
+          <ValidatedInputString
+            state={name}
+            setState={setName}
+            id="api-key-name"
+            type="text"
+            isAvailable={async (name) => {
+              if (name === apiKey.name) {
+                return true;
+              } else {
+                return await isApiKeyAvailable(authContext, {
+                  name,
+                });
+              }
             }}
-          >
-            Cancel
-          </Button2>
-          <Button1
-            className="flex-1"
-            disabled={
-              apiKeyAvailable.status !== 'valid' || !modified || loading
+            checkAvailability={true}
+            minLength={
+              openapi_schema.components.schemas.ApiKeyCreate.properties.name
+                .minLength
             }
-            type="submit"
-          >
-            Submit
-          </Button1>
-        </div>
-      </form>
-    </div>
+            maxLength={
+              openapi_schema.components.schemas.ApiKeyCreate.properties.name
+                .maxLength
+            }
+            required={true}
+            checkValidity={true}
+            showStatus={nameModified}
+          />
+        </section>
+        <section className="space-y-2">
+          <label htmlFor="api-key-expiry">Expiry</label>
+          <ValidatedInputDatetimeLocal
+            state={expiry}
+            setState={setExpiry}
+            id="api-key-expiry"
+            required={true}
+            showStatus={expiryModified}
+          />
+        </section>
+      </fieldset>
+      <div className="h-[4rem] flex flex-row justify-center space-x-2 items-center">
+        {loading ? (
+          <Loader1 />
+        ) : modified ? (
+          <>
+            <CheckOrX status={updateApiKeyInputStatus} />
+            <p className="text-center">
+              {updateApiKeyInputStatus === 'valid'
+                ? 'Available'
+                : updateApiKeyInputStatus === 'loading'
+                ? 'Checking'
+                : updateApiKeyInputStatus === 'invalid'
+                ? 'Not available'
+                : 'error'}
+            </p>
+          </>
+        ) : null}
+      </div>
+      <div className="flex flex-row space-x-4">
+        <Button2
+          className="flex-1"
+          disabled={!modified}
+          onClick={(e) => {
+            e.preventDefault();
+            setName({
+              ...defaultValidatedInputState<string>(apiKey.name),
+            });
+            setExpiry({
+              ...defaultValidatedInputState<Date>(new Date(apiKey.expiry)),
+            });
+          }}
+        >
+          Cancel
+        </Button2>
+        <Button1
+          className="flex-1"
+          disabled={updateApiKeyInputStatus !== 'valid' || !modified || loading}
+          type="submit"
+        >
+          Submit
+        </Button1>
+      </div>
+    </form>
   );
 }
 
@@ -467,7 +470,7 @@ function AddApiKey({
 interface ApiKeyTableRowScopeProps {
   scopeId: ScopeID;
   apiKey: TApiKey;
-  apiKeyScopeIds: TApiKeyScopeIds;
+  scopeIds: Set<ScopeID>;
   deleteApiKeyScopeFunc: TModifyApiKeyScopeFunc;
   addApiKeyScopeFunc: TModifyApiKeyScopeFunc;
 }
@@ -475,7 +478,7 @@ interface ApiKeyTableRowScopeProps {
 function ApiKeyTableRowScope({
   scopeId,
   apiKey,
-  apiKeyScopeIds,
+  scopeIds,
   addApiKeyScopeFunc,
   deleteApiKeyScopeFunc,
 }: ApiKeyTableRowScopeProps) {
@@ -485,14 +488,14 @@ function ApiKeyTableRowScope({
       onClick={async (e) => {
         e.stopPropagation();
         setLoading(true);
-        if (apiKeyScopeIds[apiKey.id].has(scopeId)) {
+        if (scopeIds.has(scopeId)) {
           await deleteApiKeyScopeFunc(apiKey, scopeId);
         } else {
           await addApiKeyScopeFunc(apiKey, scopeId);
         }
         setLoading(false);
       }}
-      state={apiKeyScopeIds[apiKey.id].has(scopeId)}
+      state={scopeIds.has(scopeId)}
       disabled={loading}
     />
   );
@@ -501,9 +504,8 @@ function ApiKeyTableRowScope({
 const deleteApiKeyModalKey = 'modal-confirmation-delete-api-key';
 
 interface ApiKeyViewProps {
-  apiKeyId: TApiKey['id'];
-  apiKeys: TApiKeys;
-  apiKeyScopeIds: TApiKeyScopeIds;
+  apiKey: TApiKey;
+  scopeIds: Set<ScopeID>;
   availableScopeIds: ScopeID[];
   updateApiKeyFunc: TUpdateApiKeyFunc;
   deleteApiKeyScopeFunc: TModifyApiKeyScopeFunc;
@@ -521,9 +523,8 @@ function makeApiKeyModalViewKey(id: TApiKey['id']): string {
 }
 
 function ApiKeyView({
-  apiKeys,
-  apiKeyId,
-  apiKeyScopeIds,
+  apiKey,
+  scopeIds,
   availableScopeIds,
   updateApiKeyFunc,
   deleteApiKeyScopeFunc,
@@ -535,27 +536,41 @@ function ApiKeyView({
 }: ApiKeyViewProps) {
   type Mode = 'code' | 'scopes' | 'edit';
 
-  const modes: Mode[] = ['code', 'scopes', 'edit'];
-  const [mode, setMode] = useState<Mode>('code');
+  const modes: Mode[] = ['edit', 'scopes', 'code'];
+  const [mode, setMode] = useState<Mode>(modes[0]);
 
   return (
-    <div className="flex flex-col space-y-4">
+    <div className="flex flex-col space-y-4 mt-2">
       <div className="flex flex-row justify-between items-center space-x-4">
         <div className="overflow-x-auto overflow-y-clip">
-          <h3 className="break-words">{apiKeys[apiKeyId].name}</h3>
+          <h3 className="break-words">{apiKey.name}</h3>
         </div>
+      </div>
+      <div className="flex flex-row space-x-2 overflow-x-auto">
+        {modes.map((m) => (
+          <Button2
+            key={m}
+            onClick={() => setMode(m)}
+            className={`${
+              mode === m ? ' border-primary-light dark:border-primary-dark' : ''
+            } hover:border-primary-light dark:hover:border-primary-dark flex-1`}
+          >
+            {m}
+          </Button2>
+        ))}
         <Button2
+          className="flex-1"
           onClick={() => {
             activateButtonConfirmation({
               key: deleteApiKeyModalKey,
               componentProps: {
                 title: 'Delete API Key?',
                 confirmText: 'Delete',
-                message: `Are you sure you want to delete the API Key ${apiKeys[apiKeyId].name}?`,
+                message: `Are you sure you want to delete the API Key ${apiKey.name}?`,
                 onConfirm: async () => {
-                  if (await deleteApiKeyFunc(apiKeys[apiKeyId])) {
+                  if (await deleteApiKeyFunc(apiKey)) {
                     modalsContext.deleteModals([
-                      makeApiKeyModalViewKey(apiKeyId),
+                      makeApiKeyModalViewKey(apiKey.id),
                     ]);
                   }
                 },
@@ -563,51 +578,38 @@ function ApiKeyView({
             });
           }}
         >
-          <span className="text-red-500">Delete</span>
+          <span className="text-red-500">delete</span>
         </Button2>
       </div>
-      <div className="flex flex-row space-x-4">
-        {modes.map((m) => (
-          <Button2
-            key={m}
-            onClick={() => setMode(m)}
-            className={`${
-              mode === m ? ' border-primary-light dark:border-primary-dark' : ''
-            } flex-1 w-16`}
-          >
-            {m}
-          </Button2>
-        ))}
-      </div>
-      {mode === 'code' && (
-        <ApiKeyCodeModal apiKey={apiKeys[apiKeyId]} authContext={authContext} />
-      )}
-      {mode === 'scopes' && (
-        <div className="flex flex-col">
-          {availableScopeIds.map((scopeId) => (
-            <div className="flex flex-row items-center space-x-4" key={scopeId}>
-              <ApiKeyTableRowScope
-                scopeId={scopeId}
-                apiKey={apiKeys[apiKeyId]}
-                apiKeyScopeIds={apiKeyScopeIds}
-                addApiKeyScopeFunc={addApiKeyScopeFunc}
-                deleteApiKeyScopeFunc={deleteApiKeyScopeFunc}
-              />
-              {scopeIdToName[scopeId]}
-            </div>
-          ))}
-        </div>
-      )}
-      {mode === 'edit' && (
-        <>
+      <div className="flex flex-col min-h-[300px] h-full overflow-y-scroll">
+        {mode === 'code' ? (
+          <ApiKeyCodeModal apiKey={apiKey} authContext={authContext} />
+        ) : mode === 'scopes' ? (
+          <>
+            {availableScopeIds.map((scopeId) => (
+              <div
+                className="flex flex-row items-center space-x-2"
+                key={scopeId}
+              >
+                <ApiKeyTableRowScope
+                  scopeId={scopeId}
+                  apiKey={apiKey}
+                  scopeIds={scopeIds}
+                  addApiKeyScopeFunc={addApiKeyScopeFunc}
+                  deleteApiKeyScopeFunc={deleteApiKeyScopeFunc}
+                />
+                <span>{scopeIdToName[scopeId]}</span>
+              </div>
+            ))}
+          </>
+        ) : mode === 'edit' ? (
           <UpdateApiKey
-            apiKeyId={apiKeyId}
-            apiKeys={apiKeys}
+            apiKey={apiKey}
             authContext={authContext}
             updateApiKeyFunc={updateApiKeyFunc}
           />
-        </>
-      )}
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -955,43 +957,50 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
   };
 
   const selectedIndexRef = useRef(selectedIndex);
+  const apiKeyViewFirstRenderRef = useRef(true);
   useEffect(() => {
     selectedIndexRef.current = selectedIndex;
   }, [selectedIndex]);
 
   useEffect(() => {
     if (selectedIndex !== null) {
-      const modal: ModalType<ApiKeyViewProps> = {
-        key: makeApiKeyModalViewKey(apiKeyIdIndex[selectedIndex]),
-        Component: ApiKeyView,
-        componentProps: {
-          apiKeyId: apiKeyIdIndex[selectedIndex],
-          apiKeys,
-          apiKeyScopeIds,
-          availableScopeIds,
-          updateApiKeyFunc,
-          deleteApiKeyScopeFunc,
-          deleteApiKeyFunc,
-          addApiKeyScopeFunc,
-          authContext,
-          modalsContext,
-          activateButtonConfirmation,
-        },
-        contentAdditionalClassName: 'max-w-[400px] w-full',
-        onExit: () => setSelectedIndex(null),
-      };
-      modalsContext.pushModals([modal]);
+      if (apiKeyViewFirstRenderRef.current) {
+        const modal: ModalType<ApiKeyViewProps> = {
+          key: makeApiKeyModalViewKey(apiKeyIdIndex[selectedIndex]),
+          Component: ApiKeyView,
+          componentProps: {
+            apiKey: apiKeys[apiKeyIdIndex[selectedIndex]],
+            scopeIds: apiKeyScopeIds[apiKeyIdIndex[selectedIndex]],
+            availableScopeIds,
+            updateApiKeyFunc,
+            deleteApiKeyScopeFunc,
+            deleteApiKeyFunc,
+            addApiKeyScopeFunc,
+            authContext,
+            modalsContext,
+            activateButtonConfirmation,
+          },
+          contentAdditionalClassName: 'max-w-[400px] w-full',
+          onExit: () => setSelectedIndex(null),
+        };
+        modalsContext.pushModals([modal]);
+        apiKeyViewFirstRenderRef.current = false;
+      }
+    } else {
+      apiKeyViewFirstRenderRef.current = true;
     }
   }, [selectedIndex]);
 
   useEffect(() => {
-    if (selectedIndexRef.current !== null) {
+    if (
+      selectedIndexRef.current !== null &&
+      !apiKeyViewFirstRenderRef.current
+    ) {
       const modal: ModalUpdateType<ApiKeyViewProps> = {
         key: makeApiKeyModalViewKey(apiKeyIdIndex[selectedIndex]),
         componentProps: {
-          apiKeyId: apiKeyIdIndex[selectedIndex],
-          apiKeys,
-          apiKeyScopeIds,
+          apiKey: apiKeys[apiKeyIdIndex[selectedIndex]],
+          scopeIds: apiKeyScopeIds[apiKeyIdIndex[selectedIndex]],
           availableScopeIds,
         },
       };
@@ -1130,7 +1139,9 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
                         setSelectedIndex(index);
                       }}
                     >
-                      <td className="px-2 py-1">{apiKeys[apiKeyId].name}</td>
+                      <td className="px-2 py-1 truncate">
+                        {apiKeys[apiKeyId].name}
+                      </td>
                       <td className="px-2 py-1">
                         {new Date(apiKeys[apiKeyId].issued).toLocaleString()}
                       </td>
@@ -1142,7 +1153,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
                           <ApiKeyTableRowScope
                             scopeId={scopeId}
                             apiKey={apiKeys[apiKeyId]}
-                            apiKeyScopeIds={apiKeyScopeIds}
+                            scopeIds={apiKeyScopeIds[apiKeyId]}
                             addApiKeyScopeFunc={addApiKeyScopeFunc}
                             deleteApiKeyScopeFunc={deleteApiKeyScopeFunc}
                           />

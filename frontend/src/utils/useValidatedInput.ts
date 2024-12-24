@@ -35,11 +35,11 @@ function useValidatedInput<T>({
   useEffect(() => {
     if (checkValidity) {
       const { valid, message } = isValid(state.value);
-      setState({
-        ...state,
+      setState((prev) => ({
+        ...prev,
         status: valid ? 'valid' : 'invalid',
         error: valid ? null : message,
-      });
+      }));
 
       // if the value is not valid, cancel pending request, return immediately
       if (!valid) {
@@ -51,11 +51,11 @@ function useValidatedInput<T>({
     }
 
     if (checkAvailability) {
-      setState({
-        ...state,
+      setState((prev) => ({
+        ...prev,
         status: 'loading',
         error: null,
-      });
+      }));
 
       // there is an existing timeout, but we want to reset it since we changed the value already
       if (debounceTimeout.current) {
@@ -63,13 +63,20 @@ function useValidatedInput<T>({
       }
       debounceTimeout.current = setTimeout(async () => {
         let available = await isAvailable(state.value);
-        setState({
-          ...state,
+        setState((prev) => ({
+          ...prev,
           status: available ? 'valid' : 'invalid',
           error: available ? null : `Not available`,
-        });
+        }));
       }, siteConfig.validatedInput.debounceTimeoutLength);
+    } else {
+      // if we are not checking availability, clear the timeout
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current);
+      }
     }
+
+    // if we are not checking validity or availability, clear the timeout
   }, [state.value]);
 }
 

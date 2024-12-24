@@ -69,8 +69,6 @@ function ModalsContextProvider({ children }: { children: React.ReactNode }) {
   const updateModals: ModalsContextType['updateModals'] = useCallback(
     (modals) => {
       setModals((prevModals) => {
-        console.log('updateModals', modals);
-
         const newModals = { ...prevModals };
         for (const modal of modals) {
           if (!prevModals[modal.key]) {

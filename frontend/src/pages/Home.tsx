@@ -30,15 +30,12 @@ function Home() {
     method: API_METHOD,
   });
 
-  const [showModal, setShowModal] = useState(false);
-
   return (
     <>
       <div>
         <Link to="/styles/">
           <Button1>Styles</Button1>
         </Link>
-        <Button2 onClick={() => setShowModal(true)}>Show Modal</Button2>
       </div>
     </>
   );
