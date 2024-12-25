@@ -18,7 +18,7 @@ interface Props {
 
 function Profile({ authContext, toastContext }: Props) {
   const modalsContext = useContext(ModalsContext);
-  const { checkTextConfirmation } = useConfirmationModal();
+  const { activateTextConfirmation } = useConfirmationModal();
 
   if (authContext.state.user !== null) {
     return (
@@ -56,7 +56,7 @@ function Profile({ authContext, toastContext }: Props) {
             <Button1
               onClick={() =>
                 setDeleteAccountModal({
-                  checkTextConfirmation,
+                  activateTextConfirmation,
                   authContext,
                   toastContext,
                   modalsContext,

@@ -480,6 +480,7 @@ class GoogleAuthRequest(BaseModel):
 
 @ auth_router.post("/login/google/", responses={status.HTTP_400_BAD_REQUEST: {"description": 'Invalid token'}})
 async def login_with_google(request_token: GoogleAuthRequest, response: Response) -> GoogleAuthResponse:
+
     async with httpx.AsyncClient() as client:
         res = await client.get('https://www.googleapis.com/oauth2/v3/userinfo?access_token={}'.format(request_token.access_token))
         res.raise_for_status()
@@ -495,15 +496,15 @@ async def login_with_google(request_token: GoogleAuthRequest, response: Response
         user = session.exec(select(models.User).where(
             models.User.email == email)).one_or_none()
         if not user:
-            user = await models.User.api_post(session=session, c=c, authorized_user_id=None, admin=False, create_model=models.UserCreateAdmin(email=email))
+            user = await models.User.api_post(session=session, c=c, authorized_user_id=None, create_model=models.UserCreateAdmin(email=email, user_role_id=c.user_role_name_mapping['user']))
 
         user_access_token = await models.UserAccessToken.api_post(
-            session=session, c=c, authorized_user_id=None, admin=False, create_model=models.UserAccessTokenCreateAdmin(
+            session=session, c=c, authorized_user_id=user._id,  admin=False, create_model=models.UserAccessTokenCreateAdmin(
                 user_id=user.id, lifespan=c.authentication['default_expiry_timedelta']
             ))
 
         set_access_token_cookie(jwt_encode(
-            user_access_token.export_to_jwt()), response)
+            user_access_token.export_to_jwt()), response, True)
 
         return VerifyMagicLinkResponse(
             auth=GetAuthBaseReturn(

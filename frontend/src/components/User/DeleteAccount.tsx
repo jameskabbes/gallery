@@ -8,22 +8,23 @@ import {
 import { useConfirmationModal } from '../../utils/useConfirmationModal';
 
 interface Props {
-  checkTextConfirmation: ReturnType<
+  activateTextConfirmation: ReturnType<
     typeof useConfirmationModal
-  >['checkTextConfirmation'];
+  >['activateTextConfirmation'];
   authContext: AuthContextType;
   toastContext: ToastContextType;
   modalsContext: ModalsContextType;
 }
 
+const modalKey = 'modal-confirmation-delete-account';
+
 function setDeleteAccountModal({
-  checkTextConfirmation,
+  activateTextConfirmation,
   authContext,
   toastContext,
   modalsContext,
 }: Props) {
   async function handleDeleteUser() {
-    modalsContext.deleteModal('delete-account');
     const toastId = toastContext.makePending({
       message: 'Deleting account...',
     });
@@ -45,8 +46,9 @@ function setDeleteAccountModal({
     }
   }
 
-  checkTextConfirmation(
-    {
+  activateTextConfirmation({
+    key: modalKey,
+    componentProps: {
       title: 'Delete Account?',
       message: (
         <p>
@@ -57,10 +59,7 @@ function setDeleteAccountModal({
       target: 'delete',
       onConfirm: () => handleDeleteUser(),
     },
-    {
-      modalKey: 'delete-account',
-    }
-  );
+  });
 }
 
 export { setDeleteAccountModal };

@@ -30,7 +30,7 @@ function UpdateUsername({ user }: Props) {
   const [loading, setLoading] = useState<boolean>(false);
   const authContext = useContext(AuthContext);
   const toastContext = useContext(ToastContext);
-  const { checkButtonConfirmation } = useConfirmationModal();
+  const { activateButtonConfirmation } = useConfirmationModal();
 
   useEffect(() => {
     setValid(username.status === 'valid' && modified);
@@ -131,20 +131,22 @@ function UpdateUsername({ user }: Props) {
         <div className="flex flex-row justify-center">
           <Button1
             onClick={() =>
-              checkButtonConfirmation({
-                title: 'Make Account Private?',
-                message:
-                  'This will action will make your account private. Are you sure you want to continue?',
-                confirmText: 'Make Account Private',
-                onConfirm: async () => {
-                  setUsername((prev) => {
-                    return {
-                      ...prev,
-                      value: '',
-                      status: 'valid',
-                    };
-                  });
-                  await updateUsername(null);
+              activateButtonConfirmation({
+                componentProps: {
+                  title: 'Make Account Private?',
+                  message:
+                    'This will action will make your account private. Are you sure you want to continue?',
+                  confirmText: 'Make Account Private',
+                  onConfirm: async () => {
+                    setUsername((prev) => {
+                      return {
+                        ...prev,
+                        value: '',
+                        status: 'valid',
+                      };
+                    });
+                    await updateUsername(null);
+                  },
                 },
               })
             }

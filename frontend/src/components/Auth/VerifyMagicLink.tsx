@@ -71,11 +71,13 @@ function VerifyMagicLink() {
   }
 
   useEffect(() => {
-    modalsContext.pushModal({
-      children: <Component />,
-      modalKey: 'verify-magic-link-loading',
-      contentAdditionalStyle: { maxWidth: '400px', width: '100%' },
-    });
+    modalsContext.pushModals([
+      {
+        Component: Component,
+        key: 'modal-verify-magic-link',
+        contentAdditionalClassName: 'max-w-[400px] w-full',
+      },
+    ]);
   }, [loading]);
 
   return null;

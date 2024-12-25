@@ -1,7 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
 import { AuthModalType, ExtractResponseTypes } from '../../types';
-import { callApi } from '../../utils/api';
 
 import openapi_schema from '../../../../openapi_schema.json';
 
@@ -107,7 +106,7 @@ function SignUp() {
           message: 'Created new user',
           type: 'success',
         });
-        modalsContext.deleteModal(key);
+        modalsContext.deleteModals([key]);
       } else {
         console.error('Error creating user:', status, data);
         signUpContext.setError('Error creating user');

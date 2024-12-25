@@ -9,7 +9,6 @@ import { AuthModalsContext } from '../../contexts/AuthModals';
 import { IoWarning } from 'react-icons/io5';
 import { IoPersonAddSharp } from 'react-icons/io5';
 import { IoMail } from 'react-icons/io5';
-import { useLogInWithGoogle } from './LogInWithGoogle';
 import { ValidatedInputCheckbox } from '../Form/ValidatedInputCheckbox';
 import { Button2, ButtonSubmit } from '../Utils/Button';
 import { Loader1, Loader2 } from '../Utils/Loader';
@@ -17,6 +16,11 @@ import { Surface } from '../Utils/Surface';
 import { postLogin, PostLogInResponses } from '../../services/api/postLogIn';
 import { ModalsContext } from '../../contexts/Modals';
 import { AuthModalType } from '../../types';
+import { useGoogleLogin } from '@react-oauth/google';
+import {
+  postLogInGoogle,
+  PostLoginGoogleResponses,
+} from '../../services/api/postLogInGoogle';
 
 function LogIn() {
   const logInContext = useContext(LogInContext);
@@ -24,7 +28,35 @@ function LogIn() {
   const authModalsContext = useContext(AuthModalsContext);
   const modalsContext = useContext(ModalsContext);
   const toastContext = useContext(ToastContext);
-  const { logInWithGoogle } = useLogInWithGoogle();
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (res) => {
+      const toastId = toastContext.makePending({
+        message: 'Logging in with Google...',
+      });
+
+      const { data, status } = await postLogInGoogle(authContext, {
+        access_token: res.access_token,
+      });
+
+      console.log(data, status);
+
+      if (status == 200) {
+        toastContext.update(toastId, {
+          message: 'Logged in with Google',
+          type: 'success',
+        });
+        const apiData = data as PostLoginGoogleResponses['200'];
+        authContext.updateFromApiResponse(apiData);
+        modalsContext.deleteModals([key]);
+      } else {
+        toastContext.update(toastId, {
+          message: 'Could not log in with Google',
+          type: 'error',
+        });
+      }
+    },
+  });
 
   const key: AuthModalType = 'logIn';
 
@@ -199,7 +231,7 @@ function LogIn() {
           <Button2
             className="w-full relative"
             onClick={() => {
-              logInWithGoogle();
+              googleLogin();
             }}
           >
             <h6 className="text-center mb-0 ">Login with Google</h6>
