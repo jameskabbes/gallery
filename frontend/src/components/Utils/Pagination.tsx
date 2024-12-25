@@ -19,13 +19,15 @@ function Pagination(props: PaginationProps) {
 
   return (
     <div className="flex flex-row items-center space-x-1">
-      {props.loading ? (
-        <Loader1 />
-      ) : (
-        <p>
-          {props.offset + 1}-{props.nCurrent + props.offset} of {props.nTotal}
-        </p>
-      )}
+      <p>
+        {props.loading ? (
+          <Loader1 />
+        ) : (
+          <>
+            {props.offset + 1}-{props.nCurrent + props.offset} of {props.nTotal}
+          </>
+        )}
+      </p>
       <button
         disabled={leftDisabled}
         onClick={() =>

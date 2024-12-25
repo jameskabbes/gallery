@@ -85,6 +85,10 @@ export interface paths {
     /** Get User Access Tokens */
     get: operations["get_user_access_tokens_user_access_tokens__get"];
   };
+  "/user-access-tokens/details/count/": {
+    /** Get User Access Tokens Count */
+    get: operations["get_user_access_tokens_count_user_access_tokens_details_count__get"];
+  };
   "/admin/user-access-tokens/{user_access_token_id}/": {
     /** Get User Access Token By Id Admin */
     get: operations["get_user_access_token_by_id_admin_admin_user_access_tokens__user_access_token_id___get"];
@@ -218,6 +222,10 @@ export interface paths {
   "/pages/settings/api-keys/": {
     /** Get Settings Api Keys Page */
     get: operations["get_settings_api_keys_page_pages_settings_api_keys__get"];
+  };
+  "/pages/settings/user-access-tokens/": {
+    /** Get Settings User Access Tokens Page */
+    get: operations["get_settings_user_access_tokens_page_pages_settings_user_access_tokens__get"];
   };
   "/pages/styles/": {
     /** Get Styles Page */
@@ -554,6 +562,14 @@ export interface components {
     /** GetSettingsPageResponse */
     GetSettingsPageResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
+    };
+    /** GetSettingsUserAccessTokensPageResponse */
+    GetSettingsUserAccessTokensPageResponse: {
+      auth: components["schemas"]["GetAuthBaseReturn"];
+      /** User Access Token Count */
+      user_access_token_count: number;
+      /** User Access Tokens */
+      user_access_tokens: components["schemas"]["UserAccessToken"][];
     };
     /** GetStylesPageResponse */
     GetStylesPageResponse: {
@@ -1253,6 +1269,17 @@ export interface operations {
       422: {
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get User Access Tokens Count */
+  get_user_access_tokens_count_user_access_tokens_details_count__get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": number;
         };
       };
     };
@@ -2187,6 +2214,31 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["GetSettingsApiKeysPageResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get Settings User Access Tokens Page */
+  get_settings_user_access_tokens_page_pages_settings_user_access_tokens__get: {
+    parameters: {
+      query?: {
+        /** @description Quantity of results */
+        limit?: number;
+        /** @description Index of the first result */
+        offset?: number;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["GetSettingsUserAccessTokensPageResponse"];
         };
       };
       /** @description Validation Error */

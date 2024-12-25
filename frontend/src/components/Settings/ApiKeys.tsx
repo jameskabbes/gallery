@@ -97,7 +97,7 @@ type TUpdateApiKeyFunc = (
   apiKeyId: Parameters<typeof patchApiKey>[1],
   apiKeyUpdate: Parameters<typeof patchApiKey>[2]
 ) => Promise<boolean>;
-type TDeleteApiKeyFunc = (apiKey: TApiKey) => Promise<boolean>;
+type TDeleteApiKeyFunc = (index: number) => Promise<boolean>;
 
 interface ApiKeyCodeModalProps {
   authContext: AuthContextType;
@@ -504,6 +504,7 @@ function ApiKeyTableRowScope({
 const deleteApiKeyModalKey = 'modal-confirmation-delete-api-key';
 
 interface ApiKeyViewProps {
+  selectedIndex: number;
   apiKey: TApiKey;
   scopeIds: Set<ScopeID>;
   availableScopeIds: ScopeID[];
@@ -523,6 +524,7 @@ function makeApiKeyModalViewKey(id: TApiKey['id']): string {
 }
 
 function ApiKeyView({
+  selectedIndex,
   apiKey,
   scopeIds,
   availableScopeIds,
@@ -568,7 +570,7 @@ function ApiKeyView({
                 confirmText: 'Delete',
                 message: `Are you sure you want to delete the API Key ${apiKey.name}?`,
                 onConfirm: async () => {
-                  if (await deleteApiKeyFunc(apiKey)) {
+                  if (await deleteApiKeyFunc(selectedIndex)) {
                     modalsContext.deleteModals([
                       makeApiKeyModalViewKey(apiKey.id),
                     ]);
@@ -633,7 +635,8 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
   const navigate = useNavigate();
   const query = new URLSearchParams(useLocation().search);
 
-  type QueryParamKey = keyof paths['/api-keys/']['get']['parameters']['query'];
+  type QueryParamKey =
+    keyof paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['query'];
   const queryParameters =
     openapi_schema['paths']['/api-keys/']['get']['parameters'];
 
@@ -932,10 +935,15 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
     }
   };
 
-  const deleteApiKeyFunc: TDeleteApiKeyFunc = async (apiKey) => {
+  const deleteApiKeyFunc: TDeleteApiKeyFunc = async (index) => {
+    const apiKeyId = apiKeyIdIndex[index];
+    const apiKey = apiKeys[apiKeyId];
+
     let toastId = toastContext.makePending({
       message: `Deleting API Key ${apiKey.name}`,
     });
+
+    setApiKeyIdIndex((prev) => prev.splice(index, 1));
 
     const { data, status } = await deleteApiKey(authContext, apiKey.id);
 
@@ -945,6 +953,13 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
         message: `Deleted API Key ${apiKey.name}`,
         type: 'success',
       });
+
+      setApiKeys((prev) => {
+        const updated = { ...prev };
+        delete updated[apiKeyId];
+        return updated;
+      });
+
       refetch();
       return true;
     } else {
@@ -952,6 +967,13 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
         message: `Error deleting API Key ${apiKey.name}`,
         type: 'error',
       });
+
+      setApiKeyIdIndex((prev) => {
+        const updated = [...prev];
+        updated.splice(index, 0, apiKeyId);
+        return updated;
+      });
+
       return false;
     }
   };
@@ -969,6 +991,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
           key: makeApiKeyModalViewKey(apiKeyIdIndex[selectedIndex]),
           Component: ApiKeyView,
           componentProps: {
+            selectedIndex: selectedIndex,
             apiKey: apiKeys[apiKeyIdIndex[selectedIndex]],
             scopeIds: apiKeyScopeIds[apiKeyIdIndex[selectedIndex]],
             availableScopeIds,
@@ -1047,7 +1070,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
             />
           </div>
 
-          <div className="overflow-x-auto mt-4 overflow-y-visible">
+          <div className="overflow-x-auto mt-4">
             <table className="min-w-full">
               <thead className="text-left">
                 <tr>

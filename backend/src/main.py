@@ -729,12 +729,18 @@ WrongUserPermissionUserAccessToken = HTTPException(
     status.HTTP_403_FORBIDDEN, detail='User does not have permission to view another user\'s access tokens')
 
 
+def user_access_token_pagination(
+    pagination: typing.Annotated[models.Pagination, Depends(
+        get_pagination(default_limit=50, max_limit=500))]
+):
+    return pagination
+
+
 @ user_access_token_router.get('/', tags=[models.User._ROUTER_TAG], responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}, WrongUserPermissionUserAccessToken.status_code: {'description': WrongUserPermissionUserAccessToken.detail, 'model': DetailOnlyResponse}})
 async def get_user_access_tokens(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization())],
-    pagination: typing.Annotated[models.Pagination, Depends(
-        get_pagination())]
+    pagination: models.Pagination = Depends(user_access_token_pagination)
 
 ) -> list[models.UserAccessToken]:
     with Session(c.db_engine) as session:
@@ -750,8 +756,7 @@ async def get_user_access_tokens_admin(
     user_id: models.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         get_authorization(required_scopes={'admin'}))],
-    pagination: typing.Annotated[models.Pagination, Depends(
-        get_pagination())]
+    pagination: models.Pagination = Depends(user_access_token_pagination)
 ) -> list[models.UserAccessToken]:
     with Session(c.db_engine) as session:
 
@@ -760,6 +765,17 @@ async def get_user_access_tokens_admin(
         query = models.build_pagination(query, pagination)
         user_access_tokens = session.exec(query).all()
         return user_access_tokens
+
+
+@user_access_token_router.get('/details/count/')
+async def get_user_access_tokens_count(
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(
+        get_authorization())],
+) -> int:
+    with Session(c.db_engine) as session:
+        query = select(func.count()).select_from(models.UserAccessToken).where(
+            models.UserAccessToken.user_id == authorization._user_id)
+        return session.exec(query).one()
 
 
 app.include_router(user_access_token_router)
@@ -1311,6 +1327,23 @@ async def get_settings_api_keys_page(
         **get_auth(authorization).model_dump(),
         api_key_count=await get_user_api_keys_count(authorization),
         api_keys=await get_user_api_keys(authorization, get_api_keys_query_params)
+    )
+
+
+class GetSettingsUserAccessTokensPageResponse(GetAuthReturn):
+    user_access_token_count: int
+    user_access_tokens: list[models.UserAccessToken]
+
+
+@pages_router.get('/settings/user-access-tokens/', tags=[models.UserAccessToken._ROUTER_TAG])
+async def get_settings_user_access_tokens_page(
+    authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization())],
+    pagination: models.Pagination = Depends(user_access_token_pagination)
+) -> GetSettingsUserAccessTokensPageResponse:
+    return GetSettingsUserAccessTokensPageResponse(
+        **get_auth(authorization).model_dump(),
+        user_access_token_count=await get_user_access_tokens_count(authorization),
+        user_access_tokens=await get_user_access_tokens(authorization, pagination)
     )
 
 
