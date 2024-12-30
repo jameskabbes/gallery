@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { IoArrowBackSharp, IoArrowForwardSharp } from 'react-icons/io5';
-import { Loader1 } from './Loader';
+import { Loader1, Loader2 } from './Loader';
 
 interface PaginationProps {
   loading: boolean;
@@ -8,38 +8,74 @@ interface PaginationProps {
   setOffset: React.Dispatch<React.SetStateAction<PaginationProps['offset']>>;
   limit: number;
   setLimit: React.Dispatch<React.SetStateAction<PaginationProps['limit']>>;
-  nCurrent: number;
-  nTotal: number;
+  count: number;
+  total: number | null;
 }
 
-function Pagination(props: PaginationProps) {
-  const leftDisabled = props.offset === 0 || props.loading;
-  const rightDisabled =
-    props.offset + props.limit >= props.nTotal || props.loading;
+function Pagination({
+  loading,
+  offset,
+  setOffset,
+  limit,
+  setLimit,
+  count,
+  total,
+}: PaginationProps) {
+  const debounceTimeout = useRef(null);
+  const [debouncedOffset, setDebouncedOffset] = useState(offset);
+  const [debouncedLoading, setDebouncedLoading] = useState(false);
+  const [leftDisabled, setLeftDisabled] = useState(false);
+  const [rightDisabled, setRightDisabled] = useState(false);
+
+  const [showLoading, setShowLoading] = useState(loading || debouncedLoading);
+
+  useEffect(() => {
+    setShowLoading(loading || debouncedLoading);
+  }, [loading, debouncedLoading]);
+
+  useEffect(() => {
+    if (total !== null) {
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current);
+        setDebouncedLoading(false);
+      }
+
+      if (debouncedOffset !== offset) {
+        setDebouncedLoading(true);
+        debounceTimeout.current = setTimeout(async () => {
+          setOffset(debouncedOffset);
+          setDebouncedLoading(false);
+        }, 200);
+      }
+    }
+  }, [debouncedOffset, offset]);
+
+  useEffect(() => {
+    setLeftDisabled(debouncedOffset === 0 || total === null);
+    setRightDisabled(debouncedOffset + limit >= total || total === null);
+  }, [debouncedOffset, limit, total]);
+
+  const handleLeftClick = () => {
+    setDebouncedOffset((prev) => Math.max(0, prev - limit));
+  };
+
+  const handleRightClick = () => {
+    setDebouncedOffset((prev) => prev + limit);
+  };
 
   return (
-    <div className="flex flex-row items-center space-x-1">
-      <span>
-        {props.loading ? (
-          <Loader1 className="inline" />
-        ) : (
-          <>
-            {props.offset + 1}-{props.nCurrent + props.offset} of {props.nTotal}
-          </>
-        )}
-      </span>
-      <button
-        disabled={leftDisabled}
-        onClick={() =>
-          props.setOffset((prev) => Math.max(0, prev - props.limit))
-        }
-      >
+    <div className="flex flex-row items-center space-x-1 h-8">
+      {loading && <Loader1 />}
+      {total !== null && (
+        <span>
+          {count !== 1 && `${debouncedOffset + 1}-`}
+          {Math.min(debouncedOffset + count, total)} of {total}
+        </span>
+      )}{' '}
+      <button disabled={leftDisabled} onClick={handleLeftClick}>
         <IoArrowBackSharp className={leftDisabled ? 'opacity-50' : ''} />
       </button>
-      <button
-        disabled={rightDisabled}
-        onClick={() => props.setOffset((prev) => prev + props.limit)}
-      >
+      <button disabled={rightDisabled} onClick={handleRightClick}>
         <IoArrowForwardSharp className={rightDisabled ? 'opacity-50' : ''} />
       </button>
     </div>

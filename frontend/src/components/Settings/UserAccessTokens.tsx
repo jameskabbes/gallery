@@ -106,7 +106,8 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
     }
   }, [limit, offset]);
 
-  const [userAccessTokenCount, setUserAccessTokenCount] = useState<number>(0);
+  const [userAccessTokenCount, setUserAccessTokenCount] =
+    useState<number>(null);
   const [userAccessTokens, setUserAccessTokens] = useState<TUserAccessTokens>(
     {}
   );
@@ -221,8 +222,8 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
               setOffset={setOffset}
               limit={limit}
               setLimit={setLimit}
-              nCurrent={userAccessTokenIdIndex.length}
-              nTotal={userAccessTokenCount}
+              count={userAccessTokenIdIndex.length}
+              total={userAccessTokenCount}
             />
           </div>
           {userAccessTokenIdIndex.map((userAccessTokenId, index) => {

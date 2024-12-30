@@ -482,21 +482,32 @@ function ApiKeyTableRowScope({
   addApiKeyScopeFunc,
   deleteApiKeyScopeFunc,
 }: ApiKeyTableRowScopeProps) {
-  const [loading, setLoading] = useState<boolean>(false);
+  const debounceTimeout = useRef(null);
+  const [debouncedState, setDebouncedState] = useState(scopeIds.has(scopeId));
+
+  useEffect(() => {
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+    }
+
+    if (scopeIds.has(scopeId) !== debouncedState) {
+      debounceTimeout.current = setTimeout(async () => {
+        if (debouncedState) {
+          addApiKeyScopeFunc(apiKey, scopeId);
+        } else {
+          deleteApiKeyScopeFunc(apiKey, scopeId);
+        }
+      }, 500);
+    }
+  }, [debouncedState, scopeIds, scopeId]);
+
   return (
     <Toggle1
       onClick={async (e) => {
         e.stopPropagation();
-        setLoading(true);
-        if (scopeIds.has(scopeId)) {
-          await deleteApiKeyScopeFunc(apiKey, scopeId);
-        } else {
-          await addApiKeyScopeFunc(apiKey, scopeId);
-        }
-        setLoading(false);
+        setDebouncedState((prev) => !prev);
       }}
-      state={scopeIds.has(scopeId)}
-      disabled={loading}
+      state={debouncedState}
     />
   );
 }
@@ -719,7 +730,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
     }
   }, [limit, offset, orderBy, orderByDesc]);
 
-  const [apiKeyCount, setApiKeyCount] = useState<number>(0);
+  const [apiKeyCount, setApiKeyCount] = useState<number>(null);
   const [apiKeys, setApiKeys] = useState<TApiKeys>({});
   const [apiKeyIdIndex, setApiKeyIdIndex] = useState<TApiKey['id'][]>([]);
   const [apiKeyScopeIds, setApiKeyScopeIds] = useState<TApiKeyScopeIds>({});
@@ -1065,8 +1076,8 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
               setOffset={setOffset}
               limit={limit}
               setLimit={setLimit}
-              nCurrent={apiKeyIdIndex.length}
-              nTotal={apiKeyCount}
+              count={apiKeyIdIndex.length}
+              total={apiKeyCount}
             />
           </div>
 
