@@ -64,14 +64,18 @@ function Pagination({
   };
 
   return (
-    <div className="flex flex-row items-center space-x-1 h-8">
+    <div className="flex flex-row items-center space-x-1">
       {loading && <Loader1 />}
-      {total !== null && (
-        <span>
-          {count !== 1 && `${debouncedOffset + 1}-`}
-          {Math.min(debouncedOffset + count, total)} of {total}
-        </span>
-      )}{' '}
+      <span>
+        {total !== null ? (
+          <>
+            {count !== 1 && `${debouncedOffset + 1}-`}
+            {Math.min(debouncedOffset + count, total)} of {total}
+          </>
+        ) : (
+          <>x of x</>
+        )}{' '}
+      </span>
       <button disabled={leftDisabled} onClick={handleLeftClick}>
         <IoArrowBackSharp className={leftDisabled ? 'opacity-50' : ''} />
       </button>

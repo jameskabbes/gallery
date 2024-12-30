@@ -14,7 +14,7 @@ function Header(): JSX.Element {
     <Surface>
       <header
         id="header"
-        className="sticky"
+        className="top-0 bg-opacity-50 border-b-[1px] sticky"
         style={{
           zIndex: siteConfig.zIndex.header,
         }}

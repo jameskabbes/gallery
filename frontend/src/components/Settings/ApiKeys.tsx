@@ -516,6 +516,7 @@ const deleteApiKeyModalKey = 'modal-confirmation-delete-api-key';
 
 interface ApiKeyViewProps {
   selectedIndex: number;
+  setSelectedIndex: React.Dispatch<React.SetStateAction<number>>;
   apiKey: TApiKey;
   scopeIds: Set<ScopeID>;
   availableScopeIds: ScopeID[];
@@ -536,6 +537,7 @@ function makeApiKeyModalViewKey(id: TApiKey['id']): string {
 
 function ApiKeyView({
   selectedIndex,
+  setSelectedIndex,
   apiKey,
   scopeIds,
   availableScopeIds,
@@ -580,12 +582,12 @@ function ApiKeyView({
                 title: 'Delete API Key?',
                 confirmText: 'Delete',
                 message: `Are you sure you want to delete the API Key ${apiKey.name}?`,
-                onConfirm: async () => {
-                  if (await deleteApiKeyFunc(selectedIndex)) {
-                    modalsContext.deleteModals([
-                      makeApiKeyModalViewKey(apiKey.id),
-                    ]);
-                  }
+                onConfirm: () => {
+                  modalsContext.deleteModals([
+                    makeApiKeyModalViewKey(apiKey.id),
+                  ]);
+                  deleteApiKeyFunc(selectedIndex);
+                  setSelectedIndex(null);
                 },
               },
             });
@@ -954,7 +956,12 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
       message: `Deleting API Key ${apiKey.name}`,
     });
 
-    setApiKeyIdIndex((prev) => prev.splice(index, 1));
+    setApiKeyIdIndex((prev) => {
+      const newApiKeyIdIndex = [...prev];
+      newApiKeyIdIndex.splice(index, 1);
+      return newApiKeyIdIndex;
+    });
+    setApiKeyCount((prev) => prev - 1);
 
     const { data, status } = await deleteApiKey(authContext, apiKey.id);
 
@@ -984,6 +991,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
         updated.splice(index, 0, apiKeyId);
         return updated;
       });
+      setApiKeyCount((prev) => prev + 1);
 
       return false;
     }
@@ -991,6 +999,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
 
   const selectedIndexRef = useRef(selectedIndex);
   const apiKeyViewFirstRenderRef = useRef(true);
+
   useEffect(() => {
     selectedIndexRef.current = selectedIndex;
   }, [selectedIndex]);
@@ -1003,6 +1012,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
           Component: ApiKeyView,
           componentProps: {
             selectedIndex: selectedIndex,
+            setSelectedIndex: setSelectedIndex,
             apiKey: apiKeys[apiKeyIdIndex[selectedIndex]],
             scopeIds: apiKeyScopeIds[apiKeyIdIndex[selectedIndex]],
             availableScopeIds,

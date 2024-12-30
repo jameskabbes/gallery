@@ -197,15 +197,10 @@
   @apply text-red-500;
 }
 
-#header {
-  @apply top-0 bg-opacity-50 border-b-[1px];
-}
-
 #mobile-footer {
   @apply fixed bottom-0 left-0 w-full transition-transform transform translate-y-full;
 }
 
-/* Input */
 form header {
   @apply h2 text-center;
 }

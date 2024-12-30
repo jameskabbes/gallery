@@ -172,6 +172,8 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
       return newUserAccessTokenIdIndex;
     });
 
+    setUserAccessTokenCount((prev) => prev - 1);
+
     const { data, status } = await deleteUserAccessToken(
       authContext,
       sessionId
@@ -207,6 +209,8 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
         newUserAccessTokenIdIndex.splice(index, 0, sessionId);
         return newUserAccessTokenIdIndex;
       });
+
+      setUserAccessTokenCount((prev) => prev + 1);
     }
   }
 
@@ -231,7 +235,7 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
             return (
               <Card1
                 key={userAccessTokenId}
-                className="flex flex-row justify-between items-center"
+                className="flex flex-row justify-between items-center m-1"
               >
                 <p>
                   Issued:{' '}
