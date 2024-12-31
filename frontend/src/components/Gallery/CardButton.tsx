@@ -14,7 +14,7 @@ function GalleryCardButton({ gallery }: Props) {
   return (
     <CardButton
       onClick={() => {
-        navigate(getGalleryLink(gallery));
+        navigate(getGalleryLink(gallery.id));
       }}
     >
       <h2>{gallery.name}</h2>

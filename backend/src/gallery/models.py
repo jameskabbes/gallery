@@ -994,7 +994,6 @@ class GalleryUpdateAdmin(GalleryUpdate):
 
 class GalleryCreate(GalleryImport):
     name: GalleryTypes.name
-    user_id: GalleryTypes.user_id
     visibility_level: GalleryTypes.visibility_level
     parent_id: typing.Optional[GalleryTypes.parent_id] = None
     description: typing.Optional[GalleryTypes.description] = None
@@ -1002,12 +1001,12 @@ class GalleryCreate(GalleryImport):
 
 
 class GalleryCreateAdmin(GalleryCreate):
-    pass
+    user_id: GalleryTypes.user_id
 
 
 class GalleryAvailable(BaseModel):
     name: GalleryTypes.name
-    parent_id: typing.Optional[GalleryTypes.parent_id] = None
+    parent_id: GalleryTypes.parent_id
     date: typing.Optional[GalleryTypes.date] = None
 
 
@@ -1067,7 +1066,8 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
         if self.parent_id is None:
             return root / self.folder_name
         else:
-            return (await self.parent.get_dir(session, root)) / self.folder_name
+            a = await (await self.get_one_by_id(session, self.parent_id)).get_dir(session, root)
+            return a / self.folder_name
 
     async def get_parents(self, session: Session) -> list[typing.Self]:
 
@@ -1081,12 +1081,13 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
         return session.exec(select(cls).where(cls.user_id == user_id).where(cls.parent_id == None)).one_or_none()
 
     @ classmethod
-    async def is_available(cls, session: Session, gallery_available_admin: GalleryAvailableAdmin) -> bool:
-        return not session.exec(select(cls).where(cls._build_conditions(gallery_available_admin.model_dump()))).one_or_none()
-
-    @ classmethod
     async def api_get_is_available(cls, session: Session, gallery_available_admin: GalleryAvailableAdmin) -> None:
-        if not await cls.is_available(session, gallery_available_admin):
+
+        # raise an exception if the parent gallery does not exist
+        await cls._basic_api_get(
+            session, gallery_available_admin.parent_id)
+
+        if session.exec(select(cls).where(cls._build_conditions(gallery_available_admin.model_dump()))).one_or_none():
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail=cls.already_exists_message())
 
@@ -1139,6 +1140,8 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
             id=cls.generate_id(),
             **kwargs['create_model'].model_dump()
         )
+
+        print(gallery)
 
         if mkdir:
             (await gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)).mkdir()

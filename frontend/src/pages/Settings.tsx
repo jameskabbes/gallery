@@ -143,9 +143,11 @@ function Settings(): JSX.Element {
           <Surface>
             <hr />
           </Surface>
-          <div className="p-2">
-            {selectionComponentMapping[selection].component}
-          </div>
+          {selection && (
+            <div className="p-2">
+              {selectionComponentMapping[selection].component}
+            </div>
+          )}
         </div>
       )}
     </>

@@ -1093,7 +1093,7 @@ async def post_gallery(
         get_authorization())]
 ) -> models.GalleryPrivate:
     with Session(c.db_engine) as session:
-        return models.GalleryPrivate.model_validate(await models.Gallery.api_post(session=session, c=c, authorized_user_id=authorization._user_id, admin=False, create_model=models.GalleryCreateAdmin(**gallery_create.model_dump(exclude_unset=True))))
+        return models.GalleryPrivate.model_validate(await models.Gallery.api_post(session=session, c=c, authorized_user_id=authorization._user_id, admin=False, create_model=models.GalleryCreateAdmin(**gallery_create.model_dump(exclude_unset=True), user_id=authorization._user_id)))
 
 
 @gallery_admin_router.post('/', responses=models.Gallery.post_responses())

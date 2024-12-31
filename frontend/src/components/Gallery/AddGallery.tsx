@@ -28,6 +28,8 @@ interface AddGalleryProps {
   parentGalleryId: components['schemas']['Gallery']['id'];
 }
 
+const addGalleryModalKey = 'modal-add-gallery';
+
 function AddGallery({
   onSuccess,
   modalsContext,
@@ -35,7 +37,6 @@ function AddGallery({
 }: AddGalleryProps) {
   const authContext = useContext(AuthContext);
   const toastContext = useContext(ToastContext);
-  const modalKey = 'add-gallery';
 
   const [name, setName] = useState<ValidatedInputState<string>>({
     ...defaultValidatedInputState<string>(''),
@@ -72,9 +73,9 @@ function AddGallery({
     checkValidity: true,
     isAvailable: () =>
       isGalleryAvailable(authContext, {
-        date: date.value !== '' ? date.value : null,
         name: name.value,
         parent_id: parentGalleryId,
+        ...(date.value !== '' && { date: date.value }),
       }),
     isValid: (value) => {
       return value.date.status === 'valid' && value.name.status === 'valid'
@@ -103,13 +104,14 @@ function AddGallery({
 
     const galleryCreate: components['schemas']['GalleryCreate'] = {
       name: name.value,
-      user_id: authContext.state.user.id,
       parent_id: parentGalleryId,
-      date: date.value !== '' ? date.value : null,
       visibility_level:
         config['visibility_level_name_mapping'][visibilityLevelName.value],
+      ...(date.value !== '' && { date: date.value }),
     };
+
     console.log(galleryCreate);
+    modalsContext.deleteModals([addGalleryModalKey]);
 
     const { data, status } = await postGallery(authContext, galleryCreate);
     if (status === 200) {
@@ -117,7 +119,6 @@ function AddGallery({
         message: 'Gallery added',
         type: 'success',
       });
-      modalsContext.deleteModal('add-gallery');
       onSuccess(data as PostGalleryResponses['200']);
     } else {
       toastContext.update(toastId, {
@@ -234,11 +235,14 @@ function setAddGalleryModal({
   modalsContext,
   ...rest
 }: SetAddGalleryModalProps) {
-  modalsContext.pushModal({
-    children: <AddGallery modalsContext={modalsContext} {...rest} />,
-    modalKey: 'add-gallery',
-    contentAdditionalClassName: 'max-w-[400px] w-full',
-  });
+  modalsContext.pushModals([
+    {
+      Component: AddGallery,
+      componentProps: { modalsContext, ...rest },
+      key: addGalleryModalKey,
+      contentAdditionalClassName: 'max-w-[400px] w-full',
+    },
+  ]);
 }
 
 export { AddGallery, setAddGalleryModal };

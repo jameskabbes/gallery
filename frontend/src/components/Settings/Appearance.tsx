@@ -37,33 +37,33 @@ function DarkModeToggle() {
   return (
     <>
       <h2 className="mb-4">Appearance</h2>
-      <form className="flex flex-col">
-        <fieldset name="theme">
-          {themeOptions.map((option) => (
-            <div
-              className="flex flex-row space-x-4 items-center"
-              onClick={() => darkModeContext.setPreference(option.value)}
-              key={option.value}
-            >
-              <RadioButton1 state={darkModeContext.preference === option.value}>
-                <input
-                  type="radio"
-                  value={option.value}
-                  checked={darkModeContext.preference === option.value}
-                  onChange={() => darkModeContext.setPreference(option.value)}
-                  className="opacity-0 absolute h-0 w-0"
-                />
-              </RadioButton1>
-              <label key={option.value} className="relative">
-                <div className="flex flex-row items-center space-x-2">
-                  {option.icon}
-                  {option.label}
-                </div>
+      <h3>Theme</h3>
+      <div className="flex flex-row">
+        <form>
+          <fieldset name="theme" className="space-y-1">
+            {themeOptions.map((option) => (
+              <label
+                key={option.value}
+                className="flex flex-row space-x-2 items-center cursor-pointer"
+              >
+                <RadioButton1
+                  state={darkModeContext.preference === option.value}
+                >
+                  <input
+                    type="radio"
+                    value={option.value}
+                    checked={darkModeContext.preference === option.value}
+                    onChange={() => darkModeContext.setPreference(option.value)}
+                    className="opacity-0 absolute h-0 w-0"
+                  />
+                </RadioButton1>
+                {option.icon}
+                {option.label}
               </label>
-            </div>
-          ))}
-        </fieldset>
-      </form>
+            ))}
+          </fieldset>
+        </form>
+      </div>
     </>
   );
 }

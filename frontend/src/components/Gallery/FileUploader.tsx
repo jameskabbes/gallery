@@ -5,6 +5,7 @@ import { AxiosProgressEvent } from 'axios';
 import {
   AuthContextType,
   defaultValidatedInputState,
+  ModalsContextType,
   ValidatedInputState,
 } from '../../types';
 import { paths, operations, components } from '../../openapi_schema';
@@ -104,6 +105,8 @@ function FileProgress({ file, authContext, galleryId }: FileProgressProps) {
   );
 }
 
+const modalFileUploaderKey = 'modal-file-uploader';
+
 interface FileUploaderProps {
   gallery: components['schemas']['GalleryPublic'];
 }
@@ -117,7 +120,7 @@ function FileUploader({ gallery }: FileUploaderProps) {
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    modalsContext.popModal();
+    modalsContext.deleteModals([modalFileUploaderKey]);
   }
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -198,14 +201,17 @@ function FileUploader({ gallery }: FileUploaderProps) {
 }
 
 function setFileUploaderModal(
-  globalModalsContext: GlobalModalsContextType,
+  modalsContext: ModalsContextType,
   gallery: components['schemas']['GalleryPublic']
 ) {
-  globalModalsContext.setModal({
-    component: <FileUploader gallery={gallery} />,
-    key: 'file-uploader',
-    className: 'max-w-[400px] w-full',
-  });
+  modalsContext.pushModals([
+    {
+      Component: FileUploader,
+      componentProps: { gallery },
+      key: modalFileUploaderKey,
+      contentAdditionalClassName: 'max-w-[400px] w-full',
+    },
+  ]);
 }
 
 export { FileUploader, setFileUploaderModal };

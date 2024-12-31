@@ -432,8 +432,6 @@ export interface components {
     GalleryCreate: {
       /** Name */
       name: string;
-      /** User Id */
-      user_id: string;
       /** Visibility Level */
       visibility_level: number;
       /** Parent Id */
@@ -447,8 +445,6 @@ export interface components {
     GalleryCreateAdmin: {
       /** Name */
       name: string;
-      /** User Id */
-      user_id: string;
       /** Visibility Level */
       visibility_level: number;
       /** Parent Id */
@@ -457,6 +453,8 @@ export interface components {
       description?: string | null;
       /** Date */
       date?: string | null;
+      /** User Id */
+      user_id: string;
     };
     /** GalleryPrivate */
     GalleryPrivate: {

@@ -69,7 +69,7 @@ function Pagination({
       <span>
         {total !== null ? (
           <>
-            {count !== 1 && `${debouncedOffset + 1}-`}
+            {count > 1 && `${debouncedOffset + 1}-`}
             {Math.min(debouncedOffset + count, total)} of {total}
           </>
         ) : (

@@ -76,8 +76,8 @@
 # GET http://localhost:8087/api-keys/details/count/
 # Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGM2MmYxMi0xOGQzLTQxM2MtOWUxNC01YTdjYjVjYTFlYzAiLCJleHAiOjE3MzQwODcxNzQsImlhdCI6MTczMzQ4MjM3NCwidHlwZSI6ImFjY2Vzc190b2tlbiJ9.9fRMULl5lnc7dZLaqwoDimE68DviZkSFI-JcdYLej6w
 
-GET http://localhost:8087/pages/settings/api-keys/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGM2MmYxMi0xOGQzLTQxM2MtOWUxNC01YTdjYjVjYTFlYzAiLCJleHAiOjE3MzQwODcxNzQsImlhdCI6MTczMzQ4MjM3NCwidHlwZSI6ImFjY2Vzc190b2tlbiJ9.9fRMULl5lnc7dZLaqwoDimE68DviZkSFI-JcdYLej6w
+# GET http://localhost:8087/pages/settings/api-keys/
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGM2MmYxMi0xOGQzLTQxM2MtOWUxNC01YTdjYjVjYTFlYzAiLCJleHAiOjE3MzQwODcxNzQsImlhdCI6MTczMzQ4MjM3NCwidHlwZSI6ImFjY2Vzc190b2tlbiJ9.9fRMULl5lnc7dZLaqwoDimE68DviZkSFI-JcdYLej6w
 
 
 
@@ -112,12 +112,20 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGM2MmYxM
 # Content-Type: application/json
 # Authorization: Bearer token
 
-# POST http://localhost:8087/galleries/
-# Authorization: Bearer token
+# GET http://localhost:8087/galleries/details/available/?name=asd&parent_id=asd
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyZGQyOGNmZi00ZDlkLTQ4NzAtOWU1OC1hYmZjYjc1ZmEzOTYiLCJleHAiOjE3MzYyMzY1MjgsImlhdCI6MTczNTYzMTcyOCwidHlwZSI6ImFjY2Vzc190b2tlbiJ9.cmQxbLflxdyMGBGfroprC9uxeXcmIMcYvm3Ve_o2uX8
 
-# {
-#     "name": "new gallery"
-# }
+
+POST http://localhost:8087/galleries/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyZGQyOGNmZi00ZDlkLTQ4NzAtOWU1OC1hYmZjYjc1ZmEzOTYiLCJleHAiOjE3MzYyMzY1MjgsImlhdCI6MTczNTYzMTcyOCwidHlwZSI6ImFjY2Vzc190b2tlbiJ9.cmQxbLflxdyMGBGfroprC9uxeXcmIMcYvm3Ve_o2uX8
+Content-Type: application/json
+
+{
+    "name": "asd",
+    "parent_id": "5a1c572e-92a0-4e14-8613-c4928b8e6179",
+    "visibility_level": 1
+}
+
 
 
 # GET http://localhost:8087/settings/api-keys/page
