@@ -1,3 +1,5 @@
+import string
+import secrets
 from pydantic import BaseModel, field_validator
 import typing
 from typing import Unpack
@@ -335,6 +337,16 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
 
 
 #
+
+type PhoneNumber = str
+
+
+class PhoneNumber(BaseModel):
+
+    phone_number: PhoneNumber
+
+
+#
 # User
 #
 
@@ -343,6 +355,10 @@ class UserTypes:
     id = str
     email = typing.Annotated[EmailStr, StringConstraints(
         min_length=1, max_length=254)]
+
+    # add phone number type
+    phone_number = str
+
     password = typing.Annotated[str, StringConstraints(
         min_length=1, max_length=64)]
     username = typing.Annotated[str, StringConstraints(
@@ -380,6 +396,7 @@ class UserImport(BaseModel):
 
 class UserUpdate(UserImport):
     email: typing.Optional[UserTypes.email] = None
+    phone_number: typing.Optional[UserTypes.phone_number] = None
     password: typing.Optional[UserTypes.password] = None
     username: typing.Optional[UserTypes.username] = None
 
@@ -390,6 +407,7 @@ class UserUpdateAdmin(UserUpdate):
 
 class UserCreate(UserImport):
     email: UserTypes.email
+    phone_number: typing.Optional[UserTypes.phone_number] = None
     username: typing.Optional[UserTypes.username] = None
     password: typing.Optional[UserTypes.password] = None
 
@@ -402,8 +420,10 @@ class User(Table['User', UserTypes.id, UserCreateAdmin, UserUpdateAdmin], UserID
     __tablename__ = 'user'
 
     email: UserTypes.email = Field(index=True, unique=True)
+    phone_number: UserTypes.phone_number = Field(unique=True, nullable=True)
     username: UserTypes.username = Field(
         index=True, unique=True, nullable=True)
+
     hashed_password: UserTypes.hashed_password | None = Field()
     user_role_id: UserTypes.user_role_id = Field()
 
@@ -559,7 +579,7 @@ class AuthCredentialTypes:
                               'The datetime at which the auth credential will expire']
     lifespan = typing.Annotated[datetime_module.timedelta,
                                 'The timedelta from creation in which the auth credential is still valid']
-    type = typing.Literal['access_token', 'api_key']
+    type = typing.Literal['access_token', 'api_key', 'otp']
 
 
 class AuthCredentialExport(TableExport):
@@ -707,6 +727,60 @@ class UserAccessToken(Table['UserAccessToken', UserAccessTokenTypes.id, UserAcce
 PluralUserAccessTokensDict = dict[UserAccessTokenTypes.id,
                                   UserAccessToken]
 
+
+# One Time Password
+
+OTP_LENGTH = 6
+
+
+class OTPTypes(AuthCredentialTypes):
+    id = str
+    code = typing.Annotated[str, StringConstraints(
+        min_length=6, max_length=6, pattern=re.compile(r'^\d{6}$'))]
+    hashed_code = str
+
+
+class OTPIdBase(IdObject[OTPTypes.id]):
+    id: OTPTypes.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
+
+
+class OTPUpdateAdmin(AuthCredentialUpdateAdmin):
+    pass
+
+
+class OTPCreateAdmin(AuthCredentialCreateAdmin):
+    pass
+
+
+class OTP(Table['OTP', OTPTypes.id, OTPCreateAdmin, OTPUpdateAdmin], OTPIdBase, AuthCredential[OTPTypes.id], table=True):
+    type: typing.ClassVar[AuthCredentialTypes.type] = 'otp'
+    __tablename__ = 'otp'
+
+    hashed_code: OTPTypes.hashed_code = Field()
+    user: User = Relationship(
+        back_populates='otps')
+
+    _ROUTER_TAG: typing.ClassVar[str] = 'One Time Password'
+
+    @ classmethod
+    async def create(cls, **kwargs) -> typing.Self:
+
+        return cls(
+            id=cls.generate_id(),
+            issued=datetime_module.datetime.now(
+                datetime_module.timezone.utc),
+            expiry=kwargs['create_model'].get_expiry(),
+            **kwargs['create_model'].model_dump(exclude=['lifespan', 'expiry'])
+        )
+
+    @classmethod
+    def generate_code(cls) -> OTPTypes.code:
+        characters = string.digits
+        return ''.join(secrets.choice(characters) for _ in range(OTP_LENGTH))
+
+
+PluralOTPDict = dict[OTPTypes.id, OTP]
 
 # # ApiKey
 

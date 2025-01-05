@@ -17,7 +17,7 @@ import typing
 import httpx
 import jwt
 from jwt.exceptions import InvalidTokenError, MissingRequiredClaimError, DecodeError
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 import datetime
 from functools import wraps
 from urllib.parse import urlencode
@@ -331,7 +331,7 @@ class LoginResponse(GetAuthReturn):
 
 
 @ auth_router.post('/login/password/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Could not validate credentials', 'model': DetailOnlyResponse}})
-async def login(
+async def login_with_password(
     user: typing.Annotated[models.User, Depends(authenticate_user_with_username_and_password)],
     response: Response,
     stay_signed_in: bool = Form(c.authentication['stay_signed_in_default'])
@@ -397,12 +397,13 @@ async def sign_up(
         ))
 
 
-class LoginWithEmailMagicLinkRequest(BaseModel):
-    email: models.UserTypes.email
+class SendMagicLinkRequest(BaseModel):
     stay_signed_in: bool = False
+    email: typing.Optional[models.UserTypes.email]
+    phone_number: typing.Optional[models.UserTypes.phone_number]
 
 
-async def send_magic_link_to_email(model: LoginWithEmailMagicLinkRequest):
+async def send_magic_link_to_email(model: SendMagicLinkRequest):
 
     with Session(c.db_engine) as session:
         user = session.exec(select(models.User).where(
@@ -426,10 +427,42 @@ async def send_magic_link_to_email(model: LoginWithEmailMagicLinkRequest):
                   )
 
 
-@ auth_router.post('/login/email-magic-link/')
-async def login_with_email_magic_link(model: LoginWithEmailMagicLinkRequest, background_tasks: BackgroundTasks) -> DetailOnlyResponse:
-    background_tasks.add_task(send_magic_link_to_email, model)
-    return DetailOnlyResponse(detail='If an account with this email exists, a login link has been sent.')
+async def send_magic_link_to_phone_number(model: SendMagicLinkRequest):
+
+    with Session(c.db_engine) as session:
+        user = session.exec(select(models.User).where(
+            models.User.phone_number == model.phone_number)).one_or_none()
+
+        if user:
+            user_access_token = await models.UserAccessToken.api_post(
+                session=session, c=c, authorized_user_id=None, admin=False,
+                create_model=models.UserAccessTokenCreateAdmin(user_id=user.id, lifespan=c.authentication['magic_link_expiry_timedelta']
+                                                               ))
+
+            link_data = {
+                'access_token': jwt_encode(user_access_token.export_to_jwt()),
+                'stay_signed_in': model.stay_signed_in
+            }
+
+            print('beep boop beep... sending sms')
+            print('http://localhost:3000' +
+                  c.magic_link_frontend_url +
+                  '?' + urlencode(link_data)
+                  )
+
+
+@ auth_router.post('/send-magic-link/')
+async def post_send_magic_link(model: SendMagicLinkRequest, background_tasks: BackgroundTasks) -> DetailOnlyResponse:
+    mediums = []
+    if 'email' in model.model_fields_set:
+        mediums.append('email')
+        background_tasks.add_task(send_magic_link_to_email, model)
+
+    if 'phone_number' in model.model_fields_set:
+        mediums.append('phone number')
+        background_tasks.add_task(send_magic_link_to_phone_number, model)
+
+    return DetailOnlyResponse(detail='If an account with this {} exists, a login link has been sent.'.format(' and '.join(mediums)))
 
 
 class VerifyMagicLinkRequest(BaseModel):
@@ -440,7 +473,85 @@ class VerifyMagicLinkResponse(GetAuthReturn):
     pass
 
 
-@ auth_router.post('/verify-magic-link/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
+@ auth_router.post('/login/magic-link/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
+async def login_with_magic_link(model: VerifyMagicLinkRequest, authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(permitted_auth_credential_types={'access_token'},
+                                                                                                                                                 override_lifetime=c.authentication['magic_link_expiry_timedelta']))], response: Response) -> VerifyMagicLinkResponse:
+    with Session(c.db_engine) as session:
+
+        user_access_token = await models.UserAccessToken.api_post(
+            session=session, c=c, authorized_user_id=None, admin=False, create_model=models.UserAccessTokenCreateAdmin(
+                user_id=authorization.user.id, lifespan=c.authentication['default_expiry_timedelta']
+            )
+        )
+        set_access_token_cookie(jwt_encode(
+            user_access_token.export_to_jwt()), response, model.stay_signed_in
+        )
+
+        # one time link, delete the auth_credential
+        session.delete(authorization.auth_credential)
+        session.commit()
+
+        return VerifyMagicLinkResponse(
+            auth=GetAuthBaseReturn(
+                user=models.UserPrivate.model_validate(authorization.user),
+                scope_ids=set(
+                    c.user_role_id_scope_ids[authorization.user.user_role_id]),
+                expiry=user_access_token.expiry,
+                auth_credential=AuthCredentialIdAndType(
+                    id=user_access_token.id, type='access_token')
+            )
+        )
+
+
+class SendOTPRequest(BaseModel):
+    stay_signed_in: bool = False
+    email: typing.Optional[models.UserTypes.email]
+    phone_number: typing.Optional[models.UserTypes.phone_number]
+
+
+async def send_otp_to_email(model: SendOTPRequest):
+
+    with Session(c.db_engine) as session:
+        user = session.exec(select(models.User).where(
+            models.User.email == model.email)).one_or_none()
+
+        if user:
+            print('beep boop beep... sending sms')
+
+
+async def send_otp_to_phone_number(model: SendMagicLinkRequest):
+
+    with Session(c.db_engine) as session:
+        user = session.exec(select(models.User).where(
+            models.User.phone_number == model.phone_number)).one_or_none()
+
+        if user:
+            print('beep boop beep... sending sms')
+
+
+@ auth_router.post('/send-otp/')
+async def post_send_otp(model: SendMagicLinkRequest, background_tasks: BackgroundTasks) -> DetailOnlyResponse:
+    mediums = []
+    if 'email' in model.model_fields_set:
+        mediums.append('email')
+        background_tasks.add_task(send_otp_to_email, model)
+
+    if 'phone_number' in model.model_fields_set:
+        mediums.append('phone number')
+        background_tasks.add_task(send_otp_to_phone_number, model)
+
+    return DetailOnlyResponse(detail='If an account with this {} exists, a login link has been sent.'.format(' and '.join(mediums)))
+
+
+class VerifyMagicLinkRequest(BaseModel):
+    stay_signed_in: bool = False
+
+
+class VerifyMagicLinkResponse(GetAuthReturn):
+    pass
+
+
+@ auth_router.post('/login/otp/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
 async def verify_magic_link(model: VerifyMagicLinkRequest, authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(permitted_auth_credential_types={'access_token'},
                                                                                                                                              override_lifetime=c.authentication['magic_link_expiry_timedelta']))], response: Response) -> VerifyMagicLinkResponse:
     with Session(c.db_engine) as session:
