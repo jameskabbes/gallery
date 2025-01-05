@@ -210,20 +210,27 @@ form label {
 }
 
 .input-text-container,
-.input-datetime-local-container {
+.input-datetime-local-container,
+.input-phone-number-container {
   @apply rounded-xl border-[1px] py-1 px-2;
 }
 
 .input-text-container input,
-.input-datetime-local-container input {
-  @apply w-full bg-inherit focus:outline-none;
+.input-datetime-local-container input,
+.input-phone-number-container input {
+  @apply min-w-[50px] w-full bg-inherit focus:outline-none;
 }
 
 .input-text-container,
 .input-datetime-local-container,
 .input-checkbox-container,
 .input-radio-container,
-.input-toggle-container {
+.input-toggle-container,
+.input-phone-number-container {
   @apply focus-within:border-color-primary hover:border-color-primary;
   transition: border-color 0.2s;
+}
+
+.input-phone-number-container {
+  @apply overflow-x-auto;
 }

@@ -1,12 +1,4 @@
-import React, {
-  useEffect,
-  useContext,
-  useState,
-  Children,
-  useCallback,
-  useMemo,
-  useRef,
-} from 'react';
+import React, { useEffect, useContext, useState, useRef } from 'react';
 import { DeviceContext } from '../contexts/Device';
 import { paths, operations, components } from '../openapi_schema';
 import {
@@ -40,6 +32,8 @@ import { RadioButton1 } from '../components/Utils/RadioButton';
 import { useConfirmationModal } from '../utils/useConfirmationModal';
 import { Toggle1 } from '../components/Utils/Toggle';
 import { AuthModalsContext } from '../contexts/AuthModals';
+import { ValidatedInputPhoneNumber } from '../components/Form/ValidatedInputPhoneNumber';
+import { E164Number } from 'libphonenumber-js';
 
 const API_ENDPOINT = '/pages/styles/';
 const API_METHOD = 'get';
@@ -72,6 +66,12 @@ function Styles() {
     ...defaultValidatedInputState<'Option 1' | 'Option 2' | 'Option 3'>(
       'Option 1'
     ),
+  });
+
+  const [phoneNumber, setPhoneNumber] = useState<
+    ValidatedInputState<E164Number>
+  >({
+    ...defaultValidatedInputState<E164Number>(null),
   });
 
   const {} = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>({
@@ -303,6 +303,13 @@ function Styles() {
                   />
                 </section>
                 <section>
+                  <label htmlFor="phone-number-input">Phone Number</label>
+                  <ValidatedInputPhoneNumber
+                    state={phoneNumber}
+                    setState={setPhoneNumber}
+                  />
+                </section>
+                <section>
                   <label htmlFor="datetime-local-input-1">
                     Datetime Local Input
                   </label>
@@ -444,7 +451,9 @@ function Styles() {
               </fieldset>
               <ButtonSubmit
                 disabled={
-                  toggleState.status != 'valid' || textState.status != 'valid'
+                  toggleState.status != 'valid' ||
+                  textState.status != 'valid' ||
+                  phoneNumber.status != 'valid'
                 }
               >
                 Submit
