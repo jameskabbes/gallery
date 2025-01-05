@@ -3,7 +3,8 @@ import { AuthModalsContextType, AuthModalType, ModalType } from '../types';
 import { ModalsContext } from './Modals';
 import { LogIn } from '../components/Auth/LogIn';
 import { SignUp } from '../components/Auth/SignUp';
-import { LogInWithEmail } from '../components/Auth/LogInWithEmail';
+import { SendMagicLink } from '../components/Auth/SendMagicLink';
+import { LogInWithOTP } from '../components/Auth/LogInWithOTP';
 
 const AuthModalsContext = React.createContext<AuthModalsContextType>({
   activate: () => {},
@@ -12,7 +13,8 @@ const AuthModalsContext = React.createContext<AuthModalsContextType>({
 const authModalMapping = {
   logIn: LogIn,
   signUp: SignUp,
-  logInWithEmail: LogInWithEmail,
+  sendMagicLink: SendMagicLink,
+  logInWithOTP: LogInWithOTP,
 };
 
 function AuthModalsContextProvider({

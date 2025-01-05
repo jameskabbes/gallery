@@ -8,7 +8,7 @@ import { Toast } from './components/Toast/Toast';
 import { Gallery } from './pages/Gallery';
 import { Settings } from './pages/Settings';
 import { Modals } from './components/Modal/Modals';
-import { VerifyMagicLink } from './components/Auth/VerifyMagicLink';
+import { LogInWithMagicLink } from './components/Auth/LogInWithMagicLink';
 import { Surface } from './components/Utils/Surface';
 import Styles from './pages/Styles';
 
@@ -42,7 +42,7 @@ function App(): JSX.Element {
               <Route path="*" element={<Navigate to="/404" />} />
               <Route
                 path={`${config.magic_link_frontend_url}`}
-                element={<VerifyMagicLink />}
+                element={<LogInWithMagicLink />}
               />
             </Routes>
             <Footer />

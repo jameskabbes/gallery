@@ -7,6 +7,7 @@ import {
   AxiosResponse,
   Method,
 } from 'axios';
+import { E164Number } from 'libphonenumber-js';
 
 interface CallApiOptions<T> extends AxiosRequestConfig<T> {
   authContext?: AuthContextType;
@@ -53,7 +54,7 @@ interface DarkModeContextType {
   setPreference: (preference: 'light' | 'dark' | 'system') => void;
 }
 
-type AuthModalType = 'logIn' | 'signUp' | 'logInWithEmail';
+type AuthModalType = 'logIn' | 'signUp' | 'sendMagicLink' | 'logInWithOTP';
 
 interface AuthModalsContextType {
   activate: (modal: AuthModalType | null) => void;
@@ -80,26 +81,30 @@ interface LogInContextType {
   setError: React.Dispatch<React.SetStateAction<LogInContextType['error']>>;
 }
 
-interface LogInWithEmailContextType {
+interface SendMagicLinkContextType {
+  medium: 'email' | 'phone';
+  setMedium: React.Dispatch<
+    React.SetStateAction<SendMagicLinkContextType['medium']>
+  >;
   email: ValidatedInputState<string>;
   setEmail: React.Dispatch<
-    React.SetStateAction<LogInWithEmailContextType['email']>
+    React.SetStateAction<SendMagicLinkContextType['email']>
+  >;
+  phoneNumber: ValidatedInputState<E164Number>;
+  setPhoneNumber: React.Dispatch<
+    React.SetStateAction<SendMagicLinkContextType['phoneNumber']>
   >;
   staySignedIn: ValidatedInputState<boolean>;
   setStaySignedIn: React.Dispatch<
-    React.SetStateAction<LogInWithEmailContextType['staySignedIn']>
-  >;
-  screen: 'email' | 'sent';
-  setScreen: React.Dispatch<
-    React.SetStateAction<LogInWithEmailContextType['screen']>
+    React.SetStateAction<SendMagicLinkContextType['staySignedIn']>
   >;
   valid: boolean;
   setValid: React.Dispatch<
-    React.SetStateAction<LogInWithEmailContextType['valid']>
+    React.SetStateAction<SendMagicLinkContextType['valid']>
   >;
   loading: boolean;
   setLoading: React.Dispatch<
-    React.SetStateAction<LogInWithEmailContextType['loading']>
+    React.SetStateAction<SendMagicLinkContextType['loading']>
   >;
 }
 
@@ -127,6 +132,8 @@ interface SignUpContextType {
     React.SetStateAction<SignUpContextType['loading']>
   >;
 }
+
+interface LogInWithOTPContextType {}
 
 interface ModalType<T = Record<string, any>> {
   key: string;
@@ -239,7 +246,8 @@ export {
   defaultValidatedInputState,
   SignUpContextType,
   LogInContextType,
-  LogInWithEmailContextType,
+  SendMagicLinkContextType,
+  LogInWithOTPContextType,
   Toast,
   ToastId,
   ToastNoType,

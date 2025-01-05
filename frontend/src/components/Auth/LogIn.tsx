@@ -6,9 +6,12 @@ import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { LogInContext } from '../../contexts/LogIn';
 import { ToastContext } from '../../contexts/Toast';
 import { AuthModalsContext } from '../../contexts/AuthModals';
-import { IoWarning } from 'react-icons/io5';
-import { IoPersonAddSharp } from 'react-icons/io5';
-import { IoMail } from 'react-icons/io5';
+import {
+  IoWarning,
+  IoPersonAddSharp,
+  IoColorWand,
+  IoPhonePortraitOutline,
+} from 'react-icons/io5';
 import { ValidatedInputCheckbox } from '../Form/ValidatedInputCheckbox';
 import { Button2, ButtonSubmit } from '../Utils/Button';
 import { Loader1, Loader2 } from '../Utils/Loader';
@@ -21,9 +24,11 @@ import {
   postLogInGoogle,
   PostLoginGoogleResponses,
 } from '../../services/api/postLogInGoogle';
+import { SendMagicLinkContext } from '../../contexts/SendMagicLink';
 
 function LogIn() {
   const logInContext = useContext(LogInContext);
+  const sendMagicLinkContext = useContext(SendMagicLinkContext);
   const authContext = useContext(AuthContext);
   const authModalsContext = useContext(AuthModalsContext);
   const modalsContext = useContext(ModalsContext);
@@ -144,7 +149,7 @@ function LogIn() {
               <div className="flex flex-row items-center justify-between">
                 <label htmlFor="login-password">Password</label>
                 <span
-                  onClick={() => authModalsContext.activate('logInWithEmail')}
+                  onClick={() => authModalsContext.activate('logInWithOTP')}
                   className="underline cursor-pointer"
                 >
                   Forgot Password?
@@ -222,11 +227,20 @@ function LogIn() {
           <Button2
             className="w-full relative"
             onClick={() => {
-              authModalsContext.activate('logInWithEmail');
+              authModalsContext.activate('sendMagicLink');
             }}
           >
-            <h6 className="text-center mb-0 ">Login with email</h6>
-            <IoMail className="absolute left-4 top-1/2 transform -translate-y-1/2" />
+            <h6 className="text-center mb-0 ">Login with Magic Link</h6>
+            <IoColorWand className="absolute left-4 top-1/2 transform -translate-y-1/2" />
+          </Button2>
+          <Button2
+            className="w-full relative"
+            onClick={() => {
+              authModalsContext.activate('logInWithOTP');
+            }}
+          >
+            <h6 className="text-center mb-0 ">Login with Code</h6>
+            <IoPhonePortraitOutline className="absolute left-4 top-1/2 transform -translate-y-1/2" />
           </Button2>
           <Button2
             className="w-full relative"

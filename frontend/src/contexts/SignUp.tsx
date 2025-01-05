@@ -36,7 +36,7 @@ function SignUpContextProvider({ children }: { children: React.ReactNode }) {
     SignUpContextType['staySignedIn']
   >({
     ...defaultValidatedInputState<SignUpContextType['staySignedIn']['value']>(
-      false
+      true
     ),
   });
 

@@ -326,7 +326,7 @@ async def post_token(
         return TokenResponse(access_token=encoded_jwt, token_type='bearer')
 
 
-class LoginResponse(GetAuthReturn):
+class LoginWithPasswordResponse(GetAuthReturn):
     pass
 
 
@@ -335,7 +335,7 @@ async def login_with_password(
     user: typing.Annotated[models.User, Depends(authenticate_user_with_username_and_password)],
     response: Response,
     stay_signed_in: bool = Form(c.authentication['stay_signed_in_default'])
-) -> LoginResponse:
+) -> LoginWithPasswordResponse:
 
     with Session(c.db_engine) as session:
 
@@ -348,7 +348,7 @@ async def login_with_password(
         set_access_token_cookie(jwt_encode(
             user_access_token.export_to_jwt()), response, stay_signed_in)
 
-        return LoginResponse(
+        return LoginWithPasswordResponse(
             auth=GetAuthBaseReturn(
                 user=models.UserPrivate.model_validate(user),
                 scope_ids=set(
@@ -399,8 +399,8 @@ async def sign_up(
 
 class SendMagicLinkRequest(BaseModel):
     stay_signed_in: bool = False
-    email: typing.Optional[models.UserTypes.email]
-    phone_number: typing.Optional[models.UserTypes.phone_number]
+    email: typing.Optional[models.UserTypes.email] = None
+    phone_number: typing.Optional[models.UserTypes.phone_number] = None
 
 
 async def send_magic_link_to_email(model: SendMagicLinkRequest):
@@ -453,6 +453,7 @@ async def send_magic_link_to_phone_number(model: SendMagicLinkRequest):
 
 @ auth_router.post('/send-magic-link/')
 async def post_send_magic_link(model: SendMagicLinkRequest, background_tasks: BackgroundTasks) -> DetailOnlyResponse:
+
     mediums = []
     if 'email' in model.model_fields_set:
         mediums.append('email')
@@ -465,17 +466,17 @@ async def post_send_magic_link(model: SendMagicLinkRequest, background_tasks: Ba
     return DetailOnlyResponse(detail='If an account with this {} exists, a login link has been sent.'.format(' and '.join(mediums)))
 
 
-class VerifyMagicLinkRequest(BaseModel):
+class LoginWithMagicLinkRequest(BaseModel):
     stay_signed_in: bool = False
 
 
-class VerifyMagicLinkResponse(GetAuthReturn):
+class LoginWithMagicLinkResponse(GetAuthReturn):
     pass
 
 
 @ auth_router.post('/login/magic-link/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
-async def login_with_magic_link(model: VerifyMagicLinkRequest, authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(permitted_auth_credential_types={'access_token'},
-                                                                                                                                                 override_lifetime=c.authentication['magic_link_expiry_timedelta']))], response: Response) -> VerifyMagicLinkResponse:
+async def login_with_magic_link(model: LoginWithMagicLinkRequest, authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(permitted_auth_credential_types={'access_token'},
+                                                                                                                                                    override_lifetime=c.authentication['magic_link_expiry_timedelta']))], response: Response) -> LoginWithMagicLinkResponse:
     with Session(c.db_engine) as session:
 
         user_access_token = await models.UserAccessToken.api_post(
@@ -491,7 +492,7 @@ async def login_with_magic_link(model: VerifyMagicLinkRequest, authorization: ty
         session.delete(authorization.auth_credential)
         session.commit()
 
-        return VerifyMagicLinkResponse(
+        return LoginWithMagicLinkResponse(
             auth=GetAuthBaseReturn(
                 user=models.UserPrivate.model_validate(authorization.user),
                 scope_ids=set(
@@ -543,22 +544,49 @@ async def post_send_otp(model: SendMagicLinkRequest, background_tasks: Backgroun
     return DetailOnlyResponse(detail='If an account with this {} exists, a login link has been sent.'.format(' and '.join(mediums)))
 
 
-class VerifyMagicLinkRequest(BaseModel):
+class LoginWithOTPRequest(BaseModel):
     stay_signed_in: bool = False
+    code: models.OTPTypes.code
+    email: typing.Optional[models.UserTypes.email]
+    phone_number: typing.Optional[models.UserTypes.phone_number]
+
+    @model_validator(mode='after')
+    def validate_either_email_or_phone_number(self):
+        if 'email' not in self.model_fields_set and 'phone_number' not in self.model_fields_set:
+            raise ValueError('Either email or phone number must be provided')
 
 
-class VerifyMagicLinkResponse(GetAuthReturn):
+class LoginWithOTPResponse(GetAuthReturn):
     pass
 
 
 @ auth_router.post('/login/otp/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
-async def verify_magic_link(model: VerifyMagicLinkRequest, authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(permitted_auth_credential_types={'access_token'},
-                                                                                                                                             override_lifetime=c.authentication['magic_link_expiry_timedelta']))], response: Response) -> VerifyMagicLinkResponse:
+async def login_with_otp(model: LoginWithOTPRequest, authorization: typing.Annotated[GetAuthorizationReturn, Depends(get_authorization(raise_exceptions=False))], response: Response) -> LoginWithOTPResponse:
     with Session(c.db_engine) as session:
 
+        if 'email' in model.model_fields_set:
+            user = session.exec(select(models.User).where(
+                models.User.email == model.email)).one_or_none()
+        elif 'phone_number' in model.model_fields_set:
+            user = session.exec(select(models.User).where(
+                models.User.phone_number == model.phone_number)).one_or_none()
+
+        # not sure what to do yet
+        if not user:
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED,
+                                detail='Invalid token')
+
+        hashed_code = models.OTP.hash_code(model.code)
+        otp = session.exec(select(models.OTP).where(models.OTP.user_id == user.id).where(
+            models.OTP.hashed_code == hashed_code)).one_or_none()
+
+        if not otp:
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED,
+                                detail='Invalid token')
+
         user_access_token = await models.UserAccessToken.api_post(
-            session=session, c=c, authorized_user_id=None, admin=False, create_model=models.UserAccessTokenCreateAdmin(
-                user_id=authorization.user.id, lifespan=c.authentication['default_expiry_timedelta']
+            session=session, c=c, authorized_user_id=user._id, admin=False, create_model=models.UserAccessTokenCreateAdmin(
+                user_id=user._id, lifespan=c.authentication['default_expiry_timedelta']
             )
         )
         set_access_token_cookie(jwt_encode(
@@ -566,10 +594,10 @@ async def verify_magic_link(model: VerifyMagicLinkRequest, authorization: typing
         )
 
         # one time link, delete the auth_credential
-        session.delete(authorization.auth_credential)
+        session.delete(otp)
         session.commit()
 
-        return VerifyMagicLinkResponse(
+        return LoginWithOTPResponse(
             auth=GetAuthBaseReturn(
                 user=models.UserPrivate.model_validate(authorization.user),
                 scope_ids=set(
@@ -581,16 +609,16 @@ async def verify_magic_link(model: VerifyMagicLinkRequest, authorization: typing
         )
 
 
-class GoogleAuthResponse(LoginResponse):
-    pass
-
-
-class GoogleAuthRequest(BaseModel):
+class LoginWithGoogleRequest(BaseModel):
     access_token: str
 
 
+class LoginWithGoogleResponse(GetAuthReturn):
+    pass
+
+
 @ auth_router.post("/login/google/", responses={status.HTTP_400_BAD_REQUEST: {"description": 'Invalid token'}})
-async def login_with_google(request_token: GoogleAuthRequest, response: Response) -> GoogleAuthResponse:
+async def login_with_google(request_token: LoginWithGoogleRequest, response: Response) -> LoginWithGoogleResponse:
 
     async with httpx.AsyncClient() as client:
         res = await client.get('https://www.googleapis.com/oauth2/v3/userinfo?access_token={}'.format(request_token.access_token))
@@ -617,7 +645,7 @@ async def login_with_google(request_token: GoogleAuthRequest, response: Response
         set_access_token_cookie(jwt_encode(
             user_access_token.export_to_jwt()), response, True)
 
-        return VerifyMagicLinkResponse(
+        return LoginWithGoogleResponse(
             auth=GetAuthBaseReturn(
                 user=models.UserPrivate.model_validate(user),
                 scope_ids=set(

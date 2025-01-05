@@ -14,20 +14,28 @@ export interface paths {
     post: operations["post_token_auth_token__post"];
   };
   "/auth/login/password/": {
-    /** Login */
-    post: operations["login_auth_login_password__post"];
+    /** Login With Password */
+    post: operations["login_with_password_auth_login_password__post"];
   };
   "/auth/signup/": {
     /** Sign Up */
     post: operations["sign_up_auth_signup__post"];
   };
-  "/auth/login/email-magic-link/": {
-    /** Login With Email Magic Link */
-    post: operations["login_with_email_magic_link_auth_login_email_magic_link__post"];
+  "/auth/send-magic-link/": {
+    /** Post Send Magic Link */
+    post: operations["post_send_magic_link_auth_send_magic_link__post"];
   };
-  "/auth/verify-magic-link/": {
-    /** Verify Magic Link */
-    post: operations["verify_magic_link_auth_verify_magic_link__post"];
+  "/auth/login/magic-link/": {
+    /** Login With Magic Link */
+    post: operations["login_with_magic_link_auth_login_magic_link__post"];
+  };
+  "/auth/send-otp/": {
+    /** Post Send Otp */
+    post: operations["post_send_otp_auth_send_otp__post"];
+  };
+  "/auth/login/otp/": {
+    /** Login With Otp */
+    post: operations["login_with_otp_auth_login_otp__post"];
   };
   "/auth/login/google/": {
     /** Login With Google */
@@ -332,10 +340,10 @@ export interface components {
        * Type
        * @enum {string}
        */
-      type: "access_token" | "api_key";
+      type: "access_token" | "api_key" | "otp";
     };
-    /** Body_login_auth_login_password__post */
-    Body_login_auth_login_password__post: {
+    /** Body_login_with_password_auth_login_password__post */
+    Body_login_with_password_auth_login_password__post: {
       /**
        * Stay Signed In
        * @default false
@@ -573,41 +581,70 @@ export interface components {
     GetStylesPageResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
     };
-    /** GoogleAuthRequest */
-    GoogleAuthRequest: {
-      /** Access Token */
-      access_token: string;
-    };
-    /** GoogleAuthResponse */
-    GoogleAuthResponse: {
-      auth: components["schemas"]["GetAuthBaseReturn"];
-    };
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
       detail?: components["schemas"]["ValidationError"][];
     };
-    /** LoginResponse */
-    LoginResponse: {
+    /** LoginWithGoogleRequest */
+    LoginWithGoogleRequest: {
+      /** Access Token */
+      access_token: string;
+    };
+    /** LoginWithGoogleResponse */
+    LoginWithGoogleResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
     };
-    /** LoginWithEmailMagicLinkRequest */
-    LoginWithEmailMagicLinkRequest: {
-      /**
-       * Email
-       * Format: email
-       */
-      email: string;
+    /** LoginWithMagicLinkRequest */
+    LoginWithMagicLinkRequest: {
       /**
        * Stay Signed In
        * @default false
        */
       stay_signed_in?: boolean;
     };
+    /** LoginWithMagicLinkResponse */
+    LoginWithMagicLinkResponse: {
+      auth: components["schemas"]["GetAuthBaseReturn"];
+    };
+    /** LoginWithOTPRequest */
+    LoginWithOTPRequest: {
+      /**
+       * Stay Signed In
+       * @default false
+       */
+      stay_signed_in?: boolean;
+      /** Code */
+      code: string;
+      /** Email */
+      email: string | null;
+      /** Phone Number */
+      phone_number: string | null;
+    };
+    /** LoginWithOTPResponse */
+    LoginWithOTPResponse: {
+      auth: components["schemas"]["GetAuthBaseReturn"];
+    };
+    /** LoginWithPasswordResponse */
+    LoginWithPasswordResponse: {
+      auth: components["schemas"]["GetAuthBaseReturn"];
+    };
     /** NotFoundResponse */
     NotFoundResponse: {
       /** Detail */
       detail: string;
+    };
+    /** SendMagicLinkRequest */
+    SendMagicLinkRequest: {
+      /**
+       * Stay Signed In
+       * @default false
+       */
+      stay_signed_in?: boolean;
+      /** Email */
+      email?: string | null;
+      /** Phone Number */
+      phone_number?: string | null;
     };
     /** SignupResponse */
     SignupResponse: {
@@ -634,6 +671,8 @@ export interface components {
        * Format: email
        */
       email: string;
+      /** Phone Number */
+      phone_number: string;
       /** Username */
       username: string;
       /** Hashed Password */
@@ -674,6 +713,8 @@ export interface components {
        * Format: email
        */
       email: string;
+      /** Phone Number */
+      phone_number?: string | null;
       /** Username */
       username?: string | null;
       /** Password */
@@ -706,6 +747,8 @@ export interface components {
     UserUpdate: {
       /** Email */
       email?: string | null;
+      /** Phone Number */
+      phone_number?: string | null;
       /** Password */
       password?: string | null;
       /** Username */
@@ -715,6 +758,8 @@ export interface components {
     UserUpdateAdmin: {
       /** Email */
       email?: string | null;
+      /** Phone Number */
+      phone_number?: string | null;
       /** Password */
       password?: string | null;
       /** Username */
@@ -728,18 +773,6 @@ export interface components {
       msg: string;
       /** Error Type */
       type: string;
-    };
-    /** VerifyMagicLinkRequest */
-    VerifyMagicLinkRequest: {
-      /**
-       * Stay Signed In
-       * @default false
-       */
-      stay_signed_in?: boolean;
-    };
-    /** VerifyMagicLinkResponse */
-    VerifyMagicLinkResponse: {
-      auth: components["schemas"]["GetAuthBaseReturn"];
     };
   };
   responses: never;
@@ -788,18 +821,18 @@ export interface operations {
       };
     };
   };
-  /** Login */
-  login_auth_login_password__post: {
+  /** Login With Password */
+  login_with_password_auth_login_password__post: {
     requestBody: {
       content: {
-        "application/x-www-form-urlencoded": components["schemas"]["Body_login_auth_login_password__post"];
+        "application/x-www-form-urlencoded": components["schemas"]["Body_login_with_password_auth_login_password__post"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["LoginResponse"];
+          "application/json": components["schemas"]["LoginWithPasswordResponse"];
         };
       };
       /** @description Could not validate credentials */
@@ -844,11 +877,11 @@ export interface operations {
       };
     };
   };
-  /** Login With Email Magic Link */
-  login_with_email_magic_link_auth_login_email_magic_link__post: {
+  /** Post Send Magic Link */
+  post_send_magic_link_auth_send_magic_link__post: {
     requestBody: {
       content: {
-        "application/json": components["schemas"]["LoginWithEmailMagicLinkRequest"];
+        "application/json": components["schemas"]["SendMagicLinkRequest"];
       };
     };
     responses: {
@@ -866,18 +899,68 @@ export interface operations {
       };
     };
   };
-  /** Verify Magic Link */
-  verify_magic_link_auth_verify_magic_link__post: {
+  /** Login With Magic Link */
+  login_with_magic_link_auth_login_magic_link__post: {
     requestBody: {
       content: {
-        "application/json": components["schemas"]["VerifyMagicLinkRequest"];
+        "application/json": components["schemas"]["LoginWithMagicLinkRequest"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["VerifyMagicLinkResponse"];
+          "application/json": components["schemas"]["LoginWithMagicLinkResponse"];
+        };
+      };
+      /** @description Invalid token */
+      401: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Post Send Otp */
+  post_send_otp_auth_send_otp__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SendMagicLinkRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Login With Otp */
+  login_with_otp_auth_login_otp__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LoginWithOTPRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["LoginWithOTPResponse"];
         };
       };
       /** @description Invalid token */
@@ -898,14 +981,14 @@ export interface operations {
   login_with_google_auth_login_google__post: {
     requestBody: {
       content: {
-        "application/json": components["schemas"]["GoogleAuthRequest"];
+        "application/json": components["schemas"]["LoginWithGoogleRequest"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["GoogleAuthResponse"];
+          "application/json": components["schemas"]["LoginWithGoogleResponse"];
         };
       };
       /** @description Invalid token */
@@ -1950,7 +2033,7 @@ export interface operations {
     parameters: {
       query: {
         name: string;
-        parent_id?: string | null;
+        parent_id: string;
         date?: string | null;
       };
     };
@@ -2114,7 +2197,7 @@ export interface operations {
     parameters: {
       query: {
         name: string;
-        parent_id?: string | null;
+        parent_id: string;
         date?: string | null;
         user_id: string;
       };

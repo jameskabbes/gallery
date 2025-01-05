@@ -435,6 +435,8 @@ class User(Table['User', UserTypes.id, UserCreateAdmin, UserUpdateAdmin], UserID
         back_populates='user', cascade_delete=True)
     gallery_permissions: list['GalleryPermission'] = Relationship(
         back_populates='user', cascade_delete=True)
+    otps: list['OTP'] = Relationship(
+        back_populates='user', cascade_delete=True)
 
     _ROUTER_TAG: typing.ClassVar[str] = 'User'
 
@@ -538,7 +540,7 @@ class User(Table['User', UserTypes.id, UserCreateAdmin, UserUpdateAdmin], UserID
         )
 
         root_gallery = await Gallery.api_post(session=kwargs['session'], c=kwargs['c'], authorized_user_id=new_user._id, admin=kwargs['admin'], create_model=GalleryCreateAdmin(
-            name='root', user_id=new_user._id, visibility_level=kwargs['c'].visibility_level_name_mapping['private']
+            name='root', user_id=new_user._id, visibility_level=kwargs['c'].visibility_level_name_mapping['private'], parent_id=None
         ))
 
         return new_user
@@ -778,6 +780,10 @@ class OTP(Table['OTP', OTPTypes.id, OTPCreateAdmin, OTPUpdateAdmin], OTPIdBase, 
     def generate_code(cls) -> OTPTypes.code:
         characters = string.digits
         return ''.join(secrets.choice(characters) for _ in range(OTP_LENGTH))
+
+    @classmethod
+    def hash_code(cls, code: OTPTypes.code) -> OTPTypes.hashed_code:
+        return utils.hash_password(code)
 
 
 PluralOTPDict = dict[OTPTypes.id, OTP]
@@ -1069,13 +1075,14 @@ class GalleryUpdateAdmin(GalleryUpdate):
 class GalleryCreate(GalleryImport):
     name: GalleryTypes.name
     visibility_level: GalleryTypes.visibility_level
-    parent_id: typing.Optional[GalleryTypes.parent_id] = None
+    parent_id: GalleryTypes.parent_id
     description: typing.Optional[GalleryTypes.description] = None
     date: typing.Optional[GalleryTypes.date] = None
 
 
 class GalleryCreateAdmin(GalleryCreate):
     user_id: GalleryTypes.user_id
+    parent_id: typing.Optional[GalleryTypes.parent_id] = None
 
 
 class GalleryAvailable(BaseModel):
@@ -1158,8 +1165,9 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
     async def api_get_is_available(cls, session: Session, gallery_available_admin: GalleryAvailableAdmin) -> None:
 
         # raise an exception if the parent gallery does not exist
-        await cls._basic_api_get(
-            session, gallery_available_admin.parent_id)
+        if gallery_available_admin.parent_id:
+            await cls._basic_api_get(
+                session, gallery_available_admin.parent_id)
 
         if session.exec(select(cls).where(cls._build_conditions(gallery_available_admin.model_dump()))).one_or_none():
             raise HTTPException(
@@ -1200,6 +1208,9 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
 
     @ classmethod
     async def _check_validation_post(cls, **kwargs):
+
+        print(kwargs['create_model'].model_dump())
+
         await cls.api_get_is_available(kwargs['session'], GalleryAvailableAdmin(**kwargs['create_model'].model_dump(include=GalleryAvailableAdmin.model_fields.keys(), exclude_unset=True)))
 
     async def _check_validation_patch(self, **kwargs):
@@ -1214,8 +1225,6 @@ class Gallery(Table['Gallery', GalleryTypes.id, GalleryCreateAdmin, GalleryUpdat
             id=cls.generate_id(),
             **kwargs['create_model'].model_dump()
         )
-
-        print(gallery)
 
         if mkdir:
             (await gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)).mkdir()

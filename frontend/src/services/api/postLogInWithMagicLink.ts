@@ -7,28 +7,30 @@ import {
   ExtractResponseTypes,
 } from '../../types';
 
-const API_ENDPOINT = '/auth/login/email-magic-link/';
+const API_ENDPOINT = '/auth/login/google/';
 const API_METHOD = 'post';
 
-type PostEmailMagicLinkResponses = ExtractResponseTypes<
+type PostLoginMagicLinkResponses = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
-async function postEmailMagicLink(
+async function postLogInWithMagicLink(
   authContext: AuthContextType,
   data: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
 ): Promise<
-  ApiResponse<PostEmailMagicLinkResponses[keyof PostEmailMagicLinkResponses]>
+  ApiResponse<PostLoginMagicLinkResponses[keyof PostLoginMagicLinkResponses]>
 > {
   return await callApi<
-    PostEmailMagicLinkResponses[keyof PostEmailMagicLinkResponses],
+    PostLoginMagicLinkResponses[keyof PostLoginMagicLinkResponses],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >({
     url: API_ENDPOINT,
     method: API_METHOD,
     authContext,
-    data,
+    headers: {
+      Authorization: `Bearer ${data.access_token}`,
+    },
   });
 }
 
-export { postEmailMagicLink, PostEmailMagicLinkResponses };
+export { postLogInWithMagicLink, PostLoginMagicLinkResponses };
