@@ -306,14 +306,6 @@ export interface components {
       /** Client Secret */
       client_secret?: string | null;
     };
-    /** Body_post_request_sign_up_auth_request_signup__post */
-    Body_post_request_sign_up_auth_request_signup__post: {
-      /**
-       * Email
-       * Format: email
-       */
-      email: string;
-    };
     /** Body_post_token_auth_token__post */
     Body_post_token_auth_token__post: {
       /**
@@ -464,6 +456,14 @@ export interface components {
     NotFoundResponse: {
       /** Detail */
       detail: string;
+    };
+    /** PostRequestSignUpRequest */
+    PostRequestSignUpRequest: {
+      /**
+       * Email
+       * Format: email
+       */
+      email: string;
     };
     /** PostRequestSignUpResponse */
     PostRequestSignUpResponse: Record<string, never>;
@@ -951,7 +951,7 @@ export interface operations {
   post_request_sign_up_auth_request_signup__post: {
     requestBody: {
       content: {
-        "application/x-www-form-urlencoded": components["schemas"]["Body_post_request_sign_up_auth_request_signup__post"];
+        "application/json": components["schemas"]["PostRequestSignUpRequest"];
       };
     };
     responses: {

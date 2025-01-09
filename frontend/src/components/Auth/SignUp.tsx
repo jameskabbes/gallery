@@ -14,8 +14,6 @@ import { AuthModalsContext } from '../../contexts/AuthModals';
 import { ToastContext } from '../../contexts/Toast';
 
 import { isEmailValid } from '../../services/isEmailValid';
-import { isEmailAvailable } from '../../services/api/getIsEmailAvailable';
-import { isPasswordValid } from '../../services/isPasswordValid';
 import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { ValidatedInputCheckbox } from '../Form/ValidatedInputCheckbox';
 import { IoLogInOutline, IoWarning } from 'react-icons/io5';
@@ -37,7 +35,6 @@ function CheckInbox() {
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        console.log('submitted');
         modalsContext.deleteModals([checkInboxModalKey]);
       }}
       className="flex flex-col space-y-6"
@@ -103,17 +100,15 @@ function RequestSignUp() {
                   setState={requestSignUpContext.setEmail}
                   id="sign-up-email"
                   minLength={
-                    openapi_schema.components.schemas.UserCreateAdmin.properties
-                      .email.minLength
+                    openapi_schema.components.schemas.PostRequestSignUpRequest
+                      .properties.email.minLength
                   }
                   maxLength={
-                    openapi_schema.components.schemas.UserCreateAdmin.properties
-                      .email.maxLength
+                    openapi_schema.components.schemas.PostRequestSignUpRequest
+                      .properties.email.maxLength
                   }
                   type="email"
                   checkAvailability={true}
-                  checkValidity={true}
-                  isAvailable={isEmailAvailable}
                   isValid={isEmailValid}
                   showStatus={true}
                 />

@@ -4,7 +4,6 @@ import openapi_schema from '../../../../openapi_schema.json';
 import { AuthContext } from '../../contexts/Auth';
 import { ToastContext } from '../../contexts/Toast';
 import { isEmailValid } from '../../services/isEmailValid';
-import { isEmailAvailable } from '../../services/api/getIsEmailAvailable';
 import { defaultValidatedInputState, ValidatedInputState } from '../../types';
 import { patchUser, PatchUserResponses } from '../../services/api/patchUser';
 import { ValidatedInputString } from '../Form/ValidatedInputString';

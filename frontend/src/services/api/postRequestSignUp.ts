@@ -16,23 +16,18 @@ type PostRequestSignUpResponses = ExtractResponseTypes<
 
 async function postRequestSignUp(
   authContext: AuthContextType,
-  data: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/x-www-form-urlencoded']
+  data: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
 ): Promise<
   ApiResponse<PostRequestSignUpResponses[keyof PostRequestSignUpResponses]>
 > {
-  const formData = new URLSearchParams();
-  Object.keys(data).forEach((key) => {
-    formData.append(key, data[key].toString());
-  });
-
   return await callApi<
     PostRequestSignUpResponses[keyof PostRequestSignUpResponses],
-    URLSearchParams
+    paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >({
     url: API_ENDPOINT,
     method: API_METHOD,
     authContext,
-    data: formData,
+    data,
   });
 }
 
