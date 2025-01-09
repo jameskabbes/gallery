@@ -54,7 +54,11 @@ interface DarkModeContextType {
   setPreference: (preference: 'light' | 'dark' | 'system') => void;
 }
 
-type AuthModalType = 'logIn' | 'signUp' | 'sendMagicLink' | 'logInWithOTP';
+type AuthModalType =
+  | 'logIn'
+  | 'requestSignUp'
+  | 'requestMagicLink'
+  | 'requestOTP';
 
 interface AuthModalsContextType {
   activate: (modal: AuthModalType | null) => void;
@@ -108,28 +112,22 @@ interface SendMagicLinkContextType {
   >;
 }
 
-interface SignUpContextType {
+interface RequestSignUpContextType {
   email: ValidatedInputState<string>;
-  setEmail: React.Dispatch<React.SetStateAction<SignUpContextType['email']>>;
-  password: ValidatedInputState<string>;
-  setPassword: React.Dispatch<
-    React.SetStateAction<SignUpContextType['password']>
-  >;
-  confirmPassword: ValidatedInputState<string>;
-  setConfirmPassword: React.Dispatch<
-    React.SetStateAction<SignUpContextType['confirmPassword']>
+  setEmail: React.Dispatch<
+    React.SetStateAction<RequestSignUpContextType['email']>
   >;
   staySignedIn: ValidatedInputState<boolean>;
   setStaySignedIn: React.Dispatch<
-    React.SetStateAction<SignUpContextType['staySignedIn']>
+    React.SetStateAction<RequestSignUpContextType['staySignedIn']>
   >;
   valid: boolean;
-  setValid: React.Dispatch<React.SetStateAction<SignUpContextType['valid']>>;
-  error: string | null;
-  setError: React.Dispatch<React.SetStateAction<SignUpContextType['error']>>;
+  setValid: React.Dispatch<
+    React.SetStateAction<RequestSignUpContextType['valid']>
+  >;
   loading: boolean;
   setLoading: React.Dispatch<
-    React.SetStateAction<SignUpContextType['loading']>
+    React.SetStateAction<RequestSignUpContextType['loading']>
   >;
 }
 
@@ -244,7 +242,7 @@ export {
   DarkModeContextType,
   ValidatedInputState,
   defaultValidatedInputState,
-  SignUpContextType,
+  RequestSignUpContextType,
   LogInContextType,
   SendMagicLinkContextType,
   LogInWithOTPContextType,

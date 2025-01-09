@@ -7,30 +7,28 @@ import {
   ExtractResponseTypes,
 } from '../../types';
 
-const API_ENDPOINT = '/auth/login/google/';
+const API_ENDPOINT = '/auth/request-otp/';
 const API_METHOD = 'post';
 
-type PostLoginMagicLinkResponses = ExtractResponseTypes<
+type PostRequestOTPResponses = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
-async function postLogInWithMagicLink(
+async function postRequestOTP(
   authContext: AuthContextType,
   data: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
 ): Promise<
-  ApiResponse<PostLoginMagicLinkResponses[keyof PostLoginMagicLinkResponses]>
+  ApiResponse<PostRequestOTPResponses[keyof PostRequestOTPResponses]>
 > {
   return await callApi<
-    PostLoginMagicLinkResponses[keyof PostLoginMagicLinkResponses],
+    PostRequestOTPResponses[keyof PostRequestOTPResponses],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >({
     url: API_ENDPOINT,
     method: API_METHOD,
     authContext,
-    headers: {
-      Authorization: `Bearer ${data.access_token}`,
-    },
+    data,
   });
 }
 
-export { postLogInWithMagicLink, PostLoginMagicLinkResponses };
+export { postRequestOTP, PostRequestOTPResponses };

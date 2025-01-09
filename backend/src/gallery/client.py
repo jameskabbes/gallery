@@ -1,11 +1,13 @@
 import typing
 import pathlib
+from pydantic import EmailStr, StringConstraints
 from gallery import utils
 from sqlalchemy import create_engine, Engine
 from sqlmodel import SQLModel
 import datetime
 import json
 from pathlib import Path
+import jwt
 
 GALLERY_DIR = Path(__file__).parent
 SRC_DIR = GALLERY_DIR.parent
@@ -41,6 +43,9 @@ class UserRoleTypes:
 
 
 type uvicorn_port_type = int
+PhoneNumber = str
+Email = typing.Annotated[EmailStr, StringConstraints(
+    min_length=1, max_length=254)]
 
 
 class PathConfig(typing.TypedDict):
@@ -63,9 +68,9 @@ class MediaRootConfig(typing.TypedDict):
 
 
 class AuthenticationConfig(typing.TypedDict):
-    default_expiry_timedelta: datetime.timedelta
-    magic_link_expiry_timedelta: datetime.timedelta
     stay_signed_in_default: bool
+    expiry_timedeltas: dict[typing.Literal['default_access_token',
+                                           'request_magic_link', 'request_sign_up'], datetime.timedelta]
 
 
 class JWTConfig(typing.TypedDict):
@@ -104,9 +109,13 @@ DefaultConfig: Config = {
     },
 
     'authentication': {
-        'default_expiry_timedelta': datetime.timedelta(days=7),
-        'magic_link_expiry_timedelta': datetime.timedelta(minutes=10),
-        'stay_signed_in_default': False
+        'stay_signed_in_default': False,
+        'expiry_timedeltas': {
+            'default_access_token': datetime.timedelta(days=7),
+            'request_magic_link': datetime.timedelta(minutes=10),
+            'request_sign_up': datetime.timedelta(hours=1),
+        }
+
     },
     'jwt': {
         'secret_key_path': {
@@ -150,7 +159,7 @@ class Client:
     auth_key: str
     header_keys: dict[str, str]
     cookie_keys: dict[str, str]
-    magic_link_frontend_url: str
+    frontend_urls: dict[str, str]
 
     scope_name_mapping: dict[ScopeTypes.name, ScopeTypes.id]
     scope_id_mapping: dict[ScopeTypes.id, ScopeTypes.name]
@@ -214,8 +223,8 @@ class Client:
         # cookie_keys
         self.cookie_keys = self.root_config['cookie_keys']
 
-        # magic_link_frontend_url
-        self.magic_link_frontend_url = self.root_config['magic_link_frontend_url']
+        # frontend_urls
+        self.frontend_urls = self.root_config['frontend_urls']
 
         # scope_name_mapping
         self.scope_name_mapping = self.root_config['scope_name_mapping']
@@ -243,6 +252,25 @@ class Client:
 
     def create_tables(self):
         SQLModel.metadata.create_all(self.db_engine)
+
+    def jwt_encode(self, payload: dict):
+        return jwt.encode(payload, self.jwt_secret_key, algorithm=self.jwt_algorithm)
+
+    def jwt_decode(self, token: str):
+        return jwt.decode(token, self.jwt_secret_key, algorithms=[self.jwt_algorithm])
+
+    def send_email(self, recipient: Email, subject: str, body: str):
+
+        print('''
+Email sent to: {}
+Subject: {}
+Body: {}'''.format(recipient, subject, body))
+
+    def send_sms(self, recipient: PhoneNumber, message: str):
+
+        print('''
+SMS sent to: {}
+Message: {}'''.format(recipient, message))
 
     '''
         def sync_with_local(self):

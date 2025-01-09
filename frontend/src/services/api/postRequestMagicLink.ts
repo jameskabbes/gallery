@@ -7,21 +7,23 @@ import {
   ExtractResponseTypes,
 } from '../../types';
 
-const API_ENDPOINT = '/auth/send-magic-link/';
+const API_ENDPOINT = '/auth/request-magic-link/';
 const API_METHOD = 'post';
 
-type PostSendMagicLinkResponses = ExtractResponseTypes<
+type PostRequestMagicLinkResponses = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
-async function postSendMagicLink(
+async function postRequestMagicLink(
   authContext: AuthContextType,
   data: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
 ): Promise<
-  ApiResponse<PostSendMagicLinkResponses[keyof PostSendMagicLinkResponses]>
+  ApiResponse<
+    PostRequestMagicLinkResponses[keyof PostRequestMagicLinkResponses]
+  >
 > {
   return await callApi<
-    PostSendMagicLinkResponses[keyof PostSendMagicLinkResponses],
+    PostRequestMagicLinkResponses[keyof PostRequestMagicLinkResponses],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >({
     url: API_ENDPOINT,
@@ -31,4 +33,4 @@ async function postSendMagicLink(
   });
 }
 
-export { postSendMagicLink, PostSendMagicLinkResponses };
+export { postRequestMagicLink, PostRequestMagicLinkResponses };

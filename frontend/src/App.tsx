@@ -8,12 +8,14 @@ import { Toast } from './components/Toast/Toast';
 import { Gallery } from './pages/Gallery';
 import { Settings } from './pages/Settings';
 import { Modals } from './components/Modal/Modals';
-import { LogInWithMagicLink } from './components/Auth/LogInWithMagicLink';
+// import { LogInWithMagicLink } from './components/Auth/MagicLink';
 import { Surface } from './components/Utils/Surface';
 import Styles from './pages/Styles';
 
 import siteConfig from '../siteConfig.json';
 import config from '../../config.json';
+import { SignUp } from './pages/SignUp';
+import { LogIn } from './pages/LogIn';
 
 function App(): JSX.Element {
   return (
@@ -26,10 +28,12 @@ function App(): JSX.Element {
             <Header />
             <Routes>
               <Route path="/" element={<Home />} />
+              {/* /galleries */}
               <Route
                 path={`${siteConfig.galleriesUrlBase}`}
                 element={<Gallery root={true} />}
               />
+              {/* /galleries/galleryId */}
               <Route
                 path={`${siteConfig.galleriesUrlBase}/:galleryId`}
                 element={<Gallery />}
@@ -38,12 +42,14 @@ function App(): JSX.Element {
               <Route path="/settings" element={<Settings />} />
               <Route path="/styles" element={<Styles />} />
               <Route path="/settings/" element={<Settings />} />
+              <Route path="/signup" element={<SignUp />} />
+              <Route path="/login" element={<LogIn />} />
               <Route path="/404" element={<p>404</p>} />
               <Route path="*" element={<Navigate to="/404" />} />
-              <Route
-                path={`${config.magic_link_frontend_url}`}
+              {/* <Route
+                path={`${config.frontend_urls.magic_link}`}
                 element={<LogInWithMagicLink />}
-              />
+              /> */}
             </Routes>
             <Footer />
           </BrowserRouter>

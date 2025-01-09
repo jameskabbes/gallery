@@ -67,7 +67,7 @@ function Menu() {
           element: <span>Sign Up</span>,
           onClick: () => {
             setIsMenuVisible(false);
-            authModalsContext.activate('signUp');
+            authModalsContext.activate('requestSignUp');
           },
         },
       ];

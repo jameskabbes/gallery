@@ -2,9 +2,9 @@ import React, { useContext, useEffect, useState } from 'react';
 import { AuthModalsContextType, AuthModalType, ModalType } from '../types';
 import { ModalsContext } from './Modals';
 import { LogIn } from '../components/Auth/LogIn';
-import { SignUp } from '../components/Auth/SignUp';
-import { SendMagicLink } from '../components/Auth/SendMagicLink';
-import { LogInWithOTP } from '../components/Auth/LogInWithOTP';
+import { RequestSignUp } from '../components/Auth/SignUp';
+import { RequestMagicLink } from '../components/Auth/MagicLink';
+import { RequestOTP } from '../components/Auth/OTP';
 
 const AuthModalsContext = React.createContext<AuthModalsContextType>({
   activate: () => {},
@@ -12,9 +12,9 @@ const AuthModalsContext = React.createContext<AuthModalsContextType>({
 
 const authModalMapping = {
   logIn: LogIn,
-  signUp: SignUp,
-  sendMagicLink: SendMagicLink,
-  logInWithOTP: LogInWithOTP,
+  requestSignUp: RequestSignUp,
+  requestMagicLink: RequestMagicLink,
+  requestOTP: RequestMagicLink,
 };
 
 function AuthModalsContextProvider({

@@ -19,12 +19,8 @@ import { Surface } from '../Utils/Surface';
 import { postLogin, PostLogInResponses } from '../../services/api/postLogIn';
 import { ModalsContext } from '../../contexts/Modals';
 import { AuthModalType } from '../../types';
-import { useGoogleLogin } from '@react-oauth/google';
-import {
-  postLogInGoogle,
-  PostLoginGoogleResponses,
-} from '../../services/api/postLogInGoogle';
 import { SendMagicLinkContext } from '../../contexts/SendMagicLink';
+import { useLogInWithGoogle } from './useLogInWithGoogle';
 
 function LogIn() {
   const logInContext = useContext(LogInContext);
@@ -33,35 +29,6 @@ function LogIn() {
   const authModalsContext = useContext(AuthModalsContext);
   const modalsContext = useContext(ModalsContext);
   const toastContext = useContext(ToastContext);
-
-  const googleLogin = useGoogleLogin({
-    onSuccess: async (res) => {
-      const toastId = toastContext.makePending({
-        message: 'Logging in with Google...',
-      });
-
-      const { data, status } = await postLogInGoogle(authContext, {
-        access_token: res.access_token,
-      });
-
-      console.log(data, status);
-
-      if (status == 200) {
-        toastContext.update(toastId, {
-          message: 'Logged in with Google',
-          type: 'success',
-        });
-        const apiData = data as PostLoginGoogleResponses['200'];
-        authContext.updateFromApiResponse(apiData);
-        modalsContext.deleteModals([key]);
-      } else {
-        toastContext.update(toastId, {
-          message: 'Could not log in with Google',
-          type: 'error',
-        });
-      }
-    },
-  });
 
   const key: AuthModalType = 'logIn';
 
@@ -126,6 +93,26 @@ function LogIn() {
       <div className="flex-1">
         <form onSubmit={handleLogin} className="flex flex-col space-y-6">
           <header>Login</header>
+          <div className="h-[2em] flex flex-col justify-center">
+            {logInContext.loading ? (
+              <div className="flex flex-row justify-center items-center space-x-2">
+                <Loader1 />
+                <span className="mb-0">logging in</span>
+              </div>
+            ) : logInContext.error ? (
+              <div className="flex flex-row justify-center items-center space-x-2">
+                <span className="rounded-full p-1 text-light leading-none bg-error-500">
+                  <IoWarning
+                    style={{
+                      animation: 'scaleUp 0.2s ease-in-out',
+                    }}
+                  />
+                </span>
+                <span>{logInContext.error}</span>
+              </div>
+            ) : null}
+          </div>
+
           <fieldset className="flex flex-col space-y-4">
             <section className="space-y-2">
               <label htmlFor="login-username">Username or Email</label>
@@ -149,7 +136,7 @@ function LogIn() {
               <div className="flex flex-row items-center justify-between">
                 <label htmlFor="login-password">Password</label>
                 <span
-                  onClick={() => authModalsContext.activate('logInWithOTP')}
+                  onClick={() => authModalsContext.activate('requestMagicLink')}
                   className="underline cursor-pointer"
                 >
                   Forgot Password?
@@ -183,26 +170,6 @@ function LogIn() {
             </section>
           </fieldset>
 
-          <div className="h-[2em] flex flex-col justify-center">
-            {logInContext.loading ? (
-              <div className="flex flex-row justify-center items-center space-x-2">
-                <Loader1 />
-                <span className="mb-0">logging in</span>
-              </div>
-            ) : logInContext.error ? (
-              <div className="flex flex-row justify-center items-center space-x-2">
-                <span className="rounded-full p-1 text-light leading-none bg-error-500">
-                  <IoWarning
-                    style={{
-                      animation: 'scaleUp 0.2s ease-in-out',
-                    }}
-                  />
-                </span>
-                <span>{logInContext.error}</span>
-              </div>
-            ) : null}
-          </div>
-
           <ButtonSubmit disabled={!logInContext.valid}>Login</ButtonSubmit>
         </form>
         <Surface keepParentMode={true}>
@@ -217,35 +184,7 @@ function LogIn() {
           <Button2
             className="w-full relative"
             onClick={() => {
-              authModalsContext.activate('signUp');
-            }}
-          >
-            <h6 className="text-center mb-0 ">Sign Up</h6>
-            <IoPersonAddSharp className="absolute left-4 top-1/2 transform -translate-y-1/2" />
-          </Button2>
-
-          <Button2
-            className="w-full relative"
-            onClick={() => {
-              authModalsContext.activate('sendMagicLink');
-            }}
-          >
-            <h6 className="text-center mb-0 ">Login with Magic Link</h6>
-            <IoColorWand className="absolute left-4 top-1/2 transform -translate-y-1/2" />
-          </Button2>
-          <Button2
-            className="w-full relative"
-            onClick={() => {
-              authModalsContext.activate('logInWithOTP');
-            }}
-          >
-            <h6 className="text-center mb-0 ">Login with Code</h6>
-            <IoPhonePortraitOutline className="absolute left-4 top-1/2 transform -translate-y-1/2" />
-          </Button2>
-          <Button2
-            className="w-full relative"
-            onClick={() => {
-              googleLogin();
+              useLogInWithGoogle();
             }}
           >
             <h6 className="text-center mb-0 ">Login with Google</h6>
@@ -255,6 +194,35 @@ function LogIn() {
               className="absolute left-4 top-1/2 transform -translate-y-1/2"
               style={{ width: '1rem', height: '1rem' }}
             />
+          </Button2>
+
+          <Button2
+            className="w-full relative"
+            onClick={() => {
+              authModalsContext.activate('requestSignUp');
+            }}
+          >
+            <h6 className="text-center mb-0 ">Sign Up</h6>
+            <IoPersonAddSharp className="absolute left-4 top-1/2 transform -translate-y-1/2" />
+          </Button2>
+
+          <Button2
+            className="w-full relative"
+            onClick={() => {
+              authModalsContext.activate('requestMagicLink');
+            }}
+          >
+            <h6 className="text-center mb-0 ">Login with Magic Link</h6>
+            <IoColorWand className="absolute left-4 top-1/2 transform -translate-y-1/2" />
+          </Button2>
+          <Button2
+            className="w-full relative"
+            onClick={() => {
+              authModalsContext.activate('requestOTP');
+            }}
+          >
+            <h6 className="text-center mb-0 ">Login with Code</h6>
+            <IoPhonePortraitOutline className="absolute left-4 top-1/2 transform -translate-y-1/2" />
           </Button2>
         </div>
       </div>

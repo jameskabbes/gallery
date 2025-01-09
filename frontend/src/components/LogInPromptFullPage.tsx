@@ -8,7 +8,7 @@ function LogInPromptFullPage() {
   return (
     <div className="flex-1 flex flex-col justify-center">
       <div className="flex flex-row justify-center">
-        <Button1 onClick={() => authModalsContext.setActiveModalType('logIn')}>
+        <Button1 onClick={() => authModalsContext.activate('logIn')}>
           Log In
         </Button1>
       </div>

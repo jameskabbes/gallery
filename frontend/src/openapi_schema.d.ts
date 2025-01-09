@@ -6,40 +6,44 @@
 
 export interface paths {
   "/auth/": {
-    /** Auth Root */
-    get: operations["auth_root_auth__get"];
+    /** Get Auth Root */
+    get: operations["get_auth_root_auth__get"];
   };
   "/auth/token/": {
     /** Post Token */
     post: operations["post_token_auth_token__post"];
   };
   "/auth/login/password/": {
-    /** Login With Password */
-    post: operations["login_with_password_auth_login_password__post"];
-  };
-  "/auth/signup/": {
-    /** Sign Up */
-    post: operations["sign_up_auth_signup__post"];
-  };
-  "/auth/send-magic-link/": {
-    /** Post Send Magic Link */
-    post: operations["post_send_magic_link_auth_send_magic_link__post"];
+    /** Post Login Password */
+    post: operations["post_login_password_auth_login_password__post"];
   };
   "/auth/login/magic-link/": {
-    /** Login With Magic Link */
-    post: operations["login_with_magic_link_auth_login_magic_link__post"];
-  };
-  "/auth/send-otp/": {
-    /** Post Send Otp */
-    post: operations["post_send_otp_auth_send_otp__post"];
+    /** Post Login Magic Link */
+    post: operations["post_login_magic_link_auth_login_magic_link__post"];
   };
   "/auth/login/otp/": {
-    /** Login With Otp */
-    post: operations["login_with_otp_auth_login_otp__post"];
+    /** Post Login Otp */
+    post: operations["post_login_otp_auth_login_otp__post"];
   };
   "/auth/login/google/": {
-    /** Login With Google */
-    post: operations["login_with_google_auth_login_google__post"];
+    /** Post Login Google */
+    post: operations["post_login_google_auth_login_google__post"];
+  };
+  "/auth/signup/": {
+    /** Post Signup */
+    post: operations["post_signup_auth_signup__post"];
+  };
+  "/auth/request-signup/": {
+    /** Post Request Sign Up */
+    post: operations["post_request_sign_up_auth_request_signup__post"];
+  };
+  "/auth/request-magic-link/": {
+    /** Post Send Magic Link */
+    post: operations["post_send_magic_link_auth_request_magic_link__post"];
+  };
+  "/auth/request-otp/": {
+    /** Post Send Otp */
+    post: operations["post_send_otp_auth_request_otp__post"];
   };
   "/auth/logout/": {
     /** Logout */
@@ -64,10 +68,6 @@ export interface paths {
   "/users/available/username/{username}/": {
     /** Get User Username Available */
     get: operations["get_user_username_available_users_available_username__username___get"];
-  };
-  "/users/available/email/{email}/": {
-    /** Get User Email Available */
-    get: operations["get_user_email_available_users_available_email__email___get"];
   };
   "/admin/users/{user_id}/": {
     /** Get User By Id Admin */
@@ -249,54 +249,15 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
-    /** ApiKey */
-    ApiKey: {
-      /** User Id */
-      user_id: string;
-      /**
-       * Issued
-       * Format: date-time
-       */
-      issued: string;
-      /**
-       * Expiry
-       * Format: date-time
-       */
-      expiry: string;
-      /** Id */
-      id: string;
-      /** Name */
-      name: string;
-    };
-    /** ApiKeyCreate */
-    ApiKeyCreate: {
-      /** Lifespan */
-      lifespan?: string | null;
-      /** Expiry */
-      expiry?: string | null;
-      /** Name */
-      name: string;
-    };
-    /** ApiKeyCreateAdmin */
-    ApiKeyCreateAdmin: {
-      /** User Id */
-      user_id: string;
-      /** Lifespan */
-      lifespan?: string | null;
-      /** Expiry */
-      expiry?: string | null;
-      /** Name */
-      name: string;
-    };
     /** ApiKeyJWTResponse */
     ApiKeyJWTResponse: {
       /** Jwt */
       jwt: string;
     };
-    /** ApiKeyPrivate */
-    ApiKeyPrivate: {
-      /** User Id */
-      user_id: string;
+    /** ApiKeyModel */
+    ApiKeyModel: {
+      /** Id */
+      id: string;
       /**
        * Issued
        * Format: date-time
@@ -307,43 +268,23 @@ export interface components {
        * Format: date-time
        */
       expiry: string;
-      /** Id */
-      id: string;
+      /** User Id */
+      user_id: string;
       /** Name */
       name: string;
-      /** Scope Ids */
-      scope_ids: number[];
-    };
-    /** ApiKeyUpdate */
-    ApiKeyUpdate: {
-      /** Lifespan */
-      lifespan?: string | null;
-      /** Expiry */
-      expiry?: string | null;
-      /** Name */
-      name?: string | null;
-    };
-    /** ApiKeyUpdateAdmin */
-    ApiKeyUpdateAdmin: {
-      /** Lifespan */
-      lifespan?: string | null;
-      /** Expiry */
-      expiry?: string | null;
-      /** Name */
-      name?: string | null;
     };
     /** AuthCredentialIdAndType */
     AuthCredentialIdAndType: {
       /** Id */
-      id: string;
+      id: string | null;
       /**
        * Type
        * @enum {string}
        */
-      type: "access_token" | "api_key" | "otp";
+      type: "access_token" | "api_key" | "otp" | "sign_up" | "change_email";
     };
-    /** Body_login_with_password_auth_login_password__post */
-    Body_login_with_password_auth_login_password__post: {
+    /** Body_post_login_password_auth_login_password__post */
+    Body_post_login_password_auth_login_password__post: {
       /**
        * Stay Signed In
        * @default false
@@ -364,6 +305,14 @@ export interface components {
       client_id?: string | null;
       /** Client Secret */
       client_secret?: string | null;
+    };
+    /** Body_post_request_sign_up_auth_request_signup__post */
+    Body_post_request_sign_up_auth_request_signup__post: {
+      /**
+       * Email
+       * Format: email
+       */
+      email: string;
     };
     /** Body_post_token_auth_token__post */
     Body_post_token_auth_token__post: {
@@ -388,21 +337,6 @@ export interface components {
       /** Client Secret */
       client_secret?: string | null;
     };
-    /** Body_sign_up_auth_signup__post */
-    Body_sign_up_auth_signup__post: {
-      /**
-       * Email
-       * Format: email
-       */
-      email: string;
-      /** Password */
-      password: string;
-      /**
-       * Stay Signed In
-       * @default false
-       */
-      stay_signed_in?: boolean;
-    };
     /** Body_upload_file_to_gallery_galleries__gallery_id__upload__post */
     Body_upload_file_to_gallery_galleries__gallery_id__upload__post: {
       /**
@@ -416,8 +350,8 @@ export interface components {
       /** Detail */
       detail: string;
     };
-    /** Gallery */
-    Gallery: {
+    /** GalleryModel */
+    GalleryModel: {
       /** Id */
       id: string;
       /** Name */
@@ -436,99 +370,9 @@ export interface components {
        */
       date: string;
     };
-    /** GalleryCreate */
-    GalleryCreate: {
-      /** Name */
-      name: string;
-      /** Visibility Level */
-      visibility_level: number;
-      /** Parent Id */
-      parent_id?: string | null;
-      /** Description */
-      description?: string | null;
-      /** Date */
-      date?: string | null;
-    };
-    /** GalleryCreateAdmin */
-    GalleryCreateAdmin: {
-      /** Name */
-      name: string;
-      /** Visibility Level */
-      visibility_level: number;
-      /** Parent Id */
-      parent_id?: string | null;
-      /** Description */
-      description?: string | null;
-      /** Date */
-      date?: string | null;
-      /** User Id */
-      user_id: string;
-    };
-    /** GalleryPrivate */
-    GalleryPrivate: {
-      /** Id */
-      id: string;
-      /** User Id */
-      user_id: string;
-      /** Name */
-      name: string;
-      /** Parent Id */
-      parent_id: string | null;
-      /** Description */
-      description: string | null;
-      /** Date */
-      date: string | null;
-      /** Visibility Level */
-      visibility_level: number;
-    };
-    /** GalleryPublic */
-    GalleryPublic: {
-      /** Id */
-      id: string;
-      /** User Id */
-      user_id: string;
-      /** Name */
-      name: string;
-      /** Parent Id */
-      parent_id: string | null;
-      /** Description */
-      description: string | null;
-      /** Date */
-      date: string | null;
-    };
-    /** GalleryUpdate */
-    GalleryUpdate: {
-      /** Name */
-      name?: string | null;
-      /** User Id */
-      user_id?: string | null;
-      /** Visibility Level */
-      visibility_level?: number | null;
-      /** Parent Id */
-      parent_id?: string | null;
-      /** Description */
-      description?: string | null;
-      /** Date */
-      date?: string | null;
-    };
-    /** GalleryUpdateAdmin */
-    GalleryUpdateAdmin: {
-      /** Name */
-      name?: string | null;
-      /** User Id */
-      user_id?: string | null;
-      /** Visibility Level */
-      visibility_level?: number | null;
-      /** Parent Id */
-      parent_id?: string | null;
-      /** Description */
-      description?: string | null;
-      /** Date */
-      date?: string | null;
-    };
     /** GetAuthBaseReturn */
     GetAuthBaseReturn: {
-      user: components["schemas"]["UserPrivate"] | null;
+      user: components["schemas"]["gallery__models__User__Private"] | null;
       /** Scope Ids */
       scope_ids: number[] | null;
       /** Expiry */
@@ -542,11 +386,11 @@ export interface components {
     /** GetGalleryPageResponse */
     GetGalleryPageResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
-      gallery: components["schemas"]["GalleryPublic"];
+      gallery: components["schemas"]["gallery__models__Gallery__Public"];
       /** Parents */
-      parents: components["schemas"]["GalleryPublic"][];
+      parents: components["schemas"]["gallery__models__Gallery__Public"][];
       /** Children */
-      children: components["schemas"]["GalleryPublic"][];
+      children: components["schemas"]["gallery__models__Gallery__Public"][];
     };
     /** GetHomePageResponse */
     GetHomePageResponse: {
@@ -555,7 +399,7 @@ export interface components {
     /** GetProfilePageResponse */
     GetProfilePageResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
-      user?: components["schemas"]["UserPrivate"] | null;
+      user?: components["schemas"]["gallery__models__User__Private"] | null;
     };
     /** GetSettingsApiKeysPageResponse */
     GetSettingsApiKeysPageResponse: {
@@ -563,7 +407,7 @@ export interface components {
       /** Api Key Count */
       api_key_count: number;
       /** Api Keys */
-      api_keys: components["schemas"]["ApiKeyPrivate"][];
+      api_keys: components["schemas"]["gallery__models__ApiKey__Private"][];
     };
     /** GetSettingsPageResponse */
     GetSettingsPageResponse: {
@@ -575,7 +419,7 @@ export interface components {
       /** User Access Token Count */
       user_access_token_count: number;
       /** User Access Tokens */
-      user_access_tokens: components["schemas"]["UserAccessToken"][];
+      user_access_tokens: components["schemas"]["UserAccessTokenModel"][];
     };
     /** GetStylesPageResponse */
     GetStylesPageResponse: {
@@ -595,25 +439,12 @@ export interface components {
     LoginWithGoogleResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
     };
-    /** LoginWithMagicLinkRequest */
-    LoginWithMagicLinkRequest: {
-      /**
-       * Stay Signed In
-       * @default false
-       */
-      stay_signed_in?: boolean;
-    };
     /** LoginWithMagicLinkResponse */
     LoginWithMagicLinkResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
     };
     /** LoginWithOTPRequest */
     LoginWithOTPRequest: {
-      /**
-       * Stay Signed In
-       * @default false
-       */
-      stay_signed_in?: boolean;
       /** Code */
       code: string;
       /** Email */
@@ -634,8 +465,12 @@ export interface components {
       /** Detail */
       detail: string;
     };
-    /** SendMagicLinkRequest */
-    SendMagicLinkRequest: {
+    /** PostRequestSignUpResponse */
+    PostRequestSignUpResponse: Record<string, never>;
+    /** PostSignUpResponse */
+    PostSignUpResponse: Record<string, never>;
+    /** RequestMagicLinkRequest */
+    RequestMagicLinkRequest: {
       /**
        * Stay Signed In
        * @default false
@@ -646,9 +481,17 @@ export interface components {
       /** Phone Number */
       phone_number?: string | null;
     };
-    /** SignupResponse */
-    SignupResponse: {
-      auth: components["schemas"]["GetAuthBaseReturn"];
+    /** RequestOTPRequest */
+    RequestOTPRequest: {
+      /**
+       * Stay Signed In
+       * @default false
+       */
+      stay_signed_in?: boolean;
+      /** Email */
+      email: string | null;
+      /** Phone Number */
+      phone_number: string | null;
     };
     /** TokenResponse */
     TokenResponse: {
@@ -662,8 +505,25 @@ export interface components {
       /** Message */
       message: string;
     };
-    /** User */
-    User: {
+    /** UserAccessTokenModel */
+    UserAccessTokenModel: {
+      /** Id */
+      id: string;
+      /**
+       * Issued
+       * Format: date-time
+       */
+      issued: string;
+      /**
+       * Expiry
+       * Format: date-time
+       */
+      expiry: string;
+      /** User Id */
+      user_id: string;
+    };
+    /** UserModel */
+    UserModel: {
       /** Id */
       id: string;
       /**
@@ -676,14 +536,56 @@ export interface components {
       /** Username */
       username: string;
       /** Hashed Password */
-      hashed_password: string | null;
+      hashed_password: string;
       /** User Role Id */
       user_role_id: number;
     };
-    /** UserAccessToken */
-    UserAccessToken: {
+    /** ValidationError */
+    ValidationError: {
+      /** Location */
+      loc: (string | number)[];
+      /** Message */
+      msg: string;
+      /** Error Type */
+      type: string;
+    };
+    /** AdminCreate */
+    gallery__models__ApiKey__AdminCreate: {
+      /** Lifespan */
+      lifespan?: string | null;
+      /** Expiry */
+      expiry?: string | null;
+      /** Name */
+      name: string;
       /** User Id */
       user_id: string;
+    };
+    /** AdminUpdate */
+    gallery__models__ApiKey__AdminUpdate: {
+      /** Lifespan */
+      lifespan?: string | null;
+      /** Expiry */
+      expiry?: string | null;
+      /** Name */
+      name?: string | null;
+    };
+    /** Create */
+    gallery__models__ApiKey__Create: {
+      /** Lifespan */
+      lifespan?: string | null;
+      /** Expiry */
+      expiry?: string | null;
+      /** Name */
+      name: string;
+    };
+    /** Private */
+    gallery__models__ApiKey__Private: {
+      /** Id */
+      id: string;
+      /** User Id */
+      user_id: string;
+      /** Name */
+      name: string;
       /**
        * Issued
        * Format: date-time
@@ -694,36 +596,148 @@ export interface components {
        * Format: date-time
        */
       expiry: string;
-      /** Id */
-      id: string;
+      /** Scope Ids */
+      scope_ids: number[];
     };
-    /** UserAccessTokenCreateAdmin */
-    UserAccessTokenCreateAdmin: {
-      /** User Id */
-      user_id: string;
+    /** Update */
+    gallery__models__ApiKey__Update: {
       /** Lifespan */
       lifespan?: string | null;
       /** Expiry */
       expiry?: string | null;
+      /** Name */
+      name?: string | null;
     };
-    /** UserCreateAdmin */
-    UserCreateAdmin: {
-      /**
-       * Email
-       * Format: email
-       */
-      email: string;
+    /** AdminCreate */
+    gallery__models__Gallery__AdminCreate: {
+      /** Name */
+      name: string;
+      /** Visibility Level */
+      visibility_level: number;
+      /** Parent Id */
+      parent_id?: string | null;
+      /** Description */
+      description?: string | null;
+      /** Date */
+      date?: string | null;
+      /** User Id */
+      user_id: string;
+    };
+    /** AdminUpdate */
+    gallery__models__Gallery__AdminUpdate: {
+      /** Name */
+      name?: string | null;
+      /** User Id */
+      user_id?: string | null;
+      /** Visibility Level */
+      visibility_level?: number | null;
+      /** Parent Id */
+      parent_id?: string | null;
+      /** Description */
+      description?: string | null;
+      /** Date */
+      date?: string | null;
+    };
+    /** Create */
+    gallery__models__Gallery__Create: {
+      /** Name */
+      name: string;
+      /** Visibility Level */
+      visibility_level: number;
+      /** Parent Id */
+      parent_id: string;
+      /** Description */
+      description?: string | null;
+      /** Date */
+      date?: string | null;
+    };
+    /** Private */
+    gallery__models__Gallery__Private: {
+      /** Id */
+      id: string;
+      /** User Id */
+      user_id: string;
+      /** Name */
+      name: string;
+      /** Parent Id */
+      parent_id: string | null;
+      /** Description */
+      description: string | null;
+      /** Date */
+      date: string | null;
+      /** Visibility Level */
+      visibility_level: number;
+    };
+    /** Public */
+    gallery__models__Gallery__Public: {
+      /** Id */
+      id: string;
+      /** User Id */
+      user_id: string;
+      /** Name */
+      name: string;
+      /** Parent Id */
+      parent_id: string | null;
+      /** Description */
+      description: string | null;
+      /** Date */
+      date: string | null;
+    };
+    /** Update */
+    gallery__models__Gallery__Update: {
+      /** Name */
+      name?: string | null;
+      /** User Id */
+      user_id?: string | null;
+      /** Visibility Level */
+      visibility_level?: number | null;
+      /** Parent Id */
+      parent_id?: string | null;
+      /** Description */
+      description?: string | null;
+      /** Date */
+      date?: string | null;
+    };
+    /** AdminCreate */
+    gallery__models__UserAccessToken__AdminCreate: {
+      /** Lifespan */
+      lifespan?: string | null;
+      /** Expiry */
+      expiry?: string | null;
+      /** User Id */
+      user_id: string;
+    };
+    /** AdminCreate */
+    gallery__models__User__AdminCreate: {
       /** Phone Number */
       phone_number?: string | null;
       /** Username */
       username?: string | null;
       /** Password */
       password?: string | null;
+      /**
+       * Email
+       * Format: email
+       */
+      email: string;
       /** User Role Id */
       user_role_id: number;
     };
-    /** UserPrivate */
-    UserPrivate: {
+    /** AdminUpdate */
+    gallery__models__User__AdminUpdate: {
+      /** Phone Number */
+      phone_number?: string | null;
+      /** Username */
+      username?: string | null;
+      /** Password */
+      password?: string | null;
+      /** Email */
+      email?: string | null;
+      /** User Role Id */
+      user_role_id?: number | null;
+    };
+    /** Private */
+    gallery__models__User__Private: {
       /** Id */
       id: string;
       /** Username */
@@ -736,43 +750,23 @@ export interface components {
       /** User Role Id */
       user_role_id: number;
     };
-    /** UserPublic */
-    UserPublic: {
+    /** Public */
+    gallery__models__User__Public: {
       /** Id */
       id: string;
       /** Username */
       username: string | null;
     };
-    /** UserUpdate */
-    UserUpdate: {
-      /** Email */
-      email?: string | null;
+    /** Update */
+    gallery__models__User__Update: {
       /** Phone Number */
       phone_number?: string | null;
-      /** Password */
-      password?: string | null;
       /** Username */
       username?: string | null;
-    };
-    /** UserUpdateAdmin */
-    UserUpdateAdmin: {
+      /** Password */
+      password?: string | null;
       /** Email */
       email?: string | null;
-      /** Phone Number */
-      phone_number?: string | null;
-      /** Password */
-      password?: string | null;
-      /** Username */
-      username?: string | null;
-    };
-    /** ValidationError */
-    ValidationError: {
-      /** Location */
-      loc: (string | number)[];
-      /** Message */
-      msg: string;
-      /** Error Type */
-      type: string;
     };
   };
   responses: never;
@@ -788,8 +782,8 @@ export type external = Record<string, never>;
 
 export interface operations {
 
-  /** Auth Root */
-  auth_root_auth__get: {
+  /** Get Auth Root */
+  get_auth_root_auth__get: {
     responses: {
       /** @description Successful Response */
       200: {
@@ -821,11 +815,11 @@ export interface operations {
       };
     };
   };
-  /** Login With Password */
-  login_with_password_auth_login_password__post: {
+  /** Post Login Password */
+  post_login_password_auth_login_password__post: {
     requestBody: {
       content: {
-        "application/x-www-form-urlencoded": components["schemas"]["Body_login_with_password_auth_login_password__post"];
+        "application/x-www-form-urlencoded": components["schemas"]["Body_post_login_password_auth_login_password__post"];
       };
     };
     responses: {
@@ -849,61 +843,11 @@ export interface operations {
       };
     };
   };
-  /** Sign Up */
-  sign_up_auth_signup__post: {
-    requestBody: {
-      content: {
-        "application/x-www-form-urlencoded": components["schemas"]["Body_sign_up_auth_signup__post"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["SignupResponse"];
-        };
-      };
-      /** @description User already exists */
-      409: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Post Send Magic Link */
-  post_send_magic_link_auth_send_magic_link__post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["SendMagicLinkRequest"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Login With Magic Link */
-  login_with_magic_link_auth_login_magic_link__post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["LoginWithMagicLinkRequest"];
+  /** Post Login Magic Link */
+  post_login_magic_link_auth_login_magic_link__post: {
+    parameters: {
+      query?: {
+        token?: string;
       };
     };
     responses: {
@@ -927,30 +871,8 @@ export interface operations {
       };
     };
   };
-  /** Post Send Otp */
-  post_send_otp_auth_send_otp__post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["SendMagicLinkRequest"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Login With Otp */
-  login_with_otp_auth_login_otp__post: {
+  /** Post Login Otp */
+  post_login_otp_auth_login_otp__post: {
     requestBody: {
       content: {
         "application/json": components["schemas"]["LoginWithOTPRequest"];
@@ -977,8 +899,8 @@ export interface operations {
       };
     };
   };
-  /** Login With Google */
-  login_with_google_auth_login_google__post: {
+  /** Post Login Google */
+  post_login_google_auth_login_google__post: {
     requestBody: {
       content: {
         "application/json": components["schemas"]["LoginWithGoogleRequest"];
@@ -994,6 +916,100 @@ export interface operations {
       /** @description Invalid token */
       400: {
         content: never;
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Post Signup */
+  post_signup_auth_signup__post: {
+    parameters: {
+      query?: {
+        token?: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["PostSignUpResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Post Request Sign Up */
+  post_request_sign_up_auth_request_signup__post: {
+    requestBody: {
+      content: {
+        "application/x-www-form-urlencoded": components["schemas"]["Body_post_request_sign_up_auth_request_signup__post"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["PostRequestSignUpResponse"];
+        };
+      };
+      /** @description UserModel already exists */
+      409: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Post Send Magic Link */
+  post_send_magic_link_auth_request_magic_link__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RequestMagicLinkRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Post Send Otp */
+  post_send_otp_auth_request_otp__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RequestOTPRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
       };
       /** @description Validation Error */
       422: {
@@ -1020,7 +1036,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["UserPrivate"];
+          "application/json": components["schemas"]["gallery__models__User__Private"];
         };
       };
     };
@@ -1038,14 +1054,14 @@ export interface operations {
   patch_self_users_me__patch: {
     requestBody: {
       content: {
-        "application/json": components["schemas"]["UserUpdate"];
+        "application/json": components["schemas"]["gallery__models__User__Update"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["UserPrivate"];
+          "application/json": components["schemas"]["gallery__models__User__Private"];
         };
       };
       /** @description Validation Error */
@@ -1067,7 +1083,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["UserPublic"];
+          "application/json": components["schemas"]["gallery__models__User__Public"];
         };
       };
       /** @description Validation Error */
@@ -1092,7 +1108,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["UserPublic"][];
+          "application/json": components["schemas"]["gallery__models__User__Public"][];
         };
       };
       /** @description Validation Error */
@@ -1131,34 +1147,6 @@ export interface operations {
       };
     };
   };
-  /** Get User Email Available */
-  get_user_email_available_users_available_email__email___get: {
-    parameters: {
-      path: {
-        email: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Email already exists */
-      409: {
-        content: {
-          "application/json": components["schemas"]["DetailOnlyResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
   /** Get User By Id Admin */
   get_user_by_id_admin_admin_users__user_id___get: {
     parameters: {
@@ -1170,7 +1158,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["User"];
+          "application/json": components["schemas"]["UserModel"];
         };
       };
       /** @description Validation Error */
@@ -1210,14 +1198,14 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": components["schemas"]["UserUpdateAdmin"];
+        "application/json": components["schemas"]["gallery__models__User__AdminUpdate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["User"];
+          "application/json": components["schemas"]["UserModel"];
         };
       };
       /** @description Validation Error */
@@ -1242,7 +1230,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["User"][];
+          "application/json": components["schemas"]["UserModel"][];
         };
       };
       /** @description Validation Error */
@@ -1257,14 +1245,14 @@ export interface operations {
   post_user_admin_admin_users__post: {
     requestBody: {
       content: {
-        "application/json": components["schemas"]["UserCreateAdmin"];
+        "application/json": components["schemas"]["gallery__models__User__AdminCreate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["User"];
+          "application/json": components["schemas"]["UserModel"];
         };
       };
       /** @description Validation Error */
@@ -1286,7 +1274,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["UserAccessToken"];
+          "application/json": components["schemas"]["UserAccessTokenModel"];
         };
       };
       /** @description Validation Error */
@@ -1331,7 +1319,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["UserAccessToken"][];
+          "application/json": components["schemas"]["UserAccessTokenModel"][];
         };
       };
       /** @description User does not have permission to view another user's access tokens */
@@ -1340,7 +1328,7 @@ export interface operations {
           "application/json": components["schemas"]["DetailOnlyResponse"];
         };
       };
-      /** @description User not found */
+      /** @description UserModel not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
@@ -1376,7 +1364,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["UserAccessToken"];
+          "application/json": components["schemas"]["UserAccessTokenModel"];
         };
       };
       /** @description Validation Error */
@@ -1411,14 +1399,14 @@ export interface operations {
   post_user_access_token_admin_admin_user_access_tokens__post: {
     requestBody: {
       content: {
-        "application/json": components["schemas"]["UserAccessTokenCreateAdmin"];
+        "application/json": components["schemas"]["gallery__models__UserAccessToken__AdminCreate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["UserAccessToken"];
+          "application/json": components["schemas"]["UserAccessTokenModel"];
         };
       };
       /** @description Validation Error */
@@ -1446,10 +1434,10 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["UserAccessToken"][];
+          "application/json": components["schemas"]["UserAccessTokenModel"][];
         };
       };
-      /** @description User not found */
+      /** @description UserModel not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
@@ -1474,7 +1462,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ApiKeyPrivate"];
+          "application/json": components["schemas"]["gallery__models__ApiKey__Private"];
         };
       };
       /** @description Validation Error */
@@ -1514,14 +1502,14 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": components["schemas"]["ApiKeyUpdate"];
+        "application/json": components["schemas"]["gallery__models__ApiKey__Update"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ApiKeyPrivate"];
+          "application/json": components["schemas"]["gallery__models__ApiKey__Private"];
         };
       };
       /** @description Validation Error */
@@ -1541,16 +1529,16 @@ export interface operations {
         /** @description Index of the first result */
         offset?: number;
         /** @description Ordered series of fields to sort the results by, in the order they should be applied */
-        order_by?: ("issued" | "expiry" | "name")[];
+        order_by?: string[];
         /** @description Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields */
-        order_by_desc?: ("issued" | "expiry" | "name")[];
+        order_by_desc?: string[];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ApiKeyPrivate"][];
+          "application/json": components["schemas"]["gallery__models__ApiKey__Private"][];
         };
       };
       /** @description Validation Error */
@@ -1565,14 +1553,14 @@ export interface operations {
   post_api_key_to_user_api_keys__post: {
     requestBody: {
       content: {
-        "application/json": components["schemas"]["ApiKeyCreate"];
+        "application/json": components["schemas"]["gallery__models__ApiKey__Create"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ApiKeyPrivate"];
+          "application/json": components["schemas"]["gallery__models__ApiKey__Private"];
         };
       };
       /** @description Validation Error */
@@ -1597,7 +1585,7 @@ export interface operations {
           "application/json": components["schemas"]["ApiKeyJWTResponse"];
         };
       };
-      /** @description ApiKey not found */
+      /** @description ApiKeyModel not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
@@ -1636,7 +1624,7 @@ export interface operations {
           "application/json": unknown;
         };
       };
-      /** @description ApiKey already exists */
+      /** @description ApiKeyModel already exists */
       409: {
         content: {
           "application/json": components["schemas"]["DetailOnlyResponse"];
@@ -1661,7 +1649,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ApiKey"];
+          "application/json": components["schemas"]["ApiKeyModel"];
         };
       };
       /** @description Validation Error */
@@ -1701,14 +1689,14 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": components["schemas"]["ApiKeyUpdateAdmin"];
+        "application/json": components["schemas"]["gallery__models__ApiKey__AdminUpdate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ApiKey"];
+          "application/json": components["schemas"]["ApiKeyModel"];
         };
       };
       /** @description Validation Error */
@@ -1723,14 +1711,14 @@ export interface operations {
   post_api_key_to_user_admin_admin_api_keys__post: {
     requestBody: {
       content: {
-        "application/json": components["schemas"]["ApiKeyCreateAdmin"];
+        "application/json": components["schemas"]["gallery__models__ApiKey__AdminCreate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ApiKey"];
+          "application/json": components["schemas"]["ApiKeyModel"];
         };
       };
       /** @description Validation Error */
@@ -1750,9 +1738,9 @@ export interface operations {
         /** @description Index of the first result */
         offset?: number;
         /** @description Ordered series of fields to sort the results by, in the order they should be applied */
-        order_by?: ("issued" | "expiry" | "name")[];
+        order_by?: string[];
         /** @description Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields */
-        order_by_desc?: ("issued" | "expiry" | "name")[];
+        order_by_desc?: string[];
       };
       path: {
         user_id: string;
@@ -1762,7 +1750,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ApiKey"][];
+          "application/json": components["schemas"]["ApiKeyModel"][];
         };
       };
       /** @description Validation Error */
@@ -1788,7 +1776,7 @@ export interface operations {
           "application/json": unknown;
         };
       };
-      /** @description ApiKey already exists */
+      /** @description ApiKeyModel already exists */
       409: {
         content: {
           "application/json": components["schemas"]["DetailOnlyResponse"];
@@ -1817,7 +1805,7 @@ export interface operations {
           "application/json": unknown;
         };
       };
-      /** @description ApiKey not found */
+      /** @description ApiKeyModel not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
@@ -1844,7 +1832,7 @@ export interface operations {
       204: {
         content: never;
       };
-      /** @description ApiKey not found */
+      /** @description ApiKeyModel not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
@@ -1873,7 +1861,7 @@ export interface operations {
           "application/json": unknown;
         };
       };
-      /** @description ApiKey not found */
+      /** @description ApiKeyModel not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
@@ -1900,7 +1888,7 @@ export interface operations {
       204: {
         content: never;
       };
-      /** @description ApiKey not found */
+      /** @description ApiKeyModel not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
@@ -1925,7 +1913,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["GalleryPublic"];
+          "application/json": components["schemas"]["gallery__models__Gallery__Public"];
         };
       };
       /** @description Validation Error */
@@ -1965,14 +1953,14 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": components["schemas"]["GalleryUpdate"];
+        "application/json": components["schemas"]["gallery__models__Gallery__Update"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["GalleryPrivate"];
+          "application/json": components["schemas"]["gallery__models__Gallery__Private"];
         };
       };
       /** @description Validation Error */
@@ -1995,7 +1983,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["GalleryPrivate"][];
+          "application/json": components["schemas"]["gallery__models__Gallery__Private"][];
         };
       };
       /** @description Validation Error */
@@ -2010,14 +1998,14 @@ export interface operations {
   post_gallery_galleries__post: {
     requestBody: {
       content: {
-        "application/json": components["schemas"]["GalleryCreate"];
+        "application/json": components["schemas"]["gallery__models__Gallery__Create"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["GalleryPrivate"];
+          "application/json": components["schemas"]["gallery__models__Gallery__Private"];
         };
       };
       /** @description Validation Error */
@@ -2112,7 +2100,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["Gallery"];
+          "application/json": components["schemas"]["GalleryModel"];
         };
       };
       /** @description Validation Error */
@@ -2152,14 +2140,14 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": components["schemas"]["GalleryUpdateAdmin"];
+        "application/json": components["schemas"]["gallery__models__Gallery__AdminUpdate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["Gallery"];
+          "application/json": components["schemas"]["GalleryModel"];
         };
       };
       /** @description Validation Error */
@@ -2174,14 +2162,14 @@ export interface operations {
   post_gallery_admin_admin_galleries__post: {
     requestBody: {
       content: {
-        "application/json": components["schemas"]["GalleryCreateAdmin"];
+        "application/json": components["schemas"]["gallery__models__Gallery__AdminCreate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["Gallery"];
+          "application/json": components["schemas"]["GalleryModel"];
         };
       };
       /** @description Validation Error */
@@ -2232,7 +2220,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["Gallery"][];
+          "application/json": components["schemas"]["GalleryModel"][];
         };
       };
       /** @description Validation Error */
@@ -2285,9 +2273,9 @@ export interface operations {
         /** @description Index of the first result */
         offset?: number;
         /** @description Ordered series of fields to sort the results by, in the order they should be applied */
-        order_by?: ("issued" | "expiry" | "name")[];
+        order_by?: string[];
         /** @description Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields */
-        order_by_desc?: ("issued" | "expiry" | "name")[];
+        order_by_desc?: string[];
       };
     };
     responses: {
@@ -2358,7 +2346,7 @@ export interface operations {
           "application/json": components["schemas"]["GetGalleryPageResponse"];
         };
       };
-      /** @description Gallery not found */
+      /** @description GalleryModel not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];

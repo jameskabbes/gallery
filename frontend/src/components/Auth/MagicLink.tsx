@@ -15,12 +15,17 @@ import { isEmailValid } from '../../services/isEmailValid';
 import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { Button2, ButtonSubmit } from '../Utils/Button';
 import { ValidatedInputCheckbox } from '../Form/ValidatedInputCheckbox';
-import { postSendMagicLink } from '../../services/api/postSendMagicLink';
 import { ModalsContext } from '../../contexts/Modals';
 import { ValidatedInputPhoneNumber } from '../Form/ValidatedInputPhoneNumber';
 import { ToastContext } from '../../contexts/Toast';
 
-function SendMagicLink() {
+import { useLocation } from 'react-router-dom';
+import { Loader1 } from '../Utils/Loader';
+import { IoWarning } from 'react-icons/io5';
+import { IoCheckmark } from 'react-icons/io5';
+import { postRequestMagicLink } from '../../services/api/postRequestMagicLink';
+
+function RequestMagicLink() {
   const authContext = useContext(AuthContext);
   const toastContext = useContext(ToastContext);
   const sendMagicLinkContext = useContext(SendMagicLinkContext);
@@ -28,7 +33,7 @@ function SendMagicLink() {
   const modalsContext = useContext(ModalsContext);
 
   const mediums: SendMagicLinkContextType['medium'][] = ['email', 'phone'];
-  const modalKey: AuthModalType = 'sendMagicLink';
+  const modalKey: AuthModalType = 'requestMagicLink';
 
   useEffect(() => {
     if (sendMagicLinkContext.medium === 'email') {
@@ -54,7 +59,7 @@ function SendMagicLink() {
       message: 'Sending Magic Link...',
     });
 
-    const { status } = await postSendMagicLink(authContext, {
+    const { status } = await postRequestMagicLink(authContext, {
       stay_signed_in: sendMagicLinkContext.staySignedIn.value,
       ...(sendMagicLinkContext.medium === 'email'
         ? { email: sendMagicLinkContext.email.value }
@@ -177,4 +182,62 @@ function SendMagicLink() {
   );
 }
 
-export { SendMagicLink };
+function VerifyMagicLink() {
+  const location = useLocation();
+  const authContext = useContext(AuthContext);
+  const searchParams = new URLSearchParams(location.search);
+  const [status, setStatus] = useState<number>(null);
+  const access_token: string = searchParams.get('access_token');
+  const stay_signed_in = searchParams.get('stay_signed_in') === 'True';
+  const modalsContext = useContext(ModalsContext);
+  const modalKey = 'modal-verify-magic-link';
+
+  useEffect(() => {
+    // async function verifyMagicLink() {
+    //   setStatus(null);
+    //   const { status } = await postRequestMagicLink(authContext, {
+    //     access_token: access_token,
+    //   });
+    //   setStatus(status);
+    // }
+    // verifyMagicLink();
+  }, [access_token, stay_signed_in]);
+
+  function Component({ status }: { status: number }) {
+    return (
+      <div className="flex flex-col items-center space-y-2">
+        <h1>
+          {status === null ? (
+            <Loader1 />
+          ) : status === 200 ? (
+            <IoCheckmark className="text-green-500" />
+          ) : (
+            <IoWarning className="text-red-500" />
+          )}
+        </h1>
+        <h4 className="text-center">
+          {status === null
+            ? 'Verifying your magic link'
+            : status === 200
+            ? 'Magic link verified. You can close this tab'
+            : 'Could not verify magic link'}
+        </h4>
+      </div>
+    );
+  }
+
+  useEffect(() => {
+    modalsContext.upsertModals([
+      {
+        Component: Component,
+        key: modalKey,
+        contentAdditionalClassName: 'max-w-[400px] w-full',
+        componentProps: { status },
+      },
+    ]);
+  }, [status]);
+
+  return null;
+}
+
+export { RequestMagicLink, VerifyMagicLink };

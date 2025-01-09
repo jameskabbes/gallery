@@ -1,9 +1,12 @@
 {
   "openapi_schema_path": "openapi_schema.json",
   "api_endpoint_base": "api",
-  "domain_name": "gallery.jameskabbes.com",
   "auth_key": "auth",
-  "magic_link_frontend_url": "/magic-link",
+  "frontend_urls": {
+    "base": "https://gallery.jameskabbes.com",
+    "verify_signup": "/welcome",
+    "verify_magic_link": "/verify-magic-link"
+  },
   "cookie_keys": {
     "access_token": "access_token"
   },
