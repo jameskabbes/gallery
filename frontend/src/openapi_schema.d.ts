@@ -249,13 +249,8 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
-    /** ApiKeyJWTResponse */
-    ApiKeyJWTResponse: {
-      /** Jwt */
-      jwt: string;
-    };
-    /** ApiKeyModel */
-    ApiKeyModel: {
+    /** ApiKey */
+    ApiKey: {
       /** Id */
       id: string;
       /**
@@ -272,6 +267,70 @@ export interface components {
       user_id: string;
       /** Name */
       name: string;
+    };
+    /** ApiKeyAdminCreate */
+    ApiKeyAdminCreate: {
+      /** Lifespan */
+      lifespan?: string | null;
+      /** Expiry */
+      expiry?: string | null;
+      /** Name */
+      name: string;
+      /** User Id */
+      user_id: string;
+    };
+    /** ApiKeyAdminUpdate */
+    ApiKeyAdminUpdate: {
+      /** Lifespan */
+      lifespan?: string | null;
+      /** Expiry */
+      expiry?: string | null;
+      /** Name */
+      name?: string | null;
+    };
+    /** ApiKeyCreate */
+    ApiKeyCreate: {
+      /** Lifespan */
+      lifespan?: string | null;
+      /** Expiry */
+      expiry?: string | null;
+      /** Name */
+      name: string;
+    };
+    /** ApiKeyJWTResponse */
+    ApiKeyJWTResponse: {
+      /** Jwt */
+      jwt: string;
+    };
+    /** ApiKeyPrivate */
+    ApiKeyPrivate: {
+      /** Id */
+      id: string;
+      /** User Id */
+      user_id: string;
+      /** Name */
+      name: string;
+      /**
+       * Issued
+       * Format: date-time
+       */
+      issued: string;
+      /**
+       * Expiry
+       * Format: date-time
+       */
+      expiry: string;
+      /** Scope Ids */
+      scope_ids: number[];
+    };
+    /** ApiKeyUpdate */
+    ApiKeyUpdate: {
+      /** Lifespan */
+      lifespan?: string | null;
+      /** Expiry */
+      expiry?: string | null;
+      /** Name */
+      name?: string | null;
     };
     /** AuthCredentialIdAndType */
     AuthCredentialIdAndType: {
@@ -342,8 +401,8 @@ export interface components {
       /** Detail */
       detail: string;
     };
-    /** GalleryModel */
-    GalleryModel: {
+    /** Gallery */
+    Gallery: {
       /** Id */
       id: string;
       /** Name */
@@ -362,9 +421,99 @@ export interface components {
        */
       date: string;
     };
+    /** GalleryAdminCreate */
+    GalleryAdminCreate: {
+      /** Name */
+      name: string;
+      /** Visibility Level */
+      visibility_level: number;
+      /** Parent Id */
+      parent_id?: string | null;
+      /** Description */
+      description?: string | null;
+      /** Date */
+      date?: string | null;
+      /** User Id */
+      user_id: string;
+    };
+    /** GalleryAdminUpdate */
+    GalleryAdminUpdate: {
+      /** Name */
+      name?: string | null;
+      /** User Id */
+      user_id?: string | null;
+      /** Visibility Level */
+      visibility_level?: number | null;
+      /** Parent Id */
+      parent_id?: string | null;
+      /** Description */
+      description?: string | null;
+      /** Date */
+      date?: string | null;
+    };
+    /** GalleryCreate */
+    GalleryCreate: {
+      /** Name */
+      name: string;
+      /** Visibility Level */
+      visibility_level: number;
+      /** Parent Id */
+      parent_id: string;
+      /** Description */
+      description?: string | null;
+      /** Date */
+      date?: string | null;
+    };
+    /** GalleryPrivate */
+    GalleryPrivate: {
+      /** Id */
+      id: string;
+      /** User Id */
+      user_id: string;
+      /** Name */
+      name: string;
+      /** Parent Id */
+      parent_id: string | null;
+      /** Description */
+      description: string | null;
+      /** Date */
+      date: string | null;
+      /** Visibility Level */
+      visibility_level: number;
+    };
+    /** GalleryPublic */
+    GalleryPublic: {
+      /** Id */
+      id: string;
+      /** User Id */
+      user_id: string;
+      /** Name */
+      name: string;
+      /** Parent Id */
+      parent_id: string | null;
+      /** Description */
+      description: string | null;
+      /** Date */
+      date: string | null;
+    };
+    /** GalleryUpdate */
+    GalleryUpdate: {
+      /** Name */
+      name?: string | null;
+      /** User Id */
+      user_id?: string | null;
+      /** Visibility Level */
+      visibility_level?: number | null;
+      /** Parent Id */
+      parent_id?: string | null;
+      /** Description */
+      description?: string | null;
+      /** Date */
+      date?: string | null;
+    };
     /** GetAuthBaseReturn */
     GetAuthBaseReturn: {
-      user: components["schemas"]["gallery__models__User__Private"] | null;
+      user: components["schemas"]["UserPrivate"] | null;
       /** Scope Ids */
       scope_ids: number[] | null;
       /** Expiry */
@@ -378,11 +527,11 @@ export interface components {
     /** GetGalleryPageResponse */
     GetGalleryPageResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
-      gallery: components["schemas"]["gallery__models__Gallery__Public"];
+      gallery: components["schemas"]["GalleryPublic"];
       /** Parents */
-      parents: components["schemas"]["gallery__models__Gallery__Public"][];
+      parents: components["schemas"]["GalleryPublic"][];
       /** Children */
-      children: components["schemas"]["gallery__models__Gallery__Public"][];
+      children: components["schemas"]["GalleryPublic"][];
     };
     /** GetHomePageResponse */
     GetHomePageResponse: {
@@ -391,7 +540,7 @@ export interface components {
     /** GetProfilePageResponse */
     GetProfilePageResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
-      user?: components["schemas"]["gallery__models__User__Private"] | null;
+      user?: components["schemas"]["UserPrivate"] | null;
     };
     /** GetSettingsApiKeysPageResponse */
     GetSettingsApiKeysPageResponse: {
@@ -399,7 +548,7 @@ export interface components {
       /** Api Key Count */
       api_key_count: number;
       /** Api Keys */
-      api_keys: components["schemas"]["gallery__models__ApiKey__Private"][];
+      api_keys: components["schemas"]["ApiKeyPrivate"][];
     };
     /** GetSettingsPageResponse */
     GetSettingsPageResponse: {
@@ -411,7 +560,7 @@ export interface components {
       /** User Access Token Count */
       user_access_token_count: number;
       /** User Access Tokens */
-      user_access_tokens: components["schemas"]["UserAccessTokenModel"][];
+      user_access_tokens: components["schemas"]["UserAccessToken"][];
     };
     /** GetStylesPageResponse */
     GetStylesPageResponse: {
@@ -505,25 +654,8 @@ export interface components {
       /** Message */
       message: string;
     };
-    /** UserAccessTokenModel */
-    UserAccessTokenModel: {
-      /** Id */
-      id: string;
-      /**
-       * Issued
-       * Format: date-time
-       */
-      issued: string;
-      /**
-       * Expiry
-       * Format: date-time
-       */
-      expiry: string;
-      /** User Id */
-      user_id: string;
-    };
-    /** UserModel */
-    UserModel: {
+    /** User */
+    User: {
       /** Id */
       id: string;
       /**
@@ -540,52 +672,10 @@ export interface components {
       /** User Role Id */
       user_role_id: number;
     };
-    /** ValidationError */
-    ValidationError: {
-      /** Location */
-      loc: (string | number)[];
-      /** Message */
-      msg: string;
-      /** Error Type */
-      type: string;
-    };
-    /** AdminCreate */
-    gallery__models__ApiKey__AdminCreate: {
-      /** Lifespan */
-      lifespan?: string | null;
-      /** Expiry */
-      expiry?: string | null;
-      /** Name */
-      name: string;
-      /** User Id */
-      user_id: string;
-    };
-    /** AdminUpdate */
-    gallery__models__ApiKey__AdminUpdate: {
-      /** Lifespan */
-      lifespan?: string | null;
-      /** Expiry */
-      expiry?: string | null;
-      /** Name */
-      name?: string | null;
-    };
-    /** Create */
-    gallery__models__ApiKey__Create: {
-      /** Lifespan */
-      lifespan?: string | null;
-      /** Expiry */
-      expiry?: string | null;
-      /** Name */
-      name: string;
-    };
-    /** Private */
-    gallery__models__ApiKey__Private: {
+    /** UserAccessToken */
+    UserAccessToken: {
       /** Id */
       id: string;
-      /** User Id */
-      user_id: string;
-      /** Name */
-      name: string;
       /**
        * Issued
        * Format: date-time
@@ -596,110 +686,11 @@ export interface components {
        * Format: date-time
        */
       expiry: string;
-      /** Scope Ids */
-      scope_ids: number[];
-    };
-    /** Update */
-    gallery__models__ApiKey__Update: {
-      /** Lifespan */
-      lifespan?: string | null;
-      /** Expiry */
-      expiry?: string | null;
-      /** Name */
-      name?: string | null;
-    };
-    /** AdminCreate */
-    gallery__models__Gallery__AdminCreate: {
-      /** Name */
-      name: string;
-      /** Visibility Level */
-      visibility_level: number;
-      /** Parent Id */
-      parent_id?: string | null;
-      /** Description */
-      description?: string | null;
-      /** Date */
-      date?: string | null;
       /** User Id */
       user_id: string;
     };
-    /** AdminUpdate */
-    gallery__models__Gallery__AdminUpdate: {
-      /** Name */
-      name?: string | null;
-      /** User Id */
-      user_id?: string | null;
-      /** Visibility Level */
-      visibility_level?: number | null;
-      /** Parent Id */
-      parent_id?: string | null;
-      /** Description */
-      description?: string | null;
-      /** Date */
-      date?: string | null;
-    };
-    /** Create */
-    gallery__models__Gallery__Create: {
-      /** Name */
-      name: string;
-      /** Visibility Level */
-      visibility_level: number;
-      /** Parent Id */
-      parent_id: string;
-      /** Description */
-      description?: string | null;
-      /** Date */
-      date?: string | null;
-    };
-    /** Private */
-    gallery__models__Gallery__Private: {
-      /** Id */
-      id: string;
-      /** User Id */
-      user_id: string;
-      /** Name */
-      name: string;
-      /** Parent Id */
-      parent_id: string | null;
-      /** Description */
-      description: string | null;
-      /** Date */
-      date: string | null;
-      /** Visibility Level */
-      visibility_level: number;
-    };
-    /** Public */
-    gallery__models__Gallery__Public: {
-      /** Id */
-      id: string;
-      /** User Id */
-      user_id: string;
-      /** Name */
-      name: string;
-      /** Parent Id */
-      parent_id: string | null;
-      /** Description */
-      description: string | null;
-      /** Date */
-      date: string | null;
-    };
-    /** Update */
-    gallery__models__Gallery__Update: {
-      /** Name */
-      name?: string | null;
-      /** User Id */
-      user_id?: string | null;
-      /** Visibility Level */
-      visibility_level?: number | null;
-      /** Parent Id */
-      parent_id?: string | null;
-      /** Description */
-      description?: string | null;
-      /** Date */
-      date?: string | null;
-    };
-    /** AdminCreate */
-    gallery__models__UserAccessToken__AdminCreate: {
+    /** UserAccessTokenAdminCreate */
+    UserAccessTokenAdminCreate: {
       /** Lifespan */
       lifespan?: string | null;
       /** Expiry */
@@ -707,8 +698,8 @@ export interface components {
       /** User Id */
       user_id: string;
     };
-    /** AdminCreate */
-    gallery__models__User__AdminCreate: {
+    /** UserAdminCreate */
+    UserAdminCreate: {
       /** Phone Number */
       phone_number?: string | null;
       /** Username */
@@ -723,8 +714,8 @@ export interface components {
       /** User Role Id */
       user_role_id: number;
     };
-    /** AdminUpdate */
-    gallery__models__User__AdminUpdate: {
+    /** UserAdminUpdate */
+    UserAdminUpdate: {
       /** Phone Number */
       phone_number?: string | null;
       /** Username */
@@ -736,8 +727,8 @@ export interface components {
       /** User Role Id */
       user_role_id?: number | null;
     };
-    /** Private */
-    gallery__models__User__Private: {
+    /** UserPrivate */
+    UserPrivate: {
       /** Id */
       id: string;
       /** Username */
@@ -750,15 +741,15 @@ export interface components {
       /** User Role Id */
       user_role_id: number;
     };
-    /** Public */
-    gallery__models__User__Public: {
+    /** UserPublic */
+    UserPublic: {
       /** Id */
       id: string;
       /** Username */
       username: string | null;
     };
-    /** Update */
-    gallery__models__User__Update: {
+    /** UserUpdate */
+    UserUpdate: {
       /** Phone Number */
       phone_number?: string | null;
       /** Username */
@@ -767,6 +758,15 @@ export interface components {
       password?: string | null;
       /** Email */
       email?: string | null;
+    };
+    /** ValidationError */
+    ValidationError: {
+      /** Location */
+      loc: (string | number)[];
+      /** Message */
+      msg: string;
+      /** Error Type */
+      type: string;
     };
   };
   responses: never;
@@ -961,7 +961,7 @@ export interface operations {
           "application/json": components["schemas"]["PostRequestSignUpResponse"];
         };
       };
-      /** @description UserModel already exists */
+      /** @description User already exists */
       409: {
         content: {
           "application/json": components["schemas"]["DetailOnlyResponse"];
@@ -1036,7 +1036,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["gallery__models__User__Private"];
+          "application/json": components["schemas"]["UserPrivate"];
         };
       };
     };
@@ -1054,14 +1054,14 @@ export interface operations {
   patch_self_users_me__patch: {
     requestBody: {
       content: {
-        "application/json": components["schemas"]["gallery__models__User__Update"];
+        "application/json": components["schemas"]["UserUpdate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["gallery__models__User__Private"];
+          "application/json": components["schemas"]["UserPrivate"];
         };
       };
       /** @description Validation Error */
@@ -1083,7 +1083,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["gallery__models__User__Public"];
+          "application/json": components["schemas"]["UserPublic"];
         };
       };
       /** @description Validation Error */
@@ -1108,7 +1108,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["gallery__models__User__Public"][];
+          "application/json": components["schemas"]["UserPublic"][];
         };
       };
       /** @description Validation Error */
@@ -1158,7 +1158,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["UserModel"];
+          "application/json": components["schemas"]["User"];
         };
       };
       /** @description Validation Error */
@@ -1198,14 +1198,14 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": components["schemas"]["gallery__models__User__AdminUpdate"];
+        "application/json": components["schemas"]["UserAdminUpdate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["UserModel"];
+          "application/json": components["schemas"]["User"];
         };
       };
       /** @description Validation Error */
@@ -1230,7 +1230,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["UserModel"][];
+          "application/json": components["schemas"]["User"][];
         };
       };
       /** @description Validation Error */
@@ -1245,14 +1245,14 @@ export interface operations {
   post_user_admin_admin_users__post: {
     requestBody: {
       content: {
-        "application/json": components["schemas"]["gallery__models__User__AdminCreate"];
+        "application/json": components["schemas"]["UserAdminCreate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["UserModel"];
+          "application/json": components["schemas"]["User"];
         };
       };
       /** @description Validation Error */
@@ -1274,7 +1274,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["UserAccessTokenModel"];
+          "application/json": components["schemas"]["UserAccessToken"];
         };
       };
       /** @description Validation Error */
@@ -1319,7 +1319,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["UserAccessTokenModel"][];
+          "application/json": components["schemas"]["UserAccessToken"][];
         };
       };
       /** @description User does not have permission to view another user's access tokens */
@@ -1328,7 +1328,7 @@ export interface operations {
           "application/json": components["schemas"]["DetailOnlyResponse"];
         };
       };
-      /** @description UserModel not found */
+      /** @description User not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
@@ -1364,7 +1364,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["UserAccessTokenModel"];
+          "application/json": components["schemas"]["UserAccessToken"];
         };
       };
       /** @description Validation Error */
@@ -1399,14 +1399,14 @@ export interface operations {
   post_user_access_token_admin_admin_user_access_tokens__post: {
     requestBody: {
       content: {
-        "application/json": components["schemas"]["gallery__models__UserAccessToken__AdminCreate"];
+        "application/json": components["schemas"]["UserAccessTokenAdminCreate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["UserAccessTokenModel"];
+          "application/json": components["schemas"]["UserAccessToken"];
         };
       };
       /** @description Validation Error */
@@ -1434,10 +1434,10 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["UserAccessTokenModel"][];
+          "application/json": components["schemas"]["UserAccessToken"][];
         };
       };
-      /** @description UserModel not found */
+      /** @description User not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
@@ -1462,7 +1462,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["gallery__models__ApiKey__Private"];
+          "application/json": components["schemas"]["ApiKeyPrivate"];
         };
       };
       /** @description Validation Error */
@@ -1502,14 +1502,14 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": components["schemas"]["gallery__models__ApiKey__Update"];
+        "application/json": components["schemas"]["ApiKeyUpdate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["gallery__models__ApiKey__Private"];
+          "application/json": components["schemas"]["ApiKeyPrivate"];
         };
       };
       /** @description Validation Error */
@@ -1538,7 +1538,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["gallery__models__ApiKey__Private"][];
+          "application/json": components["schemas"]["ApiKeyPrivate"][];
         };
       };
       /** @description Validation Error */
@@ -1553,14 +1553,14 @@ export interface operations {
   post_api_key_to_user_api_keys__post: {
     requestBody: {
       content: {
-        "application/json": components["schemas"]["gallery__models__ApiKey__Create"];
+        "application/json": components["schemas"]["ApiKeyCreate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["gallery__models__ApiKey__Private"];
+          "application/json": components["schemas"]["ApiKeyPrivate"];
         };
       };
       /** @description Validation Error */
@@ -1585,7 +1585,7 @@ export interface operations {
           "application/json": components["schemas"]["ApiKeyJWTResponse"];
         };
       };
-      /** @description ApiKeyModel not found */
+      /** @description ApiKey not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
@@ -1624,7 +1624,7 @@ export interface operations {
           "application/json": unknown;
         };
       };
-      /** @description ApiKeyModel already exists */
+      /** @description ApiKey already exists */
       409: {
         content: {
           "application/json": components["schemas"]["DetailOnlyResponse"];
@@ -1649,7 +1649,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ApiKeyModel"];
+          "application/json": components["schemas"]["ApiKey"];
         };
       };
       /** @description Validation Error */
@@ -1689,14 +1689,14 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": components["schemas"]["gallery__models__ApiKey__AdminUpdate"];
+        "application/json": components["schemas"]["ApiKeyAdminUpdate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ApiKeyModel"];
+          "application/json": components["schemas"]["ApiKey"];
         };
       };
       /** @description Validation Error */
@@ -1711,14 +1711,14 @@ export interface operations {
   post_api_key_to_user_admin_admin_api_keys__post: {
     requestBody: {
       content: {
-        "application/json": components["schemas"]["gallery__models__ApiKey__AdminCreate"];
+        "application/json": components["schemas"]["ApiKeyAdminCreate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ApiKeyModel"];
+          "application/json": components["schemas"]["ApiKey"];
         };
       };
       /** @description Validation Error */
@@ -1750,7 +1750,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ApiKeyModel"][];
+          "application/json": components["schemas"]["ApiKey"][];
         };
       };
       /** @description Validation Error */
@@ -1776,7 +1776,7 @@ export interface operations {
           "application/json": unknown;
         };
       };
-      /** @description ApiKeyModel already exists */
+      /** @description ApiKey already exists */
       409: {
         content: {
           "application/json": components["schemas"]["DetailOnlyResponse"];
@@ -1805,7 +1805,7 @@ export interface operations {
           "application/json": unknown;
         };
       };
-      /** @description ApiKeyModel not found */
+      /** @description ApiKey not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
@@ -1832,7 +1832,7 @@ export interface operations {
       204: {
         content: never;
       };
-      /** @description ApiKeyModel not found */
+      /** @description ApiKey not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
@@ -1861,7 +1861,7 @@ export interface operations {
           "application/json": unknown;
         };
       };
-      /** @description ApiKeyModel not found */
+      /** @description ApiKey not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
@@ -1888,7 +1888,7 @@ export interface operations {
       204: {
         content: never;
       };
-      /** @description ApiKeyModel not found */
+      /** @description ApiKey not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
@@ -1913,7 +1913,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["gallery__models__Gallery__Public"];
+          "application/json": components["schemas"]["GalleryPublic"];
         };
       };
       /** @description Validation Error */
@@ -1953,14 +1953,14 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": components["schemas"]["gallery__models__Gallery__Update"];
+        "application/json": components["schemas"]["GalleryUpdate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["gallery__models__Gallery__Private"];
+          "application/json": components["schemas"]["GalleryPrivate"];
         };
       };
       /** @description Validation Error */
@@ -1983,7 +1983,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["gallery__models__Gallery__Private"][];
+          "application/json": components["schemas"]["GalleryPrivate"][];
         };
       };
       /** @description Validation Error */
@@ -1998,14 +1998,14 @@ export interface operations {
   post_gallery_galleries__post: {
     requestBody: {
       content: {
-        "application/json": components["schemas"]["gallery__models__Gallery__Create"];
+        "application/json": components["schemas"]["GalleryCreate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["gallery__models__Gallery__Private"];
+          "application/json": components["schemas"]["GalleryPrivate"];
         };
       };
       /** @description Validation Error */
@@ -2100,7 +2100,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["GalleryModel"];
+          "application/json": components["schemas"]["Gallery"];
         };
       };
       /** @description Validation Error */
@@ -2140,14 +2140,14 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": components["schemas"]["gallery__models__Gallery__AdminUpdate"];
+        "application/json": components["schemas"]["GalleryAdminUpdate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["GalleryModel"];
+          "application/json": components["schemas"]["Gallery"];
         };
       };
       /** @description Validation Error */
@@ -2162,14 +2162,14 @@ export interface operations {
   post_gallery_admin_admin_galleries__post: {
     requestBody: {
       content: {
-        "application/json": components["schemas"]["gallery__models__Gallery__AdminCreate"];
+        "application/json": components["schemas"]["GalleryAdminCreate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["GalleryModel"];
+          "application/json": components["schemas"]["Gallery"];
         };
       };
       /** @description Validation Error */
@@ -2220,7 +2220,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["GalleryModel"][];
+          "application/json": components["schemas"]["Gallery"][];
         };
       };
       /** @description Validation Error */
@@ -2346,7 +2346,7 @@ export interface operations {
           "application/json": components["schemas"]["GetGalleryPageResponse"];
         };
       };
-      /** @description GalleryModel not found */
+      /** @description Gallery not found */
       404: {
         content: {
           "application/json": components["schemas"]["NotFoundResponse"];
