@@ -8,6 +8,7 @@ import datetime
 import json
 from pathlib import Path
 import jwt
+import secrets
 
 GALLERY_DIR = Path(__file__).parent
 SRC_DIR = GALLERY_DIR.parent
@@ -189,12 +190,12 @@ class Client:
             merged_config['media_root']['path'])
 
         if not self.media_dir.exists():
-            self.media_dir.mkdir()
+            self.media_dir.mkdir(parents=True)
 
         # galleries dir
         self.galleries_dir = self.media_dir / 'galleries'
         if not self.galleries_dir.exists():
-            self.galleries_dir.mkdir()
+            self.galleries_dir.mkdir(parents=True)
 
         # authentication
         self.authentication = merged_config['authentication']
@@ -202,6 +203,10 @@ class Client:
         # jwt
         jwt_secret_key_path = get_path_from_config(
             merged_config['jwt']['secret_key_path'])
+
+        if not jwt_secret_key_path.exists():
+            jwt_secret_key_path.write_text(self.generate_jwt_secret_key())
+
         self.jwt_secret_key = jwt_secret_key_path.read_text()
         self.jwt_algorithm = merged_config['jwt']['algorithm']
 
@@ -249,6 +254,9 @@ class Client:
             self.user_role_id_scope_ids[scope_id] = set([
                 self.scope_name_mapping[_scope_name] for _scope_name in self.root_config['user_role_scopes'][scope_name]
             ])
+
+    def generate_jwt_secret_key(self):
+        return secrets.token_hex(32)
 
     def create_tables(self):
         SQLModel.metadata.create_all(self.db_engine)

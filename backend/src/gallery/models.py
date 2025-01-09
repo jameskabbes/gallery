@@ -336,36 +336,6 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-class ModelManager:
-
-    class IdBase(IdObject[typing.Any]):
-        pass
-
-    class Export(TableExport):
-        pass
-
-    class Public(Export):
-        pass
-
-    class Private(Export):
-        pass
-
-    class Import(BaseModel):
-        pass
-
-    class Update(Import):
-        pass
-
-    class AdminUpdate(Update):
-        pass
-
-    class Create(Import):
-        pass
-
-    class AdminCreate(Create):
-        pass
-
-
 class UserTypes:
     id = str
     email = client.Email
@@ -379,44 +349,34 @@ class UserTypes:
     user_role_id = client.UserRoleTypes.id
 
 
-class User(ModelManager):
-
-    class IdBase(IdObject[UserTypes.id]):
-        id: UserTypes.id = Field(
-            primary_key=True, index=True, unique=True, const=True)
-
-    # export types
-    class Export(TableExport, IdBase):
-        id: UserTypes.id
-        username: typing.Optional[UserTypes.username]
-
-    class Public(Export):
-        pass
-
-    class Private(Export):
-        email: UserTypes.email
-        user_role_id: UserTypes.user_role_id
-
-    # import types
-    class Import(BaseModel):
-        phone_number: typing.Optional[UserTypes.phone_number] = None
-        username: typing.Optional[UserTypes.username] = None
-        password: typing.Optional[UserTypes.password] = None
-
-    class Update(Import):
-        email: typing.Optional[UserTypes.email] = None
-
-    class AdminUpdate(Update):
-        user_role_id: typing.Optional[UserTypes.user_role_id] = None
-
-    class Create(Import):
-        email: UserTypes.email
-
-    class AdminCreate(Create):
-        user_role_id: UserTypes.user_role_id
+class UserIdBase(IdObject[UserTypes.id]):
+    id: UserTypes.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
 
 
-class UserModel(Table['UserModel', UserTypes.id, User.AdminCreate, User.AdminUpdate], User.IdBase, table=True):
+class UserImport(BaseModel):
+    phone_number: typing.Optional[UserTypes.phone_number] = None
+    username: typing.Optional[UserTypes.username] = None
+    password: typing.Optional[UserTypes.password] = None
+
+
+class UserUpdate(UserImport):
+    email: typing.Optional[UserTypes.email] = None
+
+
+class UserAdminUpdate(UserUpdate):
+    user_role_id: typing.Optional[UserTypes.user_role_id] = None
+
+
+class UserCreate(UserImport):
+    email: UserTypes.email
+
+
+class UserAdminCreate(UserCreate):
+    user_role_id: UserTypes.user_role_id
+
+
+class User(Table['User', UserTypes.id, UserAdminCreate, UserAdminUpdate], UserIdBase, table=True):
     __tablename__ = 'user'
 
     email: UserTypes.email = Field(index=True, unique=True)
@@ -427,15 +387,15 @@ class UserModel(Table['UserModel', UserTypes.id, User.AdminCreate, User.AdminUpd
     hashed_password: UserTypes.hashed_password = Field(nullable=True)
     user_role_id: UserTypes.user_role_id = Field()
 
-    api_keys: list['ApiKeyModel'] = Relationship(
+    api_keys: list['ApiKey'] = Relationship(
         back_populates='user', cascade_delete=True)
-    user_access_tokens: list['UserAccessTokenModel'] = Relationship(
+    user_access_tokens: list['UserAccessToken'] = Relationship(
         back_populates='user', cascade_delete=True)
-    galleries: list['GalleryModel'] = Relationship(
+    galleries: list['Gallery'] = Relationship(
         back_populates='user', cascade_delete=True)
-    gallery_permissions: list['GalleryPermissionModel'] = Relationship(
+    gallery_permissions: list['GalleryPermission'] = Relationship(
         back_populates='user', cascade_delete=True)
-    otps: list['OTPModel'] = Relationship(
+    otps: list['OTP'] = Relationship(
         back_populates='user', cascade_delete=True)
 
     _ROUTER_TAG = 'User'
@@ -469,7 +429,7 @@ class UserModel(Table['UserModel', UserTypes.id, User.AdminCreate, User.AdminUpd
     @ api_endpoint
     async def is_username_available(cls, session: Session, username: UserTypes.username) -> bool:
 
-        if session.exec(select(cls).where(UserModel.username == username)).one_or_none():
+        if session.exec(select(cls).where(User.username == username)).one_or_none():
             return False
         return True
 
@@ -481,7 +441,7 @@ class UserModel(Table['UserModel', UserTypes.id, User.AdminCreate, User.AdminUpd
 
     @ classmethod
     async def is_email_available(cls, session: Session, email: UserTypes.email) -> bool:
-        if session.exec(select(cls).where(UserModel.email == email)).one_or_none():
+        if session.exec(select(cls).where(User.email == email)).one_or_none():
             return False
         return True
 
@@ -513,21 +473,21 @@ class UserModel(Table['UserModel', UserTypes.id, User.AdminCreate, User.AdminUpd
         model = kwargs['create_model']
         if 'username' in model.model_fields_set:
             if model.username != None:
-                await UserModel.api_get_is_username_available(
+                await User.api_get_is_username_available(
                     kwargs['session'], model.username)
         if 'email' in model.model_fields_set:
             if model.email != None:
-                await UserModel.api_get_is_email_available(kwargs['session'], model.email)
+                await User.api_get_is_email_available(kwargs['session'], model.email)
 
     async def _check_validation_patch(self, **kwargs):
         model = kwargs['update_model']
         if 'username' in model.model_fields_set:
             if model.username != None:
-                await UserModel.api_get_is_username_available(
+                await User.api_get_is_username_available(
                     kwargs['session'], model.username)
         if 'email' in model.model_fields_set:
             if model.email != None:
-                await UserModel.api_get_is_email_available(kwargs['session'], model.email)
+                await User.api_get_is_email_available(kwargs['session'], model.email)
 
     @ classmethod
     async def create(cls, **kwargs) -> typing.Self:
@@ -539,7 +499,7 @@ class UserModel(Table['UserModel', UserTypes.id, User.AdminCreate, User.AdminUpd
             **kwargs['create_model'].model_dump(exclude=['password'])
         )
 
-        root_gallery = await GalleryModel.api_post(session=kwargs['session'], c=kwargs['c'], authorized_user_id=new_user._id, admin=kwargs['admin'], create_model=Gallery.AdminCreate(
+        root_gallery = await Gallery.api_post(session=kwargs['session'], c=kwargs['c'], authorized_user_id=new_user._id, admin=kwargs['admin'], create_model=GalleryAdminCreate(
             name='root', user_id=new_user._id, visibility_level=kwargs['c'].visibility_level_name_mapping['private'], parent_id=None
         ))
 
@@ -555,14 +515,31 @@ class UserModel(Table['UserModel', UserTypes.id, User.AdminCreate, User.AdminUpd
 
         # rename the root gallery if the username is updated
         if 'username' in kwargs['update_model'].model_fields_set:
-            root_gallery = await GalleryModel.get_root_gallery(kwargs['session'], self._id)
-            await root_gallery.update(session=kwargs['session'], c=kwargs['c'], authorized_user_id=kwargs['authorized_user_id'], admin=kwargs['admin'], update_model=Gallery.AdminUpdate(
+            root_gallery = await Gallery.get_root_gallery(kwargs['session'], self._id)
+            await root_gallery.update(session=kwargs['session'], c=kwargs['c'], authorized_user_id=kwargs['authorized_user_id'], admin=kwargs['admin'], update_model=GalleryAdminUpdate(
                 name=self._id if self.username == None else self.username
             ))
 
     async def delete(self, **kwargs):
-        await (await GalleryModel.get_root_gallery(kwargs['session'], self._id)).delete(session=kwargs['session'], c=kwargs['c'],
-                                                                                        authorized_user_id=kwargs['authorized_user_id'], admin=kwargs['admin'])
+        await (await Gallery.get_root_gallery(kwargs['session'], self._id)).delete(session=kwargs['session'], c=kwargs['c'],
+                                                                                   authorized_user_id=kwargs['authorized_user_id'], admin=kwargs['admin'])
+
+
+class UserExport(TableExport, UserIdBase):
+    id: UserTypes.id
+    username: typing.Optional[UserTypes.username]
+
+
+class UserPublic(UserExport):
+    pass
+
+
+class UserPrivate(UserExport):
+    email: UserTypes.email
+    user_role_id: UserTypes.user_role_id
+
+
+# JWT
 
 
 class JwtIO[TEncode: dict, TDecode: dict](BaseModel):
@@ -646,45 +623,48 @@ class AuthCredential:
             return value.replace(tzinfo=datetime_module.timezone.utc)
 
 
+# UserAccessToken
+
 class UserAccessTokenTypes(AuthCredentialTypes):
     id = str
 
 
-class UserAccessToken(ModelManager):
-
-    class IdBase(IdObject[UserAccessTokenTypes.id]):
-        id: UserAccessTokenTypes.id = Field(
-            primary_key=True, index=True, unique=True, const=True)
-
-    class AdminUpdate(BaseModel):
-        pass
-
-    class AdminCreate(AuthCredential.Import):
-        user_id: UserTypes.id
-
-    class Jwt:
-        class Encode(AuthCredential.Model.Jwt.EncodeBase):
-            sub: UserTypes.id
-
-        class Decode(AuthCredential.Model.Jwt.DecodeBase):
-            id: UserTypes.id
+class UserAccessTokenIdBase(IdObject[UserAccessTokenTypes.id]):
+    id: UserAccessTokenTypes.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
 
 
-class UserAccessTokenModel(
-        Table['UserAccessTokenModel', UserAccessTokenTypes.id,
-              UserAccessToken.AdminCreate, UserAccessToken.AdminUpdate],
+class UserAccessTokenAdminUpdate(BaseModel):
+    pass
+
+
+class UserAccessTokenAdminCreate(AuthCredential.Import):
+    user_id: UserTypes.id
+
+
+class UserAccessTokenJwt:
+    class Encode(AuthCredential.Model.Jwt.EncodeBase):
+        sub: UserTypes.id
+
+    class Decode(AuthCredential.Model.Jwt.DecodeBase):
+        id: UserTypes.id
+
+
+class UserAccessToken(
+        Table['UserAccessToken', UserAccessTokenTypes.id,
+              UserAccessTokenAdminCreate, UserAccessTokenAdminUpdate],
         AuthCredential.Model,
-        UserAccessToken.IdBase,
-        JwtIO[UserAccessToken.Jwt.Encode, UserAccessToken.Jwt.Decode],
+        UserAccessTokenIdBase,
+        JwtIO[UserAccessTokenJwt.Encode, UserAccessTokenJwt.Decode],
         table=True):
 
     auth_type = 'access_token'
     __tablename__ = 'user_access_token'
 
     user_id: UserTypes.id = Field(
-        index=True, foreign_key=UserModel.__tablename__ + '.' + UserModel._ID_COLS[0], const=True, ondelete='CASCADE')
+        index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0], const=True, ondelete='CASCADE')
 
-    user: 'UserModel' = Relationship(
+    user: 'User' = Relationship(
         back_populates='user_access_tokens')
 
     _JWT_CLAIMS_MAPPING = {
@@ -716,41 +696,46 @@ class UserAccessTokenModel(
         )
 
 
+# OTP
+
+class OTPConfig:
+    _LENGTH: typing.ClassVar[int] = 6
+
+
 class OTPTypes(AuthCredentialTypes):
     id = str
     code = typing.Annotated[str, StringConstraints(
-        min_length=6, max_length=6, pattern=re.compile(r'^\d{6}$'))]
+        min_length=OTPConfig._LENGTH, max_length=OTPConfig._LENGTH, pattern=re.compile(r'^\d{6}$'))]
     hashed_code = str
 
 
-class OTP(ModelManager):
-    _LENGTH: typing.ClassVar[int] = 6
-
-    class IdBase(IdObject[OTPTypes.id]):
-        id: OTPTypes.id = Field(
-            primary_key=True, index=True, unique=True, const=True)
-
-    class AdminUpdate(BaseModel):
-        pass
-
-    class AdminCreate(AuthCredential.Import):
-        user_id: UserTypes.id
+class OTPIdBase(IdObject[OTPTypes.id]):
+    id: OTPTypes.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
 
 
-class OTPModel(
-        Table['OTPModel', OTPTypes.id,
-              OTP.AdminCreate, OTP.AdminUpdate],
+class OTPAdminUpdate(BaseModel):
+    pass
+
+
+class OTPAdminCreate(AuthCredential.Import):
+    user_id: UserTypes.id
+
+
+class OTP(
+        Table['OTP', OTPTypes.id,
+              OTPAdminCreate, OTPAdminUpdate],
         AuthCredential.Model,
-        OTP.IdBase,
+        OTPIdBase,
         table=True):
 
     auth_type = 'otp'
     __tablename__ = 'otp'
 
     user_id: UserTypes.id = Field(
-        index=True, foreign_key=UserModel.__tablename__ + '.' + UserModel._ID_COLS[0], const=True, ondelete='CASCADE')
+        index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0], const=True, ondelete='CASCADE')
     hashed_code: OTPTypes.hashed_code = Field()
-    user: 'UserModel' = Relationship(
+    user: 'User' = Relationship(
         back_populates='otps')
 
     _ROUTER_TAG = 'One Time Password'
@@ -758,7 +743,7 @@ class OTPModel(
     @classmethod
     def generate_code(cls) -> OTPTypes.code:
         characters = string.digits
-        return ''.join(secrets.choice(characters) for _ in range(OTP._LENGTH))
+        return ''.join(secrets.choice(characters) for _ in range(OTPConfig._LENGTH))
 
     @classmethod
     def hash_code(cls, code: OTPTypes.code) -> OTPTypes.hashed_code:
@@ -774,7 +759,7 @@ class OTPModel(
             **kwargs['create_model'].model_dump(exclude=['lifespan', 'expiry'])
         )
 
-# # ApiKey
+# ApiKey
 
 
 class ApiKeyTypes(AuthCredentialTypes):
@@ -784,74 +769,63 @@ class ApiKeyTypes(AuthCredentialTypes):
     order_by = typing.Literal['issued', 'expiry', 'name']
 
 
-class ApiKey(ModelManager):
-
-    class IdBase(IdObject[ApiKeyTypes.id]):
-        id: ApiKeyTypes.id = Field(
-            primary_key=True, index=True, unique=True, const=True)
-
-    class Available(BaseModel):
-        name: ApiKeyTypes.name
-
-    class AdminAvailable(Available):
-        user_id: UserTypes.id
-
-    class Export(TableExport):
-        id: ApiKeyTypes.id
-        user_id: UserTypes.id
-        name: ApiKeyTypes.name
-        issued: ApiKeyTypes.issued
-        expiry: ApiKeyTypes.expiry
-
-    class Public(Export):
-        pass
-
-    class Private(Export):
-        scope_ids: list[client.ScopeTypes.id]
-
-        @classmethod
-        def from_api_key(cls, api_key: 'ApiKeyModel') -> typing.Self:
-            return cls.model_construct(**api_key.model_dump(), scope_ids=[api_key_scope.scope_id for api_key_scope in api_key.api_key_scopes])
-
-    class Import(AuthCredential.Import):
-        pass
-
-    class Update(Import):
-        name: typing.Optional[ApiKeyTypes.name] = None
-
-    class AdminUpdate(Update):
-        pass
-
-    class Create(Import):
-        name: ApiKeyTypes.name
-
-    class AdminCreate(Create):
-        user_id: UserTypes.id
-
-    class Jwt:
-        class Encode(AuthCredential.Model.Jwt.EncodeBase):
-            sub: UserTypes.id
-
-        class Decode(AuthCredential.Model.Jwt.DecodeBase):
-            id: UserTypes.id
+class ApiKeyIdBase(IdObject[ApiKeyTypes.id]):
+    id: ApiKeyTypes.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
 
 
-class ApiKeyModel(
-        Table['ApiKeyModel', ApiKeyTypes.id,
-              ApiKey.AdminCreate, ApiKey.AdminUpdate],
+class ApiKeyAvailable(BaseModel):
+    name: ApiKeyTypes.name
+
+
+class ApiKeyAdminAvailable(ApiKeyAvailable):
+    user_id: UserTypes.id
+
+
+class ApiKeyImport(AuthCredential.Import):
+    pass
+
+
+class ApiKeyUpdate(ApiKeyImport):
+    name: typing.Optional[ApiKeyTypes.name] = None
+
+
+class ApiKeyAdminUpdate(ApiKeyUpdate):
+    pass
+
+
+class ApiKeyCreate(ApiKeyImport):
+    name: ApiKeyTypes.name
+
+
+class ApiKeyAdminCreate(ApiKeyCreate):
+    user_id: UserTypes.id
+
+
+class ApiKeyJwt:
+    class Encode(AuthCredential.Model.Jwt.EncodeBase):
+        sub: UserTypes.id
+
+    class Decode(AuthCredential.Model.Jwt.DecodeBase):
+        id: UserTypes.id
+
+
+class ApiKey(
+        Table['ApiKey', ApiKeyTypes.id,
+              ApiKeyAdminCreate, ApiKeyAdminUpdate],
         AuthCredential.Model,
-        ApiKey.IdBase,
-        JwtIO[ApiKey.Jwt.Encode, ApiKey.Jwt.Decode],
+        ApiKeyIdBase,
+        JwtIO[ApiKeyJwt.Encode, ApiKeyJwt.Decode],
         table=True):
     auth_type = 'api_key'
     __tablename__ = 'api_key'
 
     user_id: UserTypes.id = Field(
-        index=True, foreign_key=UserModel.__tablename__ + '.' + UserModel._ID_COLS[0], const=True, ondelete='CASCADE')
+        index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0], const=True, ondelete='CASCADE')
     name: ApiKeyTypes.name = Field()
 
-    user: 'UserModel' = Relationship(back_populates='api_keys')
-    api_key_scopes: list['ApiKeyScopeModel'] = Relationship(
+    user: 'User' = Relationship(back_populates='api_keys')
+    api_key_scopes: list['ApiKeyScope'] = Relationship(
         back_populates='api_key', cascade_delete=True)
 
     _JWT_CLAIMS_MAPPING = {
@@ -864,11 +838,11 @@ class ApiKeyModel(
         return [api_key_scope.scope_id for api_key_scope in self.api_key_scopes]
 
     @ classmethod
-    async def is_available(cls, session: Session, api_key_available_admin: 'ApiKey.AdminAvailable') -> bool:
+    async def is_available(cls, session: Session, api_key_available_admin: ApiKeyAdminAvailable) -> bool:
         return not session.exec(select(cls).where(cls._build_conditions(api_key_available_admin.model_dump()))).one_or_none()
 
     @ classmethod
-    async def api_get_is_available(cls, session: Session, api_key_available_admin: 'ApiKey.AdminAvailable') -> None:
+    async def api_get_is_available(cls, session: Session, api_key_available_admin: ApiKeyAdminAvailable) -> None:
 
         if not await cls.is_available(session, api_key_available_admin):
             raise HTTPException(
@@ -889,13 +863,13 @@ class ApiKeyModel(
 
     @ classmethod
     async def _check_validation_post(cls, **kwargs):
-        await cls.api_get_is_available(kwargs['session'], ApiKey.AdminAvailable(
+        await cls.api_get_is_available(kwargs['session'], ApiKeyAdminAvailable(
             name=kwargs['create_model'].name, user_id=kwargs['create_model'].user_id)
         )
 
     async def _check_validation_patch(self, **kwargs):
         if 'name' in kwargs['update_model'].model_fields_set:
-            await self.api_get_is_available(kwargs['session'], ApiKey.AdminAvailable(
+            await self.api_get_is_available(kwargs['session'], ApiKeyAdminAvailable(
                 name=kwargs['update_model'].name, user_id=kwargs['authorized_user_id']))
 
     @ classmethod
@@ -909,22 +883,44 @@ class ApiKeyModel(
         )
 
 
-class SignUp:
+class ApiKeyExport(TableExport):
+    id: ApiKeyTypes.id
+    user_id: UserTypes.id
+    name: ApiKeyTypes.name
+    issued: ApiKeyTypes.issued
+    expiry: ApiKeyTypes.expiry
 
-    class Jwt:
-        class Encode(AuthCredential.Model.Jwt.EncodeBase):
-            sub: UserTypes.email
 
-        class Decode(AuthCredential.Model.Jwt.DecodeBase):
-            email: UserTypes.email
+class ApiKeyPublic(ApiKeyExport):
+    pass
 
-    class AdminCreate(AuthCredential.Import):
+
+class ApiKeyPrivate(ApiKeyExport):
+    scope_ids: list[client.ScopeTypes.id]
+
+    @classmethod
+    def from_api_key(cls, api_key: ApiKey) -> typing.Self:
+        return cls.model_construct(**api_key.model_dump(), scope_ids=[api_key_scope.scope_id for api_key_scope in api_key.api_key_scopes])
+
+
+# SignUp
+
+
+class SignUpJwt:
+    class Encode(AuthCredential.Model.Jwt.EncodeBase):
+        sub: UserTypes.email
+
+    class Decode(AuthCredential.Model.Jwt.DecodeBase):
         email: UserTypes.email
 
 
-class SignUpModel(
+class SignUpAdminCreate(AuthCredential.Import):
+    email: UserTypes.email
+
+
+class SignUp(
     AuthCredential.Model,
-    JwtIO[SignUp.Jwt.Encode, SignUp.Jwt.Decode],
+    JwtIO[SignUpJwt.Encode, SignUpJwt.Decode],
 ):
     auth_type = 'sign_up'
     email: UserTypes.email = Field()
@@ -933,7 +929,7 @@ class SignUpModel(
         **AuthCredential.Model._JWT_CLAIMS_MAPPING_BASE, **{'sub': 'email'}}
 
     @classmethod
-    def create(cls, create_model: 'SignUp.AdminCreate') -> typing.Self:
+    def create(cls, create_model: SignUpAdminCreate) -> typing.Self:
         return cls(
             issued=datetime_module.datetime.now(
                 datetime_module.timezone.utc),
@@ -943,26 +939,16 @@ class SignUpModel(
 
 
 AuthCredentialClass = UserAccessToken | ApiKey | OTP | SignUp
-AuthCredentialModel = UserAccessTokenModel | ApiKeyModel | OTPModel | SignUpModel
 AuthCredentialId = UserAccessTokenTypes.id | ApiKeyTypes.id | OTPTypes.id
 
 AUTH_CREDENTIAL_CLASSES: set[AuthCredentialClass] = {
     UserAccessToken, ApiKey, OTP, SignUp}
-AUTH_CREDENTIAL_MODELS: set[AuthCredentialModel] = {
-    UserAccessTokenModel, ApiKeyModel, OTPModel, SignUpModel}
 
 AUTH_CREDENTIAL_TYPE_TO_CLASS: dict[AuthCredentialTypes.type, AuthCredentialClass] = {
     'access_token': UserAccessToken,
     'api_key': ApiKey,
     'otp': OTP,
     'sign_up': SignUp
-}
-
-AUTH_CREDENTIAL_TYPE_TO_MODEL: dict[AuthCredentialTypes.type, AuthCredentialModel] = {
-    'access_token': UserAccessTokenModel,
-    'api_key': ApiKeyModel,
-    'otp': OTPModel,
-    'sign_up': SignUpModel
 }
 
 
@@ -972,26 +958,26 @@ class ApiKeyScopeTypes:
                           ]
 
 
-class ApiKeyScope(ModelManager):
+class ApiKeyScopeIdBase(IdObject[ApiKeyScopeTypes.id]):
+    _ID_COLS: typing.ClassVar[list[str]] = ['api_key_id', 'scope_id']
 
-    class IdBase(IdObject[ApiKeyScopeTypes.id]):
-        _ID_COLS: typing.ClassVar[list[str]] = ['api_key_id', 'scope_id']
-
-        api_key_id: ApiKeyTypes.id = Field(
-            index=True, foreign_key=ApiKeyModel.__tablename__ + '.' + ApiKeyModel._ID_COLS[0], ondelete='CASCADE')
-        scope_id: client.ScopeTypes.id = Field(index=True)
-
-    class AdminUpdate(BaseModel):
-        pass
-
-    class AdminCreate(IdBase):
-        pass
+    api_key_id: ApiKeyTypes.id = Field(
+        index=True, foreign_key=ApiKey.__tablename__ + '.' + ApiKey._ID_COLS[0], ondelete='CASCADE')
+    scope_id: client.ScopeTypes.id = Field(index=True)
 
 
-class ApiKeyScopeModel(
-        Table['ApiKeyScopeModel', ApiKeyScopeTypes.id,
-              ApiKeyScope.AdminCreate, ApiKeyScope.AdminUpdate],
-        ApiKeyScope.IdBase,
+class ApiKeyScopeAdminUpdate(BaseModel):
+    pass
+
+
+class ApiKeyScopeAdminCreate(ApiKeyScopeIdBase):
+    pass
+
+
+class ApiKeyScope(
+        Table['ApiKeyScope', ApiKeyScopeTypes.id,
+              ApiKeyScopeAdminCreate, ApiKeyScopeAdminUpdate],
+        ApiKeyScopeIdBase,
         table=True):
 
     __tablename__ = 'api_key_scope'
@@ -999,7 +985,7 @@ class ApiKeyScopeModel(
         PrimaryKeyConstraint('api_key_id', 'scope_id'),
     )
 
-    api_key: ApiKeyModel = Relationship(
+    api_key: ApiKey = Relationship(
         back_populates='api_key_scopes')
 
     _ROUTER_TAG: typing.ClassVar[str] = 'Api Key Scope'
@@ -1012,7 +998,7 @@ class ApiKeyScopeModel(
 
     @ classmethod
     async def _check_authorization_post(cls, **kwargs):
-        api_key = await ApiKeyModel._basic_api_get(kwargs['session'], kwargs['create_model'].api_key_id)
+        api_key = await ApiKey._basic_api_get(kwargs['session'], kwargs['create_model'].api_key_id)
 
         if not kwargs['admin']:
             if api_key.user_id != kwargs['authorized_user_id']:
@@ -1050,72 +1036,78 @@ class GalleryTypes:
     folder_name = str
 
 
-class Gallery:
-
-    Types = GalleryTypes
-
-    class IdBase(IdObject[GalleryTypes.id]):
-        id: GalleryTypes.id = Field(
-            primary_key=True, index=True, unique=True, const=True)
-
-    class Export(TableExport):
-        id: GalleryTypes.id
-        user_id: GalleryTypes.user_id
-        name: GalleryTypes.name
-        parent_id: GalleryTypes.parent_id | None
-        description: GalleryTypes.description | None
-        date: GalleryTypes.date | None
-
-    class Public(Export):
-        pass
-
-    class Private(Export):
-        visibility_level: GalleryTypes.visibility_level
-
-    class Import(BaseModel):
-        pass
-
-    class Update(Import):
-        name: typing.Optional[GalleryTypes.name] = None
-        user_id: typing.Optional[GalleryTypes.user_id] = None
-        visibility_level: typing.Optional[GalleryTypes.visibility_level] = None
-        parent_id: typing.Optional[GalleryTypes.parent_id] = None
-        description: typing.Optional[GalleryTypes.description] = None
-        date: typing.Optional[GalleryTypes.date] = None
-
-    class AdminUpdate(Update):
-        pass
-
-    class Create(Import):
-        name: GalleryTypes.name
-        visibility_level: GalleryTypes.visibility_level
-        parent_id: GalleryTypes.parent_id
-        description: typing.Optional[GalleryTypes.description] = None
-        date: typing.Optional[GalleryTypes.date] = None
-
-    class AdminCreate(Create):
-        user_id: GalleryTypes.user_id
-        parent_id: typing.Optional[GalleryTypes.parent_id] = None
-
-    class Available(BaseModel):
-        name: GalleryTypes.name
-        parent_id: GalleryTypes.parent_id
-        date: typing.Optional[GalleryTypes.date] = None
-
-    class AdminAvailable(Available):
-        user_id: UserTypes.id
+class GalleryIdBase(IdObject[GalleryTypes.id]):
+    id: GalleryTypes.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
 
 
-class GalleryModel(
-        Table['GalleryModel', GalleryTypes.id,
-              Gallery.AdminCreate, Gallery.AdminUpdate],
-        Gallery.IdBase,
+class GalleryExport(TableExport):
+    id: GalleryTypes.id
+    user_id: GalleryTypes.user_id
+    name: GalleryTypes.name
+    parent_id: GalleryTypes.parent_id | None
+    description: GalleryTypes.description | None
+    date: GalleryTypes.date | None
+
+
+class GalleryPublic(GalleryExport):
+    pass
+
+
+class GalleryPrivate(GalleryExport):
+    visibility_level: GalleryTypes.visibility_level
+
+
+class GalleryImport(BaseModel):
+    pass
+
+
+class GalleryUpdate(GalleryImport):
+    name: typing.Optional[GalleryTypes.name] = None
+    user_id: typing.Optional[GalleryTypes.user_id] = None
+    visibility_level: typing.Optional[GalleryTypes.visibility_level] = None
+    parent_id: typing.Optional[GalleryTypes.parent_id] = None
+    description: typing.Optional[GalleryTypes.description] = None
+    date: typing.Optional[GalleryTypes.date] = None
+
+
+class GalleryAdminUpdate(GalleryUpdate):
+    pass
+
+
+class GalleryCreate(GalleryImport):
+    name: GalleryTypes.name
+    visibility_level: GalleryTypes.visibility_level
+    parent_id: GalleryTypes.parent_id
+    description: typing.Optional[GalleryTypes.description] = None
+    date: typing.Optional[GalleryTypes.date] = None
+
+
+class GalleryAdminCreate(GalleryCreate):
+    user_id: GalleryTypes.user_id
+    parent_id: typing.Optional[GalleryTypes.parent_id] = None
+
+
+class GalleryAvailable(BaseModel):
+    name: GalleryTypes.name
+    parent_id: GalleryTypes.parent_id
+    date: typing.Optional[GalleryTypes.date] = None
+
+
+class GalleryAdminAvailable(GalleryAvailable):
+    user_id: UserTypes.id
+
+
+class Gallery(
+        Table['Gallery', GalleryTypes.id,
+              GalleryAdminCreate, GalleryAdminUpdate],
+        GalleryIdBase,
         table=True):
     __tablename__ = 'gallery'
 
     name: GalleryTypes.name = Field()
     user_id: GalleryTypes.user_id = Field(
-        index=True, foreign_key=UserModel.__tablename__ + '.' + UserModel._ID_COLS[0], ondelete='CASCADE')
+        index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0], ondelete='CASCADE')
 
     visibility_level: GalleryTypes.visibility_level = Field()
     parent_id: GalleryTypes.parent_id = Field(nullable=True, index=True,
@@ -1123,16 +1115,16 @@ class GalleryModel(
     description: GalleryTypes.description = Field(nullable=True)
     date: GalleryTypes.date = Field(nullable=True)
 
-    user: 'UserModel' = Relationship(back_populates='galleries')
-    parent: typing.Optional['GalleryModel'] = Relationship(
-        back_populates='children', sa_relationship_kwargs={'remote_side': 'GalleryModel.id'})
-    children: list['GalleryModel'] = Relationship(
+    user: 'User' = Relationship(back_populates='galleries')
+    parent: typing.Optional['Gallery'] = Relationship(
+        back_populates='children', sa_relationship_kwargs={'remote_side': 'Gallery.id'})
+    children: list['Gallery'] = Relationship(
         back_populates='parent', cascade_delete=True)
-    gallery_permissions: list['GalleryPermissionModel'] = Relationship(
+    gallery_permissions: list['GalleryPermission'] = Relationship(
         back_populates='gallery', cascade_delete=True)
     files: list['FileModel'] = Relationship(
         back_populates='gallery', cascade_delete=True)
-    image_versions: list['ImageVersionModel'] = Relationship(
+    image_versions: list['ImageVersion'] = Relationship(
         back_populates='gallery', cascade_delete=True)
 
     _ROUTER_TAG: typing.ClassVar[str] = 'Gallery'
@@ -1177,7 +1169,7 @@ class GalleryModel(
         return session.exec(select(cls).where(cls.user_id == user_id).where(cls.parent_id == None)).one_or_none()
 
     @ classmethod
-    async def api_get_is_available(cls, session: Session, gallery_available_admin: 'Gallery.AdminAvailable') -> None:
+    async def api_get_is_available(cls, session: Session, gallery_available_admin: GalleryAdminAvailable) -> None:
 
         # raise an exception if the parent gallery does not exist
         if gallery_available_admin.parent_id:
@@ -1204,7 +1196,7 @@ class GalleryModel(
                     raise HTTPException(
                         status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this gallery'.format(method=kwargs['method']))
 
-                gallery_permission = await GalleryPermissionModel.get_one_by_id(kwargs['session'], (kwargs['id'], kwargs['authorized_user_id']))
+                gallery_permission = await GalleryPermission.get_one_by_id(kwargs['session'], (kwargs['id'], kwargs['authorized_user_id']))
 
                 # if the gallery is private and user has no access, pretend it doesn't exist
                 if not gallery_permission and self.visibility_level == kwargs['c'].visibility_level_name_mapping['private']:
@@ -1226,16 +1218,16 @@ class GalleryModel(
 
         print(kwargs['create_model'].model_dump())
 
-        await cls.api_get_is_available(kwargs['session'], Gallery.AdminAvailable(**kwargs['create_model'].model_dump(include=Gallery.AdminAvailable.model_fields.keys(), exclude_unset=True)))
+        await cls.api_get_is_available(kwargs['session'], GalleryAdminAvailable(**kwargs['create_model'].model_dump(include=GalleryAdminAvailable.model_fields.keys(), exclude_unset=True)))
 
     async def _check_validation_patch(self, **kwargs):
         # take self, overwrite it with the update_model, and see if the combined model is available
-        await self.api_get_is_available(kwargs['session'], Gallery.AdminAvailable(**{
-            **self.model_dump(include=list(Gallery.AdminAvailable.model_fields.keys())), **kwargs['update_model'].model_dump(include=Gallery.AdminAvailable.model_fields.keys(), exclude_unset=True)
+        await self.api_get_is_available(kwargs['session'], GalleryAdminAvailable(**{
+            **self.model_dump(include=list(GalleryAdminAvailable.model_fields.keys())), **kwargs['update_model'].model_dump(include=GalleryAdminAvailable.model_fields.keys(), exclude_unset=True)
         }))
 
     @ classmethod
-    async def create(cls, mkdir=True, **kwargs: Unpack[CreateMethodKwargs['Gallery.AdminCreate']]) -> typing.Self:
+    async def create(cls, mkdir=True, **kwargs: Unpack[CreateMethodKwargs[GalleryAdminCreate]]) -> typing.Self:
         gallery = cls(
             id=cls.generate_id(),
             **kwargs['create_model'].model_dump()
@@ -1302,13 +1294,13 @@ class GalleryModel(
 
         for folder_name in to_remove:
             gallery = db_galleries_by_folder_name[folder_name]
-            await GalleryModel.api_delete(session=session, c=c, id=gallery.id, authorized_user_id=self.user_id, admin=False, rmtree=False)
+            await Gallery.api_delete(session=session, c=c, id=gallery.id, authorized_user_id=self.user_id, admin=False, rmtree=False)
 
         for folder_name in to_add:
             date, name = self.get_date_and_name_from_folder_name(
                 folder_name)
-            new_gallery = await GalleryModel.api_post(
-                session=session, c=c, authorized_user_id=self.user_id, admin=False, mkdir=False, create_model=Gallery.AdminCreate(name=name, user_id=self.user_id, visibility_level=self.visibility_level, parent_id=self.id, date=date))
+            new_gallery = await Gallery.api_post(
+                session=session, c=c, authorized_user_id=self.user_id, admin=False, mkdir=False, create_model=GalleryAdminCreate(name=name, user_id=self.user_id, visibility_level=self.visibility_level, parent_id=self.id, date=date))
 
         # add new files, remove old ones
         local_file_by_names = {
@@ -1327,9 +1319,9 @@ class GalleryModel(
 
             # if this is the last image tied to that version, delete the version too
             if file.suffix in ImageFileMetadata._SUFFIXES:
-                image_version = await ImageVersionModel.get_one_by_id(session, file.image_file_metadata.version_id)
+                image_version = await ImageVersion.get_one_by_id(session, file.image_file_metadata.version_id)
                 if len(image_version.image_file_metadatas) == 1:
-                    await ImageVersionModel.api_delete(session=session, c=c, id=image_version.id, authorized_user_id=self.user_id, admin=False)
+                    await ImageVersion.api_delete(session=session, c=c, id=image_version.id, authorized_user_id=self.user_id, admin=False)
 
             await FileModel.api_delete(session=session, c=c, id=file.id, authorized_user_id=self.user_id, admin=False, unlink=False)
 
@@ -1354,15 +1346,15 @@ class GalleryModel(
         for original_images in [True, False]:
             for image_file in image_files:
 
-                base_name, version, scale = ImageFileMetadataModel.parse_file_stem(
+                base_name, version, scale = ImageFileMetadata.parse_file_stem(
                     image_file.stem)
 
                 if original_images == (version == None):
 
                     parent_id = None
                     if version is not None:
-                        image_version_og = session.exec(select(ImageVersionModel).where(ImageVersionModel.gallery_id == self._id).where(
-                            ImageVersionModel.base_name == base_name).where(ImageVersionModel.version == None)).one_or_none()
+                        image_version_og = session.exec(select(ImageVersion).where(ImageVersion.gallery_id == self._id).where(
+                            ImageVersion.base_name == base_name).where(ImageVersion.version == None)).one_or_none()
 
                         # if an original exists, assume the version wants to link as the parent
                         if image_version_og:
@@ -1375,14 +1367,14 @@ class GalleryModel(
                         'parent_id': parent_id
                     }
 
-                    image_version = session.exec(select(ImageVersionModel).where(
-                        ImageVersionModel._build_conditions(image_version_kwargs))).one_or_none()
+                    image_version = session.exec(select(ImageVersion).where(
+                        ImageVersion._build_conditions(image_version_kwargs))).one_or_none()
 
                     # this if the first file of this version
                     if not image_version:
-                        image_version = await ImageVersionModel.api_post(session=session, c=c, authorized_user_id=self.user_id, admin=False, create_model=ImageVersion.AdminCreate(**image_version_kwargs))
+                        image_version = await ImageVersion.api_post(session=session, c=c, authorized_user_id=self.user_id, admin=False, create_model=ImageVersionAdminCreate(**image_version_kwargs))
 
-                    image_file_metadata = await ImageFileMetadataModel.api_post(session=session, c=c, authorized_user_id=self.user_id, admin=False, create_model=ImageFileMetadata.AdminCreate(file_id=image_file.id, version_id=image_version.id, scale=scale))
+                    image_file_metadata = await ImageFileMetadata.api_post(session=session, c=c, authorized_user_id=self.user_id, admin=False, create_model=ImageFileMetadataAdminCreate(file_id=image_file.id, version_id=image_version.id, scale=scale))
 
         # recursively sync children
         for child in self.children:
@@ -1401,41 +1393,45 @@ class GalleryPermissionTypes:
     permission_level = client.PermissionLevelTypes.id
 
 
-class GalleryPermission:
+class GalleryPermissionIdBase(IdObject[GalleryPermissionTypes.id]):
+    _ID_COLS: typing.ClassVar[list[str]] = ['gallery_id', 'user_id']
 
-    class IdBase(IdObject[GalleryPermissionTypes.id]):
-        _ID_COLS: typing.ClassVar[list[str]] = ['gallery_id', 'user_id']
-
-        gallery_id: GalleryPermissionTypes.gallery_id = Field(
-            primary_key=True, index=True, foreign_key=GalleryModel.__tablename__ + '.' + GalleryModel._ID_COLS[0], ondelete='CASCADE')
-        user_id: GalleryPermissionTypes.user_id = Field(
-            primary_key=True, index=True, foreign_key=UserModel.__tablename__ + '.' + UserModel._ID_COLS[0], ondelete='CASCADE')
-
-    class Export(TableExport):
-        gallery_id: GalleryPermissionTypes.gallery_id
-        user_id: GalleryPermissionTypes.user_id
-        permission_level: GalleryPermissionTypes.permission_level
-
-    class Public(Export):
-        pass
-
-    class Private(Export):
-        pass
-
-    class Import(BaseModel):
-        pass
-
-    class AdminUpdate(Import):
-        permission_level: typing.Optional[GalleryPermissionTypes.permission_level] = None
-
-    class AdminCreate(Import, IdBase):
-        permission_level: GalleryPermissionTypes.permission_level
+    gallery_id: GalleryPermissionTypes.gallery_id = Field(
+        primary_key=True, index=True, foreign_key=Gallery.__tablename__ + '.' + Gallery._ID_COLS[0], ondelete='CASCADE')
+    user_id: GalleryPermissionTypes.user_id = Field(
+        primary_key=True, index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0], ondelete='CASCADE')
 
 
-class GalleryPermissionModel(
-        Table['GalleryPermissionModel',
-              GalleryPermissionTypes.id, GalleryPermission.AdminCreate, GalleryPermission.AdminUpdate],
-        GalleryPermission.IdBase,
+class GalleryPermissionExport(TableExport):
+    gallery_id: GalleryPermissionTypes.gallery_id
+    user_id: GalleryPermissionTypes.user_id
+    permission_level: GalleryPermissionTypes.permission_level
+
+
+class GalleryPermissionPublic(GalleryPermissionExport):
+    pass
+
+
+class GalleryPermissionPrivate(GalleryPermissionExport):
+    pass
+
+
+class GalleryPermissionImport(BaseModel):
+    pass
+
+
+class GalleryPermissionAdminUpdate(GalleryPermissionImport):
+    permission_level: typing.Optional[GalleryPermissionTypes.permission_level] = None
+
+
+class GalleryPermissionAdminCreate(GalleryPermissionImport, GalleryPermissionIdBase):
+    permission_level: GalleryPermissionTypes.permission_level
+
+
+class GalleryPermission(
+        Table['GalleryPermission',
+              GalleryPermissionTypes.id, GalleryPermissionAdminCreate, GalleryPermissionAdminUpdate],
+        GalleryPermissionIdBase,
         table=True):
     __tablename__ = 'gallery_permission'
     __table_args__ = (
@@ -1444,9 +1440,9 @@ class GalleryPermissionModel(
 
     permission_level: GalleryPermissionTypes.permission_level = Field()
 
-    gallery: 'GalleryModel' = Relationship(
+    gallery: 'Gallery' = Relationship(
         back_populates='gallery_permissions')
-    user: 'UserModel' = Relationship(
+    user: 'User' = Relationship(
         back_populates='gallery_permissions')
 
     @ classmethod
@@ -1459,7 +1455,7 @@ class GalleryPermissionModel(
 
     @ classmethod
     async def _check_validation_post(cls, **kwargs):
-        if await GalleryPermissionModel.get_one_by_id(kwargs['session'], kwargs['create_model']._id):
+        if await GalleryPermission.get_one_by_id(kwargs['session'], kwargs['create_model']._id):
             raise HTTPException(
                 status.HTTP_409_CONFLICT, detail='Gallery permission already exists')
 
@@ -1473,7 +1469,7 @@ class GalleryPermissionModel(
 
         if not kwargs['admin']:
             if self.gallery.user != kwargs['authorized_user_id']:
-                authorized_user_gallery_permission = await self.get_one_by_id(kwargs['session'], GalleryPermission.IdBase(
+                authorized_user_gallery_permission = await self.get_one_by_id(kwargs['session'], GalleryPermissionIdBase(
                     gallery_id=self.gallery._id, user_id=kwargs['authorized_user_id']
                 )._id)
 
@@ -1492,7 +1488,7 @@ class FileTypes:
     suffix = typing.Annotated[str, StringConstraints(
         to_lower=True)]
     size = int
-    gallery_id = Gallery.Types.id
+    gallery_id = GalleryTypes.id
 
 
 class File:
@@ -1537,11 +1533,11 @@ class FileModel(
     stem: FileTypes.stem = Field()
     suffix: FileTypes.suffix = Field(nullable=True)
     gallery_id: FileTypes.gallery_id = Field(
-        index=True, foreign_key=GalleryModel.__tablename__ + '.' + GalleryModel._ID_COLS[0], ondelete='CASCADE')
+        index=True, foreign_key=Gallery.__tablename__ + '.' + Gallery._ID_COLS[0], ondelete='CASCADE')
     size: FileTypes.size = Field(nullable=True)
 
-    gallery: 'GalleryModel' = Relationship(back_populates='files')
-    image_file_metadata: typing.Optional['ImageFileMetadataModel'] = Relationship(
+    gallery: Gallery = Relationship(back_populates='files')
+    image_file_metadata: typing.Optional['ImageFileMetadata'] = Relationship(
         back_populates='file', cascade_delete=True)
 
     @ property
@@ -1555,7 +1551,7 @@ class ImageVersionTypes:
         id = str
 
     id = BaseTypes.id
-    gallery_id = Gallery.Types.id
+    gallery_id = GalleryTypes.id
     base_name = typing.Annotated[str, StringConstraints(
         # prohibit underscore
         min_length=1, max_length=240, pattern=re.compile(r'^(?!.*_).+$')
@@ -1571,53 +1567,57 @@ class ImageVersionTypes:
     average_color = str
 
 
-class ImageVersion:
-
-    class IdBase(IdObject[ImageVersionTypes.id]):
-        id: ImageVersionTypes.id = Field(
-            primary_key=True, index=True, unique=True, const=True)
-
-    class Export(TableExport):
-        id: ImageVersionTypes.id
-        base_name: ImageVersionTypes.base_name | None
-        parent_id: ImageVersionTypes.parent_id | None
-        version: ImageVersionTypes.version | None
-        datetime: ImageVersionTypes.datetime | None
-        description: ImageVersionTypes.description | None
-        aspect_ratio: ImageVersionTypes.aspect_ratio | None
-        average_color: ImageVersionTypes.average_color | None
-
-    class Import(BaseModel):
-        base_name: typing.Optional[ImageVersionTypes.base_name] = None
-        parent_id: typing.Optional[ImageVersionTypes.parent_id] = None
-        version: typing.Optional[ImageVersionTypes.version] = None
-        datetime: typing.Optional[ImageVersionTypes.datetime] = None
-        description: typing.Optional[ImageVersionTypes.description] = None
-
-    class Update(Import, IdBase):
-        pass
-
-    class AdminUpdate(Update):
-        pass
-
-    class Create (Import):
-        pass
-
-    class AdminCreate(Create):
-        gallery_id: ImageVersionTypes.gallery_id
-        base_name: typing.Optional[ImageVersionTypes.base_name] = None
-        version: typing.Optional[ImageVersionTypes.version] = None
-        parent_id: typing.Optional[ImageVersionTypes.parent_id] = None
-        datetime: typing.Optional[ImageVersionTypes.datetime] = None
-        description: typing.Optional[ImageVersionTypes.description] = None
-        aspect_ratio: typing.Optional[ImageVersionTypes.aspect_ratio] = None
-        average_color: typing.Optional[ImageVersionTypes.average_color] = None
+class ImageVersionIdBase(IdObject[ImageVersionTypes.id]):
+    id: ImageVersionTypes.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
 
 
-class ImageVersionModel(
-        Table['ImageVersionModel', ImageVersionTypes.id,
-              ImageVersion.AdminCreate, ImageVersion.AdminUpdate],
-        ImageVersion.IdBase,
+class ImageVersionExport(TableExport):
+    id: ImageVersionTypes.id
+    base_name: ImageVersionTypes.base_name | None
+    parent_id: ImageVersionTypes.parent_id | None
+    version: ImageVersionTypes.version | None
+    datetime: ImageVersionTypes.datetime | None
+    description: ImageVersionTypes.description | None
+    aspect_ratio: ImageVersionTypes.aspect_ratio | None
+    average_color: ImageVersionTypes.average_color | None
+
+
+class ImageVersionImport(BaseModel):
+    base_name: typing.Optional[ImageVersionTypes.base_name] = None
+    parent_id: typing.Optional[ImageVersionTypes.parent_id] = None
+    version: typing.Optional[ImageVersionTypes.version] = None
+    datetime: typing.Optional[ImageVersionTypes.datetime] = None
+    description: typing.Optional[ImageVersionTypes.description] = None
+
+
+class ImageVersionUpdate(ImageVersionImport, ImageVersionIdBase):
+    pass
+
+
+class ImageVersionAdminUpdate(ImageVersionUpdate):
+    pass
+
+
+class ImageVersionCreate (ImageVersionImport):
+    pass
+
+
+class ImageVersionAdminCreate(ImageVersionCreate):
+    gallery_id: ImageVersionTypes.gallery_id
+    base_name: typing.Optional[ImageVersionTypes.base_name] = None
+    version: typing.Optional[ImageVersionTypes.version] = None
+    parent_id: typing.Optional[ImageVersionTypes.parent_id] = None
+    datetime: typing.Optional[ImageVersionTypes.datetime] = None
+    description: typing.Optional[ImageVersionTypes.description] = None
+    aspect_ratio: typing.Optional[ImageVersionTypes.aspect_ratio] = None
+    average_color: typing.Optional[ImageVersionTypes.average_color] = None
+
+
+class ImageVersion(
+        Table['ImageVersion', ImageVersionTypes.id,
+              ImageVersionAdminCreate, ImageVersionAdminUpdate],
+        ImageVersionIdBase,
         table=True):
     __tablename__ = 'image_version'
 
@@ -1629,21 +1629,21 @@ class ImageVersionModel(
     # BW, Edit1, etc. Original version is null
     version: ImageVersionTypes.version = Field(nullable=True)
     gallery_id: ImageVersionTypes.gallery_id = Field(
-        index=True, foreign_key=GalleryModel.__tablename__ + '.' + GalleryModel._ID_COLS[0], ondelete='CASCADE')
+        index=True, foreign_key=Gallery.__tablename__ + '.' + Gallery._ID_COLS[0], ondelete='CASCADE')
     datetime: ImageVersionTypes.datetime = Field(nullable=True)
     description: ImageVersionTypes.description = Field(nullable=True)
     aspect_ratio: ImageVersionTypes.aspect_ratio = Field(nullable=True)
     average_color: ImageVersionTypes.average_color = Field(
         nullable=True)
 
-    parent: typing.Optional['ImageVersionModel'] = Relationship(
-        back_populates='children', sa_relationship_kwargs={'remote_side': 'ImageVersionModel.id'})
-    children: list['ImageVersionModel'] = Relationship(
+    parent: typing.Optional['ImageVersion'] = Relationship(
+        back_populates='children', sa_relationship_kwargs={'remote_side': 'ImageVersion.id'})
+    children: list['ImageVersion'] = Relationship(
         back_populates='parent')
 
-    image_file_metadatas: list['ImageFileMetadataModel'] = Relationship(
+    image_file_metadatas: list['ImageFileMetadata'] = Relationship(
         back_populates='version')
-    gallery: 'GalleryModel' = Relationship(
+    gallery: 'Gallery' = Relationship(
         back_populates='image_versions')
 
     @ model_validator(mode='after')
@@ -1670,59 +1670,66 @@ class ImageVersionModel(
                 raise ValueError('Unnamed versions must have a parent_id')
 
 
+class ImageFileMetadataConfig:
+    _SUFFIXES: typing.ClassVar[set[str]] = {
+        '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'}
+
+
 class ImageFileMetadataTypes:
     file_id = FileTypes.id
     version_id = ImageVersionTypes.id
     scale = int
 
 
-class ImageFileMetadata:
-    _SUFFIXES: typing.ClassVar[set[str]] = {
-        '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'}
+class ImageFileMetadataIdBase(IdObject[ImageFileMetadataTypes.file_id]):
+    _ID_COLS: typing.ClassVar[list[str]] = ['file_id']
 
-    class IdBase(IdObject[ImageFileMetadataTypes.file_id]):
-        _ID_COLS: typing.ClassVar[list[str]] = ['file_id']
-
-        file_id: ImageFileMetadataTypes.file_id = Field(
-            primary_key=True, index=True, unique=True, const=True, foreign_key=FileModel.__tablename__ + '.' + FileModel._ID_COLS[0], ondelete='CASCADE')
-
-    class Export(TableExport):
-        file_id: ImageFileMetadataTypes.file_id
-        version_id: ImageFileMetadataTypes.version_id
-        scale: ImageFileMetadataTypes.scale | None
-
-    class Import(BaseModel):
-        pass
-
-    class Update(Import, IdBase):
-        pass
-
-    class AdminUpdate(Update):
-        pass
-
-    class Create(Import):
-        file_id: ImageFileMetadataTypes.file_id
-        version_id: ImageFileMetadataTypes.version_id
-        scale: typing.Optional[ImageFileMetadataTypes.scale] = Field(
-            default=None, ge=1, le=99)
-
-    class AdminCreate(Create):
-        pass
+    file_id: ImageFileMetadataTypes.file_id = Field(
+        primary_key=True, index=True, unique=True, const=True, foreign_key=FileModel.__tablename__ + '.' + FileModel._ID_COLS[0], ondelete='CASCADE')
 
 
-class ImageFileMetadataModel(
-        Table['ImageFileMetadataModel', ImageFileMetadataTypes.file_id,
-              ImageFileMetadata.AdminCreate, ImageFileMetadata.AdminUpdate],
-        ImageFileMetadata.IdBase,
+class ImageFileMetadataExport(TableExport):
+    file_id: ImageFileMetadataTypes.file_id
+    version_id: ImageFileMetadataTypes.version_id
+    scale: ImageFileMetadataTypes.scale | None
+
+
+class ImageFileMetadataImport(BaseModel):
+    pass
+
+
+class ImageFileMetadataUpdate(ImageFileMetadataImport, ImageFileMetadataIdBase):
+    pass
+
+
+class ImageFileMetadataAdminUpdate(ImageFileMetadataUpdate):
+    pass
+
+
+class ImageFileMetadataCreate(ImageFileMetadataImport):
+    file_id: ImageFileMetadataTypes.file_id
+    version_id: ImageFileMetadataTypes.version_id
+    scale: typing.Optional[ImageFileMetadataTypes.scale] = Field(
+        default=None, ge=1, le=99)
+
+
+class ImageFileMetadataAdminCreate(ImageFileMetadataCreate):
+    pass
+
+
+class ImageFileMetadata(
+        Table['ImageFileMetadata', ImageFileMetadataTypes.file_id,
+              ImageFileMetadataAdminCreate, ImageFileMetadataAdminUpdate],
+        ImageFileMetadataIdBase,
         table=True):
     __tablename__ = 'image_file_metadata'
 
     version_id: ImageFileMetadataTypes.version_id = Field(
-        index=True, foreign_key=ImageVersionModel.__tablename__ + '.' + ImageVersionModel._ID_COLS[0], ondelete='CASCADE')
+        index=True, foreign_key=ImageVersion.__tablename__ + '.' + ImageVersion._ID_COLS[0], ondelete='CASCADE')
     scale: ImageFileMetadataTypes.scale = Field(
         nullable=True, ge=1, le=99)
 
-    version: 'ImageVersionModel' = Relationship(
+    version: 'ImageVersion' = Relationship(
         back_populates='image_file_metadatas')
     file: 'FileModel' = Relationship(
         back_populates='image_file_metadata')

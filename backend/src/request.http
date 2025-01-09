@@ -23,7 +23,6 @@
 
 # see common auth status
 # GET http://localhost:8087/auth/
-# Authorization: Bearer token
 
 #get token from email magic link 
 # POST http://localhost:8087/auth/login/email-magic-link/
@@ -116,15 +115,15 @@
 # Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyZGQyOGNmZi00ZDlkLTQ4NzAtOWU1OC1hYmZjYjc1ZmEzOTYiLCJleHAiOjE3MzYyMzY1MjgsImlhdCI6MTczNTYzMTcyOCwidHlwZSI6ImFjY2Vzc190b2tlbiJ9.cmQxbLflxdyMGBGfroprC9uxeXcmIMcYvm3Ve_o2uX8
 
 
-POST http://localhost:8087/galleries/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyZGQyOGNmZi00ZDlkLTQ4NzAtOWU1OC1hYmZjYjc1ZmEzOTYiLCJleHAiOjE3MzYyMzY1MjgsImlhdCI6MTczNTYzMTcyOCwidHlwZSI6ImFjY2Vzc190b2tlbiJ9.cmQxbLflxdyMGBGfroprC9uxeXcmIMcYvm3Ve_o2uX8
-Content-Type: application/json
+# POST http://localhost:8087/galleries/
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyZGQyOGNmZi00ZDlkLTQ4NzAtOWU1OC1hYmZjYjc1ZmEzOTYiLCJleHAiOjE3MzYyMzY1MjgsImlhdCI6MTczNTYzMTcyOCwidHlwZSI6ImFjY2Vzc190b2tlbiJ9.cmQxbLflxdyMGBGfroprC9uxeXcmIMcYvm3Ve_o2uX8
+# Content-Type: application/json
 
-{
-    "name": "asd",
-    "parent_id": "5a1c572e-92a0-4e14-8613-c4928b8e6179",
-    "visibility_level": 1
-}
+# {
+#     "name": "asd",
+#     "parent_id": "5a1c572e-92a0-4e14-8613-c4928b8e6179",
+#     "visibility_level": 1
+# }
 
 
 
