@@ -428,7 +428,9 @@ async def post_login_otp(session: Session, user: models.User, response: Response
     user_otps = user.otps
 
     found = False
-    for otp in user_otps:
+
+    # the most recent ones are at the end
+    for otp in user_otps[::-1]:
         if models.OTP.verify_code(code, otp.hashed_code):
             found = True
             break

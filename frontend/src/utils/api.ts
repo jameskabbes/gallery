@@ -33,7 +33,6 @@ async function callApi<TResponseData, TRequestData = any>({
     };
 
     console.log(method, url);
-    await new Promise((resolve) => setTimeout(resolve, 500));
     const response = await apiClient.request<TResponseData>(requestConfig);
     if (authContext && response.headers[config.header_keys['auth_error']]) {
       authContext.logOut();

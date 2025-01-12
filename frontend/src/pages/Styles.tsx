@@ -26,7 +26,6 @@ import {
 
 import { Card1 } from '../components/Utils/Card';
 import { Loader1, Loader2, Loader3 } from '../components/Utils/Loader';
-
 import { Checkbox1 } from '../components/Utils/Checkbox';
 import { RadioButton1 } from '../components/Utils/RadioButton';
 import { useConfirmationModal } from '../utils/useConfirmationModal';
@@ -34,6 +33,7 @@ import { Toggle1 } from '../components/Utils/Toggle';
 import { AuthModalsContext } from '../contexts/AuthModals';
 import { ValidatedInputPhoneNumber } from '../components/Form/ValidatedInputPhoneNumber';
 import { E164Number } from 'libphonenumber-js';
+import { VerifyOTP } from '../components/Auth/OTP';
 
 const API_ENDPOINT = '/pages/styles/';
 const API_METHOD = 'get';

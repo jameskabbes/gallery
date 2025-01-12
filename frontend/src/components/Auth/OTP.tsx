@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { AuthContext } from '../../contexts/Auth';
 import { RequestOTPContext } from '../../contexts/RequestOTP';
 import { AuthModalsContext } from '../../contexts/AuthModals';
@@ -17,6 +17,10 @@ import { isEmailValid } from '../../services/isEmailValid';
 import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { ValidatedInputPhoneNumber } from '../Form/ValidatedInputPhoneNumber';
 import { postLogInOTPPhoneNumber } from '../../services/api/postLogInOTPPhoneNumber';
+import { Surface } from '../Utils/Surface';
+import { useValidatedInputString } from '../../utils/useValidatedInput';
+import { Loader1 } from '../Utils/Loader';
+import { IoWarning } from 'react-icons/io5';
 
 function RequestOTP() {
   const authContext = useContext(AuthContext);
@@ -136,63 +140,179 @@ function VerifyOTP() {
   const [code, setCode] = useState<ValidatedInputState<string>>({
     ...defaultValidatedInputState<string>(''),
   });
-  const [valid, setValid] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isFocused, setIsFocused] = useState(false);
+  const [cursorIndex, setCursorIndex] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const pattern = new RegExp(
+    openapi_schema.components.schemas.PostLoginWithOTPEmailRequest.properties.code.pattern
+  );
+
+  const nCharacters =
+    openapi_schema.components.schemas.PostLoginWithOTPEmailRequest.properties
+      .code.maxLength;
+
+  function setControlledCursorIndex(index: number, codeValueLength: number) {
+    if (index < 0) {
+      // min case
+      setCursorIndex(0);
+    } else if (index > nCharacters) {
+      setCursorIndex(nCharacters);
+    } else {
+      setCursorIndex(index);
+    }
+  }
+
+  useValidatedInputString({
+    state: code,
+    setState: setCode,
+    checkValidity: true,
+    minLength: nCharacters,
+    maxLength: nCharacters,
+    pattern:
+      openapi_schema.components.schemas.PostLoginWithOTPEmailRequest.properties
+        .code.pattern,
+  });
 
   useEffect(() => {
-    setValid(code.status === 'valid');
-  }, [code.status]);
+    if (inputRef.current) {
+      inputRef.current.setSelectionRange(cursorIndex, cursorIndex);
+    }
+  }, [cursorIndex]);
 
-  async function handleSubmitVerify(e: React.FormEvent) {
+  // Check focus state on component render and updates
+  useEffect(() => {
+    const handleFocus = () => setIsFocused(true);
+    const handleBlur = () => setIsFocused(false);
+
+    const currentInput = inputRef.current;
+
+    currentInput.addEventListener('focus', handleFocus);
+    currentInput.addEventListener('blur', handleBlur);
+
+    return () => {
+      currentInput.removeEventListener('focus', handleFocus);
+      currentInput.removeEventListener('blur', handleBlur);
+    };
+  }, []);
+
+  useEffect(() => {
+    setControlledCursorIndex(code.value.length, code.value.length);
+    setError(null);
+  }, [code.value]);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
 
     if (requestOTPContext.medium === 'email') {
       var { data, status } = await postLogInOTPEmail(authContext, {
-        code: code.value,
         email: requestOTPContext.email.value,
+        code: code.value,
       });
     } else if (requestOTPContext.medium === 'sms') {
       var { data, status } = await postLogInOTPPhoneNumber(authContext, {
-        code: code.value,
         phone_number: requestOTPContext.phoneNumber.value,
+        code: code.value,
       });
     }
     setLoading(false);
-    console.log(data);
-    console.log(status);
-
     if (status === 200) {
       authModalsContext.activate(null);
-      authContext.updateFromApiResponse(data);
+    } else {
+      setCode((prev) => ({
+        ...prev,
+        status: 'invalid',
+      }));
+      setError('could not verify code');
     }
   }
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // filter out the non numbers
+
+    const value = e.target.value.slice(0, nCharacters);
+
+    // fill in remaining characters with the number 1 - assume the number 1 is safe
+    const mockedValue = value + '1'.repeat(nCharacters - value.length);
+
+    if (pattern.test(mockedValue)) {
+      setCode((prev) => {
+        return { ...prev, value };
+      });
+    }
+  };
+
+  const handleContainerClick = () => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmitVerify} className="flex flex-col space-y-6">
-      <header>Enter Code</header>
-      <p
-        className="underline text-center cursor-pointer"
-        onClick={() => authModalsContext.activate('requestOTP')}
-      >
-        Need a new code?
-      </p>
-      <fieldset>
-        <ValidatedInputString
-          state={code}
-          setState={setCode}
-          id="verify-otp-code"
-          minLength={
-            openapi_schema.components.schemas.PostLoginWithOTPEmailRequest
-              .properties.code.minLength
-          }
-          maxLength={
-            openapi_schema.components.schemas.PostLoginWithOTPEmailRequest
-              .properties.code.maxLength
-          }
-        />
-      </fieldset>
-      <ButtonSubmit disabled={!valid || loading}>Log In</ButtonSubmit>
+    <form onSubmit={handleSubmit} className="flex flex-col space-y-6">
+      <header>Verify Code</header>
+      <div className="info-bar">
+        {loading ? (
+          <div className="flex flex-row justify-center items-center space-x-2">
+            <Loader1 />
+            <span className="mb-0">logging in</span>
+          </div>
+        ) : error ? (
+          <div className="flex flex-row justify-center items-center space-x-2">
+            <span className="rounded-full p-1 text-light leading-none bg-error-500">
+              <IoWarning
+                style={{
+                  animation: 'scaleUp 0.2s ease-in-out',
+                }}
+              />
+            </span>
+            <span>{error}</span>
+          </div>
+        ) : null}
+      </div>
+      <Surface>
+        <div
+          className={`flex flex-row justify-between cursor-pointer p-4 rounded-xl border-[1px] hover:border-color-primary ${
+            isFocused ? 'border-color-primary' : ''
+          }`}
+          onClick={handleContainerClick}
+        >
+          <input
+            ref={inputRef}
+            type="text"
+            value={code.value}
+            onChange={handleInputChange}
+            className="opacity-0 absolute"
+          />
+          {Array.from({ length: nCharacters }).map((_, index) => (
+            <div
+              onClick={() => {
+                setControlledCursorIndex(index, code.value.length);
+              }}
+              key={index}
+              className={`flex-1 text-3xl text-center px-2`}
+            >
+              <Surface keepParentMode={true}>
+                <div
+                  className={`border-b-[1px] py-2 ${
+                    index === cursorIndex && isFocused
+                      ? 'border-primary-light dark:border-primary-dark'
+                      : ''
+                  }`}
+                >
+                  {code.value[index] || '*'}
+                </div>
+              </Surface>
+            </div>
+          ))}
+        </div>
+      </Surface>
+
+      <ButtonSubmit disabled={code.status !== 'valid'}>
+        Submit Code
+      </ButtonSubmit>
     </form>
   );
 }

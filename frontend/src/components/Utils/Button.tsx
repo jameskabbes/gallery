@@ -17,7 +17,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   isActive?: boolean;
 }
 
-function Button1({ children, isActive, ...rest }: ButtonProps) {
+function Button1({ children, isActive, ref, ...rest }: ButtonProps) {
   return (
     <Button1Base {...rest} className={`${rest.className} }`}>
       {children}

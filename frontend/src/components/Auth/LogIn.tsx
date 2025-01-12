@@ -67,7 +67,6 @@ function LogIn() {
 
       if (status == 200) {
         const apiData = data as PostLogInResponses['200'];
-        authContext.updateFromApiResponse(apiData);
         modalsContext.deleteModals([key]);
         toastContext.make({
           message: `Welcome ${
@@ -91,7 +90,7 @@ function LogIn() {
       <div className="flex-1">
         <form onSubmit={handleLogin} className="flex flex-col space-y-6">
           <header>Login</header>
-          <div className="h-[2em] flex flex-col justify-center">
+          <div className="info-bar">
             {logInContext.loading ? (
               <div className="flex flex-row justify-center items-center space-x-2">
                 <Loader1 />

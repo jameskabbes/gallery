@@ -742,13 +742,13 @@ class UserAccessToken(
 
 
 class OTPConfig:
-    _LENGTH: typing.ClassVar[int] = 6
+    CODE_LENGTH: typing.ClassVar[int] = 6
 
 
 class OTPTypes(AuthCredentialTypes):
     id = str
     code = typing.Annotated[str, StringConstraints(
-        min_length=OTPConfig._LENGTH, max_length=OTPConfig._LENGTH, pattern=re.compile(r'^\d{6}$'))]
+        min_length=OTPConfig.CODE_LENGTH, max_length=OTPConfig.CODE_LENGTH, pattern=re.compile(r'^\d{6}$'))]
     hashed_code = str
 
 
@@ -791,7 +791,7 @@ class OTP(
     @classmethod
     def generate_code(cls) -> OTPTypes.code:
         characters = string.digits
-        return ''.join(secrets.choice(characters) for _ in range(OTPConfig._LENGTH))
+        return ''.join(secrets.choice(characters) for _ in range(OTPConfig.CODE_LENGTH))
 
     @classmethod
     def hash_code(cls, code: OTPTypes.code) -> OTPTypes.hashed_code:
@@ -799,7 +799,13 @@ class OTP(
 
     @classmethod
     def verify_code(cls, code: OTPTypes.code, hashed_code: OTPTypes.hashed_code) -> bool:
-        return utils.verify_password(code, hashed_code)
+
+        import time
+        start = time.time()
+        a = utils.verify_password(code, hashed_code)
+        end = time.time()
+        print(end - start)
+        return a
 
 
 # ApiKey

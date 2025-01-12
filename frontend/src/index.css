@@ -209,6 +209,10 @@ form label {
   @apply h5 mb-0;
 }
 
+form .info-bar {
+  @apply h-[2em] flex flex-row items-center justify-center;
+}
+
 .input-text-container,
 .input-datetime-local-container,
 .input-phone-number-container {
