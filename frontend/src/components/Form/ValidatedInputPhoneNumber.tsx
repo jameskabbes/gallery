@@ -80,7 +80,6 @@ function ValidatedInputPhoneNumber({
     const formatter = new AsYouType(selectedCountryCode);
 
     const a = formatter.input(displayProposedChange);
-    console.log(a);
     setDisplay(a);
 
     const phoneNumber = parsePhoneNumberFromString(

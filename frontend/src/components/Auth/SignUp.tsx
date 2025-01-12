@@ -1,10 +1,18 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useRef } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
+
 import {
   AuthModalType,
   ExtractResponseTypes,
   ModalsContextType,
 } from '../../types';
+
+import {
+  postSignUp,
+  PostSignUpData,
+  PostSignUpResponses,
+} from '../../services/api/postSignUp';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import openapi_schema from '../../../../openapi_schema.json';
 
@@ -19,11 +27,12 @@ import { ValidatedInputCheckbox } from '../Form/ValidatedInputCheckbox';
 import { IoLogInOutline, IoWarning } from 'react-icons/io5';
 import { Button2, ButtonSubmit } from '../Utils/Button';
 import { Loader1, Loader3 } from '../Utils/Loader';
-import { postRequestSignUp } from '../../services/api/postRequestSignUp';
+import { postRequestSignUpEmail } from '../../services/api/postRequestSignUpEmail';
 import { ModalsContext } from '../../contexts/Modals';
 import { Surface } from '../Utils/Surface';
 import { useLogInWithGoogle } from './useLogInWithGoogle';
 import { Card1 } from '../Utils/Card';
+import { useApiCall } from '../../utils/api';
 
 const checkInboxModalKey = 'modal-signup-check-inbox';
 
@@ -48,7 +57,7 @@ function CheckInbox() {
       <p className="text-center">
         Follow the link sent to your inbox to get started.
       </p>
-      <ButtonSubmit>Okay!</ButtonSubmit>
+      <ButtonSubmit type="submit">Okay!</ButtonSubmit>
     </form>
   );
 }
@@ -78,7 +87,7 @@ function RequestSignUp() {
 
       requestSignUpContext.setLoading(true);
 
-      const { data, status } = await postRequestSignUp(authContext, {
+      await postRequestSignUpEmail(authContext, {
         email: requestSignUpContext.email.value,
       });
       requestSignUpContext.setLoading(false);
@@ -100,26 +109,18 @@ function RequestSignUp() {
                   setState={requestSignUpContext.setEmail}
                   id="sign-up-email"
                   minLength={
-                    openapi_schema.components.schemas.PostRequestSignUpRequest
-                      .properties.email.minLength
+                    openapi_schema.components.schemas
+                      .PostRequestSignUpEmailRequest.properties.email.minLength
                   }
                   maxLength={
-                    openapi_schema.components.schemas.PostRequestSignUpRequest
-                      .properties.email.maxLength
+                    openapi_schema.components.schemas
+                      .PostRequestSignUpEmailRequest.properties.email.maxLength
                   }
                   type="email"
-                  checkAvailability={true}
+                  checkValidity={true}
                   isValid={isEmailValid}
                   showStatus={true}
                 />
-              </section>
-              <section className="flex flex-row items-center justify-center space-x-2">
-                <ValidatedInputCheckbox
-                  state={requestSignUpContext.staySignedIn}
-                  setState={requestSignUpContext.setStaySignedIn}
-                  id="sign-up-stay-signed-in"
-                />
-                <label htmlFor="login-stay-signed-in">Remember Me</label>
               </section>
             </fieldset>
 
@@ -166,6 +167,45 @@ function RequestSignUp() {
   );
 }
 
-function VerifySignUp() {}
+function VerifySignUp() {
+  const location = useLocation();
+  const authContext = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const [status, setStatus] = useState<keyof PostSignUpResponses>(null);
+  const [token, setToken] = useState<PostSignUpData['token']>(
+    new URLSearchParams(location.search).get('token')
+  );
+
+  useEffect(() => {
+    setToken(new URLSearchParams(location.search).get('token'));
+  }, [location.search]);
+
+  useEffect(() => {
+    async function verifySignUp() {
+      const { data, status } = await postSignUp(authContext, {
+        token: token,
+      });
+      navigate({ search: '' });
+      setStatus(status as keyof PostSignUpResponses);
+      authContext.updateFromApiResponse(data);
+    }
+    if (token) {
+      verifySignUp();
+    }
+  }, [token]);
+
+  return (
+    <div>
+      {status === 200 ? (
+        <h1>Success</h1>
+      ) : status === null ? (
+        <Loader1 />
+      ) : (
+        <h1>Error</h1>
+      )}
+    </div>
+  );
+}
 
 export { RequestSignUp, VerifySignUp };

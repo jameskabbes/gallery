@@ -5,7 +5,8 @@
   "frontend_urls": {
     "base": "https://gallery.jameskabbes.com",
     "verify_signup": "/welcome",
-    "verify_magic_link": "/verify-magic-link"
+    "verify_magic_link": "/verify-magic-link",
+    "galleries": "/galleries"
   },
   "cookie_keys": {
     "access_token": "access_token"

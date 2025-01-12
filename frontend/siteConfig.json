@@ -6,6 +6,5 @@
   },
   "validatedInput": {
     "debounceTimeoutLength": 200
-  },
-  "galleriesUrlBase": "/galleries"
+  }
 }

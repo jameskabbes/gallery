@@ -84,14 +84,6 @@ function UpdateEmail({ user }: Props) {
                 .anyOf[0].maxLength
             }
             checkValidity={true}
-            checkAvailability={true}
-            isAvailable={async (value) => {
-              if (value === startingEmail) {
-                return true;
-              } else {
-                return await isEmailAvailable(value);
-              }
-            }}
             isValid={isEmailValid}
             required={true}
             showStatus={modified}

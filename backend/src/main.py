@@ -94,12 +94,12 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
     return response
 
 
-def set_access_token_cookie(access_token: str, response: Response, stay_signed_in: bool):
+def set_access_token_cookie(access_token: str, response: Response, lifespan: datetime.timedelta | None):
 
     kwargs = {}
-    if stay_signed_in:
+    if lifespan:
         kwargs['expires'] = datetime.datetime.now(
-            datetime.UTC) + c.authentication['default_expiry_timedelta']
+            datetime.UTC) + lifespan
 
     response.set_cookie(
         key=c.cookie_keys['access_token'],
@@ -123,7 +123,6 @@ class MakeGetAuthorizationDependencyKwargs(typing.TypedDict, total=False):
 
 class GetAuthorizationReturn(BaseModel):
     isAuthorized: bool = False
-    expiry: typing.Optional[datetime.datetime] = None
     exception: typing.Optional[auth.EXCEPTION] = None
     user: typing.Optional[models.UserPrivate] = None
     scope_ids: typing.Optional[set[client.ScopeTypes.id]] = None
@@ -138,132 +137,147 @@ class GetAuthorizationReturn(BaseModel):
             return None
 
 
-async def get_authorization(
-        token: typing.Optional[str] = None,
-        required_scopes: typing.Optional[set[client.ScopeTypes.name]] = set(),
-        permitted_auth_credential_types: typing.Optional[set[models.AuthCredentialTypes.type]] = set(
-        ),
+class GetAuthorizationFromTokenReturn(GetAuthorizationReturn):
+    auth_credential: typing.Optional[models.AuthCredentialTokenClass] = None
+
+
+async def get_auth_from_auth_credential_table_inst(
+        session: Session,
+        auth_credential_table_inst: models.AuthCredentialTableClass,
+        required_scopes: set[client.ScopeTypes.name] = set(),
+        override_lifetime: typing.Optional[datetime.timedelta] = None,
+        dt_now=datetime.datetime.now(datetime.UTC),
+) -> GetAuthorizationReturn:
+
+    if not auth_credential_table_inst:
+        return GetAuthorizationReturn(exception='authorization_expired')
+
+    print(auth_credential_table_inst)
+
+    # if it expired, delete it
+    if dt_now > auth_credential_table_inst.expiry:
+        session.delete(auth_credential_table_inst)
+        session.commit()
+        return GetAuthorizationReturn(exception='authorization_expired')
+
+    if override_lifetime != None:
+        if dt_now > (auth_credential_table_inst.issued + override_lifetime):
+            session.delete(auth_credential_table_inst)
+            session.commit()
+            return GetAuthorizationReturn(exception='authorization_expired')
+
+    user = auth_credential_table_inst.user
+    if user == None:
+        return GetAuthorizationReturn(exception='user_not_found')
+
+    scope_ids = await auth_credential_table_inst.get_scope_ids(session, c)
+
+    required_scope_ids = set(
+        [c.scope_name_mapping[scope_name]
+            for scope_name in required_scopes]
+    )
+    if not required_scope_ids.issubset(scope_ids):
+        return GetAuthorizationReturn(exception='not_permitted')
+
+    return GetAuthorizationReturn(
+        isAuthorized=True,
+        user=models.UserPrivate.model_validate(user),
+        scope_ids=scope_ids,
+        auth_credential=auth_credential_table_inst
+    )
+
+
+async def get_auth_from_token(
+        token: typing.Optional[client.JwtEncodedStr] = None,
+        required_scopes: set[client.ScopeTypes.name] = set(),
+        permitted_auth_credential_types: set[models.AuthCredentialTokenType] = set(
+            c.auth_type for c in models.AUTH_CREDENTIAL_TOKEN_CLASSES),
         override_lifetime: typing.Optional[datetime.timedelta] = None
 ) -> GetAuthorizationReturn:
 
-    if token == None:
-        return GetAuthorizationReturn(exception='improper_format')
-
+    # make sure the token is a valid jwt
     try:
         payload: dict = c.jwt_decode(token)
     except:
         return GetAuthorizationReturn(exception='improper_format')
 
-    if 'type' not in payload:
+    # make sure "type" is in the jwt
+    if models.AuthCredential.JwtIO._TYPE_CLAIM not in payload:
         return GetAuthorizationReturn(exception='missing_required_claims')
 
-    if payload['type'] not in permitted_auth_credential_types:
+    # make sure the "type" is a permitted auth_credential type
+    auth_type: models.AuthCredentialTypes.type = payload['type']
+    if auth_type not in permitted_auth_credential_types:
         return GetAuthorizationReturn(exception='invalid_authorization_type')
 
-    auth_type: models.AuthCredentialTypes.type = payload['type']
     AuthCredentialClass = models.AUTH_CREDENTIAL_TYPE_TO_CLASS[auth_type]
 
     # validate the jwt claims
     if not AuthCredentialClass.validate_jwt_claims(payload):
         return GetAuthorizationReturn(exception='missing_required_claims')
 
+    # decode the payload
+    decoded_payload = AuthCredentialClass.decode(payload)
+    decoded_payload['expiry'] = datetime.datetime.fromtimestamp(
+        decoded_payload['expiry'], datetime.UTC)
+    decoded_payload['issued'] = datetime.datetime.fromtimestamp(
+        decoded_payload['issued'], datetime.UTC)
+
     auth_credential_from_jwt: models.AuthCredentialClass = AuthCredentialClass(
-        **AuthCredentialClass.decode(payload))
+        **decoded_payload)
 
     dt_now = datetime.datetime.now(datetime.UTC)
-    dt_exp = auth_credential_from_jwt.expiry
-    dt_iat = auth_credential_from_jwt.issued
+
+    # check the dates from the jwt
+    if dt_now > auth_credential_from_jwt.expiry:
+        return GetAuthorizationReturn(exception='authorization_expired')
+    if override_lifetime != None:
+        if dt_now > auth_credential_from_jwt.issued + override_lifetime:
+            return GetAuthorizationReturn(exception='authorization_expired')
 
     # if the auth_credentail is a table, it will need to be in the db
     # for example, SignUp is a JWT only credential, so it will not be in the db
-    user_private: models.UserPrivate = None
-    scope_ids: set[client.ScopeTypes.id] = set()
-
     if issubclass(AuthCredentialClass, models.Table):
-
         with Session(c.db_engine) as session:
             auth_credential_from_db = await AuthCredentialClass.get_one_by_id(
                 session, auth_credential_from_jwt._id)
-            auth_credential = auth_credential_from_db
 
-            # not in the db, raise exception
-            if not auth_credential_from_db:
-                return GetAuthorizationReturn(exception='authorization_expired')
-
-            dt_exp = min(dt_exp, auth_credential_from_db.expiry)
-            dt_iat = min(dt_iat, auth_credential_from_db.issued)
-
-            if dt_now > dt_exp:
-                session.delete(auth_credential_from_db)
-                session.commit()
-                return GetAuthorizationReturn(exception='authorization_expired')
-
-            # if there was an overriden lifetime, check if it has expired
-            if override_lifetime != None:
-                if dt_now > dt_iat + override_lifetime:
-                    session.delete(auth_credential_from_db)
-                    session.commit()
-                    return GetAuthorizationReturn(exception='authorization_expired')
-
-            user: models.User = auth_credential_from_db.user
-            if user == None:
-                return GetAuthorizationReturn(exception='user_not_found')
-
-            if AuthCredentialClass.auth_type == 'access_token':
-                scope_ids = c.user_role_id_scope_ids[user.user_role_id]
-            elif AuthCredentialClass.auth_type == 'api_key':
-                scope_ids = await auth_credential_from_db.get_scope_ids()
-
-            user_private = models.UserPrivate.model_validate(user)
-
+            response = await get_auth_from_auth_credential_table_inst(
+                session, auth_credential_from_db, required_scopes, override_lifetime, dt_now)
+            return response
     else:
-        if dt_now > dt_exp:
-            return GetAuthorizationReturn(exception='authorization_expired')
-        if override_lifetime != None:
-            if dt_now > dt_iat + override_lifetime:
-                return GetAuthorizationReturn(exception='authorization_expired')
+        # non-table auth_credentials have no scopes
+        if required_scopes:
+            return GetAuthorizationReturn(exception='not_permitted')
 
-    required_scope_ids = set(
-        [c.scope_name_mapping[scope_name]
-            for scope_name in required_scopes]
-    )
-
-    if not required_scope_ids.issubset(scope_ids):
-        return GetAuthorizationReturn(exception='not_permitted')
-
-    return GetAuthorizationReturn(
-        isAuthorized=True,
-        expiry=dt_exp,
-        user_private=user_private,
-        scope_ids=scope_ids,
-        auth_credential=auth_credential,
-    )
+        return GetAuthorizationReturn(
+            isAuthorized=True,
+            user=None,
+            scope_ids=set(),
+            auth_credential=auth_credential_from_jwt
+        )
 
 
 def make_get_auth_dependency(raise_exceptions: bool = True, **kwargs: typing.Unpack[MakeGetAuthorizationDependencyKwargs]):
-
-    async def get_authorization_dependency(response: Response, auth_token: typing.Annotated[str | None, Depends(oauth2_scheme)]) -> GetAuthorizationReturn:
-
-        get_authorization_return = await get_authorization(token=auth_token, **kwargs)
+    async def get_authorization_dependency(response: Response, auth_token: typing.Annotated[client.JwtEncodedStr | None, Depends(oauth2_scheme)]) -> GetAuthorizationReturn:
+        get_authorization_return = await get_auth_from_token(token=auth_token, **kwargs)
         if get_authorization_return.exception:
             if raise_exceptions:
                 raise auth.EXCEPTION_MAPPING[get_authorization_return.exception]
-
         return get_authorization_return
-
     return get_authorization_dependency
 
 
-class AuthCredentialIdAndType(BaseModel):
+class AuthCredentialIdTypeAndExpiry(BaseModel):
     id: models.AuthCredentialId | None
     type: models.AuthCredentialTypes.type
+    expiry: models.AuthCredentialTypes.expiry
 
 
 class GetAuthBaseReturn(BaseModel):
     user: typing.Optional[models.UserPrivate]
     scope_ids: typing.Optional[set[client.ScopeTypes.id]]
-    expiry: typing.Optional[models.AuthCredentialTypes.expiry]
-    auth_credential: typing.Optional[AuthCredentialIdAndType]
+    auth_credential: typing.Optional[AuthCredentialIdTypeAndExpiry]
 
 
 assert c.auth_key == 'auth'
@@ -274,12 +288,16 @@ class GetAuthReturn(BaseModel):
 
 
 def get_auth(get_authorization_return: GetAuthorizationReturn) -> GetAuthReturn:
+
     return GetAuthReturn(auth=GetAuthBaseReturn(
         user=get_authorization_return.user,
         scope_ids=get_authorization_return.scope_ids,
-        expiry=get_authorization_return.expiry,
-        auth_credential=AuthCredentialIdAndType(id=get_authorization_return.auth_credential._id if get_authorization_return.auth_credential and get_authorization_return.auth_credential.issub else None,
-                                                type=get_authorization_return.auth_credential.auth_type) if get_authorization_return.auth_credential else None
+        auth_credential=None if not get_authorization_return.auth_credential else
+        AuthCredentialIdTypeAndExpiry(
+            id=get_authorization_return.auth_credential._id,
+            type=get_authorization_return.auth_credential.auth_type,
+            expiry=get_authorization_return.auth_credential.expiry
+        )
     ))
 
 
@@ -300,8 +318,8 @@ async def authenticate_user_with_username_and_password(form_data: typing.Annotat
         return user
 
 
-class TokenResponse(BaseModel):
-    access_token: str
+class PostTokenResponse(BaseModel):
+    access_token: client.JwtEncodedStr
     token_type: str
 
 
@@ -310,20 +328,22 @@ async def post_token(
     user: typing.Annotated[models.User, Depends(authenticate_user_with_username_and_password)],
     response: Response,
     stay_signed_in: bool = Form(c.authentication['stay_signed_in_default'])
-) -> TokenResponse:
+) -> PostTokenResponse:
     with Session(c.db_engine) as session:
+
+        lifespan = None if not stay_signed_in else c.authentication[
+            'expiry_timedeltas']['access_token']
         user_access_token = await models.UserAccessToken.api_post(
             session=session, c=c, authorized_user_id=user._id, admin=False, create_model=models.UserAccessTokenAdminCreate(
-                user_id=user._id, lifespan=c.authentication['expiry_timedeltas']['default_access_token']
+                user_id=user._id, lifespan=lifespan
             ))
 
         encoded_jwt = c.jwt_encode(user_access_token.encode())
+        set_access_token_cookie(encoded_jwt, response, lifespan)
+        return PostTokenResponse(access_token=encoded_jwt, token_type='bearer')
 
-        set_access_token_cookie(encoded_jwt, response, stay_signed_in)
-        return TokenResponse(access_token=encoded_jwt, token_type='bearer')
 
-
-class LoginWithPasswordResponse(GetAuthReturn):
+class PostLoginWithPasswordResponse(GetAuthReturn):
     pass
 
 
@@ -332,149 +352,167 @@ async def post_login_password(
     user: typing.Annotated[models.User, Depends(authenticate_user_with_username_and_password)],
     response: Response,
     stay_signed_in: bool = Form(c.authentication['stay_signed_in_default'])
-) -> LoginWithPasswordResponse:
+) -> PostLoginWithPasswordResponse:
 
     with Session(c.db_engine) as session:
 
+        token_lifespan = c.authentication['expiry_timedeltas']['access_token']
         user_access_token = await models.UserAccessToken.api_post(
             session=session, c=c, authorized_user_id=user._id, admin=False, create_model=models.UserAccessTokenAdminCreate(
-                user_id=user._id, lifespan=c.authentication['expiry_timedeltas']['default_access_token']
+                user_id=user._id, lifespan=token_lifespan
             )
         )
 
         set_access_token_cookie(c.jwt_encode(
-            user_access_token.encode()), response, stay_signed_in)
+            user_access_token.encode()), response, token_lifespan if stay_signed_in else None)
 
-        return LoginWithPasswordResponse(
+        return PostLoginWithPasswordResponse(
             auth=GetAuthBaseReturn(
                 user=models.UserPrivate.model_validate(user),
                 scope_ids=set(
                     c.user_role_id_scope_ids[user.user_role_id]),
-                expiry=user_access_token.expiry,
-                auth_credential=AuthCredentialIdAndType(
-                    id=user_access_token.id, type='access_token')
+                auth_credential=AuthCredentialIdTypeAndExpiry(
+                    id=user_access_token.id, type='access_token', expiry=user_access_token.expiry)
             )
         )
 
 
-class LoginWithMagicLinkResponse(GetAuthReturn):
+class PostLoginWithMagicLinkResponse(GetAuthReturn):
     pass
 
 
 @ auth_router.post('/login/magic-link/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
 async def post_login_magic_link(
         response: Response,
-        token: str = Query(None),
-) -> LoginWithMagicLinkResponse:
+        token: client.JwtEncodedStr = Query(None),
+) -> PostLoginWithMagicLinkResponse:
 
-    authorization = await get_authorization(token=token, permitted_auth_credential_types={
-        'access_token'}, override_lifetime=c.authentication['expiry_timedeltas']['request_magic_link'])
+    authorization = await get_auth_from_token(token=token, permitted_auth_credential_types={
+        'access_token'}, override_lifetime=c.authentication['expiry_timedeltas']['magic_link'])
 
     with Session(c.db_engine) as session:
+
+        token_lifespan = c.authentication['expiry_timedeltas']['access_token']
         user_access_token = await models.UserAccessToken.api_post(
             session=session, c=c, authorized_user_id=authorization._user_id, admin=False, create_model=models.UserAccessTokenAdminCreate(
-                user_id=authorization.user.id, lifespan=c.authentication[
-                    'expiry_timedeltas']['default_access_token']
+                user_id=authorization.user.id, lifespan=token_lifespan
             )
         )
         set_access_token_cookie(c.jwt_encode(
-            user_access_token.encode()), response, True
-        )
+            user_access_token.encode()), response, token_lifespan)
 
         # one time link, delete the auth_credential
         session.delete(authorization.auth_credential)
         session.commit()
 
-        return LoginWithMagicLinkResponse(
+        return PostLoginWithMagicLinkResponse(
             auth=GetAuthBaseReturn(
                 user=models.UserPrivate.model_validate(authorization.user),
                 scope_ids=set(
                     c.user_role_id_scope_ids[authorization.user.user_role_id]),
-                expiry=user_access_token.expiry,
-                auth_credential=AuthCredentialIdAndType(
-                    id=user_access_token.id, type='access_token')
+                auth_credential=AuthCredentialIdTypeAndExpiry(
+                    id=user_access_token.id, type='access_token', expiry=user_access_token.expiry)
             )
         )
 
 
-class LoginWithOTPRequest(BaseModel):
-    code: models.OTPTypes.code
-    email: typing.Optional[models.UserTypes.email]
-    phone_number: typing.Optional[models.UserTypes.phone_number]
-
-    @model_validator(mode='after')
-    def validate_either_email_or_phone_number(self):
-        if 'email' not in self.model_fields_set and 'phone_number' not in self.model_fields_set:
-            raise ValueError('Either email or phone number must be provided')
-
-
-class LoginWithOTPResponse(GetAuthReturn):
+class PostLoginWithOTPResponse(GetAuthReturn):
     pass
 
 
-@ auth_router.post('/login/otp/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
-async def post_login_otp(
-        model: LoginWithOTPRequest,
-        authorization: typing.Annotated[GetAuthorizationReturn, Depends(make_get_auth_dependency(raise_exceptions=False))],
-        response: Response) -> LoginWithOTPResponse:
+async def post_login_otp(session: Session, user: models.User, response: Response, code: models.OTPTypes.code) -> PostLoginWithOTPResponse:
+
+    if not user:
+        raise auth.EXCEPTION_MAPPING['invalid_otp']
+
+    user_otps = user.otps
+
+    found = False
+    for otp in user_otps:
+        if models.OTP.verify_code(code, otp.hashed_code):
+            found = True
+            break
+
+    if not found:
+        raise auth.EXCEPTION_MAPPING['invalid_otp']
+
+    token_lifespan = c.authentication['expiry_timedeltas']['access_token']
+    get_auth = await get_auth_from_auth_credential_table_inst(
+        session, otp, override_lifetime=token_lifespan)
+
+    if get_auth.exception:
+        raise auth.EXCEPTION_MAPPING[get_auth.exception]
+
+    # if the code is active and correct, create an access token
+    user_access_token = await models.UserAccessToken.api_post(
+        session=session, c=c, authorized_user_id=user._id, admin=False, create_model=models.UserAccessTokenAdminCreate(
+            user_id=user._id, lifespan=token_lifespan
+        )
+    )
+    set_access_token_cookie(c.jwt_encode(
+        user_access_token.encode()), response, token_lifespan
+    )
+
+    # one time link, delete the auth_credential
+    session.delete(otp)
+    session.commit()
+
+    a = PostLoginWithOTPResponse(
+        auth=GetAuthBaseReturn(
+            user=models.UserPrivate.model_validate(user),
+            scope_ids=await user_access_token.get_scope_ids(session, c),
+            auth_credential=AuthCredentialIdTypeAndExpiry(
+                id=user_access_token._id, type='access_token', expiry=user_access_token.expiry)
+        )
+    )
+
+    print(a)
+    return a
+
+
+class PostLoginWithOTPEmailRequest(BaseModel):
+    code: models.OTPTypes.code
+    email: models.UserTypes.email
+
+
+@ auth_router.post('/login/otp/email/')
+async def post_login_otp_email(
+        model: PostLoginWithOTPEmailRequest,
+        response: Response) -> PostLoginWithOTPResponse:
 
     with Session(c.db_engine) as session:
-
-        if 'email' in model.model_fields_set:
-            user = session.exec(select(models.User).where(
-                models.User.email == model.email)).one_or_none()
-        elif 'phone_number' in model.model_fields_set:
-            user = session.exec(select(models.User).where(
-                models.User.phone_number == model.phone_number)).one_or_none()
-
-        # not sure what to do yet
-        if not user:
-            raise HTTPException(status.HTTP_401_UNAUTHORIZED,
-                                detail='Invalid token')
-
-        hashed_code = models.OTP.hash_code(model.code)
-        otp = session.exec(select(models.OTP).where(models.OTP.user_id == user.id).where(
-            models.OTP.hashed_code == hashed_code)).one_or_none()
-
-        if not otp:
-            raise HTTPException(status.HTTP_401_UNAUTHORIZED,
-                                detail='Invalid token')
-
-        user_access_token = await models.UserAccessToken.api_post(
-            session=session, c=c, authorized_user_id=user._id, admin=False, create_model=models.UserAccessTokenAdminCreate(
-                user_id=user._id, lifespan=c.authentication['default_expiry_timedelta']
-            )
-        )
-        set_access_token_cookie(c.jwt_encode(
-            user_access_token.encode()), response, True
-        )
-
-        # one time link, delete the auth_credential
-        session.delete(otp)
-        session.commit()
-
-        return LoginWithOTPResponse(
-            auth=GetAuthBaseReturn(
-                user=models.UserPrivate.model_validate(authorization.user),
-                scope_ids=set(
-                    c.user_role_id_scope_ids[authorization.user.user_role_id]),
-                expiry=user_access_token.expiry,
-                auth_credential=AuthCredentialIdAndType(
-                    id=user_access_token.id, type='access_token')
-            )
-        )
+        user = session.exec(select(models.User).where(
+            models.User.email == model.email)).one_or_none()
+        return await post_login_otp(session, user, response, model.code)
 
 
-class LoginWithGoogleRequest(BaseModel):
+class PostLoginWithOTPPhoneNumberRequest(BaseModel):
+    code: models.OTPTypes.code
+    phone_number: models.UserTypes.phone_number
+
+
+@auth_router.post('/login/otp/phone_number/')
+async def post_login_otp_phone_number(
+    model: PostLoginWithOTPPhoneNumberRequest,
+    response: Response
+) -> PostLoginWithOTPResponse:
+
+    with Session(c.db_engine) as session:
+        user = session.exec(select(models.User).where(
+            models.User.phone_number == model.phone_number)).one_or_none()
+        return await post_login_otp(session, user, response, model.code)
+
+
+class PostLoginWithGoogleRequest(BaseModel):
     access_token: str
 
 
-class LoginWithGoogleResponse(GetAuthReturn):
+class PostLoginWithGoogleResponse(GetAuthReturn):
     pass
 
 
 @ auth_router.post("/login/google/", responses={status.HTTP_400_BAD_REQUEST: {"description": 'Invalid token'}})
-async def post_login_google(request_token: LoginWithGoogleRequest, response: Response) -> LoginWithGoogleResponse:
+async def post_login_google(request_token: PostLoginWithGoogleRequest, response: Response) -> PostLoginWithGoogleResponse:
 
     async with httpx.AsyncClient() as client:
         res = await client.get('https://www.googleapis.com/oauth2/v3/userinfo?access_token={}'.format(request_token.access_token))
@@ -493,35 +531,40 @@ async def post_login_google(request_token: LoginWithGoogleRequest, response: Res
         if not user:
             user = await models.User.api_post(session=session, c=c, authorized_user_id=None, create_model=models.UserAdminCreate(email=email, user_role_id=c.user_role_name_mapping['user']))
 
+        token_lifespan = c.authentication['expiry_timedeltas']['access_token']
+
         user_access_token = await models.UserAccessToken.api_post(
             session=session, c=c, authorized_user_id=user._id,  admin=False, create_model=models.UserAccessTokenAdminCreate(
-                user_id=user.id, lifespan=c.authentication['default_expiry_timedelta']
+                user_id=user.id, lifespan=token_lifespan
             ))
 
         set_access_token_cookie(c.jwt_encode(
-            user_access_token.encode()), response, True)
+            user_access_token.encode()), response, token_lifespan)
 
-        return LoginWithGoogleResponse(
+        return PostLoginWithGoogleResponse(
             auth=GetAuthBaseReturn(
                 user=models.UserPrivate.model_validate(user),
                 scope_ids=set(
                     c.user_role_id_scope_ids[user.user_role_id]),
-                expiry=user_access_token.expiry,
-                auth_credential=AuthCredentialIdAndType(
-                    id=user_access_token.id, type='access_token')
+                auth_credential=AuthCredentialIdTypeAndExpiry(
+                    id=user_access_token.id, type='access_token', expiry=user_access_token.expiry)
             )
         )
 
 
-class PostSignUpResponse(BaseModel):
+class PostSignUpRequest(BaseModel):
+    token: str
+
+
+class PostSignUpResponse(GetAuthReturn):
     pass
 
 
 @auth_router.post('/signup/')
-async def post_signup(response: Response, token: str = Query(None)) -> PostSignUpResponse:
+async def post_signup(response: Response, model: PostSignUpRequest) -> PostSignUpResponse:
 
-    authorization = await get_authorization(
-        token=token,
+    authorization = await get_auth_from_token(
+        token=model.token,
         permitted_auth_credential_types={'sign_up'},
         override_lifetime=c.authentication['expiry_timedeltas']['request_sign_up'])
 
@@ -534,174 +577,183 @@ async def post_signup(response: Response, token: str = Query(None)) -> PostSignU
         user = await models.User.api_post(session=session, c=c, authorized_user_id=None,
                                           admin=False, create_model=user_create_admin)
 
+        token_lifespan = c.authentication['expiry_timedeltas']['access_token']
         user_access_token = await models.UserAccessToken.api_post(
             session=session, c=c, authorized_user_id=user._id, admin=False, create_model=models.UserAccessTokenAdminCreate(
-                user_id=user._id, type='access_token', lifespan=c.authentication['default_expiry_timedelta']
+                user_id=user._id, type='access_token', lifespan=token_lifespan
             ))
 
         set_access_token_cookie(c.jwt_encode(
-            user_access_token.encode()), response, True)
+            user_access_token.encode()), response, token_lifespan)
 
-        return LoginWithGoogleResponse(
+        return PostSignUpResponse(
             auth=GetAuthBaseReturn(
                 user=models.UserPrivate.model_validate(user),
                 scope_ids=set(
                     c.user_role_id_scope_ids[user.user_role_id]),
-                expiry=user_access_token.expiry,
-                auth_credential=AuthCredentialIdAndType(
-                    id=user_access_token.id, type='access_token')
+                auth_credential=AuthCredentialIdTypeAndExpiry(
+                    id=user_access_token.id, type='access_token', expiry=user_access_token.expiry)
             )
         )
 
 
-class PostRequestSignUpRequest(BaseModel):
+async def send_signup_link(session: Session, user: models.User,  email: typing.Optional[models.UserTypes.email] = None, phone_number: typing.Optional[models.UserTypes.phone_number] = None):
+
+    # existing user, send email to existing user
+    if user:
+        user_access_token = await models.UserAccessToken.api_post(
+            session=session, c=c, authorized_user_id=None, admin=True,
+            create_model=models.UserAccessTokenAdminCreate(user_id=user._id, lifespan=c.authentication['expiry_timedeltas']['magic_link']))
+
+        url = '{}{}/?token={}'.format(c.frontend_urls['base'],
+                                      c.frontend_urls['verify_magic_link'], c.jwt_encode(user_access_token.encode()))
+
+        if email:
+            c.send_email(
+                email, 'Sign Up Request', 'Somebody requested to sign up with this email. An account already exists with this email. Click here to login instead: {}'.format(url))
+        if phone_number:
+            c.send_sms(
+                phone_number, 'Somebody requested to sign up with this phone number. An account already exists with this phone number. Click here to login instead: {}'.format(url))
+
+    else:
+        sign_up = models.SignUp.create(models.SignUpAdminCreate(
+            email=email, lifespan=c.authentication['expiry_timedeltas']['request_sign_up']
+        ))
+        sign_up_jwt = c.jwt_encode(sign_up.encode())
+        url = '{}{}/?token={}'.format(c.frontend_urls['base'],
+                                      c.frontend_urls['verify_signup'], sign_up_jwt)
+
+        if email:
+            c.send_email(email, 'Sign Up',
+                         'Click here to sign up: {}'.format(url))
+        if phone_number:
+            c.send_sms(phone_number, 'Click here to sign up: {}'.format(url))
+
+
+class PostRequestSignUpEmailRequest(BaseModel):
     email: models.UserTypes.email
 
 
-class PostRequestSignUpResponse(BaseModel):
-    pass
-
-
-@ auth_router.post('/request-signup/', responses={status.HTTP_409_CONFLICT: {"description": models.User.already_exists_message(), 'model': DetailOnlyResponse}})
-async def post_request_sign_up(
-    model: PostRequestSignUpRequest,
-) -> PostRequestSignUpResponse:
-
-    with Session(c.db_engine) as session:
-
-        user = session.exec(select(models.User).where(
-            models.User.email == model.email)).one_or_none()
-
-        # somebody tried signing up with an email that already exists
-        if user:
-            c.send_email(
-                model.email, 'Someone is trying to sign up with your email', '')
-
-        # send them a sign up link
-        else:
-            sign_up = models.SignUp.create(
-                models.SignUpAdminCreate(
-                    email=model.email, lifespan=c.authentication['expiry_timedeltas']['request_sign_up'])
-            )
-            sign_up_jwt = c.jwt_encode(sign_up.encode())
-            url = '{}{}/?token={}'.format(c.frontend_urls['base'],
-                                          c.frontend_urls['verify_signup'], sign_up_jwt)
-
-            c.send_email(
-                model.email, 'Sign Up', 'Click to sign up: {}'.format(url))
-
-        return PostRequestSignUpResponse()
-
-
-class RequestMagicLinkRequest(BaseModel):
-    stay_signed_in: bool = False
-    email: typing.Optional[models.UserTypes.email] = None
-    phone_number: typing.Optional[models.UserTypes.phone_number] = None
-
-
-async def send_magic_link_to_email(model: RequestMagicLinkRequest):
+@ auth_router.post('/request/signup/email/')
+async def post_request_sign_up_email(
+    model: PostRequestSignUpEmailRequest,
+    background_tasks: BackgroundTasks
+):
 
     with Session(c.db_engine) as session:
         user = session.exec(select(models.User).where(
             models.User.email == model.email)).one_or_none()
+        background_tasks.add_task(
+            send_signup_link, session, user, email=model.email)
+        return Response()
+
+
+class PostRequestSignUpSMSRequest(BaseModel):
+    phone_number: models.UserTypes.phone_number
+
+
+@auth_router.post('/request/signup/sms/')
+async def post_request_sign_up_sms(
+    model: PostRequestSignUpSMSRequest,
+    background_tasks: BackgroundTasks
+):
+    with Session(c.db_engine) as session:
+        user = session.exec(select(models.User).where(
+            models.User.phone_number == model.phone_number)).one_or_none()
+        background_tasks.add_task(
+            send_signup_link, session, user, phone_number=model.phone_number)
+        return Response()
+
+
+async def send_magic_link(session: Session, user: models.User, email: typing.Optional[models.UserTypes.email] = None, phone_number: typing.Optional[models.UserTypes.phone_number] = None):
+
+    user_access_token = await models.UserAccessToken.api_post(
+        session=session, c=c, authorized_user_id=None, admin=True,
+        create_model=models.UserAccessTokenAdminCreate(user_id=user._id, lifespan=c.authentication['expiry_timedeltas']['magic_link']))
+
+    url = '{}{}/?token={}'.format(c.frontend_urls['base'],
+                                  c.frontend_urls['verify_magic_link'], c.jwt_encode(user_access_token.encode()))
+
+    if email:
+        c.send_email(email, 'Magic Link', 'Click to login: {}'.format(url))
+    if phone_number:
+        c.send_sms(user.phone_number, 'Click to login: {}'.format(url))
+
+
+class PostRequestMagicLinkEmailRequest(BaseModel):
+    email: models.UserTypes.email
+
+
+@ auth_router.post('/request/magic-link/email/')
+async def post_request_magic_link_email(model: PostRequestMagicLinkEmailRequest, background_tasks: BackgroundTasks):
+
+    with Session(c.db_engine) as session:
+        user = session.exec(select(models.User).where(
+            models.User.email == model.email)).one_or_none()
+        if user:
+            background_tasks.add_task(
+                send_magic_link, session, user, email=model.email)
+    return Response()
+
+
+class PostRequestMagicLinkSMSRequest(BaseModel):
+    phone_number: models.UserTypes.phone_number
+
+
+@auth_router.post('/request/magic-link/sms/')
+async def post_request_magic_link_sms(model: PostRequestMagicLinkSMSRequest, background_tasks: BackgroundTasks):
+    with Session(c.db_engine) as session:
+        user = session.exec(select(models.User).where(
+            models.User.email == model.phone_number)).one_or_none()
+        if user:
+            background_tasks.add_task(
+                send_magic_link, session, user, phone_number=model.phone_number)
+    return Response()
+
+
+async def send_otp(session: Session, user: models.User, email: typing.Optional[models.UserTypes.email] = None, phone_number: typing.Optional[models.UserTypes.phone_number] = None):
+
+    code = models.OTP.generate_code()
+    otp = await models.OTP.api_post(session=session, c=c, authorized_user_id=user._id, create_model=models.OTPAdminCreate(
+        user_id=user._id, hashed_code=models.OTP.hash_code(code), lifespan=c.authentication['expiry_timedeltas']['otp']), admin=False)
+
+    if email:
+        c.send_email(email, 'OTP', 'Your OTP is: {}'.format(code))
+    if phone_number:
+        c.send_sms(phone_number, 'Your OTP is: {}'.format(code))
+
+
+class PostRequestOTPEmailRequest(BaseModel):
+    email: models.UserTypes.email
+
+
+@ auth_router.post('/request/otp/email/')
+async def post_request_otp_email(model: PostRequestOTPEmailRequest, background_tasks: BackgroundTasks):
+
+    with Session(c.db_engine) as session:
+        user = session.exec(select(models.User).where(
+            models.User.email == model.email)).one_or_none()
 
         if user:
-            user_access_token = await models.UserAccessToken.api_post(
-                session=session, c=c, authorized_user_id=None, admin=False,
-                create_model=models.UserAccessTokenAdminCreate(user_id=user._id, lifespan=c.authentication['expiry_timedeltas']['request_magic_link']))
-
-            link_data = {
-                'access_token': c.jwt_encode(user_access_token.encode()),
-                'stay_signed_in': model.stay_signed_in
-            }
-
-            url = '{}{}/?{}'.format(c.frontend_urls['base'],
-                                    c.frontend_urls['verify_signup'], urlencode(link_data))
-
-            c.send_email(
-                user.email, 'Magic Link', 'Click to login: {}'.format(url))
+            background_tasks.add_task(
+                send_otp, session, user, email=model.email)
+    return Response()
 
 
-async def send_magic_link_to_phone_number(model: RequestMagicLinkRequest):
+class PostRequestOTPSMSRequest(BaseModel):
+    phone_number: models.UserTypes.phone_number
+
+
+@ auth_router.post('/request/otp/sms/')
+async def post_request_otp_email(model: PostRequestOTPSMSRequest, background_tasks: BackgroundTasks):
 
     with Session(c.db_engine) as session:
         user = session.exec(select(models.User).where(
             models.User.phone_number == model.phone_number)).one_or_none()
-
         if user:
-            user_access_token = await models.UserAccessToken.api_post(
-                session=session, c=c, authorized_user_id=None, admin=False,
-                create_model=models.UserAccessTokenAdminCreate(user_id=user._id, lifespan=c.authentication['expiry_timedeltas']['request_magic_link']
-                                                               ))
-
-            link_data = {
-                'access_token': c.jwt_encode(user_access_token.encode()),
-                'stay_signed_in': model.stay_signed_in
-            }
-
-            url = '{}{}/?{}'.format(c.frontend_urls['base'],
-                                    c.frontend_urls['verify_signup'], urlencode(link_data))
-
-            c.send_sms(
-                user.phone_number, 'Click to login: {}'.format(url))
-
-
-@ auth_router.post('/request-magic-link/')
-async def post_send_magic_link(model: RequestMagicLinkRequest, background_tasks: BackgroundTasks) -> DetailOnlyResponse:
-
-    mediums = []
-    if 'email' in model.model_fields_set:
-        mediums.append('email')
-        background_tasks.add_task(send_magic_link_to_email, model)
-
-    if 'phone_number' in model.model_fields_set:
-        mediums.append('phone number')
-        background_tasks.add_task(send_magic_link_to_phone_number, model)
-
-    return DetailOnlyResponse(detail='If an account with this {} exists, a login link has been sent.'.format(' and '.join(mediums)))
-
-
-class RequestOTPRequest(BaseModel):
-    stay_signed_in: bool = False
-    email: typing.Optional[models.UserTypes.email]
-    phone_number: typing.Optional[models.UserTypes.phone_number]
-
-
-async def send_otp_to_email(model: RequestOTPRequest, code: models.OTPTypes.code):
-
-    with Session(c.db_engine) as session:
-        user = session.exec(select(models.User).where(
-            models.User.email == model.email)).one_or_none()
-
-        if user:
-            c.send_email(user.email, 'OTP', 'Your OTP is: {}'.format(code))
-
-
-async def send_otp_to_phone_number(model: RequestOTPRequest, code: models.OTPTypes.code):
-
-    with Session(c.db_engine) as session:
-        user = session.exec(select(models.User).where(
-            models.User.phone_number == model.phone_number)).one_or_none()
-
-        if user:
-            c.send_sms(user.phone_number, 'Your OTP is: {}'.format(code))
-
-
-@ auth_router.post('/request-otp/')
-async def post_send_otp(model: RequestOTPRequest, background_tasks: BackgroundTasks) -> DetailOnlyResponse:
-    mediums = []
-    if 'email' in model.model_fields_set or 'phone_number' in model.model_fields_set:
-        code = models.OTP.generate_code()
-
-        if 'email' in model.model_fields_set:
-            mediums.append('email')
-            background_tasks.add_task(send_otp_to_email, model, code)
-
-        if 'phone_number' in model.model_fields_set:
-            mediums.append('phone number')
-            background_tasks.add_task(send_otp_to_phone_number, model, code)
-
-    return DetailOnlyResponse(detail='If an account with this {} exists, a login link has been sent.'.format(' and '.join(mediums)))
+            background_tasks.add_task(
+                send_otp, session, user, phone_number=model.phone_number)
+    return Response()
 
 
 @ auth_router.post('/logout/')
@@ -777,7 +829,7 @@ async def patch_self(
         make_get_auth_dependency())]
 ) -> models.UserPrivate:
     with Session(c.db_engine) as session:
-        return models.UserPrivate.model_validate(await models.User.api_patch(session=session, c=c, authorized_user_id=authorization._user_id, id=authorization._user_id, admin=False, update_model=models.UserUpdateAdmin(**user_update.model_dump(exclude_unset=True))))
+        return models.UserPrivate.model_validate(await models.User.api_patch(session=session, c=c, authorized_user_id=authorization._user_id, id=authorization._user_id, admin=False, update_model=models.UserAdminUpdate(**user_update.model_dump(exclude_unset=True))))
 
 
 @ user_admin_router.patch('/{user_id}/', responses=models.User.patch_responses())
@@ -1371,7 +1423,7 @@ async def get_galleries(
 # async def get_galleries_by_user(
 #     user_id: models.UserTypes.id,
 #     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
-#         get_authorization(raise_exceptions=False))],
+#         get_auth_from_token(raise_exceptions=False))],
 #     pagination: PaginationParams = Depends(get_pagination_params),
 # ) -> list[models.GalleryPublic]:
 

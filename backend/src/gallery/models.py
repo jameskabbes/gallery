@@ -8,9 +8,10 @@ from fastapi import HTTPException, status, Response, APIRouter, Query
 from sqlmodel import SQLModel, Field, Column, Session, select, delete, Relationship
 from sqlalchemy import PrimaryKeyConstraint, and_, or_, event
 from sqlalchemy.sql import Select
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, declared_attr
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.engine import Result
+from sqlalchemy.types import TypeDecorator, String, DateTime
 from pydantic import BaseModel, EmailStr, constr, StringConstraints, field_validator, ValidationInfo, ValidatorFunctionWrapHandler, ValidationError, field_serializer, model_validator, conint
 from pydantic.functional_validators import WrapValidator
 from gallery import utils, auth
@@ -27,6 +28,31 @@ import shutil
 from functools import wraps
 
 #
+
+
+# Define a custom SQLAlchemy type for string serialization
+class DateTimeWithTimeZoneString(TypeDecorator):
+    impl = String  # Underlying type in the database
+
+    def process_bind_param(self, value: datetime_module.datetime, dialect) -> str:
+        """Convert datetime to string before saving to the database."""
+        if value is None:
+            return None
+        if isinstance(value, datetime_module.datetime):
+            return value.isoformat()  # Serialize to ISO 8601 format
+        raise ValueError("Value must be a datetime object")
+
+    def process_result_value(self, value: str, dialect) -> datetime_module.datetime:
+        """convert from string to datetime after loading from the database."""
+        if value is None:
+            return None
+        return datetime_module.datetime.fromisoformat(value)
+
+
+def validate_and_normalize_datetime(value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime:
+    if value.tzinfo == None:
+        raise ValueError(info.field_name + ' must have a timezone')
+    return value.astimezone(datetime_module.timezone.utc)
 
 
 class ApiMethodBaseKwargs(typing.TypedDict):
@@ -105,12 +131,6 @@ def build_pagination[TQuery: Select](query: TQuery, pagination: Pagination):
 class OrderBy[T](BaseModel):
     field: T
     ascending: bool
-
-
-def validate_and_normalize_datetime(value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime:
-    if value.tzinfo == None:
-        raise ValueError(info.field_name + ' must have a timezone')
-    return value.astimezone(datetime_module.timezone.utc)
 
 
 class IdObject[IdType](BaseModel):
@@ -500,7 +520,7 @@ class User(Table['User', UserTypes.id, UserAdminCreate, UserAdminUpdate], UserId
         )
 
         root_gallery = await Gallery.api_post(session=kwargs['session'], c=kwargs['c'], authorized_user_id=new_user._id, admin=kwargs['admin'], create_model=GalleryAdminCreate(
-            name='root', user_id=new_user._id, visibility_level=kwargs['c'].visibility_level_name_mapping['private'], parent_id=None
+            name='root', user_id=new_user._id, visibility_level=kwargs['c'].visibility_level_name_mapping['private']
         ))
 
         return new_user
@@ -547,29 +567,29 @@ class JwtIO[TEncode: dict, TDecode: dict](BaseModel):
     _JWT_CLAIMS_MAPPING: typing.ClassVar[dict[str, str]] = {}
 
     @ classmethod
-    def validate_jwt_claims(cls, payload: TDecode) -> bool:
+    def validate_jwt_claims(cls, payload: TEncode) -> bool:
         return all(claim in payload for claim in cls._JWT_CLAIMS_MAPPING)
 
     @ classmethod
-    def decode(cls, payload: TDecode) -> str:
+    def decode(cls, payload: TEncode) -> TDecode:
         return {cls._JWT_CLAIMS_MAPPING[claim]: payload.get(claim) for claim in cls._JWT_CLAIMS_MAPPING}
 
     def encode(self) -> TEncode:
-        print(self)
-        print(self._JWT_CLAIMS_MAPPING)
-
         return {key: getattr(self, value) for key, value in self._JWT_CLAIMS_MAPPING.items()}
 
 
 class AuthCredentialTypes:
     issued = typing.Annotated[datetime_module.datetime,
                               'The datetime at which the auth credential was issued']
+    issued_timestamp = typing.Annotated[float,
+                                        'The datetime at which the auth credential was issued']
     expiry = typing.Annotated[datetime_module.datetime,
                               'The datetime at which the auth credential will expire']
+    expiry_timestamp = typing.Annotated[float,
+                                        'The datetime at which the auth credential will expire']
     lifespan = typing.Annotated[datetime_module.timedelta,
                                 'The timedelta from creation in which the auth credential is still valid']
-    type = typing.Literal['access_token',
-                          'api_key', 'otp', 'sign_up', 'change_email']
+    type = typing.Literal['access_token', 'api_key', 'otp', 'sign_up']
 
 
 class AuthCredential:
@@ -591,21 +611,27 @@ class AuthCredential:
             return datetime_module.datetime.now(
                 datetime_module.UTC) + self.lifespan
 
+    class JwtEncodeBase(typing.TypedDict):
+        exp: AuthCredentialTypes.expiry_timestamp
+        iat: AuthCredentialTypes.issued_timestamp
+        type: AuthCredentialTypes.type
+
+    class JwtDecodeBase(typing.TypedDict):
+        expiry: AuthCredentialTypes.expiry_timestamp
+        issued: AuthCredentialTypes.issued_timestamp
+        type: AuthCredentialTypes.type
+
+    class JwtIO[TEncode: dict, TDecode: dict](JwtIO[TEncode, TDecode]):
+        _TYPE_CLAIM: typing.ClassVar[str] = 'type'
+
     class Model(JwtIO):
-        issued: AuthCredentialTypes.issued = Field(const=True)
-        expiry: AuthCredentialTypes.expiry = Field()
+
+        # repeated in child classes due to behavior of sqlalchemy with custom type
+        issued: AuthCredentialTypes.issued = Field(
+            const=True, sa_column=Column(DateTimeWithTimeZoneString))
+        expiry: AuthCredentialTypes.expiry = Field(
+            sa_column=Column(DateTimeWithTimeZoneString))
         auth_type: typing.ClassVar[AuthCredentialTypes.type]
-
-        class Jwt:
-            class EncodeBase(typing.TypedDict):
-                exp: AuthCredentialTypes.expiry
-                iat: AuthCredentialTypes.issued
-                type: AuthCredentialTypes.type
-
-            class DecodeBase(typing.TypedDict):
-                expiry: AuthCredentialTypes.expiry
-                issued: AuthCredentialTypes.issued
-                type: AuthCredentialTypes.type
 
         _JWT_CLAIMS_MAPPING_BASE: typing.ClassVar[dict[str, str]] = {
             'exp': 'expiry',
@@ -621,6 +647,25 @@ class AuthCredential:
         @ field_serializer('issued', 'expiry')
         def serialize_datetime(value: datetime_module.datetime) -> datetime_module.datetime:
             return value.replace(tzinfo=datetime_module.timezone.utc)
+
+    class Table(Table):
+
+        user_id: UserTypes.id = Field(
+            index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0], const=True, ondelete='CASCADE')
+
+        @ classmethod
+        async def create(cls, **kwargs: Unpack[CreateMethodKwargs['AuthCredential.Import']]) -> typing.Self:
+            return cls(
+                id=cls.generate_id(),
+                issued=datetime_module.datetime.now(
+                    datetime_module.timezone.utc),
+                expiry=kwargs['create_model'].get_expiry(),
+                **kwargs['create_model'].model_dump(exclude=['lifespan', 'expiry'])
+            )
+
+        @classmethod
+        async def get_scope_ids(cls, session: Session = None, c: client.Client = None) -> list[client.ScopeTypes.id]:
+            return []
 
 
 # UserAccessToken
@@ -643,26 +688,30 @@ class UserAccessTokenAdminCreate(AuthCredential.Import):
 
 
 class UserAccessTokenJwt:
-    class Encode(AuthCredential.Model.Jwt.EncodeBase):
+    class Encode(AuthCredential.JwtEncodeBase):
         sub: UserTypes.id
 
-    class Decode(AuthCredential.Model.Jwt.DecodeBase):
+    class Decode(AuthCredential.JwtDecodeBase):
         id: UserTypes.id
 
 
 class UserAccessToken(
         Table['UserAccessToken', UserAccessTokenTypes.id,
               UserAccessTokenAdminCreate, UserAccessTokenAdminUpdate],
+        AuthCredential.Table,
+        AuthCredential.JwtIO[UserAccessTokenJwt.Encode,
+                             UserAccessTokenJwt.Decode],
         AuthCredential.Model,
         UserAccessTokenIdBase,
-        JwtIO[UserAccessTokenJwt.Encode, UserAccessTokenJwt.Decode],
         table=True):
 
     auth_type = 'access_token'
     __tablename__ = 'user_access_token'
 
-    user_id: UserTypes.id = Field(
-        index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0], const=True, ondelete='CASCADE')
+    issued: AuthCredentialTypes.issued = Field(
+        const=True, sa_column=Column(DateTimeWithTimeZoneString))
+    expiry: AuthCredentialTypes.expiry = Field(
+        sa_column=Column(DateTimeWithTimeZoneString))
 
     user: 'User' = Relationship(
         back_populates='user_access_tokens')
@@ -685,18 +734,12 @@ class UserAccessToken(
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail=self.not_found_message())
 
-    @ classmethod
-    async def create(cls, **kwargs) -> typing.Self:
-        return cls(
-            id=cls.generate_id(),
-            issued=datetime_module.datetime.now(
-                datetime_module.timezone.utc),
-            expiry=kwargs['create_model'].get_expiry(),
-            **kwargs['create_model'].model_dump(exclude=['lifespan', 'expiry'])
-        )
+    async def get_scope_ids(self, session: Session = None, c: client.Client = None) -> list[client.ScopeTypes.id]:
+        return c.user_role_id_scope_ids[self.user.user_role_id]
 
 
 # OTP
+
 
 class OTPConfig:
     _LENGTH: typing.ClassVar[int] = 6
@@ -720,11 +763,13 @@ class OTPAdminUpdate(BaseModel):
 
 class OTPAdminCreate(AuthCredential.Import):
     user_id: UserTypes.id
+    hashed_code: OTPTypes.hashed_code
 
 
 class OTP(
         Table['OTP', OTPTypes.id,
               OTPAdminCreate, OTPAdminUpdate],
+        AuthCredential.Table,
         AuthCredential.Model,
         OTPIdBase,
         table=True):
@@ -732,8 +777,11 @@ class OTP(
     auth_type = 'otp'
     __tablename__ = 'otp'
 
-    user_id: UserTypes.id = Field(
-        index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0], const=True, ondelete='CASCADE')
+    issued: AuthCredentialTypes.issued = Field(
+        const=True, sa_column=Column(DateTimeWithTimeZoneString))
+    expiry: AuthCredentialTypes.expiry = Field(
+        sa_column=Column(DateTimeWithTimeZoneString))
+
     hashed_code: OTPTypes.hashed_code = Field()
     user: 'User' = Relationship(
         back_populates='otps')
@@ -749,15 +797,10 @@ class OTP(
     def hash_code(cls, code: OTPTypes.code) -> OTPTypes.hashed_code:
         return utils.hash_password(code)
 
-    @ classmethod
-    async def create(cls, **kwargs) -> typing.Self:
-        return cls(
-            id=cls.generate_id(),
-            issued=datetime_module.datetime.now(
-                datetime_module.timezone.utc),
-            expiry=kwargs['create_model'].get_expiry(),
-            **kwargs['create_model'].model_dump(exclude=['lifespan', 'expiry'])
-        )
+    @classmethod
+    def verify_code(cls, code: OTPTypes.code, hashed_code: OTPTypes.hashed_code) -> bool:
+        return utils.verify_password(code, hashed_code)
+
 
 # ApiKey
 
@@ -803,27 +846,30 @@ class ApiKeyAdminCreate(ApiKeyCreate):
 
 
 class ApiKeyJwt:
-    class Encode(AuthCredential.Model.Jwt.EncodeBase):
+    class Encode(AuthCredential.JwtEncodeBase):
         sub: UserTypes.id
 
-    class Decode(AuthCredential.Model.Jwt.DecodeBase):
+    class Decode(AuthCredential.JwtDecodeBase):
         id: UserTypes.id
 
 
 class ApiKey(
         Table['ApiKey', ApiKeyTypes.id,
               ApiKeyAdminCreate, ApiKeyAdminUpdate],
+        AuthCredential.Table,
+        AuthCredential.JwtIO[ApiKeyJwt.Encode, ApiKeyJwt.Decode],
         AuthCredential.Model,
         ApiKeyIdBase,
-        JwtIO[ApiKeyJwt.Encode, ApiKeyJwt.Decode],
         table=True):
     auth_type = 'api_key'
     __tablename__ = 'api_key'
 
-    user_id: UserTypes.id = Field(
-        index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0], const=True, ondelete='CASCADE')
-    name: ApiKeyTypes.name = Field()
+    issued: AuthCredentialTypes.issued = Field(
+        const=True, sa_column=Column(DateTimeWithTimeZoneString))
+    expiry: AuthCredentialTypes.expiry = Field(
+        sa_column=Column(DateTimeWithTimeZoneString))
 
+    name: ApiKeyTypes.name = Field()
     user: 'User' = Relationship(back_populates='api_keys')
     api_key_scopes: list['ApiKeyScope'] = Relationship(
         back_populates='api_key', cascade_delete=True)
@@ -834,7 +880,7 @@ class ApiKey(
     _ROUTER_TAG = 'Api Key'
     _ORDER_BY_OPTIONS: typing.ClassVar['ApiKeyTypes.order_by']
 
-    async def get_scope_ids(self) -> list[client.ScopeTypes.id]:
+    async def get_scope_ids(self, session: Session = None, c: client.Client = None) -> list[client.ScopeTypes.id]:
         return [api_key_scope.scope_id for api_key_scope in self.api_key_scopes]
 
     @ classmethod
@@ -872,16 +918,6 @@ class ApiKey(
             await self.api_get_is_available(kwargs['session'], ApiKeyAdminAvailable(
                 name=kwargs['update_model'].name, user_id=kwargs['authorized_user_id']))
 
-    @ classmethod
-    async def create(cls, **kwargs) -> typing.Self:
-        return cls(
-            id=cls.generate_id(),
-            issued=datetime_module.datetime.now(
-                datetime_module.timezone.utc),
-            expiry=kwargs['create_model'].get_expiry(),
-            **kwargs['create_model'].model_dump(exclude=['lifespan', 'expiry'])
-        )
-
 
 class ApiKeyExport(TableExport):
     id: ApiKeyTypes.id
@@ -907,10 +943,10 @@ class ApiKeyPrivate(ApiKeyExport):
 
 
 class SignUpJwt:
-    class Encode(AuthCredential.Model.Jwt.EncodeBase):
+    class Encode(AuthCredential.JwtEncodeBase):
         sub: UserTypes.email
 
-    class Decode(AuthCredential.Model.Jwt.DecodeBase):
+    class Decode(AuthCredential.JwtDecodeBase):
         email: UserTypes.email
 
 
@@ -919,11 +955,15 @@ class SignUpAdminCreate(AuthCredential.Import):
 
 
 class SignUp(
+    AuthCredential.JwtIO[SignUpJwt.Encode, SignUpJwt.Decode],
     AuthCredential.Model,
-    JwtIO[SignUpJwt.Encode, SignUpJwt.Decode],
 ):
     auth_type = 'sign_up'
     email: UserTypes.email = Field()
+    issued: AuthCredentialTypes.issued = Field(
+        const=True, sa_column=Column(DateTimeWithTimeZoneString))
+    expiry: AuthCredentialTypes.expiry = Field(
+        sa_column=Column(DateTimeWithTimeZoneString))
 
     _JWT_CLAIMS_MAPPING = {
         **AuthCredential.Model._JWT_CLAIMS_MAPPING_BASE, **{'sub': 'email'}}
@@ -941,8 +981,18 @@ class SignUp(
 AuthCredentialClass = UserAccessToken | ApiKey | OTP | SignUp
 AuthCredentialId = UserAccessTokenTypes.id | ApiKeyTypes.id | OTPTypes.id
 
+
 AUTH_CREDENTIAL_CLASSES: set[AuthCredentialClass] = {
     UserAccessToken, ApiKey, OTP, SignUp}
+
+AuthCredentialTokenType = typing.Literal['access_token', 'api_key', 'sign_up']
+AuthCredentialTokenClass = UserAccessToken | ApiKey | SignUp
+AUTH_CREDENTIAL_TOKEN_CLASSES: set[AuthCredentialTokenClass] = {
+    UserAccessToken, ApiKey, SignUp}
+
+AuthCredentialTableClass = UserAccessToken | ApiKey | OTP
+AUTH_CREDENTIAL_TABLE_CLASSES: set[AuthCredentialTableClass] = {
+    UserAccessToken, ApiKey, OTP}
 
 AUTH_CREDENTIAL_TYPE_TO_CLASS: dict[AuthCredentialTypes.type, AuthCredentialClass] = {
     'access_token': UserAccessToken,
@@ -1090,7 +1140,7 @@ class GalleryAdminCreate(GalleryCreate):
 
 class GalleryAvailable(BaseModel):
     name: GalleryTypes.name
-    parent_id: GalleryTypes.parent_id
+    parent_id: typing.Optional[GalleryTypes.parent_id] = None
     date: typing.Optional[GalleryTypes.date] = None
 
 
@@ -1215,9 +1265,6 @@ class Gallery(
 
     @ classmethod
     async def _check_validation_post(cls, **kwargs):
-
-        print(kwargs['create_model'].model_dump())
-
         await cls.api_get_is_available(kwargs['session'], GalleryAdminAvailable(**kwargs['create_model'].model_dump(include=GalleryAdminAvailable.model_fields.keys(), exclude_unset=True)))
 
     async def _check_validation_patch(self, **kwargs):
@@ -1253,7 +1300,6 @@ class Gallery(
             kwargs['update_model'].model_dump(exclude_unset=True))
 
         if rename_folder:
-            print('renaming folder')
             new_dir = (await self.get_dir(kwargs['session'], kwargs['c'].galleries_dir)).parent / self.folder_name
             original_dir.rename(new_dir)
 

@@ -4,8 +4,6 @@ import { RequestSignUpContextType, defaultValidatedInputState } from '../types';
 const RequestSignUpContext = createContext<RequestSignUpContextType>({
   email: null,
   setEmail: () => {},
-  staySignedIn: null,
-  setStaySignedIn: () => {},
   valid: false,
   setValid: () => {},
   loading: false,
@@ -22,14 +20,6 @@ function RequestSignUpContextProvider({
       ''
     ),
   });
-  const [staySignedIn, setStaySignedIn] = useState<
-    RequestSignUpContextType['staySignedIn']
-  >({
-    ...defaultValidatedInputState<
-      RequestSignUpContextType['staySignedIn']['value']
-    >(true),
-  });
-
   const [valid, setValid] = useState<RequestSignUpContextType['valid']>(false);
   const [loading, setLoading] =
     useState<RequestSignUpContextType['loading']>(false);
@@ -39,8 +29,6 @@ function RequestSignUpContextProvider({
       value={{
         email,
         setEmail,
-        staySignedIn,
-        setStaySignedIn,
         valid,
         setValid,
         loading,

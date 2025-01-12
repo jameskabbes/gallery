@@ -47,6 +47,7 @@ type uvicorn_port_type = int
 PhoneNumber = str
 Email = typing.Annotated[EmailStr, StringConstraints(
     min_length=1, max_length=254)]
+JwtEncodedStr = str
 
 
 class PathConfig(typing.TypedDict):
@@ -70,8 +71,8 @@ class MediaRootConfig(typing.TypedDict):
 
 class AuthenticationConfig(typing.TypedDict):
     stay_signed_in_default: bool
-    expiry_timedeltas: dict[typing.Literal['default_access_token',
-                                           'request_magic_link', 'request_sign_up'], datetime.timedelta]
+    expiry_timedeltas: dict[typing.Literal['access_token',
+                                           'magic_link', 'request_sign_up', 'otp'], datetime.timedelta]
 
 
 class JWTConfig(typing.TypedDict):
@@ -112,9 +113,10 @@ DefaultConfig: Config = {
     'authentication': {
         'stay_signed_in_default': False,
         'expiry_timedeltas': {
-            'default_access_token': datetime.timedelta(days=7),
-            'request_magic_link': datetime.timedelta(minutes=10),
+            'access_token': datetime.timedelta(days=7),
+            'magic_link': datetime.timedelta(minutes=10),
             'request_sign_up': datetime.timedelta(hours=1),
+            'otp': datetime.timedelta(minutes=10)
         }
 
     },
@@ -261,10 +263,10 @@ class Client:
     def create_tables(self):
         SQLModel.metadata.create_all(self.db_engine)
 
-    def jwt_encode(self, payload: dict):
+    def jwt_encode(self, payload: dict) -> JwtEncodedStr:
         return jwt.encode(payload, self.jwt_secret_key, algorithm=self.jwt_algorithm)
 
-    def jwt_decode(self, token: str):
+    def jwt_decode(self, token: JwtEncodedStr) -> dict:
         return jwt.decode(token, self.jwt_secret_key, algorithms=[self.jwt_algorithm])
 
     def send_email(self, recipient: Email, subject: str, body: str):

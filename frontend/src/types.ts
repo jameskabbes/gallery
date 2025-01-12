@@ -58,7 +58,8 @@ type AuthModalType =
   | 'logIn'
   | 'requestSignUp'
   | 'requestMagicLink'
-  | 'requestOTP';
+  | 'requestOTP'
+  | 'verifyOTP';
 
 interface AuthModalsContextType {
   activate: (modal: AuthModalType | null) => void;
@@ -85,41 +86,10 @@ interface LogInContextType {
   setError: React.Dispatch<React.SetStateAction<LogInContextType['error']>>;
 }
 
-interface SendMagicLinkContextType {
-  medium: 'email' | 'phone';
-  setMedium: React.Dispatch<
-    React.SetStateAction<SendMagicLinkContextType['medium']>
-  >;
-  email: ValidatedInputState<string>;
-  setEmail: React.Dispatch<
-    React.SetStateAction<SendMagicLinkContextType['email']>
-  >;
-  phoneNumber: ValidatedInputState<E164Number>;
-  setPhoneNumber: React.Dispatch<
-    React.SetStateAction<SendMagicLinkContextType['phoneNumber']>
-  >;
-  staySignedIn: ValidatedInputState<boolean>;
-  setStaySignedIn: React.Dispatch<
-    React.SetStateAction<SendMagicLinkContextType['staySignedIn']>
-  >;
-  valid: boolean;
-  setValid: React.Dispatch<
-    React.SetStateAction<SendMagicLinkContextType['valid']>
-  >;
-  loading: boolean;
-  setLoading: React.Dispatch<
-    React.SetStateAction<SendMagicLinkContextType['loading']>
-  >;
-}
-
 interface RequestSignUpContextType {
   email: ValidatedInputState<string>;
   setEmail: React.Dispatch<
     React.SetStateAction<RequestSignUpContextType['email']>
-  >;
-  staySignedIn: ValidatedInputState<boolean>;
-  setStaySignedIn: React.Dispatch<
-    React.SetStateAction<RequestSignUpContextType['staySignedIn']>
   >;
   valid: boolean;
   setValid: React.Dispatch<
@@ -131,7 +101,47 @@ interface RequestSignUpContextType {
   >;
 }
 
-interface LogInWithOTPContextType {}
+interface RequestMagicLinkContextType {
+  medium: 'email' | 'sms';
+  setMedium: React.Dispatch<
+    React.SetStateAction<RequestMagicLinkContextType['medium']>
+  >;
+  email: ValidatedInputState<string>;
+  setEmail: React.Dispatch<
+    React.SetStateAction<RequestMagicLinkContextType['email']>
+  >;
+  phoneNumber: ValidatedInputState<E164Number>;
+  setPhoneNumber: React.Dispatch<
+    React.SetStateAction<RequestMagicLinkContextType['phoneNumber']>
+  >;
+  valid: boolean;
+  setValid: React.Dispatch<
+    React.SetStateAction<RequestMagicLinkContextType['valid']>
+  >;
+  loading: boolean;
+  setLoading: React.Dispatch<
+    React.SetStateAction<RequestMagicLinkContextType['loading']>
+  >;
+}
+
+interface RequestOTPContextType {
+  medium: 'email' | 'sms';
+  setMedium: React.Dispatch<
+    React.SetStateAction<RequestOTPContextType['medium']>
+  >;
+  email: ValidatedInputState<string>;
+  setEmail: React.Dispatch<
+    React.SetStateAction<RequestOTPContextType['email']>
+  >;
+  phoneNumber: ValidatedInputState<E164Number>;
+  setPhoneNumber: React.Dispatch<
+    React.SetStateAction<RequestOTPContextType['phoneNumber']>
+  >;
+  valid: boolean;
+  setValid: React.Dispatch<
+    React.SetStateAction<RequestOTPContextType['valid']>
+  >;
+}
 
 interface ModalType<T = Record<string, any>> {
   key: string;
@@ -242,11 +252,10 @@ export {
   DarkModeContextType,
   ValidatedInputState,
   defaultValidatedInputState,
-  RequestSignUpContextType,
   LogInContextType,
-  SendMagicLinkContextType,
-  LogInWithOTPContextType,
-  Toast,
+  RequestSignUpContextType,
+  RequestMagicLinkContextType,
+  RequestOTPContextType,
   ToastId,
   ToastNoType,
   ToastContextState,

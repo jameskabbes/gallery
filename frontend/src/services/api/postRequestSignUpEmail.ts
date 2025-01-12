@@ -7,21 +7,23 @@ import {
   ExtractResponseTypes,
 } from '../../types';
 
-const API_ENDPOINT = '/auth/request-otp/';
+const API_ENDPOINT = '/auth/request/signup/email/';
 const API_METHOD = 'post';
 
-type PostRequestOTPResponses = ExtractResponseTypes<
+type PostRequestSignUpEmailResponses = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
-async function postRequestOTP(
+async function postRequestSignUpEmail(
   authContext: AuthContextType,
   data: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
 ): Promise<
-  ApiResponse<PostRequestOTPResponses[keyof PostRequestOTPResponses]>
+  ApiResponse<
+    PostRequestSignUpEmailResponses[keyof PostRequestSignUpEmailResponses]
+  >
 > {
   return await callApi<
-    PostRequestOTPResponses[keyof PostRequestOTPResponses],
+    PostRequestSignUpEmailResponses[keyof PostRequestSignUpEmailResponses],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >({
     url: API_ENDPOINT,
@@ -31,4 +33,4 @@ async function postRequestOTP(
   });
 }
 
-export { postRequestOTP, PostRequestOTPResponses };
+export { postRequestSignUpEmail, PostRequestSignUpEmailResponses };

@@ -3,13 +3,13 @@ import { paths, operations, components } from '../../openapi_schema';
 import {
   AuthModalType,
   ExtractResponseTypes,
-  SendMagicLinkContextType,
+  RequestMagicLinkContextType,
 } from '../../types';
 import openapi_schema from '../../../../openapi_schema.json';
 
 import { AuthContext } from '../../contexts/Auth';
 import { AuthModalsContext } from '../../contexts/AuthModals';
-import { SendMagicLinkContext } from '../../contexts/SendMagicLink';
+import { RequestMagicLinkContext } from '../../contexts/RequestMagicLink';
 
 import { isEmailValid } from '../../services/isEmailValid';
 import { ValidatedInputString } from '../Form/ValidatedInputString';
@@ -23,60 +23,46 @@ import { useLocation } from 'react-router-dom';
 import { Loader1 } from '../Utils/Loader';
 import { IoWarning } from 'react-icons/io5';
 import { IoCheckmark } from 'react-icons/io5';
-import { postRequestMagicLink } from '../../services/api/postRequestMagicLink';
+import { postRequestMagicLinkEmail } from '../../services/api/postRequestMagicLinkEmail';
+import { postRequestMagicLinkSMS } from '../../services/api/postRequestMagicLinkSMS';
 
 function RequestMagicLink() {
   const authContext = useContext(AuthContext);
   const toastContext = useContext(ToastContext);
-  const sendMagicLinkContext = useContext(SendMagicLinkContext);
+  const requestMagicLinkContext = useContext(RequestMagicLinkContext);
   const authModalsContext = useContext(AuthModalsContext);
   const modalsContext = useContext(ModalsContext);
 
-  const mediums: SendMagicLinkContextType['medium'][] = ['email', 'phone'];
+  const mediums: RequestMagicLinkContextType['medium'][] = ['email', 'sms'];
   const modalKey: AuthModalType = 'requestMagicLink';
 
   useEffect(() => {
-    if (sendMagicLinkContext.medium === 'email') {
-      sendMagicLinkContext.setValid(
-        sendMagicLinkContext.email.status === 'valid'
+    if (requestMagicLinkContext.medium === 'email') {
+      requestMagicLinkContext.setValid(
+        requestMagicLinkContext.email.status === 'valid'
       );
-    } else if (sendMagicLinkContext.medium === 'phone') {
-      sendMagicLinkContext.setValid(
-        sendMagicLinkContext.phoneNumber.status === 'valid'
+    } else if (requestMagicLinkContext.medium === 'sms') {
+      requestMagicLinkContext.setValid(
+        requestMagicLinkContext.phoneNumber.status === 'valid'
       );
     }
   }, [
-    sendMagicLinkContext.email.status,
-    sendMagicLinkContext.phoneNumber.status,
-    sendMagicLinkContext.medium,
+    requestMagicLinkContext.email.status,
+    requestMagicLinkContext.phoneNumber.status,
+    requestMagicLinkContext.medium,
   ]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    modalsContext.deleteModals([modalKey]);
+    authModalsContext.activate(null);
 
-    const toastId = toastContext.makePending({
-      message: 'Sending Magic Link...',
-    });
-
-    const { status } = await postRequestMagicLink(authContext, {
-      stay_signed_in: sendMagicLinkContext.staySignedIn.value,
-      ...(sendMagicLinkContext.medium === 'email'
-        ? { email: sendMagicLinkContext.email.value }
-        : sendMagicLinkContext.medium === 'phone'
-        ? { phone_number: sendMagicLinkContext.phoneNumber.value }
-        : {}),
-    });
-
-    if (status === 200) {
-      toastContext.update(toastId, {
-        message: 'Magic Link Sent',
-        type: 'success',
+    if (requestMagicLinkContext.medium === 'email') {
+      var { status } = await postRequestMagicLinkEmail(authContext, {
+        email: requestMagicLinkContext.email.value,
       });
-    } else {
-      toastContext.update(toastId, {
-        message: 'Could not send magic link',
-        type: 'error',
+    } else if (requestMagicLinkContext.medium === 'sms') {
+      var { status } = await postRequestMagicLinkSMS(authContext, {
+        phone_number: requestMagicLinkContext.phoneNumber.value,
       });
     }
   }
@@ -90,12 +76,9 @@ function RequestMagicLink() {
               <Button2
                 type="button"
                 key={medium}
-                onClick={() => sendMagicLinkContext.setMedium(medium)}
-                className={`${
-                  medium === sendMagicLinkContext.medium
-                    ? ' border-primary-light dark:border-primary-dark'
-                    : ''
-                } hover:border-primary-light dark:hover:border-primary-dark flex-1`}
+                onClick={() => requestMagicLinkContext.setMedium(medium)}
+                isActive={medium === requestMagicLinkContext.medium}
+                className="flex-1"
               >
                 {medium}
               </Button2>
@@ -104,19 +87,21 @@ function RequestMagicLink() {
 
           <fieldset className="flex flex-col space-y-6">
             <section className="space-y-2">
-              {sendMagicLinkContext.medium === 'email' ? (
+              {requestMagicLinkContext.medium === 'email' ? (
                 <>
-                  <label htmlFor="email">Email</label>
+                  <label htmlFor="request-magic-link-email">Email</label>
                   <ValidatedInputString
-                    state={sendMagicLinkContext.email}
-                    setState={sendMagicLinkContext.setEmail}
-                    id="login-with-email-email"
+                    state={requestMagicLinkContext.email}
+                    setState={requestMagicLinkContext.setEmail}
+                    id="request-magic-link-email"
                     minLength={
-                      openapi_schema.components.schemas.User.properties.email
+                      openapi_schema.components.schemas
+                        .PostRequestMagicLinkEmailRequest.properties.email
                         .minLength
                     }
                     maxLength={
-                      openapi_schema.components.schemas.User.properties.email
+                      openapi_schema.components.schemas
+                        .PostRequestMagicLinkEmailRequest.properties.email
                         .maxLength
                     }
                     type="email"
@@ -125,46 +110,38 @@ function RequestMagicLink() {
                     isValid={isEmailValid}
                   />
                 </>
-              ) : sendMagicLinkContext.medium === 'phone' ? (
+              ) : requestMagicLinkContext.medium === 'sms' ? (
                 <>
-                  <label htmlFor="phone">Phone Number</label>
+                  <label htmlFor="request-magic-link-phone-number">
+                    Phone Number
+                  </label>
                   <ValidatedInputPhoneNumber
-                    state={sendMagicLinkContext.phoneNumber}
-                    setState={sendMagicLinkContext.setPhoneNumber}
-                    id="login-with-email-phone"
+                    state={requestMagicLinkContext.phoneNumber}
+                    setState={requestMagicLinkContext.setPhoneNumber}
+                    id="request-magic-link-phone-number"
                     showStatus={true}
                   />
                 </>
               ) : null}
             </section>
-            <section className="flex flex-row items-center justify-center space-x-2">
-              <ValidatedInputCheckbox
-                state={sendMagicLinkContext.staySignedIn}
-                setState={sendMagicLinkContext.setStaySignedIn}
-                id="login-with-email-stay-signed-in"
-              />
-              <label htmlFor="login-with-email-stay-signed-in">
-                Remember Me
-              </label>
-            </section>
           </fieldset>
           <span className="text-center mx-10">
             {`If an account with this ${
-              sendMagicLinkContext.medium === 'email'
+              requestMagicLinkContext.medium === 'email'
                 ? 'email address'
-                : sendMagicLinkContext.medium === 'phone'
+                : requestMagicLinkContext.medium === 'sms'
                 ? 'phone number'
                 : null
             } exists, we will send you a magic login link.`}
           </span>
           <ButtonSubmit
             disabled={
-              !sendMagicLinkContext.valid || sendMagicLinkContext.loading
+              !requestMagicLinkContext.valid || requestMagicLinkContext.loading
             }
           >
-            {sendMagicLinkContext.medium === 'email'
+            {requestMagicLinkContext.medium === 'email'
               ? 'Send Email'
-              : sendMagicLinkContext.medium === 'phone'
+              : requestMagicLinkContext.medium === 'sms'
               ? 'Send SMS'
               : null}
           </ButtonSubmit>
@@ -187,8 +164,7 @@ function VerifyMagicLink() {
   const authContext = useContext(AuthContext);
   const searchParams = new URLSearchParams(location.search);
   const [status, setStatus] = useState<number>(null);
-  const access_token: string = searchParams.get('access_token');
-  const stay_signed_in = searchParams.get('stay_signed_in') === 'True';
+  const token: string = searchParams.get('token');
   const modalsContext = useContext(ModalsContext);
   const modalKey = 'modal-verify-magic-link';
 
@@ -201,7 +177,7 @@ function VerifyMagicLink() {
     //   setStatus(status);
     // }
     // verifyMagicLink();
-  }, [access_token, stay_signed_in]);
+  }, [token]);
 
   function Component({ status }: { status: number }) {
     return (

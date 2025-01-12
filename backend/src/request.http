@@ -137,3 +137,11 @@
 #     "name": "new api key",
 #     "lifespan": 100
 # }
+
+POST http://localhost:8087/auth/login/otp/email
+Content-Type: application/json
+
+{
+    "code": "588793",
+    "email": "a@a.com"
+}

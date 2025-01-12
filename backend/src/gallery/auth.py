@@ -48,6 +48,12 @@ def credentials_exception() -> HTTPException:
         detail="Incorrect username or password")
 
 
+def invalid_otp_exception() -> HTTPException:
+    return _bearer_cookie_exception(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid OTP")
+
+
 def invalid_authorization_type_exception() -> HTTPException:
     return HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
@@ -62,7 +68,8 @@ type EXCEPTION = typing.Literal[
     'user_not_found',
     'not_permitted',
     'credentials',
-    'invalid_authorization_type'
+    'invalid_authorization_type',
+    'invalid_otp'
 ]
 
 EXCEPTION_MAPPING: dict[EXCEPTION, HTTPException] = {
@@ -72,7 +79,8 @@ EXCEPTION_MAPPING: dict[EXCEPTION, HTTPException] = {
     'user_not_found': user_not_found_exception(),
     'not_permitted': not_permitted_exception(),
     'credentials': credentials_exception(),
-    'invalid_authorization_type': invalid_authorization_type_exception()
+    'invalid_authorization_type': invalid_authorization_type_exception(),
+    'invalid_otp': invalid_otp_exception()
 }
 
 # Scopes

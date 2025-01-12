@@ -8,14 +8,13 @@ import { Toast } from './components/Toast/Toast';
 import { Gallery } from './pages/Gallery';
 import { Settings } from './pages/Settings';
 import { Modals } from './components/Modal/Modals';
-// import { LogInWithMagicLink } from './components/Auth/MagicLink';
 import { Surface } from './components/Utils/Surface';
-import Styles from './pages/Styles';
-
+import { VerifySignUp } from './components/Auth/SignUp';
+import { Styles } from './pages/Styles';
+// import { LogInWithMagicLink } from './components/Auth/MagicLink';
 import siteConfig from '../siteConfig.json';
 import config from '../../config.json';
-import { SignUp } from './pages/SignUp';
-import { LogIn } from './pages/LogIn';
+import { VerifyMagicLink } from './components/Auth/MagicLink';
 
 function App(): JSX.Element {
   return (
@@ -30,20 +29,27 @@ function App(): JSX.Element {
               <Route path="/" element={<Home />} />
               {/* /galleries */}
               <Route
-                path={`${siteConfig.galleriesUrlBase}`}
+                path={`${config.frontend_urls.galleries}`}
                 element={<Gallery root={true} />}
               />
               {/* /galleries/galleryId */}
               <Route
-                path={`${siteConfig.galleriesUrlBase}/:galleryId`}
+                path={`${config.frontend_urls.galleries}/:galleryId`}
                 element={<Gallery />}
               />
+              <Route
+                path={`${config.frontend_urls.verify_signup}`}
+                element={<VerifySignUp />}
+              />
+              <Route
+                path={`${config.frontend_urls.verify_magic_link}`}
+                element={<VerifyMagicLink />}
+              />
+
               <Route path="/settings/:selection" element={<Settings />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/styles" element={<Styles />} />
               <Route path="/settings/" element={<Settings />} />
-              <Route path="/signup" element={<SignUp />} />
-              <Route path="/login" element={<LogIn />} />
               <Route path="/404" element={<p>404</p>} />
               <Route path="*" element={<Navigate to="/404" />} />
               {/* <Route

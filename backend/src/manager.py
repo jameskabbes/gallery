@@ -2,7 +2,7 @@ import asyncio
 import typing
 from fastapi import Depends
 from sqlmodel import Session
-from gallery import models
+from gallery import models, get_client
 # Adjust the import as necessary
 # from main import c
 
@@ -14,100 +14,111 @@ from google.auth.transport import requests
 
 async def main():
 
-    print()
+    c = get_client()
 
-    # c = await models.UserCreateAdmin(
-    #     email='a@a.com', password='1', user_role_id='1').create()
-    # print(c.model_dump())
+    with Session(c.db_engine) as session:
 
-    # d = models.UserUpdateAdmin(
-    #     id=c.id,
-    #     username='nAA'
-    # )
+        user_access_token_admin_create = models.UserAccessTokenAdminCreate(
+            user_id='b0d8bf32-11d1-4212-ad5b-cbb17e2a9987',
+            lifespan=datetime.timedelta(days=1),
+        )
 
-    # print(d.model_dump())
+        user_access_token = await models.UserAccessToken.api_post(
+            session=session, c=c, authorized_user_id=None, admin=True, create_model=user_access_token_admin_create)
 
-    # with Session(c.db_engine) as session:
+        print(user_access_token)
 
-    #     dt = datetime.datetime.now()
+        # c = await models.UserCreateAdmin(
+        #     email='a@a.com', password='1', user_role_id='1').create()
+        # print(c.model_dump())
 
-    #     a = models.User(id='sadf', email='a@a.com',
-    #                     hashed_password='1234', user_role_id='asdf')
+        # d = models.UserUpdateAdmin(
+        #     id=c.id,
+        #     username='nAA'
+        # )
 
-    #     print(a)
-    #     print(a.model_dump())
+        # print(d.model_dump())
 
-    # a = models.AuthCredential(
-    #     user_id='sadf',
-    #     issued=dt,
-    #     expiry=dt,
-    # )
-    # print(a)
-    # print(a.model_dump())
+        # with Session(c.db_engine) as session:
 
-    # api_key = models.APIKey(
-    #     id='14edcfd4-db29-4bbf-80a1-3494dc879117',
-    #     user_id='14edcfd4-db29-4bbf-80a1-3494dc879117',
-    #     issued=dt,
-    #     expiry=dt,
-    #     name='test',
-    # )
-    # print(api_key)
+        #     dt = datetime.datetime.now()
 
-    # print(api_key.model_dump())
+        #     a = models.User(id='sadf', email='a@a.com',
+        #                     hashed_password='1234', user_role_id='asdf')
 
-    # a = models.AuthCredential.get_one_by_id(
-    #     session, '14edcfd4-db29-4bbf-80a1-3494dc879117')
-    # print(a)
+        #     print(a)
+        #     print(a.model_dump())
 
-    # b = {'dt': datetime.datetime.now(datetime.UTC)}
-    # print(b)
+        # a = models.AuthCredential(
+        #     user_id='sadf',
+        #     issued=dt,
+        #     expiry=dt,
+        # )
+        # print(a)
+        # print(a.model_dump())
 
-    # #
-    # read_scope = models.Scope(id='users.read')
-    # write_scope = models.Scope(id='users.write')
-    # session.add(read_scope)
-    # session.add(write_scope)
-    # session.commit()
+        # api_key = models.APIKey(
+        #     id='14edcfd4-db29-4bbf-80a1-3494dc879117',
+        #     user_id='14edcfd4-db29-4bbf-80a1-3494dc879117',
+        #     issued=dt,
+        #     expiry=dt,
+        #     name='test',
+        # )
+        # print(api_key)
 
-    # user = models.UserCreate(
-    #     email='a@a.com'
-    # ).create()
-    # session.add(user)
-    # session.commit()
+        # print(api_key.model_dump())
 
-    # #
-    # user_scope_read = models.UserScope(
-    #     user_id=user.id, scope_id=read_scope.id)
-    # user_scope_write = models.UserScope(
-    #     user_id=user.id, scope_id=write_scope.id)
-    # session.add(user_scope_read)
-    # session.add(user_scope_write)
-    # session.commit()
+        # a = models.AuthCredential.get_one_by_id(
+        #     session, '14edcfd4-db29-4bbf-80a1-3494dc879117')
+        # print(a)
 
-    # #
-    # api_key = models.APIKeyCreate(user_id=user.id).create()
-    # session.add(api_key)
-    # session.commit()
+        # b = {'dt': datetime.datetime.now(datetime.UTC)}
+        # print(b)
 
-    # #
-    # api_key_scope_read = models.APIKeyScope(
-    #     api_key_id=api_key.id, scope_id=read_scope.id)
-    # api_key_scope_write = models.APIKeyScope(
-    #     api_key_id=api_key.id, scope_id=write_scope.id)
-    # session.add(api_key_scope_read)
-    # session.add(api_key_scope_write)
-    # session.commit()
+        # #
+        # read_scope = models.Scope(id='users.read')
+        # write_scope = models.Scope(id='users.write')
+        # session.add(read_scope)
+        # session.add(write_scope)
+        # session.commit()
 
-    # user = session.exec(select(models.User)).first()
+        # user = models.UserCreate(
+        #     email='a@a.com'
+        # ).create()
+        # session.add(user)
+        # session.commit()
 
-    # print(user)
-    # for user_scope in user.scopes:
-    #     print(user_scope)
+        # #
+        # user_scope_read = models.UserScope(
+        #     user_id=user.id, scope_id=read_scope.id)
+        # user_scope_write = models.UserScope(
+        #     user_id=user.id, scope_id=write_scope.id)
+        # session.add(user_scope_read)
+        # session.add(user_scope_write)
+        # session.commit()
 
-    # for use_api_key in user.api_keys:
-    #     print(use_api_key)
+        # #
+        # api_key = models.APIKeyCreate(user_id=user.id).create()
+        # session.add(api_key)
+        # session.commit()
 
+        # #
+        # api_key_scope_read = models.APIKeyScope(
+        #     api_key_id=api_key.id, scope_id=read_scope.id)
+        # api_key_scope_write = models.APIKeyScope(
+        #     api_key_id=api_key.id, scope_id=write_scope.id)
+        # session.add(api_key_scope_read)
+        # session.add(api_key_scope_write)
+        # session.commit()
+
+        # user = session.exec(select(models.User)).first()
+
+        # print(user)
+        # for user_scope in user.scopes:
+        #     print(user_scope)
+
+        # for use_api_key in user.api_keys:
+        #     print(use_api_key)
 
 if __name__ == "__main__":
     # Run the example

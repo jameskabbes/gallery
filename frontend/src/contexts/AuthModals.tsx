@@ -1,20 +1,21 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { Component, useContext, useEffect, useState } from 'react';
 import { AuthModalsContextType, AuthModalType, ModalType } from '../types';
 import { ModalsContext } from './Modals';
 import { LogIn } from '../components/Auth/LogIn';
 import { RequestSignUp } from '../components/Auth/SignUp';
 import { RequestMagicLink } from '../components/Auth/MagicLink';
-import { RequestOTP } from '../components/Auth/OTP';
+import { RequestOTP, VerifyOTP } from '../components/Auth/OTP';
 
 const AuthModalsContext = React.createContext<AuthModalsContextType>({
   activate: () => {},
 });
 
-const authModalMapping = {
+const authModalMapping: Record<AuthModalType, React.ComponentType> = {
   logIn: LogIn,
   requestSignUp: RequestSignUp,
   requestMagicLink: RequestMagicLink,
-  requestOTP: RequestMagicLink,
+  requestOTP: RequestOTP,
+  verifyOTP: VerifyOTP,
 };
 
 function AuthModalsContextProvider({
@@ -28,7 +29,7 @@ function AuthModalsContextProvider({
   const activate: AuthModalsContextType['activate'] = (modalType) => {
     setActive((prev) => {
       if (modalType === null) {
-        if (!prev) {
+        if (prev !== null) {
           modalsContext.deleteModals([prev]);
         }
       } else {

@@ -19,12 +19,10 @@ import { Surface } from '../Utils/Surface';
 import { postLogin, PostLogInResponses } from '../../services/api/postLogIn';
 import { ModalsContext } from '../../contexts/Modals';
 import { AuthModalType } from '../../types';
-import { SendMagicLinkContext } from '../../contexts/SendMagicLink';
 import { useLogInWithGoogle } from './useLogInWithGoogle';
 
 function LogIn() {
   const logInContext = useContext(LogInContext);
-  const sendMagicLinkContext = useContext(SendMagicLinkContext);
   const authContext = useContext(AuthContext);
   const authModalsContext = useContext(AuthModalsContext);
   const modalsContext = useContext(ModalsContext);
@@ -122,7 +120,7 @@ function LogIn() {
                 id="login-username"
                 minLength={1}
                 maxLength={Math.max(
-                  openapi_schema.components.schemas.UserCreateAdmin.properties
+                  openapi_schema.components.schemas.UserAdminCreate.properties
                     .email.maxLength,
                   openapi_schema.components.schemas.User.properties.username
                     .maxLength
@@ -148,11 +146,11 @@ function LogIn() {
                 setState={logInContext.setPassword}
                 id="login-password"
                 minLength={
-                  openapi_schema.components.schemas.UserCreateAdmin.properties
+                  openapi_schema.components.schemas.UserAdminCreate.properties
                     .password.anyOf[0].minLength
                 }
                 maxLength={
-                  openapi_schema.components.schemas.UserCreateAdmin.properties
+                  openapi_schema.components.schemas.UserAdminCreate.properties
                     .password.anyOf[0].maxLength
                 }
                 type="password"

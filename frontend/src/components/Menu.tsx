@@ -11,6 +11,8 @@ import { logOut } from './Auth/logOut';
 import { Surface } from './Utils/Surface';
 import { useConfirmationModal } from '../utils/useConfirmationModal';
 
+import config from '../../../config.json';
+
 function Menu() {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -31,7 +33,7 @@ function Menu() {
           onClick: () => {},
         },
         {
-          element: <Link to="/settings">Settings</Link>,
+          element: <Link to={config.frontend_urls['galleries']}>Settings</Link>,
           onClick: () => {},
         },
         {

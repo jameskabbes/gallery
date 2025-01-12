@@ -5,7 +5,8 @@ import { DeviceContextProvider } from './Device';
 import { AuthContextProvider } from './Auth';
 import { AuthModalsContextProvider } from './AuthModals';
 import { RequestSignUpContextProvider } from './RequestSignUp';
-import { SendMagicLinkContextProvider } from './SendMagicLink';
+import { RequestMagicLinkContextProvider } from './RequestMagicLink';
+import { RequestOTPContextProvider } from './RequestOTP';
 import { EscapeKeyContextProvider } from './EscapeKey';
 import { ToastContextProvider } from './Toast';
 import { LogInWithGoogleProvider } from './LogInWithGoogle';
@@ -21,13 +22,15 @@ const ApplicationContextProvider = ({ children }) => {
               <DarkModeContextProvider>
                 <LogInContextProvider>
                   <LogInWithGoogleProvider>
-                    <SendMagicLinkContextProvider>
+                    <RequestMagicLinkContextProvider>
                       <RequestSignUpContextProvider>
-                        <AuthModalsContextProvider>
-                          {children}
-                        </AuthModalsContextProvider>
+                        <RequestOTPContextProvider>
+                          <AuthModalsContextProvider>
+                            {children}
+                          </AuthModalsContextProvider>
+                        </RequestOTPContextProvider>
                       </RequestSignUpContextProvider>
-                    </SendMagicLinkContextProvider>
+                    </RequestMagicLinkContextProvider>
                   </LogInWithGoogleProvider>
                 </LogInContextProvider>
               </DarkModeContextProvider>

@@ -7,23 +7,25 @@ import {
   ExtractResponseTypes,
 } from '../../types';
 
-const API_ENDPOINT = '/auth/request-magic-link/';
+const API_ENDPOINT = '/auth/login/otp/phone_number/';
 const API_METHOD = 'post';
 
-type PostRequestMagicLinkResponses = ExtractResponseTypes<
+type PostLoginOTPPhoneNumberResponses = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
-async function postRequestMagicLink(
+async function postLogInOTPPhoneNumber(
   authContext: AuthContextType,
   data: paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
 ): Promise<
   ApiResponse<
-    PostRequestMagicLinkResponses[keyof PostRequestMagicLinkResponses]
+    PostLoginOTPPhoneNumberResponses[keyof PostLoginOTPPhoneNumberResponses]
   >
 > {
+  console.log(data);
+
   return await callApi<
-    PostRequestMagicLinkResponses[keyof PostRequestMagicLinkResponses],
+    PostLoginOTPPhoneNumberResponses[keyof PostLoginOTPPhoneNumberResponses],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >({
     url: API_ENDPOINT,
@@ -33,4 +35,4 @@ async function postRequestMagicLink(
   });
 }
 
-export { postRequestMagicLink, PostRequestMagicLinkResponses };
+export { postLogInOTPPhoneNumber, PostLoginOTPPhoneNumberResponses };

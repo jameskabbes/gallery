@@ -501,4 +501,4 @@ function Styles() {
   );
 }
 
-export default Styles;
+export { Styles };
