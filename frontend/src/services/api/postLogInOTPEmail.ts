@@ -20,9 +20,7 @@ async function postLogInOTPEmail(
 ): Promise<
   ApiResponse<PostLoginOTPEmailResponses[keyof PostLoginOTPEmailResponses]>
 > {
-  console.log(data);
-
-  return await callApi<
+  const response = await callApi<
     PostLoginOTPEmailResponses[keyof PostLoginOTPEmailResponses],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >({
@@ -31,6 +29,9 @@ async function postLogInOTPEmail(
     authContext,
     data,
   });
+
+  authContext.updateFromApiResponse(response.data);
+  return response;
 }
 
 export { postLogInOTPEmail, PostLoginOTPEmailResponses };

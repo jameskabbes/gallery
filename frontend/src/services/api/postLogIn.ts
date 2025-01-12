@@ -23,7 +23,7 @@ async function postLogin(
     formData.append(key, data[key].toString());
   });
 
-  return await callApi<
+  const response = await callApi<
     PostLogInResponses[keyof PostLogInResponses],
     URLSearchParams
   >({
@@ -32,6 +32,8 @@ async function postLogin(
     authContext,
     data: formData,
   });
+  authContext.updateFromApiResponse(response.data);
+  return response;
 }
 
 export { postLogin, PostLogInResponses };

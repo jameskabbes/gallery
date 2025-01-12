@@ -22,9 +22,7 @@ async function postLogInOTPPhoneNumber(
     PostLoginOTPPhoneNumberResponses[keyof PostLoginOTPPhoneNumberResponses]
   >
 > {
-  console.log(data);
-
-  return await callApi<
+  const response = await callApi<
     PostLoginOTPPhoneNumberResponses[keyof PostLoginOTPPhoneNumberResponses],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >({
@@ -33,6 +31,8 @@ async function postLogInOTPPhoneNumber(
     authContext,
     data,
   });
+  authContext.updateFromApiResponse(response.data);
+  return response;
 }
 
 export { postLogInOTPPhoneNumber, PostLoginOTPPhoneNumberResponses };

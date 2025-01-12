@@ -20,7 +20,7 @@ async function postLogInGoogle(
 ): Promise<
   ApiResponse<PostLoginGoogleResponses[keyof PostLoginGoogleResponses]>
 > {
-  return await callApi<
+  const response = await callApi<
     PostLoginGoogleResponses[keyof PostLoginGoogleResponses],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json']
   >({
@@ -29,6 +29,8 @@ async function postLogInGoogle(
     authContext,
     data,
   });
+  authContext.updateFromApiResponse(response.data);
+  return response;
 }
 
 export { postLogInGoogle, PostLoginGoogleResponses };

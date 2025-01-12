@@ -7,30 +7,31 @@ import {
   ExtractResponseTypes,
 } from '../../types';
 
-const API_ENDPOINT = '/auth/signup/';
+const API_ENDPOINT = '/auth/login/magic-link/';
 const API_METHOD = 'post';
 
-type PostSignUpResponses = ExtractResponseTypes<
+type PostLoginOTPEmailResponses = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
-type PostSignUpData =
-  paths[typeof API_ENDPOINT][typeof API_METHOD]['requestBody']['content']['application/json'];
-
-async function postSignUp(
+async function postLogInOTPEmail(
   authContext: AuthContextType,
-  data: PostSignUpData
-): Promise<ApiResponse<PostSignUpResponses[keyof PostSignUpResponses]>> {
+  data: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['query']
+): Promise<
+  ApiResponse<PostLoginOTPEmailResponses[keyof PostLoginOTPEmailResponses]>
+> {
   const response = await callApi<
-    PostSignUpResponses[keyof PostSignUpResponses]
+    PostLoginOTPEmailResponses[keyof PostLoginOTPEmailResponses],
+    paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['query']
   >({
     url: API_ENDPOINT,
     method: API_METHOD,
     authContext,
-    data: data,
+    data,
   });
+
   authContext.updateFromApiResponse(response.data);
   return response;
 }
 
-export { postSignUp, PostSignUpResponses, PostSignUpData };
+export { postLogInOTPEmail, PostLoginOTPEmailResponses };

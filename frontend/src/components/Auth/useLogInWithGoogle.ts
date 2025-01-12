@@ -27,7 +27,6 @@ function useLogInWithGoogle() {
           type: 'success',
         });
         const apiData = data as PostLoginGoogleResponses['200'];
-        authContext.updateFromApiResponse(apiData);
       } else {
         toastContext.update(toastId, {
           message: 'Could not log in with Google',
