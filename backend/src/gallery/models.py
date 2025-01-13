@@ -57,7 +57,6 @@ def validate_and_normalize_datetime(value: datetime_module.datetime, info: Valid
 
 class ApiMethodBaseKwargs(typing.TypedDict):
     session: Session
-    c: client.Client
     authorized_user_id: str | None
     admin: bool
 
