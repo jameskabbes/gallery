@@ -12,7 +12,7 @@
     "access_token": "access_token"
   },
   "header_keys": {
-    "auth_error": "x-auth-error"
+    "auth_logout": "x-auth-logout"
   },
   "scope_name_mapping": {
     "admin": 1,

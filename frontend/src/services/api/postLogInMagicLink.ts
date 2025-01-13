@@ -10,18 +10,18 @@ import {
 const API_ENDPOINT = '/auth/login/magic-link/';
 const API_METHOD = 'post';
 
-type PostLoginOTPEmailResponses = ExtractResponseTypes<
+type PostLoginMagicLinkResponses = ExtractResponseTypes<
   paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
 >;
 
-async function postLogInOTPEmail(
+async function postLogInMagicLink(
   authContext: AuthContextType,
   data: paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['query']
 ): Promise<
-  ApiResponse<PostLoginOTPEmailResponses[keyof PostLoginOTPEmailResponses]>
+  ApiResponse<PostLoginMagicLinkResponses[keyof PostLoginMagicLinkResponses]>
 > {
   const response = await callApi<
-    PostLoginOTPEmailResponses[keyof PostLoginOTPEmailResponses],
+    PostLoginMagicLinkResponses[keyof PostLoginMagicLinkResponses],
     paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['query']
   >({
     url: API_ENDPOINT,
@@ -34,4 +34,4 @@ async function postLogInOTPEmail(
   return response;
 }
 
-export { postLogInOTPEmail, PostLoginOTPEmailResponses };
+export { postLogInMagicLink, PostLoginMagicLinkResponses };

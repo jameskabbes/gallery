@@ -1,64 +1,69 @@
 from fastapi import HTTPException, status
 import typing
 
-AUTH_ERROR_HEADER = 'x-auth-error'
+AUTH_LOGOUT_HEADER = 'x-auth-logout'
 
 
-def _bearer_cookie_exception(status_code: int, detail: str) -> HTTPException:
-    return HTTPException(
-        status_code=status_code,
-        detail=detail,
-        headers={"WWW-Authenticate": "Bearer, Cookie", AUTH_ERROR_HEADER: 'true'})
+class BearerCookieExceptionKwargs(typing.TypedDict):
+    logout: bool = True
 
 
-def improper_format_exception() -> HTTPException:
-    return HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Improper formatting of authorization header or cookie",
-        headers={"WWW-Authenticate": "Bearer, Cookie", AUTH_ERROR_HEADER: 'true'})
+BearerCookieExceptionReturn = HTTPException
 
 
-def missing_required_claims_exception() -> HTTPException:
-    return _bearer_cookie_exception(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Missing required claims")
+def make_bearer_cookie_exception(status_code: int, detail: str):
+    def decorator(func):
+        def wrapper(**kwargs: typing.Unpack[BearerCookieExceptionKwargs]) -> BearerCookieExceptionReturn:
+            headers = {"WWW-Authenticate": "Bearer, Cookie"}
+            if kwargs.get('logout', True):
+                headers[AUTH_LOGOUT_HEADER] = 'true'
+            return HTTPException(
+                status_code=status_code,
+                detail=detail,
+                headers=headers
+            )
+        return wrapper
+    return decorator
 
 
-def authorization_expired_exception() -> HTTPException:
-    return _bearer_cookie_exception(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Authorization expired")
+@make_bearer_cookie_exception(status.HTTP_400_BAD_REQUEST, "Improper formatting of authorization header or cookie")
+def improper_format_exception():
+    pass
 
 
-def user_not_found_exception() -> HTTPException:
-    return _bearer_cookie_exception(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="User not found")
+@make_bearer_cookie_exception(status.HTTP_401_UNAUTHORIZED, "Missing required claims")
+def missing_required_claims_exception():
+    pass
 
 
-def not_permitted_exception() -> HTTPException:
-    return _bearer_cookie_exception(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail="Authorizaton lacks required permissions")
+@make_bearer_cookie_exception(status.HTTP_401_UNAUTHORIZED, "Authorization expired")
+def authorization_expired_exception():
+    pass
 
 
-def credentials_exception() -> HTTPException:
-    return _bearer_cookie_exception(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Incorrect username or password")
+@make_bearer_cookie_exception(status.HTTP_404_NOT_FOUND, "User not found")
+def user_not_found_exception():
+    pass
 
 
-def invalid_otp_exception() -> HTTPException:
-    return _bearer_cookie_exception(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid OTP")
+@make_bearer_cookie_exception(status.HTTP_403_FORBIDDEN, "Authorization lacks required permissions")
+def not_permitted_exception():
+    pass
 
 
-def invalid_authorization_type_exception() -> HTTPException:
-    return HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Invalid authorization type",
-        headers={"WWW-Authenticate": "Bearer, Cookie", AUTH_ERROR_HEADER: 'true'})
+@make_bearer_cookie_exception(status.HTTP_401_UNAUTHORIZED, "Incorrect username or password")
+def credentials_exception():
+    pass
+
+
+@make_bearer_cookie_exception(status.HTTP_401_UNAUTHORIZED, "Invalid OTP")
+def invalid_otp_exception():
+    pass
+
+
+@make_bearer_cookie_exception(status.HTTP_400_BAD_REQUEST, "Invalid authorization type")
+def invalid_authorization_type_exception():
+    pass
 
 
 type EXCEPTION = typing.Literal[
@@ -72,15 +77,15 @@ type EXCEPTION = typing.Literal[
     'invalid_otp'
 ]
 
-EXCEPTION_MAPPING: dict[EXCEPTION, HTTPException] = {
-    'improper_format': improper_format_exception(),
-    'missing_required_claims': missing_required_claims_exception(),
-    'authorization_expired': authorization_expired_exception(),
-    'user_not_found': user_not_found_exception(),
-    'not_permitted': not_permitted_exception(),
-    'credentials': credentials_exception(),
-    'invalid_authorization_type': invalid_authorization_type_exception(),
-    'invalid_otp': invalid_otp_exception()
+EXCEPTION_MAPPING: dict[str, HTTPException] = {
+    'improper_format': improper_format_exception,
+    'missing_required_claims': missing_required_claims_exception,
+    'authorization_expired': authorization_expired_exception,
+    'user_not_found': user_not_found_exception,
+    'not_permitted': not_permitted_exception,
+    'credentials': credentials_exception,
+    'invalid_authorization_type': invalid_authorization_type_exception,
+    'invalid_otp': invalid_otp_exception
 }
 
 # Scopes

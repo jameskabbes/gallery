@@ -52,20 +52,27 @@ class OAuth2PasswordBearerMultiSource(OAuth2):
             password={"tokenUrl": tokenUrl, "scopes": scopes})
         super().__init__(flows=flows, scheme_name=scheme_name, auto_error=False)
 
-    async def __call__(self, request: Request) -> str | None:
+    async def __call__(self, request: Request) -> client.JwtEncodedStr | None:
         # change to accept access token from Authorization header
 
+        token: client.JwtEncodedStr | None = None
+
+        # Authorization: bearer <token>
         authorization = request.headers.get("Authorization")
         if authorization:
             scheme, param = get_authorization_scheme_param(authorization)
             if scheme.lower() == "bearer":
-                return param
+                token = param
 
         # HTTP-only Cookie
         cookie_access_token = request.cookies.get(
             c.cookie_keys['access_token'])
         if cookie_access_token:
-            return cookie_access_token
+            if token:
+                raise HTTPException(
+                    stuatus_code=status.HTTP_400_BAD_REQUEST, detail='Improper formatting of authorization header or cookie')
+            else:
+                token = cookie_access_token
 
         return None
 
@@ -377,6 +384,10 @@ async def post_login_password(
         )
 
 
+class PostLoginWithMagicLinkRequest(BaseModel):
+    token: client.JwtEncodedStr
+
+
 class PostLoginWithMagicLinkResponse(GetAuthReturn):
     pass
 
@@ -384,11 +395,14 @@ class PostLoginWithMagicLinkResponse(GetAuthReturn):
 @ auth_router.post('/login/magic-link/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
 async def post_login_magic_link(
         response: Response,
-        token: client.JwtEncodedStr = Query(None),
+        model: PostLoginWithMagicLinkRequest
 ) -> PostLoginWithMagicLinkResponse:
 
-    authorization = await get_auth_from_token(token=token, permitted_auth_credential_types={
+    authorization = await get_auth_from_token(token=model.token, permitted_auth_credential_types={
         'access_token'}, override_lifetime=c.authentication['expiry_timedeltas']['magic_link'])
+
+    if authorization.exception:
+        raise auth.EXCEPTION_MAPPING[authorization.exception]
 
     with Session(c.db_engine) as session:
 
@@ -426,7 +440,6 @@ async def post_login_otp(session: Session, user: models.User, response: Response
         raise auth.EXCEPTION_MAPPING['invalid_otp']
 
     user_otps = user.otps
-
     found = False
 
     # the most recent ones are at the end

@@ -25,6 +25,8 @@ import { IoWarning } from 'react-icons/io5';
 import { IoCheckmark } from 'react-icons/io5';
 import { postRequestMagicLinkEmail } from '../../services/api/postRequestMagicLinkEmail';
 import { postRequestMagicLinkSMS } from '../../services/api/postRequestMagicLinkSMS';
+import { postLogInMagicLink } from '../../services/api/postLogInMagicLink';
+import { Card1 } from '../Utils/Card';
 
 function RequestMagicLink() {
   const authContext = useContext(AuthContext);
@@ -169,51 +171,40 @@ function VerifyMagicLink() {
   const modalKey = 'modal-verify-magic-link';
 
   useEffect(() => {
-    // async function verifyMagicLink() {
-    //   setStatus(null);
-    //   const { status } = await postRequestMagicLink(authContext, {
-    //     access_token: access_token,
-    //   });
-    //   setStatus(status);
-    // }
-    // verifyMagicLink();
+    async function verifyMagicLink() {
+      setStatus(null);
+      const { status } = await postLogInMagicLink(authContext, {
+        token: token,
+      });
+      setStatus(status);
+    }
+    verifyMagicLink();
   }, [token]);
 
-  function Component({ status }: { status: number }) {
-    return (
-      <div className="flex flex-col items-center space-y-2">
-        <h1>
-          {status === null ? (
-            <Loader1 />
-          ) : status === 200 ? (
-            <IoCheckmark className="text-green-500" />
-          ) : (
-            <IoWarning className="text-red-500" />
-          )}
-        </h1>
-        <h4 className="text-center">
-          {status === null
-            ? 'Verifying your magic link'
-            : status === 200
-            ? 'Magic link verified. You can close this tab'
-            : 'Could not verify magic link'}
-        </h4>
+  return (
+    <div className="flex flex-1 flex-row justify-center">
+      <div className="flex flex-col justify-center p-2">
+        <Card1 className="flex flex-col items-center">
+          <h1>
+            {status === null ? (
+              <Loader1 />
+            ) : status === 200 ? (
+              <IoCheckmark className="text-green-500" />
+            ) : (
+              <IoWarning className="text-red-500" />
+            )}
+          </h1>
+          <h4 className="text-center">
+            {status === null
+              ? 'Verifying your magic link'
+              : status === 200
+              ? 'Magic link verified. You can close this tab'
+              : 'Could not verify magic link'}
+          </h4>
+        </Card1>
       </div>
-    );
-  }
-
-  useEffect(() => {
-    modalsContext.upsertModals([
-      {
-        Component: Component,
-        key: modalKey,
-        contentAdditionalClassName: 'max-w-[400px] w-full',
-        componentProps: { status },
-      },
-    ]);
-  }, [status]);
-
-  return null;
+    </div>
+  );
 }
 
 export { RequestMagicLink, VerifyMagicLink };
