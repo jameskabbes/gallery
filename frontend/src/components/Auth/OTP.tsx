@@ -20,7 +20,7 @@ import { postLogInOTPPhoneNumber } from '../../services/api/postLogInOTPPhoneNum
 import { Surface } from '../Utils/Surface';
 import { useValidatedInputString } from '../../utils/useValidatedInput';
 import { Loader1 } from '../Utils/Loader';
-import { IoWarning } from 'react-icons/io5';
+import { IoLogInOutline, IoWarning } from 'react-icons/io5';
 
 function RequestOTP() {
   const authContext = useContext(AuthContext);
@@ -128,6 +128,24 @@ function RequestOTP() {
             : null}
         </ButtonSubmit>
       </form>
+      <Surface keepParentMode={true}>
+        <div className="flex flex-row items-center space-x-2 my-2">
+          <div className="flex-1 border-inherit border-t-[1px]" />
+          <p>or</p>
+          <div className="flex-1 border-inherit border-t-[1px]" />
+        </div>
+      </Surface>
+      <div className="space-y-1">
+        <Button2
+          className="w-full relative"
+          onClick={() => {
+            authModalsContext.activate('logIn');
+          }}
+        >
+          <h6 className="text-center mb-0 ">Login</h6>
+          <IoLogInOutline className="absolute left-4 top-1/2 transform -translate-y-1/2" />{' '}
+        </Button2>
+      </div>
     </div>
   );
 }

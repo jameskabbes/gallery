@@ -1279,12 +1279,6 @@ class Gallery(
             **self.model_dump(include=list(GalleryAdminAvailable.model_fields.keys())), **kwargs['update_model'].model_dump(include=GalleryAdminAvailable.model_fields.keys(), exclude_unset=True)
         }))
 
-    @classmethod
-    async def api_post(cls, c: client.Client = None, **kwargs) -> typing.Self:
-        instance = await cls._basic_api_get(kwargs['session'], kwargs['id'])
-        await instance._check_authorization_existing(**kwargs, method='get')
-        return instance
-
     @ classmethod
     async def create(cls, mkdir=True, **kwargs: Unpack[CreateMethodKwargs[GalleryAdminCreate]]) -> typing.Self:
         gallery = cls(

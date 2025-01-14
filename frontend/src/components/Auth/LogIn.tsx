@@ -27,6 +27,7 @@ function LogIn() {
   const authModalsContext = useContext(AuthModalsContext);
   const modalsContext = useContext(ModalsContext);
   const toastContext = useContext(ToastContext);
+  const logInWithGoogle = useLogInWithGoogle();
 
   const key: AuthModalType = 'logIn';
 
@@ -181,7 +182,7 @@ function LogIn() {
           <Button2
             className="w-full relative"
             onClick={() => {
-              useLogInWithGoogle();
+              logInWithGoogle();
             }}
           >
             <h6 className="text-center mb-0 ">Login with Google</h6>

@@ -15,6 +15,7 @@ import { ApiKeys } from '../components/Settings/ApiKeys';
 import { useApiCall } from '../utils/api';
 import { ExtractResponseTypes } from '../types';
 import { Surface } from '../components/Utils/Surface';
+import { Button2 } from '../components/Utils/Button';
 
 const API_ENDPOINT = '/pages/settings/';
 const API_METHOD = 'get';
@@ -105,8 +106,8 @@ function Settings(): JSX.Element {
   return (
     <>
       {validated && (
-        <div className="flex-1 max-w-screen-2xl mx-auto w-full">
-          <div className="flex flex-row overflow-x-auto ">
+        <div className="flex-1 max-w-screen-2xl mx-auto w-full px-1">
+          <div className="flex flex-row overflow-x-auto space-x-1 py-2">
             {Object.keys(selectionComponentMapping).map(
               (key: SelectionComponentKey) => {
                 if (
@@ -118,23 +119,19 @@ function Settings(): JSX.Element {
                   }
 
                   return (
-                    <Surface key={key}>
-                      <button
-                        onClick={() => navigateToSelection(key)}
-                        className={`${
-                          selection === key ? 'border-color-primary' : ''
-                        } border-[1px] hover:border-color-primary py-1 px-2 mx-1 my-2 rounded-full `}
-                      >
-                        <h5>
-                          <div className="flex flex-row space-x-1 items-center">
-                            {selectionComponentMapping[key].icon}
-                            <span className="whitespace-nowrap">
-                              {selectionComponentMapping[key].name}
-                            </span>
-                          </div>
-                        </h5>
-                      </button>
-                    </Surface>
+                    <Button2
+                      key={key}
+                      className="rounded-full"
+                      onClick={() => navigateToSelection(key)}
+                      isActive={selection === key}
+                    >
+                      <div className="flex flex-row space-x-1 items-center">
+                        {selectionComponentMapping[key].icon}
+                        <span className="whitespace-nowrap">
+                          {selectionComponentMapping[key].name}
+                        </span>
+                      </div>
+                    </Button2>
                   );
                 }
               }

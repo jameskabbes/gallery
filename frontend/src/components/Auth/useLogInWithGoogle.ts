@@ -6,10 +6,12 @@ import {
 import { useContext } from 'react';
 import { ToastContext } from '../../contexts/Toast';
 import { AuthContext } from '../../contexts/Auth';
+import { AuthModalsContext } from '../../contexts/AuthModals';
 
 function useLogInWithGoogle() {
   const toastContext = useContext(ToastContext);
   const authContext = useContext(AuthContext);
+  const authModalsContext = useContext(AuthModalsContext);
 
   return useGoogleLogin({
     onSuccess: async (res) => {
@@ -27,6 +29,7 @@ function useLogInWithGoogle() {
           type: 'success',
         });
         const apiData = data as PostLoginGoogleResponses['200'];
+        authModalsContext.activate(null);
       } else {
         toastContext.update(toastId, {
           message: 'Could not log in with Google',

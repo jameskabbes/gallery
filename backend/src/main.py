@@ -242,8 +242,11 @@ def make_get_auth_dependency(raise_exceptions: bool = True, logout_on_exception:
         get_authorization_return = await get_auth_from_token(token=auth_token, **kwargs)
         if get_authorization_return.exception:
             if raise_exceptions:
-                raise get_authorization_return.exception(
-                    logout_on_exception=logout_on_exception)
+
+                exception_kwargs: auth.ExceptionKwargs = {
+                    'logout_on_exception': logout_on_exception}
+
+                raise get_authorization_return.exception(**exception_kwargs)
         return get_authorization_return
     return get_authorization_dependency
 
@@ -514,7 +517,7 @@ async def post_login_google(request_token: PostLoginWithGoogleRequest, response:
         user = session.exec(select(models.User).where(
             models.User.email == email)).one_or_none()
         if not user:
-            user = await models.User.api_post(session=session, c=c, authorized_user_id=None, create_model=models.UserAdminCreate(email=email, user_role_id=config.USER_ROLE_NAME_MAPPING['user']))
+            user = await models.User.api_post(session=session, c=c, authorized_user_id=None, admin=True, create_model=models.UserAdminCreate(email=email, user_role_id=config.USER_ROLE_NAME_MAPPING['user']))
 
         token_lifespan = c.authentication['expiry_timedeltas']['access_token']
 
@@ -1254,7 +1257,7 @@ async def remove_scope_from_api_key(
         make_get_auth_dependency())]
 ):
     with Session(c.db_engine) as session:
-        return await models.ApiKeyScope.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=models.ApiKeyScope.IdBase(api_key_id=api_key_id, scope_id=scope_id)._id, admin=False)
+        return await models.ApiKeyScope.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=models.ApiKeyScopeIdBase(api_key_id=api_key_id, scope_id=scope_id)._id, admin=False)
 
 
 @ api_key_scope_admin_router.delete('/api-keys/{api_key_id}/scopes/{scope_id}/',
@@ -1269,7 +1272,7 @@ async def remove_scope_from_api_key_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ):
     with Session(c.db_engine) as session:
-        return await models.ApiKeyScope.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=models.ApiKeyScope.IdBase(api_key_id=api_key_id, scope_id=scope_id)._id, admin=True)
+        return await models.ApiKeyScope.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=models.ApiKeyScopeIdBase(api_key_id=api_key_id, scope_id=scope_id)._id, admin=True)
 
 app.include_router(api_key_scope_router)
 app.include_router(api_key_scope_admin_router)

@@ -67,6 +67,7 @@ function RequestSignUp() {
   const authContext = useContext(AuthContext);
   const authModalsContext = useContext(AuthModalsContext);
   const modalsContext = useContext(ModalsContext);
+  const logInWithGoogle = useLogInWithGoogle();
 
   useEffect(() => {
     requestSignUpContext.setValid(
@@ -139,7 +140,7 @@ function RequestSignUp() {
             <Button2
               className="w-full relative"
               onClick={() => {
-                useLogInWithGoogle();
+                logInWithGoogle();
               }}
             >
               <h6 className="text-center mb-0 ">Login with Google</h6>
