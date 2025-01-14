@@ -14,7 +14,7 @@ from sqlalchemy.engine import Result
 from sqlalchemy.types import TypeDecorator, String, DateTime
 from pydantic import BaseModel, EmailStr, constr, StringConstraints, field_validator, ValidationInfo, ValidatorFunctionWrapHandler, ValidationError, field_serializer, model_validator, conint
 from pydantic.functional_validators import WrapValidator
-from gallery import utils, auth
+from gallery import utils, types, config
 from abc import ABC, abstractmethod
 import datetime as datetime_module
 from enum import IntEnum, Enum
@@ -57,6 +57,7 @@ def validate_and_normalize_datetime(value: datetime_module.datetime, info: Valid
 
 class ApiMethodBaseKwargs(typing.TypedDict):
     session: Session
+    c: client.Client
     authorized_user_id: str | None
     admin: bool
 
@@ -357,15 +358,15 @@ class Table[T: 'Table', IdType, TPost: BaseModel, TPatch: BaseModel](SQLModel, I
 
 class UserTypes:
     id = str
-    email = client.Email
-    phone_number = client.PhoneNumber
+    email = types.Email
+    phone_number = types.PhoneNumber
 
     password = typing.Annotated[str, StringConstraints(
         min_length=1, max_length=64)]
     username = typing.Annotated[str, StringConstraints(
         min_length=3, max_length=20, pattern=re.compile(r'^[a-zA-Z0-9_.-]+$'), to_lower=True)]
     hashed_password = str
-    user_role_id = client.UserRoleTypes.id
+    user_role_id = types.UserRoleTypes.id
 
 
 class UserIdBase(IdObject[UserTypes.id]):
@@ -519,7 +520,7 @@ class User(Table['User', UserTypes.id, UserAdminCreate, UserAdminUpdate], UserId
         )
 
         root_gallery = await Gallery.api_post(session=kwargs['session'], c=kwargs['c'], authorized_user_id=new_user._id, admin=kwargs['admin'], create_model=GalleryAdminCreate(
-            name='root', user_id=new_user._id, visibility_level=kwargs['c'].visibility_level_name_mapping['private']
+            name='root', user_id=new_user._id, visibility_level=config.VISIBILITY_LEVEL_NAME_MAPPING['private']
         ))
 
         return new_user
@@ -663,7 +664,7 @@ class AuthCredential:
             )
 
         @classmethod
-        async def get_scope_ids(cls, session: Session = None, c: client.Client = None) -> list[client.ScopeTypes.id]:
+        async def get_scope_ids(cls, session: Session = None) -> list[types.ScopeTypes.id]:
             return []
 
 
@@ -733,8 +734,8 @@ class UserAccessToken(
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail=self.not_found_message())
 
-    async def get_scope_ids(self, session: Session = None, c: client.Client = None) -> list[client.ScopeTypes.id]:
-        return c.user_role_id_scope_ids[self.user.user_role_id]
+    async def get_scope_ids(self, session: Session = None) -> list[types.ScopeTypes.id]:
+        return config.USER_ROLE_ID_SCOPE_IDS[self.user.user_role_id]
 
 
 # OTP
@@ -885,7 +886,7 @@ class ApiKey(
     _ROUTER_TAG = 'Api Key'
     _ORDER_BY_OPTIONS: typing.ClassVar['ApiKeyTypes.order_by']
 
-    async def get_scope_ids(self, session: Session = None, c: client.Client = None) -> list[client.ScopeTypes.id]:
+    async def get_scope_ids(self, session: Session = None, c: client.Client = None) -> list[types.ScopeTypes.id]:
         return [api_key_scope.scope_id for api_key_scope in self.api_key_scopes]
 
     @ classmethod
@@ -937,7 +938,7 @@ class ApiKeyPublic(ApiKeyExport):
 
 
 class ApiKeyPrivate(ApiKeyExport):
-    scope_ids: list[client.ScopeTypes.id]
+    scope_ids: list[types.ScopeTypes.id]
 
     @classmethod
     def from_api_key(cls, api_key: ApiKey) -> typing.Self:
@@ -1009,7 +1010,7 @@ AUTH_CREDENTIAL_TYPE_TO_CLASS: dict[AuthCredentialTypes.type, AuthCredentialClas
 
 class ApiKeyScopeTypes:
     id = typing.Annotated[tuple[ApiKeyTypes.id,
-                                client.ScopeTypes.id], '(api_key_id, scope_id)'
+                                types.ScopeTypes.id], '(api_key_id, scope_id)'
                           ]
 
 
@@ -1018,7 +1019,7 @@ class ApiKeyScopeIdBase(IdObject[ApiKeyScopeTypes.id]):
 
     api_key_id: ApiKeyTypes.id = Field(
         index=True, foreign_key=ApiKey.__tablename__ + '.' + ApiKey._ID_COLS[0], ondelete='CASCADE')
-    scope_id: client.ScopeTypes.id = Field(index=True)
+    scope_id: types.ScopeTypes.id = Field(index=True)
 
 
 class ApiKeyScopeAdminUpdate(BaseModel):
@@ -1083,7 +1084,7 @@ class GalleryTypes:
     # name can't start with the `YYYY-MM-DD ` pattern
     name = typing.Annotated[str, StringConstraints(
         min_length=1, max_length=256, pattern=re.compile(r'^(?!\d{4}-\d{2}-\d{2} ).*'))]
-    visibility_level = client.VisibilityLevelTypes.id
+    visibility_level = types.VisibilityLevelTypes.id
     parent_id = BaseTypes.id
     description = typing.Annotated[str, StringConstraints(
         min_length=0, max_length=20000)]
@@ -1254,17 +1255,17 @@ class Gallery(
                 gallery_permission = await GalleryPermission.get_one_by_id(kwargs['session'], (kwargs['id'], kwargs['authorized_user_id']))
 
                 # if the gallery is private and user has no access, pretend it doesn't exist
-                if not gallery_permission and self.visibility_level == kwargs['c'].visibility_level_name_mapping['private']:
+                if not gallery_permission and self.visibility_level == config.VISIBILITY_LEVEL_NAME_MAPPING['private']:
                     raise HTTPException(
                         status.HTTP_404_NOT_FOUND, detail=self.not_found_message())
 
                 elif kwargs['method'] == 'get':
-                    if gallery_permission.permission_level < kwargs['c'].permission_level_name_mapping['viewer']:
+                    if gallery_permission.permission_level < config.PERMISSION_LEVEL_NAME_MAPPING['viewer']:
                         raise HTTPException(
                             status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this gallery'.format(method=kwargs['method']))
 
                 elif kwargs['method'] == 'patch':
-                    if gallery_permission.permission_level < kwargs['c'].permission_level_name_mapping['editor']:
+                    if gallery_permission.permission_level < config.PERMISSION_LEVEL_NAME_MAPPING['editor']:
                         raise HTTPException(
                             status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this gallery'.format(method=kwargs['method']))
 
@@ -1277,6 +1278,12 @@ class Gallery(
         await self.api_get_is_available(kwargs['session'], GalleryAdminAvailable(**{
             **self.model_dump(include=list(GalleryAdminAvailable.model_fields.keys())), **kwargs['update_model'].model_dump(include=GalleryAdminAvailable.model_fields.keys(), exclude_unset=True)
         }))
+
+    @classmethod
+    async def api_post(cls, c: client.Client = None, **kwargs) -> typing.Self:
+        instance = await cls._basic_api_get(kwargs['session'], kwargs['id'])
+        await instance._check_authorization_existing(**kwargs, method='get')
+        return instance
 
     @ classmethod
     async def create(cls, mkdir=True, **kwargs: Unpack[CreateMethodKwargs[GalleryAdminCreate]]) -> typing.Self:
@@ -1441,7 +1448,7 @@ class GalleryPermissionTypes:
                                 BaseTypes.user_id], '(gallery_id, user_id)']
     gallery_id = BaseTypes.gallery_id
     user_id = BaseTypes.user_id
-    permission_level = client.PermissionLevelTypes.id
+    permission_level = types.PermissionLevelTypes.id
 
 
 class GalleryPermissionIdBase(IdObject[GalleryPermissionTypes.id]):

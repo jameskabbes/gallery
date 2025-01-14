@@ -15,7 +15,7 @@ import { getGalleryLink } from '../components/Gallery/getLink';
 import { Link } from 'react-router-dom';
 import { ToastContext } from '../contexts/Toast';
 import { deleteGallery } from '../services/api/deleteGallery';
-import siteConfig from '../../siteConfig.json';
+import constants from '../../../constants.json';
 import {
   postGallerySync,
   PostGallerySyncResponses,
@@ -89,7 +89,7 @@ function Gallery({ root = false }: Props) {
         message: 'Gallery deleted',
         type: 'success',
       });
-      navigate(siteConfig.galleriesUrlBase);
+      navigate(constants.frontend_urls.galleries);
     } else {
       toastContext.update(toastId, {
         message: 'Error deleting gallery',

@@ -1,38 +1,4 @@
 {
   "openapi_schema_path": "openapi_schema.json",
-  "api_endpoint_base": "api",
-  "auth_key": "auth",
-  "frontend_urls": {
-    "base": "https://gallery.jameskabbes.com",
-    "verify_signup": "/welcome",
-    "verify_magic_link": "/verify-magic-link",
-    "galleries": "/galleries"
-  },
-  "cookie_keys": {
-    "access_token": "access_token"
-  },
-  "header_keys": {
-    "auth_logout": "x-auth-logout"
-  },
-  "scope_name_mapping": {
-    "admin": 1,
-    "user.read": 2,
-    "user.write": 3
-  },
-  "visibility_level_name_mapping": {
-    "public": 1,
-    "private": 2
-  },
-  "permission_level_name_mapping": {
-    "editor": 2,
-    "viewer": 1
-  },
-  "user_role_name_mapping": {
-    "admin": 2,
-    "user": 1
-  },
-  "user_role_scopes": {
-    "admin": ["admin", "user.read", "user.write"],
-    "user": ["user.read", "user.write"]
-  }
+  "api_endpoint_base": "api"
 }

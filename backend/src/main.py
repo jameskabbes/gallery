@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from sqlalchemy import and_
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql import func
-from gallery import get_client, models, utils, auth, client
+from gallery import get_client, models, utils, auth, client, types, config
 import datetime
 from sqlmodel import Session, SQLModel, select
 import typing
@@ -37,9 +37,6 @@ app = FastAPI(lifespan=lifespan)
 c = get_client()
 
 
-auth_exception_manager = auth.AuthExceptionManager(c)
-
-
 class OAuth2PasswordBearerMultiSource(OAuth2):
     def __init__(
         self,
@@ -53,10 +50,10 @@ class OAuth2PasswordBearerMultiSource(OAuth2):
             password={"tokenUrl": tokenUrl, "scopes": scopes})
         super().__init__(flows=flows, scheme_name=scheme_name, auto_error=False)
 
-    async def __call__(self, request: Request) -> client.JwtEncodedStr:
+    async def __call__(self, request: Request) -> types.JwtEncodedStr:
         # change to accept access token from Authorization header
 
-        token: client.JwtEncodedStr | None = None
+        token: types.JwtEncodedStr | None = None
 
         # Authorization: bearer <token>
         authorization = request.headers.get("Authorization")
@@ -66,13 +63,10 @@ class OAuth2PasswordBearerMultiSource(OAuth2):
                 token = param
 
         # HTTP-only Cookie
-        cookie_access_token = request.cookies.get(
-            c.cookie_keys['access_token'])
+        cookie_access_token = request.cookies.get(auth.ACCESS_TOKEN_COOKIE_KEY)
         if cookie_access_token:
             if token != None:
-                raise auth_exception_manager.EXCEPTION_MAPPING['both_authorization_header_and_cookie'](
-                    logout=False)
-
+                raise auth.both_authorization_header_and_cookie_exception()
             token = cookie_access_token
 
         return token
@@ -98,42 +92,21 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
 
     # in get_auhorization, a special header 'X-Auth-Logout' is set, signaling the user should be logged out
     if exc.headers and exc.headers.get(c.header_keys['auth_logout']) != None:
-        delete_access_token_cookie(response)
+        auth.delete_access_token_cookie(response)
     return response
 
 
-def set_access_token_cookie(access_token: str, response: Response, lifespan: datetime.timedelta | None):
-
-    kwargs = {}
-    if lifespan:
-        kwargs['expires'] = datetime.datetime.now(
-            datetime.UTC) + lifespan
-
-    response.set_cookie(
-        key=c.cookie_keys['access_token'],
-        value=access_token,
-        httponly=True,
-        secure=True,
-        samesite="Lax",
-        **kwargs
-    )
-
-
-def delete_access_token_cookie(response: Response):
-    response.delete_cookie(c.cookie_keys['access_token'])
-
-
 class MakeGetAuthorizationDependencyKwargs(typing.TypedDict, total=False):
-    required_scopes: typing.Optional[set[client.ScopeTypes.name]]
+    required_scopes: typing.Optional[set[types.ScopeTypes.name]]
     permitted_auth_credential_types: typing.Optional[set[models.AuthCredentialTypes.type]]
     override_lifetime: typing.Optional[datetime.timedelta]
 
 
 class GetAuthorizationReturn(BaseModel):
     isAuthorized: bool = False
-    exception: typing.Optional[auth.EXCEPTION] = None
+    exception: typing.Optional[auth.AuthExceptionFunction] = None
     user: typing.Optional[models.UserPrivate] = None
-    scope_ids: typing.Optional[set[client.ScopeTypes.id]] = None
+    scope_ids: typing.Optional[set[types.ScopeTypes.id]] = None
     auth_credential: typing.Optional[models.AuthCredentialClass] = None
 
     @property
@@ -152,7 +125,7 @@ class GetAuthorizationFromTokenReturn(GetAuthorizationReturn):
 async def get_auth_from_auth_credential_table_inst(
         session: Session,
         auth_credential_table_inst: models.AuthCredentialTableClass,
-        required_scopes: set[client.ScopeTypes.name] = set(),
+        required_scopes: set[types.ScopeTypes.name] = set(),
         override_lifetime: typing.Optional[datetime.timedelta] = None,
         dt_now=datetime.datetime.now(datetime.UTC),
 ) -> GetAuthorizationReturn:
@@ -176,10 +149,10 @@ async def get_auth_from_auth_credential_table_inst(
     if user == None:
         return GetAuthorizationReturn(exception='user_not_found')
 
-    scope_ids = await auth_credential_table_inst.get_scope_ids(session, c)
+    scope_ids = await auth_credential_table_inst.get_scope_ids(session)
 
     required_scope_ids = set(
-        [c.scope_name_mapping[scope_name]
+        [config.SCOPE_NAME_MAPPING[scope_name]
             for scope_name in required_scopes]
     )
     if not required_scope_ids.issubset(scope_ids):
@@ -194,8 +167,8 @@ async def get_auth_from_auth_credential_table_inst(
 
 
 async def get_auth_from_token(
-        token: typing.Optional[client.JwtEncodedStr] = None,
-        required_scopes: set[client.ScopeTypes.name] = set(),
+        token: typing.Optional[types.JwtEncodedStr] = None,
+        required_scopes: set[types.ScopeTypes.name] = set(),
         permitted_auth_credential_types: set[models.AuthCredentialTokenType] = set(
             c.auth_type for c in models.AUTH_CREDENTIAL_TOKEN_CLASSES),
         override_lifetime: typing.Optional[datetime.timedelta] = None
@@ -205,22 +178,22 @@ async def get_auth_from_token(
     try:
         payload: dict = c.jwt_decode(token)
     except:
-        return GetAuthorizationReturn(exception='improper_format')
+        return GetAuthorizationReturn(exception=auth.improper_format_exception)
 
     # make sure "type" is in the jwt
     if models.AuthCredential.JwtIO._TYPE_CLAIM not in payload:
-        return GetAuthorizationReturn(exception='missing_required_claims')
+        return GetAuthorizationReturn(exception=auth.missing_required_claims_exception)
 
     # make sure the "type" is a permitted auth_credential type
     auth_type: models.AuthCredentialTypes.type = payload['type']
     if auth_type not in permitted_auth_credential_types:
-        return GetAuthorizationReturn(exception='invalid_authorization_type')
+        return GetAuthorizationReturn(exception=auth.authorization_type_not_permitted_exception)
 
     AuthCredentialClass = models.AUTH_CREDENTIAL_TYPE_TO_CLASS[auth_type]
 
     # validate the jwt claims
     if not AuthCredentialClass.validate_jwt_claims(payload):
-        return GetAuthorizationReturn(exception='missing_required_claims')
+        return GetAuthorizationReturn(exception=auth.missing_required_claims_exception)
 
     # decode the payload
     decoded_payload = AuthCredentialClass.decode(payload)
@@ -236,10 +209,10 @@ async def get_auth_from_token(
 
     # check the dates from the jwt
     if dt_now > auth_credential_from_jwt.expiry:
-        return GetAuthorizationReturn(exception='authorization_expired')
+        return GetAuthorizationReturn(exception=auth.authorization_expired_exception)
     if override_lifetime != None:
         if dt_now > auth_credential_from_jwt.issued + override_lifetime:
-            return GetAuthorizationReturn(exception='authorization_expired')
+            return GetAuthorizationReturn(exception=auth.authorization_expired_exception)
 
     # if the auth_credentail is a table, it will need to be in the db
     # for example, SignUp is a JWT only credential, so it will not be in the db
@@ -254,7 +227,7 @@ async def get_auth_from_token(
     else:
         # non-table auth_credentials have no scopes
         if required_scopes:
-            return GetAuthorizationReturn(exception='not_permitted')
+            return GetAuthorizationReturn(exception=auth.not_permitted_exception)
 
         return GetAuthorizationReturn(
             isAuthorized=True,
@@ -264,12 +237,13 @@ async def get_auth_from_token(
         )
 
 
-def make_get_auth_dependency(raise_exceptions: bool = True, logout_on_error: bool = True, **kwargs: typing.Unpack[MakeGetAuthorizationDependencyKwargs]):
-    async def get_authorization_dependency(response: Response, auth_token: typing.Annotated[auth.AuthTokenAndSource | None, Depends(oauth2_scheme)]) -> GetAuthorizationReturn:
-        get_authorization_return = await get_auth_from_token(token=auth_token.token, **kwargs)
+def make_get_auth_dependency(raise_exceptions: bool = True, logout_on_exception: bool = True, **kwargs: typing.Unpack[MakeGetAuthorizationDependencyKwargs]):
+    async def get_authorization_dependency(response: Response, auth_token: typing.Annotated[types.JwtEncodedStr | None, Depends(oauth2_scheme)]) -> GetAuthorizationReturn:
+        get_authorization_return = await get_auth_from_token(token=auth_token, **kwargs)
         if get_authorization_return.exception:
             if raise_exceptions:
-                raise auth_exception_manager.EXCEPTION_MAPPING[get_authorization_return.exception]
+                raise get_authorization_return.exception(
+                    logout_on_exception=logout_on_exception)
         return get_authorization_return
     return get_authorization_dependency
 
@@ -282,11 +256,11 @@ class AuthCredentialIdTypeAndExpiry(BaseModel):
 
 class GetAuthBaseReturn(BaseModel):
     user: typing.Optional[models.UserPrivate]
-    scope_ids: typing.Optional[set[client.ScopeTypes.id]]
+    scope_ids: typing.Optional[set[types.ScopeTypes.id]]
     auth_credential: typing.Optional[AuthCredentialIdTypeAndExpiry]
 
 
-assert c.auth_key == 'auth'
+assert config.SHARED_CONSTANTS['auth_key'] == 'auth'
 
 
 class GetAuthReturn(BaseModel):
@@ -320,15 +294,12 @@ async def authenticate_user_with_username_and_password(form_data: typing.Annotat
         user = await models.User.authenticate(
             session, form_data.username, form_data.password)
         if not user:
-            # auth_exception_manager.credentials_exception(True)
-            auth_exception_manager.both_authorization_header_and_cookie_exception()
-
-            raise auth_exception_manager.EXCEPTION_MAPPING['credentials']
+            raise auth.credentials_exception()
         return user
 
 
 class PostTokenResponse(BaseModel):
-    access_token: client.JwtEncodedStr
+    access_token: types.JwtEncodedStr
     token_type: str
 
 
@@ -343,12 +314,12 @@ async def post_token(
         lifespan = None if not stay_signed_in else c.authentication[
             'expiry_timedeltas']['access_token']
         user_access_token = await models.UserAccessToken.api_post(
-            session=session,  authorized_user_id=user._id, admin=False, create_model=models.UserAccessTokenAdminCreate(
+            session=session, c=c,  authorized_user_id=user._id, admin=False, create_model=models.UserAccessTokenAdminCreate(
                 user_id=user._id, lifespan=lifespan
             ))
 
         encoded_jwt = c.jwt_encode(user_access_token.encode())
-        set_access_token_cookie(encoded_jwt, response, lifespan)
+        auth.set_access_token_cookie(response, encoded_jwt, lifespan)
         return PostTokenResponse(access_token=encoded_jwt, token_type='bearer')
 
 
@@ -367,19 +338,19 @@ async def post_login_password(
 
         token_lifespan = c.authentication['expiry_timedeltas']['access_token']
         user_access_token = await models.UserAccessToken.api_post(
-            session=session,  authorized_user_id=user._id, admin=False, create_model=models.UserAccessTokenAdminCreate(
+            session=session, c=c,  authorized_user_id=user._id, admin=False, create_model=models.UserAccessTokenAdminCreate(
                 user_id=user._id, lifespan=token_lifespan
             )
         )
 
-        set_access_token_cookie(c.jwt_encode(
-            user_access_token.encode()), response, token_lifespan if stay_signed_in else None)
+        auth.set_access_token_cookie(response, c.jwt_encode(
+            user_access_token.encode()), token_lifespan if stay_signed_in else None)
 
         return PostLoginWithPasswordResponse(
             auth=GetAuthBaseReturn(
                 user=models.UserPrivate.model_validate(user),
                 scope_ids=set(
-                    c.user_role_id_scope_ids[user.user_role_id]),
+                    config.USER_ROLE_ID_SCOPE_IDS[user.user_role_id]),
                 auth_credential=AuthCredentialIdTypeAndExpiry(
                     id=user_access_token.id, type='access_token', expiry=user_access_token.expiry)
             )
@@ -387,7 +358,7 @@ async def post_login_password(
 
 
 class PostLoginWithMagicLinkRequest(BaseModel):
-    token: client.JwtEncodedStr
+    token: types.JwtEncodedStr
 
 
 class PostLoginWithMagicLinkResponse(GetAuthReturn):
@@ -404,18 +375,18 @@ async def post_login_magic_link(
         'access_token'}, override_lifetime=c.authentication['expiry_timedeltas']['magic_link'])
 
     if authorization.exception:
-        raise auth.EXCEPTION_MAPPING[authorization.exception]
+        raise authorization.exception()
 
     with Session(c.db_engine) as session:
 
         token_lifespan = c.authentication['expiry_timedeltas']['access_token']
         user_access_token = await models.UserAccessToken.api_post(
-            session=session,  authorized_user_id=authorization._user_id, admin=False, create_model=models.UserAccessTokenAdminCreate(
+            session=session, c=c,  authorized_user_id=authorization._user_id, admin=False, create_model=models.UserAccessTokenAdminCreate(
                 user_id=authorization.user.id, lifespan=token_lifespan
             )
         )
-        set_access_token_cookie(c.jwt_encode(
-            user_access_token.encode()), response, token_lifespan)
+        auth.set_access_token_cookie(response, c.jwt_encode(
+            user_access_token.encode()), token_lifespan)
 
         # one time link, delete the auth_credential
         session.delete(authorization.auth_credential)
@@ -425,7 +396,7 @@ async def post_login_magic_link(
             auth=GetAuthBaseReturn(
                 user=models.UserPrivate.model_validate(authorization.user),
                 scope_ids=set(
-                    c.user_role_id_scope_ids[authorization.user.user_role_id]),
+                    config.USER_ROLE_ID_SCOPE_IDS[authorization.user.user_role_id]),
                 auth_credential=AuthCredentialIdTypeAndExpiry(
                     id=user_access_token.id, type='access_token', expiry=user_access_token.expiry)
             )
@@ -439,7 +410,7 @@ class PostLoginWithOTPResponse(GetAuthReturn):
 async def post_login_otp(session: Session, user: models.User, response: Response, code: models.OTPTypes.code) -> PostLoginWithOTPResponse:
 
     if not user:
-        raise auth.EXCEPTION_MAPPING['invalid_otp']
+        raise auth.invaliad_otp_exception()
 
     user_otps = user.otps
     found = False
@@ -451,40 +422,37 @@ async def post_login_otp(session: Session, user: models.User, response: Response
             break
 
     if not found:
-        raise auth.EXCEPTION_MAPPING['invalid_otp']
+        raise auth.invaliad_otp_exception()
 
     token_lifespan = c.authentication['expiry_timedeltas']['access_token']
     get_auth = await get_auth_from_auth_credential_table_inst(
         session, otp, override_lifetime=token_lifespan)
 
     if get_auth.exception:
-        raise auth.EXCEPTION_MAPPING[get_auth.exception]
+        raise get_auth.exception()
 
     # if the code is active and correct, create an access token
     user_access_token = await models.UserAccessToken.api_post(
-        session=session,  authorized_user_id=user._id, admin=False, create_model=models.UserAccessTokenAdminCreate(
+        session=session, c=c,  authorized_user_id=user._id, admin=False, create_model=models.UserAccessTokenAdminCreate(
             user_id=user._id, lifespan=token_lifespan
         )
     )
-    set_access_token_cookie(c.jwt_encode(
-        user_access_token.encode()), response, token_lifespan
+    auth.set_access_token_cookie(response, c.jwt_encode(
+        user_access_token.encode()), token_lifespan
     )
 
     # one time link, delete the auth_credential
     session.delete(otp)
     session.commit()
 
-    a = PostLoginWithOTPResponse(
+    return PostLoginWithOTPResponse(
         auth=GetAuthBaseReturn(
             user=models.UserPrivate.model_validate(user),
-            scope_ids=await user_access_token.get_scope_ids(session, c),
+            scope_ids=await user_access_token.get_scope_ids(session),
             auth_credential=AuthCredentialIdTypeAndExpiry(
                 id=user_access_token._id, type='access_token', expiry=user_access_token.expiry)
         )
     )
-
-    print(a)
-    return a
 
 
 class PostLoginWithOTPEmailRequest(BaseModel):
@@ -546,23 +514,23 @@ async def post_login_google(request_token: PostLoginWithGoogleRequest, response:
         user = session.exec(select(models.User).where(
             models.User.email == email)).one_or_none()
         if not user:
-            user = await models.User.api_post(session=session,  authorized_user_id=None, create_model=models.UserAdminCreate(email=email, user_role_id=c.user_role_name_mapping['user']))
+            user = await models.User.api_post(session=session, c=c, authorized_user_id=None, create_model=models.UserAdminCreate(email=email, user_role_id=config.USER_ROLE_NAME_MAPPING['user']))
 
         token_lifespan = c.authentication['expiry_timedeltas']['access_token']
 
         user_access_token = await models.UserAccessToken.api_post(
-            session=session,  authorized_user_id=user._id,  admin=False, create_model=models.UserAccessTokenAdminCreate(
+            session=session, c=c,  authorized_user_id=user._id,  admin=False, create_model=models.UserAccessTokenAdminCreate(
                 user_id=user.id, lifespan=token_lifespan
             ))
 
-        set_access_token_cookie(c.jwt_encode(
-            user_access_token.encode()), response, token_lifespan)
+        auth.set_access_token_cookie(response, c.jwt_encode(
+            user_access_token.encode()), token_lifespan)
 
         return PostLoginWithGoogleResponse(
             auth=GetAuthBaseReturn(
                 user=models.UserPrivate.model_validate(user),
                 scope_ids=set(
-                    c.user_role_id_scope_ids[user.user_role_id]),
+                    config.USER_ROLE_ID_SCOPE_IDS[user.user_role_id]),
                 auth_credential=AuthCredentialIdTypeAndExpiry(
                     id=user_access_token.id, type='access_token', expiry=user_access_token.expiry)
             )
@@ -589,25 +557,25 @@ async def post_signup(response: Response, model: PostSignUpRequest) -> PostSignU
         sign_up: models.SignUp = authorization.auth_credential
 
         user_create_admin = models.UserAdminCreate(
-            email=sign_up.email, user_role_id=c.user_role_name_mapping['user'])
+            email=sign_up.email, user_role_id=config.USER_ROLE_NAME_MAPPING['user'])
 
-        user = await models.User.api_post(session=session,  authorized_user_id=None,
+        user = await models.User.api_post(session=session, c=c, authorized_user_id=None,
                                           admin=False, create_model=user_create_admin)
 
         token_lifespan = c.authentication['expiry_timedeltas']['access_token']
         user_access_token = await models.UserAccessToken.api_post(
-            session=session,  authorized_user_id=user._id, admin=False, create_model=models.UserAccessTokenAdminCreate(
+            session=session, c=c,  authorized_user_id=user._id, admin=False, create_model=models.UserAccessTokenAdminCreate(
                 user_id=user._id, type='access_token', lifespan=token_lifespan
             ))
 
-        set_access_token_cookie(c.jwt_encode(
-            user_access_token.encode()), response, token_lifespan)
+        auth.set_access_token_cookie(response, c.jwt_encode(
+            user_access_token.encode()), token_lifespan)
 
         return PostSignUpResponse(
             auth=GetAuthBaseReturn(
                 user=models.UserPrivate.model_validate(user),
                 scope_ids=set(
-                    c.user_role_id_scope_ids[user.user_role_id]),
+                    config.USER_ROLE_ID_SCOPE_IDS[user.user_role_id]),
                 auth_credential=AuthCredentialIdTypeAndExpiry(
                     id=user_access_token.id, type='access_token', expiry=user_access_token.expiry)
             )
@@ -619,7 +587,7 @@ async def send_signup_link(session: Session, user: models.User,  email: typing.O
     # existing user, send email to existing user
     if user:
         user_access_token = await models.UserAccessToken.api_post(
-            session=session,  authorized_user_id=None, admin=True,
+            session=session, c=c,  authorized_user_id=None, admin=True,
             create_model=models.UserAccessTokenAdminCreate(user_id=user._id, lifespan=c.authentication['expiry_timedeltas']['magic_link']))
 
         url = '{}{}/?token={}'.format(c.frontend_urls['base'],
@@ -685,7 +653,7 @@ async def post_request_sign_up_sms(
 async def send_magic_link(session: Session, user: models.User, email: typing.Optional[models.UserTypes.email] = None, phone_number: typing.Optional[models.UserTypes.phone_number] = None):
 
     user_access_token = await models.UserAccessToken.api_post(
-        session=session,  authorized_user_id=None, admin=True,
+        session=session, c=c,  authorized_user_id=None, admin=True,
         create_model=models.UserAccessTokenAdminCreate(user_id=user._id, lifespan=c.authentication['expiry_timedeltas']['magic_link']))
 
     url = '{}{}/?token={}'.format(c.frontend_urls['base'],
@@ -731,7 +699,7 @@ async def post_request_magic_link_sms(model: PostRequestMagicLinkSMSRequest, bac
 async def send_otp(session: Session, user: models.User, email: typing.Optional[models.UserTypes.email] = None, phone_number: typing.Optional[models.UserTypes.phone_number] = None):
 
     code = models.OTP.generate_code()
-    otp = await models.OTP.api_post(session=session,  authorized_user_id=user._id, create_model=models.OTPAdminCreate(
+    otp = await models.OTP.api_post(session=session, c=c, authorized_user_id=user._id, create_model=models.OTPAdminCreate(
         user_id=user._id, hashed_code=models.OTP.hash_code(code), lifespan=c.authentication['expiry_timedeltas']['otp']), admin=False)
 
     if email:
@@ -780,9 +748,9 @@ async def logout(response: Response, authorization: typing.Annotated[GetAuthoriz
     if authorization.auth_credential:
         if authorization.auth_credential.auth_type == 'access_token':
             with Session(c.db_engine) as session:
-                await models.UserAccessToken.api_delete(session=session,  authorized_user_id=authorization._user_id, id=authorization.auth_credential.id, admin=False)
+                await models.UserAccessToken.api_delete(session=session, c=c, authorized_user_id=authorization._user_id, id=authorization.auth_credential.id, admin=False)
 
-    delete_access_token_cookie(response)
+    auth.delete_access_token_cookie(response)
     return DetailOnlyResponse(detail='Logged out')
 
 app.include_router(auth_router)
@@ -816,7 +784,7 @@ async def get_user_by_id(
         make_get_auth_dependency(raise_exceptions=False))]
 ) -> models.UserPublic:
     with Session(c.db_engine) as session:
-        return models.UserPublic.model_validate(await models.User.api_get(session=session,  authorized_user_id=authorization._user_id, id=user_id, admin=False))
+        return models.UserPublic.model_validate(await models.User.api_get(session=session, c=c, authorized_user_id=authorization._user_id, id=user_id, admin=False))
 
 
 @ user_admin_router.get('/{user_id}/', responses=models.User.get_responses())
@@ -826,7 +794,7 @@ async def get_user_by_id_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ) -> models.User:
     with Session(c.db_engine) as session:
-        a = await models.User.api_get(session=session,  authorized_user_id=authorization._user_id, id=user_id, admin=True)
+        a = await models.User.api_get(session=session, c=c, authorized_user_id=authorization._user_id, id=user_id, admin=True)
 
 
 @ user_admin_router.post('/', responses=models.User.post_responses())
@@ -836,7 +804,7 @@ async def post_user_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ) -> models.User:
     with Session(c.db_engine) as session:
-        return await models.User.api_post(session=session,  authorized_user_id=authorization._user_id, admin=True, create_model=user_create_admin)
+        return await models.User.api_post(session=session, c=c, authorized_user_id=authorization._user_id, admin=True, create_model=user_create_admin)
 
 
 @ user_router.patch('/me/', responses=models.User.patch_responses())
@@ -846,7 +814,7 @@ async def patch_self(
         make_get_auth_dependency())]
 ) -> models.UserPrivate:
     with Session(c.db_engine) as session:
-        return models.UserPrivate.model_validate(await models.User.api_patch(session=session,  authorized_user_id=authorization._user_id, id=authorization._user_id, admin=False, update_model=models.UserAdminUpdate(**user_update.model_dump(exclude_unset=True))))
+        return models.UserPrivate.model_validate(await models.User.api_patch(session=session, c=c, authorized_user_id=authorization._user_id, id=authorization._user_id, admin=False, update_model=models.UserAdminUpdate(**user_update.model_dump(exclude_unset=True))))
 
 
 @ user_admin_router.patch('/{user_id}/', responses=models.User.patch_responses())
@@ -857,7 +825,7 @@ async def patch_user_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ) -> models.User:
     with Session(c.db_engine) as session:
-        return await models.User.api_patch(session=session,  authorized_user_id=authorization._user_id, id=user_id, admin=True, update_model=user_update_admin)
+        return await models.User.api_patch(session=session, c=c, authorized_user_id=authorization._user_id, id=user_id, admin=True, update_model=user_update_admin)
 
 
 @ user_router.delete('/me/', responses=models.User.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
@@ -866,7 +834,7 @@ async def delete_self(
         make_get_auth_dependency())]
 ):
     with Session(c.db_engine) as session:
-        return await models.User.api_delete(session=session,  authorized_user_id=authorization._user_id, id=authorization._user_id, admin=False)
+        return await models.User.api_delete(session=session, c=c, authorized_user_id=authorization._user_id, id=authorization._user_id, admin=False)
 
 
 @ user_admin_router.delete('/{user_id}/', responses=models.User.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
@@ -876,7 +844,7 @@ async def delete_user_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ):
     with Session(c.db_engine) as session:
-        return await models.User.api_delete(session=session,  authorized_user_id=authorization._user_id, id=user_id, admin=True)
+        return await models.User.api_delete(session=session, c=c, authorized_user_id=authorization._user_id, id=user_id, admin=True)
 
 
 @ user_router.get('/', responses=models.User.post_responses())
@@ -933,7 +901,7 @@ async def get_user_access_token_by_id(
         make_get_auth_dependency())]
 ) -> models.UserAccessToken:
     with Session(c.db_engine) as session:
-        return await models.UserAccessToken.api_get(session=session,  authorized_user_id=authorization._user_id, id=user_access_token_id, admin=False)
+        return await models.UserAccessToken.api_get(session=session, c=c, authorized_user_id=authorization._user_id, id=user_access_token_id, admin=False)
 
 
 @ user_access_token_admin_router.get('/{user_access_token_id}/', responses=models.UserAccessToken.get_responses())
@@ -943,7 +911,7 @@ async def get_user_access_token_by_id_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ) -> models.UserAccessToken:
     with Session(c.db_engine) as session:
-        return await models.UserAccessToken.api_get(session=session,  authorized_user_id=authorization._user_id, id=user_access_token_id, admin=True)
+        return await models.UserAccessToken.api_get(session=session, c=c, authorized_user_id=authorization._user_id, id=user_access_token_id, admin=True)
 
 
 @ user_access_token_admin_router.post('/', responses=models.UserAccessToken.post_responses())
@@ -953,7 +921,7 @@ async def post_user_access_token_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ) -> models.UserAccessToken:
     with Session(c.db_engine) as session:
-        return await models.UserAccessToken.api_post(session=session,  authorized_user_id=authorization._user_id, admin=True, create_model=user_access_token_create_admin)
+        return await models.UserAccessToken.api_post(session=session, c=c, authorized_user_id=authorization._user_id, admin=True, create_model=user_access_token_create_admin)
 
 
 @ user_access_token_router.delete('/{user_access_token_id}/', responses=models.UserAccessToken.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
@@ -963,7 +931,7 @@ async def delete_user_access_token(
         make_get_auth_dependency())]
 ):
     with Session(c.db_engine) as session:
-        return await models.UserAccessToken.api_delete(session=session,  authorized_user_id=authorization._user_id, id=user_access_token_id, admin=False)
+        return await models.UserAccessToken.api_delete(session=session, c=c, authorized_user_id=authorization._user_id, id=user_access_token_id, admin=False)
 
 
 @ user_access_token_admin_router.delete('/{user_access_token_id}/', responses=models.UserAccessToken.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
@@ -973,7 +941,7 @@ async def delete_user_access_token_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ):
     with Session(c.db_engine) as session:
-        return await models.UserAccessToken.api_delete(session=session,  authorized_user_id=authorization._user_id, id=user_access_token_id, admin=True)
+        return await models.UserAccessToken.api_delete(session=session, c=c, authorized_user_id=authorization._user_id, id=user_access_token_id, admin=True)
 
 
 WrongUserPermissionUserAccessToken = HTTPException(
@@ -1049,7 +1017,7 @@ async def get_api_key_by_id(
         make_get_auth_dependency())]
 ) -> models.ApiKeyPrivate:
     with Session(c.db_engine) as session:
-        return models.ApiKeyPrivate.model_validate(await models.ApiKey.api_get(session=session,  authorized_user_id=authorization.user.id, id=api_key_id, admin=False))
+        return models.ApiKeyPrivate.model_validate(await models.ApiKey.api_get(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=False))
 
 
 @ api_key_admin_router.get('/{api_key_id}/', responses=models.ApiKey.get_responses())
@@ -1059,7 +1027,7 @@ async def get_api_key_by_id_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ) -> models.ApiKey:
     with Session(c.db_engine) as session:
-        return await models.ApiKey.api_get(session=session,  authorized_user_id=authorization.user.id, id=api_key_id, admin=True)
+        return await models.ApiKey.api_get(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=True)
 
 
 @ api_key_router.post('/', responses=models.ApiKey.post_responses())
@@ -1070,7 +1038,7 @@ async def post_api_key_to_user(
 ) -> models.ApiKeyPrivate:
 
     with Session(c.db_engine) as session:
-        return models.ApiKeyPrivate.from_api_key(await models.ApiKey.api_post(session=session,  authorized_user_id=authorization._user_id, admin=False, create_model=models.ApiKeyAdminCreate(
+        return models.ApiKeyPrivate.from_api_key(await models.ApiKey.api_post(session=session, c=c, authorized_user_id=authorization._user_id, admin=False, create_model=models.ApiKeyAdminCreate(
             **api_key_create.model_dump(exclude_unset=True), user_id=authorization._user_id)))
 
 
@@ -1081,7 +1049,7 @@ async def post_api_key_to_user_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ) -> models.ApiKey:
     with Session(c.db_engine) as session:
-        return await models.ApiKey.api_post(session=session,  authorized_user_id=authorization.user.id, admin=True, create_model=models.ApiKeyAdminCreate(**api_key_create_admin.model_dump(exclude_unset=True)))
+        return await models.ApiKey.api_post(session=session, c=c, authorized_user_id=authorization.user.id, admin=True, create_model=models.ApiKeyAdminCreate(**api_key_create_admin.model_dump(exclude_unset=True)))
 
 
 @ api_key_router.patch('/{api_key_id}/', responses=models.ApiKey.patch_responses())
@@ -1092,7 +1060,7 @@ async def patch_api_key(
         make_get_auth_dependency())]
 ) -> models.ApiKeyPrivate:
     with Session(c.db_engine) as session:
-        return models.ApiKeyPrivate.from_api_key(await models.ApiKey.api_patch(session=session,  authorized_user_id=authorization.user.id, id=api_key_id, admin=False, update_model=models.ApiKeyAdminUpdate(**api_key_update.model_dump(exclude_unset=True))))
+        return models.ApiKeyPrivate.from_api_key(await models.ApiKey.api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=False, update_model=models.ApiKeyAdminUpdate(**api_key_update.model_dump(exclude_unset=True))))
 
 
 @ api_key_admin_router.patch('/{api_key_id}/', responses=models.ApiKey.patch_responses())
@@ -1103,7 +1071,7 @@ async def patch_api_key_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ) -> models.ApiKey:
     with Session(c.db_engine) as session:
-        return await models.ApiKey.api_patch(session=session,  authorized_user_id=authorization.user.id, id=api_key_id, admin=True, update_model=models.ApiKeyAdminUpdate(**api_key_update_admin.model_dump(exclude_unset=True)))
+        return await models.ApiKey.api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=True, update_model=models.ApiKeyAdminUpdate(**api_key_update_admin.model_dump(exclude_unset=True)))
 
 
 @ api_key_router.delete('/{api_key_id}/', responses=models.ApiKey.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
@@ -1113,7 +1081,7 @@ async def delete_api_key(
         make_get_auth_dependency())]
 ):
     with Session(c.db_engine) as session:
-        return await models.ApiKey.api_delete(session=session,  authorized_user_id=authorization.user.id, id=api_key_id, admin=False)
+        return await models.ApiKey.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=False)
 
 
 @ api_key_admin_router.delete('/{api_key_id}/', responses=models.ApiKey.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
@@ -1123,7 +1091,7 @@ async def delete_api_key_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ):
     with Session(c.db_engine) as session:
-        return await models.ApiKey.api_delete(session=session,  authorized_user_id=authorization.user.id, id=api_key_id, admin=True)
+        return await models.ApiKey.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=True)
 
 
 class ApiKeyJWTResponse(BaseModel):
@@ -1137,7 +1105,7 @@ async def get_api_key_jwt(
         make_get_auth_dependency())]
 ) -> ApiKeyJWTResponse:
     with Session(c.db_engine) as session:
-        api_key = await models.ApiKey.api_get(session=session,  authorized_user_id=authorization.user.id, id=api_key_id, admin=False)
+        api_key = await models.ApiKey.api_get(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=False)
         return ApiKeyJWTResponse(
             jwt=c.jwt_encode(api_key.encode())
         )
@@ -1252,12 +1220,12 @@ api_key_scope_admin_router = APIRouter(
                             )
 async def add_scope_to_api_key(
     api_key_id: models.ApiKeyTypes.id,
-    scope_id: client.ScopeTypes.id,
+    scope_id: types.ScopeTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())]
 ):
     with Session(c.db_engine) as session:
-        return await models.ApiKeyScope.api_post(session=session,  authorized_user_id=authorization.user.id, create_model=models.ApiKeyScopeAdminCreate(api_key_id=api_key_id, scope_id=scope_id), admin=False)
+        return await models.ApiKeyScope.api_post(session=session, c=c, authorized_user_id=authorization.user.id, create_model=models.ApiKeyScopeAdminCreate(api_key_id=api_key_id, scope_id=scope_id), admin=False)
 
 
 @ api_key_scope_admin_router.post('/api-keys/{api_key_id}/scopes/{scope_id}/',
@@ -1266,12 +1234,12 @@ async def add_scope_to_api_key(
                                   )
 async def add_scope_to_api_key_admin(
     api_key_id: models.ApiKeyTypes.id,
-    scope_id: client.ScopeTypes.id,
+    scope_id: types.ScopeTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ):
     with Session(c.db_engine) as session:
-        return await models.ApiKeyScope.api_post(session=session,  authorized_user_id=authorization.user.id, create_model=models.ApiKeyScopeAdminCreate(api_key_id=api_key_id, scope_id=scope_id), admin=True)
+        return await models.ApiKeyScope.api_post(session=session, c=c, authorized_user_id=authorization.user.id, create_model=models.ApiKeyScopeAdminCreate(api_key_id=api_key_id, scope_id=scope_id), admin=True)
 
 
 @ api_key_scope_router.delete('/api-keys/{api_key_id}/scopes/{scope_id}/',
@@ -1281,12 +1249,12 @@ async def add_scope_to_api_key_admin(
                               )
 async def remove_scope_from_api_key(
     api_key_id: models.ApiKeyTypes.id,
-    scope_id: client.ScopeTypes.id,
+    scope_id: types.ScopeTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())]
 ):
     with Session(c.db_engine) as session:
-        return await models.ApiKeyScope.api_delete(session=session,  authorized_user_id=authorization.user.id, id=models.ApiKeyScope.IdBase(api_key_id=api_key_id, scope_id=scope_id)._id, admin=False)
+        return await models.ApiKeyScope.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=models.ApiKeyScope.IdBase(api_key_id=api_key_id, scope_id=scope_id)._id, admin=False)
 
 
 @ api_key_scope_admin_router.delete('/api-keys/{api_key_id}/scopes/{scope_id}/',
@@ -1296,12 +1264,12 @@ async def remove_scope_from_api_key(
                                     )
 async def remove_scope_from_api_key_admin(
     api_key_id: models.ApiKeyTypes.id,
-    scope_id: client.ScopeTypes.id,
+    scope_id: types.ScopeTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ):
     with Session(c.db_engine) as session:
-        return await models.ApiKeyScope.api_delete(session=session,  authorized_user_id=authorization.user.id, id=models.ApiKeyScope.IdBase(api_key_id=api_key_id, scope_id=scope_id)._id, admin=True)
+        return await models.ApiKeyScope.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=models.ApiKeyScope.IdBase(api_key_id=api_key_id, scope_id=scope_id)._id, admin=True)
 
 app.include_router(api_key_scope_router)
 app.include_router(api_key_scope_admin_router)
@@ -1323,7 +1291,7 @@ async def get_gallery_by_id(
         make_get_auth_dependency(raise_exceptions=False))]
 ) -> models.GalleryPublic:
     with Session(c.db_engine) as session:
-        return models.GalleryPublic.model_validate(await models.Gallery.api_get(session=session,  authorized_user_id=authorization._user_id, id=gallery_id, admin=False))
+        return models.GalleryPublic.model_validate(await models.Gallery.api_get(session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id, admin=False))
 
 
 @ gallery_admin_router.get('/{gallery_id}/', responses=models.Gallery.get_responses())
@@ -1333,7 +1301,7 @@ async def get_gallery_by_id_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ) -> models.Gallery:
     with Session(c.db_engine) as session:
-        return await models.Gallery.api_get(session=session,  authorized_user_id=authorization._user_id, id=gallery_id, admin=True)
+        return await models.Gallery.api_get(session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id, admin=True)
 
 
 @ gallery_router.post('/', responses=models.Gallery.post_responses())
@@ -1343,7 +1311,7 @@ async def post_gallery(
         make_get_auth_dependency())]
 ) -> models.GalleryPrivate:
     with Session(c.db_engine) as session:
-        return models.GalleryPrivate.model_validate(await models.Gallery.api_post(session=session,  authorized_user_id=authorization._user_id, admin=False, create_model=models.GalleryAdminCreate(**gallery_create.model_dump(exclude_unset=True), user_id=authorization._user_id)))
+        return models.GalleryPrivate.model_validate(await models.Gallery.api_post(session=session, c=c, authorized_user_id=authorization._user_id, admin=False, create_model=models.GalleryAdminCreate(**gallery_create.model_dump(exclude_unset=True), user_id=authorization._user_id)))
 
 
 @ gallery_admin_router.post('/', responses=models.Gallery.post_responses())
@@ -1353,7 +1321,7 @@ async def post_gallery_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ) -> models.Gallery:
     with Session(c.db_engine) as session:
-        return await models.Gallery.api_post(session=session,  authorized_user_id=authorization._user_id, admin=True, create_model=models.GalleryAdminCreate(**gallery_create_admin.model_dump(exclude_unset=True)))
+        return await models.Gallery.api_post(session=session, c=c, authorized_user_id=authorization._user_id, admin=True, create_model=models.GalleryAdminCreate(**gallery_create_admin.model_dump(exclude_unset=True)))
 
 
 @ gallery_router.patch('/{gallery_id}/', responses=models.Gallery.patch_responses())
@@ -1364,7 +1332,7 @@ async def patch_gallery(
         make_get_auth_dependency())]
 ) -> models.GalleryPrivate:
     with Session(c.db_engine) as session:
-        return models.GalleryPrivate.model_validate(await models.Gallery.api_patch(session=session,  authorized_user_id=authorization._user_id, id=gallery_id, admin=False, update_model=models.GalleryAdminUpdate(**gallery_update.model_dump(exclude_unset=True))))
+        return models.GalleryPrivate.model_validate(await models.Gallery.api_patch(session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id, admin=False, update_model=models.GalleryAdminUpdate(**gallery_update.model_dump(exclude_unset=True))))
 
 
 @ gallery_admin_router.patch('/{gallery_id}/', responses=models.Gallery.patch_responses())
@@ -1375,7 +1343,7 @@ async def patch_gallery_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ) -> models.Gallery:
     with Session(c.db_engine) as session:
-        return await models.Gallery.api_patch(session=session,  authorized_user_id=authorization._user_id, id=gallery_id, admin=True, update_model=models.GalleryAdminUpdate(**gallery_update_admin.model_dump(exclude_unset=True)))
+        return await models.Gallery.api_patch(session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id, admin=True, update_model=models.GalleryAdminUpdate(**gallery_update_admin.model_dump(exclude_unset=True)))
 
 
 @ gallery_router.delete('/{gallery_id}/', responses=models.Gallery.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
@@ -1385,7 +1353,7 @@ async def delete_gallery(
         make_get_auth_dependency())]
 ):
     with Session(c.db_engine) as session:
-        return await models.Gallery.api_delete(session=session,  authorized_user_id=authorization._user_id, id=gallery_id, admin=False)
+        return await models.Gallery.api_delete(session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id, admin=False)
 
 
 @ gallery_admin_router.delete('/{gallery_id}/', responses=models.Gallery.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
@@ -1395,7 +1363,7 @@ async def delete_gallery_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ):
     with Session(c.db_engine) as session:
-        return await models.Gallery.api_delete(session=session,  authorized_user_id=authorization._user_id, id=gallery_id, admin=True)
+        return await models.Gallery.api_delete(session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id, admin=True)
 
 
 @ gallery_router.get('/details/available/')
@@ -1509,7 +1477,7 @@ async def sync_gallery(
 ) -> DetailOnlyResponse:
 
     with Session(c.db_engine) as session:
-        gallery = await models.Gallery.api_get(session=session,  authorized_user_id=authorization.user.id, id=gallery_id, admin=False)
+        gallery = await models.Gallery.api_get(session=session, c=c, authorized_user_id=authorization.user.id, id=gallery_id, admin=False)
         dir = await gallery.get_dir(session, c.galleries_dir)
         await gallery.sync_with_local(session, c, dir)
         return DetailOnlyResponse(detail='Synced gallery')
@@ -1634,7 +1602,7 @@ async def get_gallery_page(
 
     with Session(c.db_engine) as session:
         gallery = await models.Gallery.api_get(
-            session=session,  authorized_user_id=None if not authorization.isAuthorized else authorization.user.id, id=gallery_id, admin=False)
+            session=session, c=c,  authorized_user_id=None if not authorization.isAuthorized else authorization.user.id, id=gallery_id, admin=False)
 
         return GetGalleryPageResponse(
             **get_auth(authorization).model_dump(),

@@ -19,31 +19,13 @@ import {
 } from '../../services/api/deleteApiKey';
 
 import { postApiKey, PostApiKeyResponses } from '../../services/api/postApiKey';
-
 import { postApiKeyScope } from '../../services/api/postApiKeyScope';
 import { deleteApiKeyScope } from '../../services/api/deleteApiKeyScope';
-
 import { ModalsContext } from '../../contexts/Modals';
 import { useConfirmationModal } from '../../utils/useConfirmationModal';
-
-import { CiClock2 } from 'react-icons/ci';
-import {
-  IoCaretForward,
-  IoEllipsisHorizontalCircle,
-  IoEye,
-  IoEyeOutline,
-  IoHourglassOutline,
-  IoPencil,
-  IoPencilOutline,
-  IoTrash,
-  IoTrashOutline,
-} from 'react-icons/io5';
-import { IoChevronForwardOutline } from 'react-icons/io5';
-import { IoChevronDownOutline } from 'react-icons/io5';
+import { IoCaretForward } from 'react-icons/io5';
 import { ValidatedInputString } from '../Form/ValidatedInputString';
-
 import openapi_schema from '../../../../openapi_schema.json';
-
 import { ValidatedInputDatetimeLocal } from '../Form/ValidatedInputDatetimeLocal';
 import { Button1, Button2, ButtonSubmit } from '../Utils/Button';
 import { Card1, CardButton } from '../Utils/Card';
@@ -52,31 +34,17 @@ import {
   getApiKeyJWT,
   GetApiKeyJwtResponses,
 } from '../../services/api/getApiKeyJwt';
-import config from '../../../../config.json';
-import {
-  scopeIdToName,
-  userRoleIdToName,
-} from '../../utils/reverseMappingConfig';
+import { scopeIdMapping, userRoleIdMapping } from '../../../config';
+import constants from '../../../../constants.json';
 import { useValidatedInput } from '../../utils/useValidatedInput';
 import { isApiKeyAvailable } from '../../services/api/getIsApiKeyAvailable';
 import { CheckOrX } from '../Form/CheckOrX';
-import {
-  getApiKeys,
-  GetApiKeysResponses,
-  QueryParams,
-} from '../../services/api/getApiKeys';
-import {
-  IoCaretUp,
-  IoCaretDown,
-  IoArrowForwardSharp,
-  IoArrowBackSharp,
-  IoEllipsisHorizontal,
-} from 'react-icons/io5';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { QueryParams } from '../../services/api/getApiKeys';
+import { IoCaretUp, IoCaretDown } from 'react-icons/io5';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Loader1 } from '../Utils/Loader';
 import { Surface } from '../Utils/Surface';
 import { patchApiKey } from '../../services/api/patchApiKey';
-import { useClickOutside } from '../../utils/useClickOutside';
 import { Pagination } from '../Utils/Pagination';
 
 type ScopeID = number;
@@ -613,7 +581,7 @@ function ApiKeyView({
                   addApiKeyScopeFunc={addApiKeyScopeFunc}
                   deleteApiKeyScopeFunc={deleteApiKeyScopeFunc}
                 />
-                <span>{scopeIdToName[scopeId]}</span>
+                <span>{scopeIdMapping[scopeId]}</span>
               </div>
             ))}
           </>
@@ -748,10 +716,10 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
   useEffect(() => {
     if (authContext.state.user !== null) {
       setAvailableScopeIds(
-        config['user_role_scopes'][
-          userRoleIdToName[authContext.state.user.user_role_id]
+        constants['user_role_scopes'][
+          userRoleIdMapping[authContext.state.user.user_role_id]
         ].map((user_role_scope: string) => {
-          return config['scope_name_mapping'][user_role_scope];
+          return constants['scope_name_mapping'][user_role_scope];
         })
       );
     }
@@ -847,7 +815,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
     apiKey,
     scopeId
   ) => {
-    const scopeName = scopeIdToName[scopeId];
+    const scopeName = scopeIdMapping[scopeId];
 
     setApiKeyScopeIds((prev) => {
       const updatedSet = new Set(prev[apiKey.id]);
@@ -1170,7 +1138,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
                     </th>
                   ))}
                   {availableScopeIds.map((scopeId) => (
-                    <th key={scopeId}>{scopeIdToName[scopeId]}</th>
+                    <th key={scopeId}>{scopeIdMapping[scopeId]}</th>
                   ))}
                 </tr>
               </thead>

@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { DarkModeToggle } from './DarkModeToggle';
 import { Surface } from './Utils/Surface';
 import { DeviceContext } from '../contexts/Device';
-import siteConfig from '../../siteConfig.json';
+import { zIndex } from '../../config';
 
 function Header(): JSX.Element {
   const deviceContext = useContext(DeviceContext);
@@ -16,7 +16,7 @@ function Header(): JSX.Element {
         id="header"
         className="top-0 bg-opacity-50 border-b-[1px] sticky"
         style={{
-          zIndex: siteConfig.zIndex.header,
+          zIndex: zIndex.header,
         }}
       >
         <h6>

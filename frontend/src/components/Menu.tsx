@@ -10,8 +10,7 @@ import { AuthContext } from '../contexts/Auth';
 import { logOut } from './Auth/logOut';
 import { Surface } from './Utils/Surface';
 import { useConfirmationModal } from '../utils/useConfirmationModal';
-
-import config from '../../../config.json';
+import constants from '../../../constants.json';
 
 function Menu() {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
@@ -26,53 +25,63 @@ function Menu() {
     setIsMenuVisible((prev) => !prev);
   };
 
-  const menuItems = authContext.state.user
-    ? [
-        {
-          element: <Link to="/galleries">Galleries</Link>,
-          onClick: () => {},
-        },
-        {
-          element: <Link to={config.frontend_urls['galleries']}>Settings</Link>,
-          onClick: () => {},
-        },
-        {
-          element: <span>Log Out</span>,
-          onClick: () => {
-            activateButtonConfirmation({
-              componentProps: {
-                title: 'Log Out?',
-                confirmText: 'Log Out',
-                message: 'Are you sure you want to log out?',
-                onConfirm: () => {
-                  setIsMenuVisible(false);
-                  logOut(authContext, toastContext);
-                },
-              },
-            });
+  interface MenuItem {
+    key: string;
+    element: JSX.Element;
+    onClick: () => void;
+    viewMode?: 'logged-out' | 'logged-in' | 'both';
+  }
+
+  const menuItems: MenuItem[] = [
+    {
+      key: 'galleries',
+      element: <Link to={constants.frontend_urls.galleries}>Galleries</Link>,
+      onClick: () => {},
+      viewMode: 'logged-in',
+    },
+    {
+      key: 'settings',
+      element: <Link to="/settings">Settings</Link>,
+      onClick: () => {},
+      viewMode: 'both',
+    },
+    {
+      key: 'log-in',
+      element: <span>Log In</span>,
+      onClick: () => {
+        setIsMenuVisible(false);
+        authModalsContext.activate('logIn');
+      },
+      viewMode: 'logged-out',
+    },
+    {
+      key: 'sign-up',
+      element: <span>Sign Up</span>,
+      onClick: () => {
+        setIsMenuVisible(false);
+        authModalsContext.activate('requestSignUp');
+      },
+      viewMode: 'logged-out',
+    },
+    {
+      key: 'log-out',
+      element: <span>Log Out</span>,
+      onClick: () => {
+        activateButtonConfirmation({
+          componentProps: {
+            title: 'Log Out?',
+            confirmText: 'Log Out',
+            message: 'Are you sure you want to log out?',
+            onConfirm: () => {
+              setIsMenuVisible(false);
+              logOut(authContext, toastContext);
+            },
           },
-        },
-      ]
-    : [
-        {
-          element: <Link to="/settings">Settings</Link>,
-          onClick: () => {},
-        },
-        {
-          element: <span>Log In</span>,
-          onClick: () => {
-            setIsMenuVisible(false);
-            authModalsContext.activate('logIn');
-          },
-        },
-        {
-          element: <span>Sign Up</span>,
-          onClick: () => {
-            setIsMenuVisible(false);
-            authModalsContext.activate('requestSignUp');
-          },
-        },
-      ];
+        });
+      },
+      viewMode: 'logged-in',
+    },
+  ];
 
   return (
     <div className="relative" ref={menuRef}>
@@ -86,16 +95,24 @@ function Menu() {
             ref={menuRef}
           >
             <ul className="flex flex-col space-y-1 m-2">
-              {menuItems.map((item, index) => (
-                <Surface keepParentMode={true} key={index}>
-                  <li
-                    className="flex flex-row p-2 cursor-pointer surface-hover rounded-sm"
-                    onClick={item.onClick}
-                  >
-                    {item.element}
-                  </li>
-                </Surface>
-              ))}
+              {menuItems.map((item, index) => {
+                if (
+                  item.viewMode === 'both' ||
+                  (item.viewMode === 'logged-in' && authContext.state.user) ||
+                  (item.viewMode === 'logged-out' && !authContext.state.user)
+                ) {
+                  return (
+                    <Surface keepParentMode={true} key={item.key}>
+                      <li
+                        className="flex flex-row p-2 cursor-pointer surface-hover rounded-sm"
+                        onClick={item.onClick}
+                      >
+                        {item.element}
+                      </li>
+                    </Surface>
+                  );
+                }
+              })}
             </ul>
           </div>
         </Surface>

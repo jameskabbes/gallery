@@ -604,6 +604,11 @@ export interface components {
     PostLoginWithGoogleResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
     };
+    /** PostLoginWithMagicLinkRequest */
+    PostLoginWithMagicLinkRequest: {
+      /** Token */
+      token: string;
+    };
     /** PostLoginWithMagicLinkResponse */
     PostLoginWithMagicLinkResponse: {
       auth: components["schemas"]["GetAuthBaseReturn"];
@@ -884,9 +889,9 @@ export interface operations {
   };
   /** Post Login Magic Link */
   post_login_magic_link_auth_login_magic_link__post: {
-    parameters: {
-      query?: {
-        token?: string;
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PostLoginWithMagicLinkRequest"];
       };
     };
     responses: {

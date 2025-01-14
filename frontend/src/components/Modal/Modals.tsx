@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { ModalsContext } from '../../contexts/Modals';
-import siteConfig from '../../../siteConfig.json';
+import { zIndex } from '../../../config';
 import './Modal.css';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import { IoClose } from 'react-icons/io5';
@@ -51,7 +51,7 @@ function Modals() {
         className="fixed top-0 left-0 w-full h-full "
         style={{
           backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          zIndex: siteConfig.zIndex.modalOverlay,
+          zIndex: zIndex.modalOverlay,
         }}
       >
         <CSSTransition

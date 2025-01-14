@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { ValidatedInputState } from '../types';
-import siteConfig from '../../siteConfig.json';
+import { validatedInput } from '../../config';
 
 interface ValidatedInputCheckValidityReturn {
   valid: boolean;
@@ -68,7 +68,7 @@ function useValidatedInput<T>({
           status: available ? 'valid' : 'invalid',
           error: available ? null : `Not available`,
         }));
-      }, siteConfig.validatedInput.debounceTimeoutLength);
+      }, validatedInput.debounceTimeoutLength);
     } else {
       // if we are not checking availability, clear the timeout
       if (debounceTimeout.current) {

@@ -3,8 +3,7 @@ import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { apiClient } from './apiClient';
 import { AuthContext } from '../contexts/Auth';
 import { ApiResponse, CallApiOptions, UseApiCallReturn } from '../types';
-import config from '../../../config.json';
-
+import constants from '../../../constants.json';
 async function callApi<TResponseData, TRequestData = any>({
   url,
   method,
@@ -34,9 +33,10 @@ async function callApi<TResponseData, TRequestData = any>({
 
     console.log(method, url);
     const response = await apiClient.request<TResponseData>(requestConfig);
-    if (authContext && response.headers[config.header_keys['auth_error']]) {
+    if (authContext && response.headers[constants.header_keys['auth_logout']]) {
       authContext.logOut();
     }
+    console.log(response.data);
     return response;
   } catch (error) {
     console.log(error);

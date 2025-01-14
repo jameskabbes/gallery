@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useContext, createContext } from 'react';
 import { AuthContextState, AuthContextType, ToastId } from '../types';
 import { paths, operations, components } from '../openapi_schema';
-import config from '../../../config.json';
 import { ToastContext } from './Toast';
 import isEqual from 'lodash.isequal';
+import constants from '../../../constants.json';
 
 const defaultState: AuthContextState = {
   user: null,
@@ -23,12 +23,12 @@ function AuthContextProvider({ children }: { children: React.ReactNode }) {
   const toastContext = useContext(ToastContext);
 
   useEffect(() => {
-    localStorage.setItem(config.auth_key, JSON.stringify(state));
+    localStorage.setItem(constants.auth_key, JSON.stringify(state));
   }, [state]);
 
   useEffect(() => {
     function handleStorageEvent(event: StorageEvent) {
-      if (event.key === config.auth_key) {
+      if (event.key === constants.auth_key) {
         const newValue = event.newValue
           ? JSON.parse(event.newValue)
           : defaultState;
@@ -59,10 +59,10 @@ function AuthContextProvider({ children }: { children: React.ReactNode }) {
   }
 
   function updateFromApiResponse(data: any) {
-    if (data && typeof data === 'object' && config.auth_key in data) {
+    if (data && typeof data === 'object' && constants.auth_key in data) {
       // only update if the state is different
-      if (!isEqual(data[config.auth_key], state)) {
-        return setState(data[config.auth_key]);
+      if (!isEqual(data[constants.auth_key], state)) {
+        return setState(data[constants.auth_key]);
       }
     }
   }

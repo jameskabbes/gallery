@@ -7,13 +7,13 @@ import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import { IoCheckmark } from 'react-icons/io5';
 import { IoAlert } from 'react-icons/io5';
 import { IoWarning } from 'react-icons/io5';
-import { Toast } from '../../types';
+import { ToastType } from '../../types';
 import tailwindConfig from '../../../tailwind.config';
 import { Card1 } from '../Utils/Card';
 import { Loader1, Loader2 } from '../Utils/Loader';
-import siteConfig from '../../../siteConfig.json';
+import { zIndex } from '../../../config';
 
-const IconMapping: Map<Toast['type'], React.ReactNode> = new Map([
+const IconMapping: Map<ToastType['type'], React.ReactNode> = new Map([
   ['success', <IoCheckmark />],
   ['info', <IoAlert />],
   ['error', <IoWarning />],
@@ -39,7 +39,7 @@ function Toast() {
       id="toast-container"
       className="fixed bottom-4 right-4 flex flex-col space-y-2 w-80"
       style={{
-        zIndex: siteConfig.zIndex.toast,
+        zIndex: zIndex.toast,
       }}
     >
       <TransitionGroup>

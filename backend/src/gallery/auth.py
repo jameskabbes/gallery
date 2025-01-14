@@ -1,116 +1,84 @@
-from fastapi import HTTPException, status
-from pydantic import BaseModel
-from gallery import client
+from gallery import client, config, types
 import typing
+from fastapi import Request, HTTPException, status, Response
+from fastapi.security import OAuth2
+from fastapi.openapi.models import OAuthFlows
+from fastapi.security.utils import get_authorization_scheme_param
+import datetime
+
+ACCESS_TOKEN_COOKIE_KEY = "access_token"
 
 
-class BearerCookieExceptionKwargs(typing.TypedDict):
-    logout: bool
+class ExceptionKwargs(typing.TypedDict):
+    logout_on_exception: bool = True
 
 
-BearerCookieExceptionReturn = HTTPException
+AuthExceptionFunction = typing.Callable[[bool], HTTPException]
 
 
-EXCEPTION = typing.Literal[
-    'improper_format',
-    'both_authorization_header_and_cookie',
-    'missing_required_claims',
-    'authorization_expired',
-    'user_not_found',
-    'not_permitted',
-    'credentials',
-    'invalid_authorization_type',
-    'invalid_otp'
-]
+def base_exception(status_code: int, detail: str, logout_on_exception: bool = True) -> HTTPException:
+    headers = {"WWW-Authenticate": "Bearer, Cookie"}
+    if logout_on_exception:
+        headers[config.SHARED_CONSTANTS['header_keys']['auth_logout']] = 'true'
+    return HTTPException(
+        status_code=status_code,
+        detail=detail,
+        headers=headers
+    )
 
 
-class AuthExceptionManager(BaseModel):
+def both_authorization_header_and_cookie_exception(**kwargs: typing.Unpack[ExceptionKwargs]) -> HTTPException:
+    return base_exception(status_code=status.HTTP_400_BAD_REQUEST, detail="Both Bearer token in the Authorization header and {} cookie supplied, which is prohibited".format(ACCESS_TOKEN_COOKIE_KEY), **kwargs)
 
-    c: client.Client
 
-    def _bearer_or_cookie_exception(self, status_code: int, detail: str, logout: bool = True) -> BearerCookieExceptionReturn:
-        headers = {"WWW-Authenticate": (
-            'Bearer realm="Access to the API", '
-            'token_type="JWT", '
-            'cookie_name="access_token", '
-            'instructions="Provide a JWT as a 1) Bearer token in the Authorzation header or 2) as a cookie named {}"'.format(
-                self.c.header_keys['access_token'])
-        )}
+def improper_format_exception(**kwargs: typing.Unpack[ExceptionKwargs]) -> HTTPException:
+    return base_exception(status_code=status.HTTP_400_BAD_REQUEST, detail="Improper format for authorization token", **kwargs)
 
-        if logout:
-            headers[self.c.header_keys['auth_logout']] = 'true'
 
-        return HTTPException(
-            status_code=status_code,
-            detail=detail,
-            headers=headers
-        )
+def missing_required_claims_exception(**kwargs: typing.Unpack[ExceptionKwargs]) -> HTTPException:
+    return base_exception(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing required claims in authorization token", **kwargs)
 
-    # def make_bearer_cookie_exception(status_code: int, detail: str):
-    #     def decorator(func):
-    #         def wrapper(**kwargs: typing.Unpack[BearerCookieExceptionKwargs]) -> BearerCookieExceptionReturn:
-    #             headers = {"WWW-Authenticate": "Bearer, Cookie"}
-    #             if kwargs.get('logout', True):
-    #                 headers[AUTH_LOGOUT_HEADER] = 'true'
-    #             return HTTPException(
-    #                 status_code=status_code,
-    #                 detail=detail,
-    #                 headers=headers
-    #             )
-    #         return wrapper
-    #     return decorator
 
-    def make_bearer_or_cookie_exception(self, status_code: int, detail: str):
-        def decorator(func):
-            def wrapper(**kwargs: typing.Unpack[BearerCookieExceptionKwargs]) -> BearerCookieExceptionReturn:
-                return self._bearer_or_cookie_exception(status_code=status_code, detail=detail, **kwargs)
-            return wrapper
-        return decorator
+def authorization_expired_exception(**kwargs: typing.Unpack[ExceptionKwargs]) -> HTTPException:
+    return base_exception(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authorization expired", **kwargs)
 
-    @make_bearer_or_cookie_exception(status_code=status.HTTP_400_BAD_REQUEST, detail="Both Bearer token in the Authorization header and access_token cookie supplied, which is prohibited")
-    def both_authorization_header_and_cookie_exception():
-        pass
 
-    @make_bearer_or_cookie_exception(status_code=status.HTTP_401_UNAUTHORIZED, detail="Improper format of authorization token")
-    def improper_format_exception():
-        pass
+def user_not_found_exception(**kwargs: typing.Unpack[ExceptionKwargs]) -> HTTPException:
+    return base_exception(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found", **kwargs)
 
-    @make_bearer_or_cookie_exception(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing required claims")
-    def missing_required_claims_exception():
-        pass
 
-    @make_bearer_or_cookie_exception(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authorization expired")
-    def authorization_expired_exception():
-        pass
+def not_permitted_exception(**kwargs: typing.Unpack[ExceptionKwargs]) -> HTTPException:
+    return base_exception(status_code=status.HTTP_403_FORBIDDEN, detail="Not permitted", **kwargs)
 
-    @make_bearer_or_cookie_exception(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
-    def user_not_found_exception():
-        pass
 
-    @make_bearer_or_cookie_exception(status_code=status.HTTP_403_FORBIDDEN, detail="Authorization lacks required permissions")
-    def not_permitted_exception():
-        pass
+def credentials_exception(**kwargs: typing.Unpack[ExceptionKwargs]) -> HTTPException:
+    return base_exception(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials", **kwargs)
 
-    @make_bearer_or_cookie_exception(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
-    def credentials_exception():
-        pass
 
-    @make_bearer_or_cookie_exception(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid OTP")
-    def invalid_otp_exception():
-        pass
+def invaliad_otp_exception(**kwargs: typing.Unpack[ExceptionKwargs]) -> HTTPException:
+    return base_exception(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid OTP", **kwargs)
 
-    @make_bearer_or_cookie_exception(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid authorization type")
-    def invalid_authorization_type_exception():
-        pass
 
-    EXCEPTION_MAPPING: dict[EXCEPTION, typing.Callable[[typing.Unpack[BearerCookieExceptionKwargs]], BearerCookieExceptionReturn]] = {
-        'improper_format': improper_format_exception,
-        'both_authorization_header_and_cookie': both_authorization_header_and_cookie_exception,
-        'missing_required_claims': missing_required_claims_exception,
-        'authorization_expired': authorization_expired_exception,
-        'user_not_found': user_not_found_exception,
-        'not_permitted': not_permitted_exception,
-        'credentials': credentials_exception,
-        'invalid_authorization_type': invalid_authorization_type_exception,
-        'invalid_otp': invalid_otp_exception
-    }
+def authorization_type_not_permitted_exception(**kwargs: typing.Unpack[ExceptionKwargs]) -> HTTPException:
+    return base_exception(status_code=status.HTTP_400_BAD_REQUEST, detail="Authorization type not permitted for this endpoint", **kwargs)
+
+
+def set_access_token_cookie(response: Response, access_token: types.JwtEncodedStr,  lifespan: datetime.timedelta | None):
+
+    kwargs = {}
+    if lifespan:
+        kwargs['expires'] = datetime.datetime.now(
+            datetime.UTC) + lifespan
+
+    response.set_cookie(
+        key=ACCESS_TOKEN_COOKIE_KEY,
+        value=access_token,
+        httponly=True,
+        secure=True,
+        samesite="Lax",
+        **kwargs
+    )
+
+
+def delete_access_token_cookie(response: Response):
+    response.delete_cookie(ACCESS_TOKEN_COOKIE_KEY)

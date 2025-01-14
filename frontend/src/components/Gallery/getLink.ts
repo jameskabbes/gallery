@@ -1,10 +1,14 @@
 import { paths, operations, components } from '../../openapi_schema';
-import siteConfig from '../../../siteConfig.json';
+import constants from '../../../../constants.json';
 
 function getGalleryLink(
-  galleryId: components['schemas']['Gallery']['id']
+  galleryId: components['schemas']['Gallery']['id'] | null
 ): string {
-  return `${siteConfig.galleriesUrlBase}/${galleryId}`;
+  if (!galleryId) {
+    return constants.frontend_urls.galleries;
+  } else {
+    return `${constants.frontend_urls.galleries}/${galleryId}`;
+  }
 }
 
 export { getGalleryLink };

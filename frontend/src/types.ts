@@ -176,15 +176,15 @@ interface DataContextType {
 
 type ToastId = string;
 
-interface Toast {
+interface ToastType {
   type: 'error' | 'info' | 'success' | 'pending';
   message: string;
 }
 
-interface ToastNoType extends Omit<Toast, 'type'> {}
+interface ToastNoType extends Omit<ToastType, 'type'> {}
 
 interface ToastContextState {
-  toasts: Map<ToastId, Toast>;
+  toasts: Map<ToastId, ToastType>;
 }
 
 interface ToastReducerActionTypes {
@@ -192,7 +192,7 @@ interface ToastReducerActionTypes {
     type: 'ADD';
     payload: {
       id: ToastId;
-      toast: Toast;
+      toast: ToastType;
     };
   };
   REMOVE: {
@@ -203,7 +203,7 @@ interface ToastReducerActionTypes {
     type: 'UPDATE';
     payload: {
       id: ToastId;
-      toast: Partial<Toast>;
+      toast: Partial<ToastType>;
     };
   };
   CLEAR: {
@@ -217,9 +217,9 @@ type ToastReducerAction =
 interface ToastContextType {
   state: ToastContextState;
   dispatch: React.Dispatch<ToastReducerAction>;
-  make: (toast: Toast) => ToastId;
+  make: (toast: ToastType) => ToastId;
   makePending: (toast: ToastNoType) => ToastId;
-  update: (id: ToastId, toast: Partial<Toast>) => void;
+  update: (id: ToastId, toast: Partial<ToastType>) => void;
 }
 
 type AuthContextState = components['schemas']['GetAuthBaseReturn'];
@@ -256,6 +256,7 @@ export {
   RequestSignUpContextType,
   RequestMagicLinkContextType,
   RequestOTPContextType,
+  ToastType,
   ToastId,
   ToastNoType,
   ToastContextState,

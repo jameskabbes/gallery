@@ -1,7 +1,6 @@
 import typing
 import pathlib
-from pydantic import EmailStr, StringConstraints
-from gallery import utils
+from gallery import utils, config, types
 from sqlalchemy import create_engine, Engine
 from sqlmodel import SQLModel
 import datetime
@@ -10,63 +9,21 @@ from pathlib import Path
 import jwt
 import secrets
 
-GALLERY_DIR = Path(__file__).parent
-SRC_DIR = GALLERY_DIR.parent
-BACKEND_DIR = SRC_DIR.parent
-REPO_DIR = BACKEND_DIR.parent
-REPO_DATA_DIR = REPO_DIR / 'data'
-PROJECT_CONFIG_PATH = REPO_DIR / 'config.json'
 
-FASTAPI_RUN_PATH = SRC_DIR / 'fastapi_run.sh'
-FASTAPI_DEV_PATH = SRC_DIR / 'fastapi_dev.sh'
-
-REQUIREMENTS_INSTALLED_PATH = SRC_DIR / 'requirements_installed.txt'
-
-
-class PermissionLevelTypes:
-    id = int
-    name = typing.Literal['editor', 'viewer']
-
-
-class VisibilityLevelTypes:
-    id = int
-    name = typing.Literal['public', 'private']
-
-
-class ScopeTypes:
-    id = int
-    name = typing.Literal['admin', 'users.read', 'users.write']
-
-
-class UserRoleTypes:
-    id = int
-    name = typing.Literal['admin', 'user']
-
-
-type uvicorn_port_type = int
-PhoneNumber = str
-Email = typing.Annotated[EmailStr, StringConstraints(
-    min_length=1, max_length=254)]
-JwtEncodedStr = str
-
-
-class PathConfig(typing.TypedDict):
-    path: pathlib.Path
-    parent_dir: pathlib.Path
-    filename: str
+UvicornPortType = int
 
 
 class UvicornConfig(typing.TypedDict):
-    port: uvicorn_port_type
+    port: UvicornPortType
 
 
 class DbConfig(typing.TypedDict):
     engine: Engine
-    path: PathConfig
+    path: Path
 
 
 class MediaRootConfig(typing.TypedDict):
-    path: PathConfig
+    path: Path
 
 
 class AuthenticationConfig(typing.TypedDict):
@@ -76,12 +33,12 @@ class AuthenticationConfig(typing.TypedDict):
 
 
 class JWTConfig(typing.TypedDict):
-    secret_key_path: PathConfig
+    secret_key_path: Path
     algorithm: str
 
 
 class GoogleClientConfig(typing.TypedDict):
-    path: PathConfig
+    path: Path
 
 
 class Config(typing.TypedDict):
@@ -98,16 +55,10 @@ DefaultConfig: Config = {
         'port': 8087,
     },
     'db': {
-        'path': {
-            'parent_dir': BACKEND_DIR,
-            'filename': 'data/gallery.db',
-        }
+        'path': config.BACKEND_DATA_DIR / 'gallery.db'
     },
     'media_root': {
-        'path': {
-            'parent_dir': BACKEND_DIR,
-            'filename': 'data/media_root'
-        }
+        'path': config.BACKEND_DATA_DIR / 'media_root'
     },
 
     'authentication': {
@@ -121,60 +72,30 @@ DefaultConfig: Config = {
 
     },
     'jwt': {
-        'secret_key_path': {
-            'parent_dir': BACKEND_DIR,
-            'filename': 'data/jwt_secret_key.txt'
-        },
+        'secret_key_path': config.BACKEND_DATA_DIR / 'jwt_secret_key.txt',
         'algorithm': 'HS256'
     },
     'google_client': {
-        'path': {
-            'parent_dir': REPO_DATA_DIR,
-            'filename': 'google_client_secret.json'
-        }}
+        'path': config.REPO_DATA_DIR / 'google_client_secret.json'
+    }
 }
-
-
-def get_path_from_config(d: PathConfig) -> pathlib.Path:
-    if 'path' in d:
-        return d['path']
-
-    if 'parent_dir' in d:
-        if 'filename' in d:
-            return d['parent_dir'].joinpath(d['filename'])
-
-        raise ValueError('dir key must be accompanied by filename or folder')
-    raise ValueError('path or dir key must be present')
 
 
 class Client:
 
-    uvicorn_port: uvicorn_port_type
+    uvicorn_port: UvicornPortType
     db_engine: Engine
     media_dir: pathlib.Path
     galleries_dir: pathlib.Path
     authentication: AuthenticationConfig
     jwt_secret_key: str
     jwt_algorithm: str
-    root_config: dict
     google_client: dict
 
     auth_key: str
     header_keys: dict[str, str]
     cookie_keys: dict[str, str]
     frontend_urls: dict[str, str]
-
-    scope_name_mapping: dict[ScopeTypes.name, ScopeTypes.id]
-    scope_id_mapping: dict[ScopeTypes.id, ScopeTypes.name]
-    visibility_level_name_mapping: dict[VisibilityLevelTypes.name,
-                                        VisibilityLevelTypes.id]
-    permission_level_name_mapping: dict[PermissionLevelTypes.name,
-                                        PermissionLevelTypes.id]
-    user_role_name_mapping: dict[UserRoleTypes.name,
-                                 UserRoleTypes.id]
-
-    user_role_id_scope_ids: dict[UserRoleTypes.id,
-                                 set[ScopeTypes.id]]
 
     def __init__(self, config: Config = {}):
 
@@ -184,12 +105,11 @@ class Client:
         self.uvicorn_port = merged_config['uvicorn']['port']
 
         # db
-        db_engine_path = get_path_from_config(merged_config['db']['path'])
+        db_engine_path = merged_config['db']['path']
         self.db_engine = create_engine(f'sqlite:///{db_engine_path}')
 
         # media dir
-        self.media_dir = get_path_from_config(
-            merged_config['media_root']['path'])
+        self.media_dir = merged_config['media_root']['path']
 
         if not self.media_dir.exists():
             self.media_dir.mkdir(parents=True)
@@ -203,8 +123,7 @@ class Client:
         self.authentication = merged_config['authentication']
 
         # jwt
-        jwt_secret_key_path = get_path_from_config(
-            merged_config['jwt']['secret_key_path'])
+        jwt_secret_key_path = merged_config['jwt']['secret_key_path']
 
         if not jwt_secret_key_path.exists():
             jwt_secret_key_path.write_text(self.generate_jwt_secret_key())
@@ -213,49 +132,8 @@ class Client:
         self.jwt_algorithm = merged_config['jwt']['algorithm']
 
         # google client
-        google_client_path = get_path_from_config(
-            merged_config['google_client']['path'])
+        google_client_path = merged_config['google_client']['path']
         self.google_client = json.loads(google_client_path.read_text())
-
-        # root config
-        self.root_config = json.loads(
-            pathlib.Path('../../config.json').read_text())
-
-        # auth_key
-        self.auth_key = self.root_config['auth_key']
-
-        # header_keys
-        self.header_keys = self.root_config['header_keys']
-
-        # cookie_keys
-        self.cookie_keys = self.root_config['cookie_keys']
-
-        # frontend_urls
-        self.frontend_urls = self.root_config['frontend_urls']
-
-        # scope_name_mapping
-        self.scope_name_mapping = self.root_config['scope_name_mapping']
-
-        self.scope_id_mapping = {}
-        for scope_name in self.scope_name_mapping:
-            self.scope_id_mapping[self.scope_name_mapping[scope_name]] = scope_name
-
-        # visibility_level_name_mapping
-        self.visibility_level_name_mapping = self.root_config['visibility_level_name_mapping']
-
-        # permission_level_name_mapping
-        self.permission_level_name_mapping = self.root_config['permission_level_name_mapping']
-
-        # user_role_name_mapping
-        self.user_role_name_mapping = self.root_config['user_role_name_mapping']
-
-        # user_role
-        self.user_role_id_scope_ids = {}
-        for scope_name in self.root_config['user_role_scopes']:
-            scope_id = self.user_role_name_mapping[scope_name]
-            self.user_role_id_scope_ids[scope_id] = set([
-                self.scope_name_mapping[_scope_name] for _scope_name in self.root_config['user_role_scopes'][scope_name]
-            ])
 
     def generate_jwt_secret_key(self):
         return secrets.token_hex(32)
@@ -263,20 +141,20 @@ class Client:
     def create_tables(self):
         SQLModel.metadata.create_all(self.db_engine)
 
-    def jwt_encode(self, payload: dict) -> JwtEncodedStr:
+    def jwt_encode(self, payload: dict) -> types.JwtEncodedStr:
         return jwt.encode(payload, self.jwt_secret_key, algorithm=self.jwt_algorithm)
 
-    def jwt_decode(self, token: JwtEncodedStr) -> dict:
+    def jwt_decode(self, token: types.JwtEncodedStr) -> dict:
         return jwt.decode(token, self.jwt_secret_key, algorithms=[self.jwt_algorithm])
 
-    def send_email(self, recipient: Email, subject: str, body: str):
+    def send_email(self, recipient: types.Email, subject: str, body: str):
 
         print('''
 Email sent to: {}
 Subject: {}
 Body: {}'''.format(recipient, subject, body))
 
-    def send_sms(self, recipient: PhoneNumber, message: str):
+    def send_sms(self, recipient: types.PhoneNumber, message: str):
 
         print('''
 SMS sent to: {}

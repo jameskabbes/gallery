@@ -5,7 +5,7 @@ import axios, {
   AxiosProgressEvent,
 } from 'axios';
 import config from '../../../config.json';
-import siteConfig from '../../siteConfig.json';
+import siteConfig from '../../config';
 import qs from 'qs';
 
 const apiClient = axios.create({
