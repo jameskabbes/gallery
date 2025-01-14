@@ -1,15 +1,18 @@
 import React from 'react';
 import { paths, operations, components } from './openapi_schema';
-import {
-  Axios,
-  AxiosProgressEvent,
-  AxiosRequestConfig,
-  AxiosResponse,
-  Method,
-} from 'axios';
+import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { E164Number } from 'libphonenumber-js';
 
-interface CallApiOptions<T> extends AxiosRequestConfig<T> {
+type FirstKey<T> = keyof {
+  [K in keyof T as K extends string ? K : never]: T[K];
+} extends infer O
+  ? keyof O
+  : never;
+
+interface CallApiOptions<TRequestData>
+  extends AxiosRequestConfig<TRequestData> {
+  url: AxiosRequestConfig['url'];
+  method: AxiosRequestConfig['method'];
   authContext?: AuthContextType;
 }
 
@@ -22,16 +25,6 @@ interface UseApiCallReturn<T> extends ApiResponse<T> {
 
 type ArrayElement<ArrayType extends readonly unknown[]> =
   ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
-
-type ExtractResponseTypes<T> = {
-  [K in keyof T]: T[K] extends {
-    content: infer ContentTypes;
-  }
-    ? {
-        [ContentType in keyof ContentTypes]: ContentTypes[ContentType];
-      }[keyof ContentTypes]
-    : never;
-};
 
 interface ValidatedInputState<T> {
   value: T;
@@ -244,8 +237,8 @@ interface SurfaceContextType {
 type OrderByState = 'off' | 'asc' | 'desc';
 
 export {
+  FirstKey,
   ArrayElement,
-  ExtractResponseTypes,
   CallApiOptions,
   ApiResponse,
   UseApiCallReturn,
