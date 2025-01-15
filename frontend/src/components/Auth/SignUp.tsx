@@ -2,16 +2,10 @@ import React, { useState, useContext, useEffect, useRef } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
 
 import {
-  AuthModalType,
-  ExtractResponseTypes,
-  ModalsContextType,
-} from '../../types';
-
-import {
   postSignUp,
-  PostSignUpData,
   PostSignUpResponses,
-} from '../../services/api/postSignUp';
+  postRequestSignUpEmail,
+} from '../../services/apiServices';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import openapi_schema from '../../../../openapi_schema.json';
@@ -27,7 +21,6 @@ import { ValidatedInputCheckbox } from '../Form/ValidatedInputCheckbox';
 import { IoLogInOutline, IoWarning } from 'react-icons/io5';
 import { Button2, ButtonSubmit } from '../Utils/Button';
 import { Loader1, Loader3 } from '../Utils/Loader';
-import { postRequestSignUpEmail } from '../../services/api/postRequestSignUpEmail';
 import { ModalsContext } from '../../contexts/Modals';
 import { Surface } from '../Utils/Surface';
 import { useLogInWithGoogle } from './useLogInWithGoogle';
@@ -88,8 +81,11 @@ function RequestSignUp() {
 
       requestSignUpContext.setLoading(true);
 
-      await postRequestSignUpEmail(authContext, {
-        email: requestSignUpContext.email.value,
+      await postRequestSignUpEmail({
+        authContext,
+        data: {
+          email: requestSignUpContext.email.value,
+        },
       });
       requestSignUpContext.setLoading(false);
     }
@@ -174,9 +170,10 @@ function VerifySignUp() {
   const navigate = useNavigate();
 
   const [status, setStatus] = useState<keyof PostSignUpResponses>(null);
-  const [token, setToken] = useState<PostSignUpData['token']>(
-    new URLSearchParams(location.search).get('token')
-  );
+
+  const [token, setToken] = useState<
+    Parameters<typeof postSignUp>[0]['data']['token']
+  >(new URLSearchParams(location.search).get('token'));
 
   useEffect(() => {
     setToken(new URLSearchParams(location.search).get('token'));
@@ -184,8 +181,11 @@ function VerifySignUp() {
 
   useEffect(() => {
     async function verifySignUp() {
-      const { data, status } = await postSignUp(authContext, {
-        token: token,
+      const { data, status } = await postSignUp({
+        authContext,
+        data: {
+          token: token,
+        },
       });
       navigate({ search: '' });
       setStatus(status as keyof PostSignUpResponses);

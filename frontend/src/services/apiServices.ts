@@ -178,6 +178,13 @@ type GetIsGalleryAvailableResponses = ExtractResponseTypes<
   paths['/galleries/details/available/']['get']
 >;
 
+type PathParams = Parameters<typeof getIsGalleryAvailable>[0]['pathParams'];
+type Data = Parameters<typeof getIsGalleryAvailable>[0]['data'];
+type QueryParams = Parameters<typeof getIsGalleryAvailable>[0]['params'];
+
+type TestParams = paths['/galleries/details/available/']['get']['parameters'];
+type TestQuery = TestParams extends { query: infer Q } ? Q : never;
+
 const postGallerySync = createApiService(
   '/galleries/{gallery_id}/sync/',
   'post'
@@ -207,6 +214,15 @@ type GetStylesPageResponses = ExtractResponseTypes<
 const getSettingsPage = createApiService('/pages/settings/', 'get');
 type GetSettingsPageResponses = ExtractResponseTypes<
   paths['/pages/settings/']['get']
+>;
+
+const getApiKeysSettingPage = createApiService(
+  '/pages/settings/api-keys/',
+  'get'
+);
+
+type GetApiKeysSettingPageResponses = ExtractResponseTypes<
+  paths['/pages/settings/api-keys/']['get']
 >;
 
 const getGalleryPage = createApiService(
@@ -286,6 +302,8 @@ export {
   GetStylesPageResponses,
   getSettingsPage,
   GetSettingsPageResponses,
+  getApiKeysSettingPage,
+  GetApiKeysSettingPageResponses,
   getGalleryPage,
   GetGalleryPageResponses,
   getHomePage,

@@ -1,5 +1,5 @@
-import { PostLogOutResponses, postLogOut } from '../../services/api/postLogOut';
-import { ApiResponse, AuthContextType, ToastContextType } from '../../types';
+import { PostLogOutResponses, postLogOut } from '../../services/apiServices';
+import { AuthContextType, ToastContextType } from '../../types';
 
 async function logOut(
   authContext: AuthContextType,
@@ -8,7 +8,9 @@ async function logOut(
   let toastId = toastContext.makePending({
     message: 'Logging out...',
   });
-  const response = await postLogOut(authContext);
+  const response = await postLogOut({
+    authContext,
+  });
   if (response.status === 200) {
     authContext.logOut(toastId);
   } else {

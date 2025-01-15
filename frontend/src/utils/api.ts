@@ -60,7 +60,7 @@ type ExtractRequestDataType<T> = T extends {
     }[keyof ContentTypes]
   : never;
 
-type ExtractRequestQueryParamsType<T> = T extends { parameters: infer Params }
+type ExtractRequestQueryParamsType<T> = T extends { parameters?: infer Params }
   ? Params extends { query?: infer U }
     ? U
     : never
@@ -126,7 +126,7 @@ function createApiService<
     contentType = Object.keys(endpoint.requestBody.content)[0];
   }
 
-  async function call({ pathParams = {}, ...rest }) {
+  return async ({ pathParams = {}, ...rest }) => {
     let url: CallApiOptions<TRequestData>['url'] = path;
     for (const key in pathParams) {
       url = url.replace(`{${key}}`, pathParams[key]);
@@ -139,9 +139,7 @@ function createApiService<
       ...rest,
     });
     return response;
-  }
-
-  return call;
+  };
 }
 
 function useApiCall<Path extends keyof paths, Method extends keyof paths[Path]>(
@@ -177,4 +175,12 @@ function useApiCall<Path extends keyof paths, Method extends keyof paths[Path]>(
   return { ...response, loading, refetch };
 }
 
-export { callApi, useApiCall, createApiService, ExtractResponseTypes };
+export {
+  callApi,
+  useApiCall,
+  createApiService,
+  ExtractResponseTypes,
+  ExtractRequestDataType,
+  ExtractRequestQueryParamsType,
+  ExtractRequestPathParamsType,
+};

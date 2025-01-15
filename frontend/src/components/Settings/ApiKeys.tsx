@@ -2,7 +2,6 @@ import React, { useContext, useEffect, useRef, useState } from 'react';
 import {
   ValidatedInputState,
   ToastContextType,
-  ExtractResponseTypes,
   AuthContextType,
   defaultValidatedInputState,
   ModalsContextType,
@@ -16,11 +15,18 @@ import { paths, operations, components } from '../../openapi_schema';
 import {
   deleteApiKey,
   DeleteApiKeyResponses,
-} from '../../services/api/deleteApiKey';
+  postApiKey,
+  PostApiKeyResponses,
+  postApiKeyScope,
+  deleteApiKeyScope,
+  getApiKeyJwt,
+  GetApiKeyJwtResponses,
+  getIsApiKeyAvailable,
+  patchApiKey,
+  getApiKeysSettingPage,
+  GetApiKeysSettingPageResponses,
+} from '../../services/apiServices';
 
-import { postApiKey, PostApiKeyResponses } from '../../services/api/postApiKey';
-import { postApiKeyScope } from '../../services/api/postApiKeyScope';
-import { deleteApiKeyScope } from '../../services/api/deleteApiKeyScope';
 import { ModalsContext } from '../../contexts/Modals';
 import { useConfirmationModal } from '../../utils/useConfirmationModal';
 import { IoCaretForward } from 'react-icons/io5';
@@ -30,21 +36,14 @@ import { ValidatedInputDatetimeLocal } from '../Form/ValidatedInputDatetimeLocal
 import { Button1, Button2, ButtonSubmit } from '../Utils/Button';
 import { Card1, CardButton } from '../Utils/Card';
 import { Toggle1 } from '../Utils/Toggle';
-import {
-  getApiKeyJWT,
-  GetApiKeyJwtResponses,
-} from '../../services/api/getApiKeyJwt';
 import { scopeIdMapping, userRoleIdMapping } from '../../../config';
 import constants from '../../../../constants.json';
 import { useValidatedInput } from '../../utils/useValidatedInput';
-import { isApiKeyAvailable } from '../../services/api/getIsApiKeyAvailable';
 import { CheckOrX } from '../Form/CheckOrX';
-import { QueryParams } from '../../services/api/getApiKeys';
 import { IoCaretUp, IoCaretDown } from 'react-icons/io5';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Loader1 } from '../Utils/Loader';
 import { Surface } from '../Utils/Surface';
-import { patchApiKey } from '../../services/api/patchApiKey';
 import { Pagination } from '../Utils/Pagination';
 
 type ScopeID = number;
@@ -59,11 +58,11 @@ type TModifyApiKeyScopeFunc = (
   scopeId: ScopeID
 ) => Promise<void>;
 type TAddApiKeyFunc = (
-  apiKeyCreate: Parameters<typeof postApiKey>[1]
+  apiKeyCreate: Parameters<typeof postApiKey>[0]['data']
 ) => Promise<boolean>;
 type TUpdateApiKeyFunc = (
-  apiKeyId: Parameters<typeof patchApiKey>[1],
-  apiKeyUpdate: Parameters<typeof patchApiKey>[2]
+  apiKeyId: Parameters<typeof patchApiKey>[0]['pathParams']['api_key_id'],
+  apiKeyUpdate: Parameters<typeof patchApiKey>[0]['data']
 ) => Promise<boolean>;
 type TDeleteApiKeyFunc = (index: number) => Promise<boolean>;
 
@@ -80,7 +79,12 @@ function ApiKeyCodeModal({ apiKey, authContext }: ApiKeyCodeModalProps) {
   async function fetchJwt(apiKeyId: TApiKey['id']) {
     setLoading(true);
     setCopySuccess(false);
-    const { data, status } = await getApiKeyJWT(authContext, apiKey.id);
+    const { data, status } = await getApiKeyJwt({
+      authContext,
+      pathParams: {
+        api_key_id: apiKeyId,
+      },
+    });
     if (status === 200) {
       const apiData = data as GetApiKeyJwtResponses['200'];
       setJwt(apiData.jwt);
@@ -231,9 +235,17 @@ function UpdateApiKey({
               if (name === apiKey.name) {
                 return true;
               } else {
-                return await isApiKeyAvailable(authContext, {
-                  name,
+                const { status } = await getIsApiKeyAvailable({
+                  authContext,
+                  params: {
+                    name: name,
+                  },
                 });
+                if (status === 200) {
+                  return true;
+                } else {
+                  return false;
+                }
               }
             }}
             checkAvailability={true}
@@ -346,10 +358,19 @@ function AddApiKey({
     setState: setApiKeyAvailable,
     checkAvailability: true,
     checkValidity: true,
-    isAvailable: () =>
-      isApiKeyAvailable(authContext, {
-        name: name.value,
-      }),
+    isAvailable: async (state) => {
+      const { status } = await getIsApiKeyAvailable({
+        authContext,
+        params: {
+          name: state.name.value,
+        },
+      });
+      if (status === 200) {
+        return true;
+      } else {
+        return false;
+      }
+    },
     isValid: (value) => {
       return value.name.status === 'valid'
         ? { valid: true }
@@ -602,13 +623,6 @@ interface ApiKeysProps {
   toastContext: ToastContextType;
 }
 
-const API_ENDPOINT = '/pages/settings/api-keys/';
-const API_METHOD = 'get';
-
-type ResponseTypesByStatus = ExtractResponseTypes<
-  paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
->;
-
 function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
   const modalsContext = useContext(ModalsContext);
   const { activateButtonConfirmation } = useConfirmationModal();
@@ -616,10 +630,12 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
   const navigate = useNavigate();
   const query = new URLSearchParams(useLocation().search);
 
-  type QueryParamKey =
-    keyof paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['query'];
+  type QueryParams = Parameters<typeof getApiKeysSettingPage>[0]['params'];
+  type QueryParamKey = keyof QueryParams;
+  type OrderByField = QueryParams['order_by'];
+
   const queryParameters =
-    openapi_schema['paths']['/api-keys/']['get']['parameters'];
+    openapi_schema['paths']['/pages/settings/api-keys/']['get']['parameters'];
 
   const queryParamObjects: Record<QueryParamKey, any> = queryParameters.reduce(
     (acc, param) => {
@@ -708,10 +724,6 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
 
   const [selectedIndex, setSelectedIndex] = useState<number>(null);
 
-  type OrderByField = ArrayElement<
-    paths['/api-keys/']['get']['parameters']['query']['order_by']
-  >;
-
   // show the available scopes based on the user's role
   useEffect(() => {
     if (authContext.state.user !== null) {
@@ -725,11 +737,8 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
     }
   }, [authContext]);
 
-  const { data, status, loading, refetch } = useApiCall<
-    ResponseTypesByStatus[keyof ResponseTypesByStatus]
-  >({
-    url: API_ENDPOINT,
-    method: API_METHOD,
+  const { data, status, loading, refetch } = useApiCall(getApiKeysSettingPage, {
+    authContext,
     params: {
       limit: limit,
       offset: offset,
@@ -753,7 +762,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
   useEffect(() => {
     if (!loading) {
       if (status === 200) {
-        const apiData = data as ResponseTypesByStatus['200'];
+        const apiData = data as GetApiKeysSettingPageResponses['200'];
         setApiKeys(() => {
           const keys = {};
           for (const apiKey of apiData.api_keys) {
@@ -793,11 +802,13 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
       };
     });
 
-    const { data, status } = await postApiKeyScope(
+    const { data, status } = await postApiKeyScope({
       authContext,
-      apiKey.id,
-      scopeId
-    );
+      pathParams: {
+        api_key_id: apiKey.id,
+        scope_id: scopeId,
+      },
+    });
     if (status === 200) {
     } else {
       setApiKeyScopeIds((prev) => {
@@ -826,11 +837,13 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
       };
     });
 
-    const { data, status } = await deleteApiKeyScope(
+    const { data, status } = await deleteApiKeyScope({
       authContext,
-      apiKey.id,
-      scopeId
-    );
+      pathParams: {
+        api_key_id: apiKey.id,
+        scope_id: scopeId,
+      },
+    });
 
     if (status === 204) {
     } else {
@@ -850,7 +863,10 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
       message: 'Creating API Key...',
     });
 
-    const { data, status } = await postApiKey(authContext, apiKeyCreate);
+    const { data, status } = await postApiKey({
+      authContext,
+      data: apiKeyCreate,
+    });
 
     if (status === 200) {
       const apiData = data as PostApiKeyResponses['200'];
@@ -885,11 +901,13 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
       return updated;
     });
 
-    const { data, status } = await patchApiKey(
+    const { data, status } = await patchApiKey({
       authContext,
-      apiKeyId,
-      apiKeyUpdate
-    );
+      pathParams: {
+        api_key_id: apiKeyId,
+      },
+      data: apiKeyUpdate,
+    });
 
     if (status === 200) {
       const apiData = data as PostApiKeyResponses['200'];
@@ -931,7 +949,12 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
     });
     setApiKeyCount((prev) => prev - 1);
 
-    const { data, status } = await deleteApiKey(authContext, apiKey.id);
+    const { data, status } = await deleteApiKey({
+      authContext,
+      pathParams: {
+        api_key_id: apiKeyId,
+      },
+    });
 
     if (status === 204) {
       const apiData = data as DeleteApiKeyResponses['204'];

@@ -8,17 +8,17 @@ import { paths, operations, components } from '../../openapi_schema';
 import {
   postGallery,
   PostGalleryResponses,
-} from '../../services/api/postGallery';
+  getIsGalleryAvailable,
+} from '../../services/apiServices';
 
 import { AuthContext } from '../../contexts/Auth';
 import { ToastContext } from '../../contexts/Toast';
-
 import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { ButtonSubmit } from '../Utils/Button';
 import openapi_schema from '../../../../openapi_schema.json';
 import config from '../../../../config.json';
+import constants from '../../../../constants.json';
 import { RadioButton1 } from '../Utils/RadioButton';
-import { isGalleryAvailable } from '../../services/api/getIsGalleryAvailable';
 import { useValidatedInput } from '../../utils/useValidatedInput';
 import { CheckOrX } from '../Form/CheckOrX';
 
@@ -71,12 +71,21 @@ function AddGallery({
     setState: setGalleryAvailable,
     checkAvailability: true,
     checkValidity: true,
-    isAvailable: () =>
-      isGalleryAvailable(authContext, {
-        name: name.value,
-        parent_id: parentGalleryId,
-        ...(date.value !== '' && { date: date.value }),
-      }),
+    isAvailable: async () => {
+      const response = await getIsGalleryAvailable({
+        authContext,
+        params: {
+          name: name.value,
+          parent_id: parentGalleryId,
+          ...(date.value !== '' && { date: date.value }),
+        },
+      });
+      if (response.status === 200) {
+        return true;
+      } else {
+        return false;
+      }
+    },
     isValid: (value) => {
       return value.date.status === 'valid' && value.name.status === 'valid'
         ? { valid: true }
@@ -102,18 +111,18 @@ function AddGallery({
       message: 'Adding gallery...',
     });
 
-    const galleryCreate: components['schemas']['GalleryCreate'] = {
-      name: name.value,
-      parent_id: parentGalleryId,
-      visibility_level:
-        config['visibility_level_name_mapping'][visibilityLevelName.value],
-      ...(date.value !== '' && { date: date.value }),
-    };
-
-    console.log(galleryCreate);
     modalsContext.deleteModals([addGalleryModalKey]);
 
-    const { data, status } = await postGallery(authContext, galleryCreate);
+    const { data, status } = await postGallery({
+      authContext,
+      data: {
+        name: name.value,
+        parent_id: parentGalleryId,
+        visibility_level:
+          constants['visibility_level_name_mapping'][visibilityLevelName.value],
+        ...(date.value !== '' && { date: date.value }),
+      },
+    });
     if (status === 200) {
       toastContext.update(toastId, {
         message: 'Gallery added',
@@ -172,7 +181,7 @@ function AddGallery({
               <legend>Visibility</legend>
             </label>
             <fieldset className="flex flex-row justify-around">
-              {Object.keys(config.visibility_level_name_mapping).map(
+              {Object.keys(constants.visibility_level_name_mapping).map(
                 (levelName) => (
                   <div
                     key={levelName}

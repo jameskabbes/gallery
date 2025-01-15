@@ -8,15 +8,18 @@ import {
   RequestOTPContextType,
   ValidatedInputState,
 } from '../../types';
-import { postRequestOTPEmail } from '../../services/api/postRequestOTPEmail';
-import { postRequestOTPSMS } from '../../services/api/postRequestOTPSMS';
-import { postLogInOTPEmail } from '../../services/api/postLogInOTPEmail';
+
+import {
+  postLogInOTPPhoneNumber,
+  postRequestOTPEmail,
+  postRequestOTPSMS,
+  postLogInOTPEmail,
+} from '../../services/apiServices';
 import { Button2, ButtonSubmit } from '../Utils/Button';
 import openapi_schema from '../../../../openapi_schema.json';
 import { isEmailValid } from '../../services/isEmailValid';
 import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { ValidatedInputPhoneNumber } from '../Form/ValidatedInputPhoneNumber';
-import { postLogInOTPPhoneNumber } from '../../services/api/postLogInOTPPhoneNumber';
 import { Surface } from '../Utils/Surface';
 import { useValidatedInputString } from '../../utils/useValidatedInput';
 import { Loader1 } from '../Utils/Loader';
@@ -48,12 +51,18 @@ function RequestOTP() {
     authModalsContext.activate('verifyOTP');
 
     if (requestOTPContext.medium === 'email') {
-      var { status } = await postRequestOTPEmail(authContext, {
-        email: requestOTPContext.email.value,
+      var { status } = await postRequestOTPEmail({
+        authContext,
+        data: {
+          email: requestOTPContext.email.value,
+        },
       });
     } else if (requestOTPContext.medium === 'sms') {
-      var { status } = await postRequestOTPSMS(authContext, {
-        phone_number: requestOTPContext.phoneNumber.value,
+      var { status } = await postRequestOTPSMS({
+        authContext,
+        data: {
+          phone_number: requestOTPContext.phoneNumber.value,
+        },
       });
     }
   }
@@ -225,14 +234,20 @@ function VerifyOTP() {
     setLoading(true);
 
     if (requestOTPContext.medium === 'email') {
-      var { data, status } = await postLogInOTPEmail(authContext, {
-        email: requestOTPContext.email.value,
-        code: code.value,
+      var { data, status } = await postLogInOTPEmail({
+        authContext,
+        data: {
+          email: requestOTPContext.email.value,
+          code: code.value,
+        },
       });
     } else if (requestOTPContext.medium === 'sms') {
-      var { data, status } = await postLogInOTPPhoneNumber(authContext, {
-        phone_number: requestOTPContext.phoneNumber.value,
-        code: code.value,
+      var { data, status } = await postLogInOTPPhoneNumber({
+        authContext,
+        data: {
+          phone_number: requestOTPContext.phoneNumber.value,
+          code: code.value,
+        },
       });
     }
     setLoading(false);

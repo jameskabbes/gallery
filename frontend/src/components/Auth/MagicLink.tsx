@@ -1,10 +1,5 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
-import { paths, operations, components } from '../../openapi_schema';
-import {
-  AuthModalType,
-  ExtractResponseTypes,
-  RequestMagicLinkContextType,
-} from '../../types';
+import { AuthModalType, RequestMagicLinkContextType } from '../../types';
 import openapi_schema from '../../../../openapi_schema.json';
 
 import { AuthContext } from '../../contexts/Auth';
@@ -23,9 +18,14 @@ import { useLocation } from 'react-router-dom';
 import { Loader1 } from '../Utils/Loader';
 import { IoLogInOutline, IoWarning } from 'react-icons/io5';
 import { IoCheckmark } from 'react-icons/io5';
-import { postRequestMagicLinkEmail } from '../../services/api/postRequestMagicLinkEmail';
-import { postRequestMagicLinkSMS } from '../../services/api/postRequestMagicLinkSMS';
-import { postLogInMagicLink } from '../../services/api/postLogInMagicLink';
+import {
+  postRequestMagicLinkEmail,
+  PostRequestMagicLinkEmailResponses,
+  postRequestMagicLinkSMS,
+  PostRequestMagicLinkSMSResponses,
+  postLogInMagicLink,
+  PostLogInMagicLinkResponses,
+} from '../../services/apiServices';
 import { Card1 } from '../Utils/Card';
 import { Surface } from '../Utils/Surface';
 
@@ -60,12 +60,18 @@ function RequestMagicLink() {
     authModalsContext.activate(null);
 
     if (requestMagicLinkContext.medium === 'email') {
-      var { status } = await postRequestMagicLinkEmail(authContext, {
-        email: requestMagicLinkContext.email.value,
+      var { status } = await postRequestMagicLinkEmail({
+        authContext,
+        data: {
+          email: requestMagicLinkContext.email.value,
+        },
       });
     } else if (requestMagicLinkContext.medium === 'sms') {
-      var { status } = await postRequestMagicLinkSMS(authContext, {
-        phone_number: requestMagicLinkContext.phoneNumber.value,
+      var { status } = await postRequestMagicLinkSMS({
+        authContext,
+        data: {
+          phone_number: requestMagicLinkContext.phoneNumber.value,
+        },
       });
     }
   }
@@ -184,8 +190,11 @@ function VerifyMagicLink() {
   useEffect(() => {
     async function verifyMagicLink() {
       setStatus(null);
-      const { status } = await postLogInMagicLink(authContext, {
-        token: token,
+      const { status } = await postLogInMagicLink({
+        authContext,
+        data: {
+          token: token,
+        },
       });
       setStatus(status);
     }

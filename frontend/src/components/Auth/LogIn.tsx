@@ -1,6 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../../contexts/Auth';
-import { paths, operations, components } from '../../openapi_schema';
 import openapi_schema from '../../../../openapi_schema.json';
 import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { LogInContext } from '../../contexts/LogIn';
@@ -16,7 +15,10 @@ import { ValidatedInputCheckbox } from '../Form/ValidatedInputCheckbox';
 import { Button2, ButtonSubmit } from '../Utils/Button';
 import { Loader1, Loader2 } from '../Utils/Loader';
 import { Surface } from '../Utils/Surface';
-import { postLogin, PostLogInResponses } from '../../services/api/postLogIn';
+import {
+  postLogInPassword,
+  PostLogInPasswordResponses,
+} from '../../services/apiServices';
 import { ModalsContext } from '../../contexts/Modals';
 import { AuthModalType } from '../../types';
 import { useLogInWithGoogle } from './useLogInWithGoogle';
@@ -58,16 +60,19 @@ function LogIn() {
     if (logInContext.valid) {
       logInContext.setLoading(true);
 
-      const { data, status } = await postLogin(authContext, {
-        username: logInContext.username.value,
-        password: logInContext.password.value,
-        stay_signed_in: logInContext.staySignedIn.value,
+      const { data, status } = await postLogInPassword({
+        authContext,
+        data: {
+          username: logInContext.username.value,
+          password: logInContext.password.value,
+          stay_signed_in: logInContext.staySignedIn.value,
+        },
       });
 
       logInContext.setLoading(false);
 
       if (status == 200) {
-        const apiData = data as PostLogInResponses['200'];
+        const apiData = data as PostLogInPasswordResponses['200'];
         modalsContext.deleteModals([key]);
         toastContext.make({
           message: `Welcome ${
@@ -78,7 +83,7 @@ function LogIn() {
           type: 'success',
         });
       } else if (status == 401) {
-        const apiData = data as PostLogInResponses['401'];
+        const apiData = data as PostLogInPasswordResponses['401'];
         logInContext.setError(apiData.detail);
       } else {
         logInContext.setError('Could not log in');

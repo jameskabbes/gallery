@@ -1,30 +1,29 @@
 import React from 'react';
-import { Photo } from '../../types';
 import { GalleryView } from '../Photo/GalleryView';
 
-function Column({
-  photos,
-  photoInds,
-  imagePreviewIndexDispatch,
-}: {
-  photos: Photo[];
-  photoInds: number[];
-  imagePreviewIndexDispatch: CallableFunction;
-}) {
-  return (
-    <>
-      <div className="column">
-        {photoInds.map((photoInd, i) => (
-          <GalleryView
-            key={i}
-            photo={photos[photoInd]}
-            index={photoInd}
-            imagePreviewIndexDispatch={imagePreviewIndexDispatch}
-          />
-        ))}
-      </div>
-    </>
-  );
-}
+// function Column({
+//   photos,
+//   photoInds,
+//   imagePreviewIndexDispatch,
+// }: {
+//   photos: Photo[];
+//   photoInds: number[];
+//   imagePreviewIndexDispatch: CallableFunction;
+// }) {
+//   return (
+//     <>
+//       <div className="column">
+//         {photoInds.map((photoInd, i) => (
+//           <GalleryView
+//             key={i}
+//             photo={photos[photoInd]}
+//             index={photoInd}
+//             imagePreviewIndexDispatch={imagePreviewIndexDispatch}
+//           />
+//         ))}
+//       </div>
+//     </>
+//   );
+// }
 
-export { Column };
+// export { Column };
