@@ -1,4 +1,8 @@
-import { createApiService, ExtractResponseTypes } from '../utils/api';
+import {
+  createApiService,
+  ExtractRequestQueryParamsType,
+  ExtractResponseTypes,
+} from '../utils/api';
 import { paths, operations, components } from '../openapi_schema';
 
 // Auth
@@ -178,9 +182,20 @@ type GetIsGalleryAvailableResponses = ExtractResponseTypes<
   paths['/galleries/details/available/']['get']
 >;
 
+getIsApiKeyAvailable({
+  params: {
+    name: 'asd',
+  },
+});
+
+type QueryParams = Parameters<typeof getIsGalleryAvailable>[0]['params'];
+
+type A = ExtractRequestQueryParamsType<
+  paths['/galleries/details/available/']['get']
+>;
+
 type PathParams = Parameters<typeof getIsGalleryAvailable>[0]['pathParams'];
 type Data = Parameters<typeof getIsGalleryAvailable>[0]['data'];
-type QueryParams = Parameters<typeof getIsGalleryAvailable>[0]['params'];
 
 type TestParams = paths['/galleries/details/available/']['get']['parameters'];
 type TestQuery = TestParams extends { query: infer Q } ? Q : never;
