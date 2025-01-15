@@ -2,11 +2,9 @@ import { useState, useEffect, useContext } from 'react';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { apiClient } from './apiClient';
 import { AuthContext } from '../contexts/Auth';
-import { ApiResponse, CallApiOptions, UseApiCallReturn } from '../types';
+import { CallApiOptions, UseApiCallReturn } from '../types';
 import constants from '../../../constants.json';
 import { paths, operations, components } from '../openapi_schema';
-import { AuthContextType } from '../types';
-import { FirstKey } from '../types';
 import openapi_schema from '../../../openapi_schema.json';
 
 async function callApi<TResponseData, TRequestData = any>({
@@ -14,7 +12,7 @@ async function callApi<TResponseData, TRequestData = any>({
   method,
   authContext = null,
   ...rest
-}: CallApiOptions<TRequestData>): Promise<ApiResponse<TResponseData>> {
+}: CallApiOptions<TRequestData>): Promise<AxiosResponse<TResponseData>> {
   try {
     const requestConfig: AxiosRequestConfig = {
       url,
@@ -39,44 +37,6 @@ async function callApi<TResponseData, TRequestData = any>({
     return error.response;
   }
 }
-
-function useApiCall<TResponseData extends object, TRequestData = any>(
-  props: Omit<CallApiOptions<TRequestData>, 'authContext'>,
-  dependencies: any[] = []
-): UseApiCallReturn<TResponseData> {
-  const [loading, setLoading] = useState<boolean>(true);
-  const [response, setResponse] = useState<AxiosResponse>(null);
-  const authContext = useContext(AuthContext);
-
-  const fetchData = async () => {
-    const response = await callApi<TResponseData, TRequestData>({
-      ...props,
-      authContext: authContext,
-    });
-    setResponse(response);
-  };
-
-  async function refetch() {
-    setLoading(true);
-    await fetchData();
-    setLoading(false);
-  }
-
-  useEffect(() => {
-    refetch();
-  }, dependencies);
-
-  return { ...response, loading, refetch };
-}
-
-// type HasRequestBody<T> = T extends { requestBody: any } ? T : never;
-// type HasParameters<T> = T extends { parameters: any } ? T : never;
-
-// type ExtractRequestBodyContentTypes<T> = T extends {
-//   requestBody: { content: infer ContentTypes };
-// }
-//   ? keyof ContentTypes
-//   : never;
 
 type ExtractResponseTypes<T> = T extends {
   responses: infer Responses;
@@ -112,39 +72,45 @@ type ExtractRequestPathParamsType<T> = T extends { parameters: infer Params }
     : never
   : never;
 
-type OptionalIfNever<T> = T extends [never] ? never : T;
+type OptionalIfNever<T, Key extends keyof T> = T[Key] extends never
+  ? Partial<Pick<T, Key>>
+  : Pick<T, Key>;
 
-const a: ExtractRequestPathParamsType<paths['/api-keys/{api_key_id}/']['get']> =
-  {
-    api_key_id: 'string',
-  };
-
-interface ApiService<
+// Extract the parameters type for the ApiService function
+type ApiServiceParams<
   Path extends keyof paths,
   Method extends keyof paths[Path]
-> {
-  call: (
-    options: Omit<
-      CallApiOptions<ExtractRequestDataType<paths[Path][Method]>>,
-      'url' | 'method'
-    > & {
-      data: OptionalIfNever<ExtractRequestDataType<paths[Path][Method]>>;
-      params: OptionalIfNever<
-        ExtractRequestQueryParamsType<paths[Path][Method]>
-      >;
-      pathParams: OptionalIfNever<
-        ExtractRequestPathParamsType<paths[Path][Method]>
-      >;
-    }
-  ) => Promise<
-    ApiResponse<
-      ExtractResponseTypes<paths[Path][Method]>[keyof ExtractResponseTypes<
-        paths[Path][Method]
-      >]
-    >
+> = Omit<
+  CallApiOptions<ExtractRequestDataType<paths[Path][Method]>>,
+  'url' | 'method'
+> &
+  OptionalIfNever<
+    { data: ExtractRequestDataType<paths[Path][Method]> },
+    'data'
+  > &
+  OptionalIfNever<
+    { params: ExtractRequestQueryParamsType<paths[Path][Method]> },
+    'params'
+  > &
+  OptionalIfNever<
+    { pathParams: ExtractRequestPathParamsType<paths[Path][Method]> },
+    'pathParams'
   >;
-  responses: ExtractResponseTypes<paths[Path][Method]>;
-}
+
+// Extract the response type for the ApiService function
+type ApiServiceResponse<
+  Path extends keyof paths,
+  Method extends keyof paths[Path]
+> = AxiosResponse<
+  ExtractResponseTypes<paths[Path][Method]>[keyof ExtractResponseTypes<
+    paths[Path][Method]
+  >]
+>;
+
+// Combine ApiServiceParams and ApiServiceResponse into the function type
+type ApiService<Path extends keyof paths, Method extends keyof paths[Path]> = (
+  options: ApiServiceParams<Path, Method>
+) => Promise<ApiServiceResponse<Path, Method>>;
 
 function createApiService<
   Path extends keyof paths,
@@ -154,29 +120,61 @@ function createApiService<
   type TRequestData = ExtractRequestDataType<paths[Path][Method]>;
   type TResponseData = Responses[keyof Responses];
 
-  return {
-    call: async ({ pathParams = {}, ...rest }) => {
-      let url: CallApiOptions<TRequestData>['url'] = path;
-      for (const key in pathParams) {
-        url = url.replace(`{${key}}`, pathParams[key]);
-      }
+  let contentType: string = null;
+  const endpoint = openapi_schema.paths[path][method as string];
+  if ('requestBody' in endpoint && 'content' in endpoint.requestBody) {
+    contentType = Object.keys(endpoint.requestBody.content)[0];
+  }
 
-      let contentType: string = null;
-      const endpoint = openapi_schema.paths[path][method as string];
-      if ('requestBody' in endpoint && 'content' in endpoint.requestBody) {
-        contentType = Object.keys(endpoint.requestBody.content)[0];
-      }
+  async function call({ pathParams = {}, ...rest }) {
+    let url: CallApiOptions<TRequestData>['url'] = path;
+    for (const key in pathParams) {
+      url = url.replace(`{${key}}`, pathParams[key]);
+    }
 
-      const response = await callApi<TRequestData, TResponseData>({
-        url,
-        method,
-        ...(contentType && { headers: { 'Content-Type': contentType } }),
-        ...rest,
-      });
-      return response;
-    },
-    responses: {} as Responses,
-  };
+    const response = await callApi<TRequestData, TResponseData>({
+      url,
+      method,
+      ...(contentType && { headers: { 'Content-Type': contentType } }),
+      ...rest,
+    });
+    return response;
+  }
+
+  return call;
 }
 
-export { callApi, useApiCall, createApiService };
+function useApiCall<Path extends keyof paths, Method extends keyof paths[Path]>(
+  apiService: ApiService<Path, Method>,
+  apiServiceOptions: ApiServiceParams<Path, Method>,
+  dependencies: any[] = []
+): UseApiCallReturn<
+  ExtractResponseTypes<paths[Path][Method]>[keyof ExtractResponseTypes<
+    paths[Path][Method]
+  >]
+> {
+  const [loading, setLoading] = useState<boolean>(true);
+  const [response, setResponse] =
+    useState<
+      AxiosResponse<
+        ExtractResponseTypes<paths[Path][Method]>[keyof ExtractResponseTypes<
+          paths[Path][Method]
+        >]
+      >
+    >(null);
+
+  async function refetch() {
+    setLoading(true);
+    const b = await apiService(apiServiceOptions);
+    setResponse(b);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    refetch();
+  }, dependencies);
+
+  return { ...response, loading, refetch };
+}
+
+export { callApi, useApiCall, createApiService, ExtractResponseTypes };

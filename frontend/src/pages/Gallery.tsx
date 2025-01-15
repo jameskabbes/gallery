@@ -2,31 +2,27 @@ import React, { useEffect, useContext, useState, Children } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DeviceContext } from '../contexts/Device';
 import { paths, operations, components } from '../openapi_schema';
-import { defaultValidatedInputState, ExtractResponseTypes } from '../types';
 import { useApiCall } from '../utils/api';
 import { ModalsContext } from '../contexts/Modals';
 import { AuthContext } from '../contexts/Auth';
 import { Button1 } from '../components/Utils/Button';
 import { setFileUploaderModal } from '../components/Gallery/FileUploader';
 
+import {
+  deleteGallery,
+  DeleteGalleryResponses,
+  getGalleryPage,
+  GetGalleryPageResponses,
+  postGallerySync,
+  PostGallerySyncResponses,
+} from '../services/apiServices';
+
 import { IoCloudUploadOutline } from 'react-icons/io5';
 import { setAddGalleryModal } from '../components/Gallery/AddGallery';
 import { getGalleryLink } from '../components/Gallery/getLink';
 import { Link } from 'react-router-dom';
 import { ToastContext } from '../contexts/Toast';
-import { deleteGallery } from '../services/api/deleteGallery';
 import constants from '../../../constants.json';
-import {
-  postGallerySync,
-  PostGallerySyncResponses,
-} from '../services/api/postGallerySync';
-
-const API_ENDPOINT = '/pages/galleries/{gallery_id}/';
-const API_METHOD = 'get';
-
-type ResponseTypesByStatus = ExtractResponseTypes<
-  paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
->;
 
 interface Props {
   root?: boolean;
@@ -41,18 +37,19 @@ function Gallery({ root = false }: Props) {
   const galleryId: components['schemas']['Gallery']['id'] =
     useParams().galleryId;
 
-  const { data, loading, status, refetch } = useApiCall<
-    ResponseTypesByStatus[keyof ResponseTypesByStatus]
-  >(
-    {
-      url: API_ENDPOINT.replace('{gallery_id}', galleryId),
-      method: API_METHOD,
-      params: {
-        root: root,
-      },
+  // params: {
+  //     root: root,
+  //   },
+
+  const { data, loading, status, refetch } = useApiCall(getGalleryPage, {
+    params: {
+      root: root,
     },
-    [galleryId, authContext.state.user]
-  );
+    pathParams: {
+      gallery_id: galleryId,
+    },
+    authContext,
+  });
 
   async function handleSyncGallery(
     gallery: components['schemas']['GalleryPublic']
@@ -62,7 +59,11 @@ function Gallery({ root = false }: Props) {
         gallery.name
       }`,
     });
-    const response = await postGallerySync(authContext, gallery.id);
+    const response = await postGallerySync({
+      pathParams: {
+        gallery_id: gallery.id,
+      },
+    });
     if (response.status === 200) {
       toastContext.update(toastId, {
         message: 'Gallery synced with local',
@@ -82,7 +83,11 @@ function Gallery({ root = false }: Props) {
     let toastId = toastContext.makePending({
       message: `Delete gallery ${gallery.date} ${gallery.name}`,
     });
-    const response = await deleteGallery(authContext, gallery.id);
+    const response = await deleteGallery({
+      pathParams: {
+        gallery_id: gallery.id,
+      },
+    });
 
     if (response.status === 204) {
       toastContext.update(toastId, {
@@ -102,7 +107,7 @@ function Gallery({ root = false }: Props) {
     return <div>Loading...</div>;
   } else {
     if (status === 200) {
-      const apiData = data as ResponseTypesByStatus['200'];
+      const apiData = data as GetGalleryPageResponses['200'];
       return (
         <>
           <div className="flex flex-row space-x-2 ">

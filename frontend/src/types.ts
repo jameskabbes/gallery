@@ -16,9 +16,7 @@ interface CallApiOptions<TRequestData>
   authContext?: AuthContextType;
 }
 
-type ApiResponse<T> = AxiosResponse<T>;
-
-interface UseApiCallReturn<T> extends ApiResponse<T> {
+interface UseApiCallReturn<T> extends AxiosResponse<T> {
   loading: boolean;
   refetch: () => void;
 }
@@ -240,7 +238,6 @@ export {
   FirstKey,
   ArrayElement,
   CallApiOptions,
-  ApiResponse,
   UseApiCallReturn,
   DarkModeContextType,
   ValidatedInputState,

@@ -13,16 +13,9 @@ import { IoPersonOutline } from 'react-icons/io5';
 import { IoKeyOutline } from 'react-icons/io5';
 import { ApiKeys } from '../components/Settings/ApiKeys';
 import { useApiCall } from '../utils/api';
-import { ExtractResponseTypes } from '../types';
 import { Surface } from '../components/Utils/Surface';
 import { Button2 } from '../components/Utils/Button';
-
-const API_ENDPOINT = '/pages/settings/';
-const API_METHOD = 'get';
-
-type ResponseTypesByStatus = ExtractResponseTypes<
-  paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
->;
+import { getSettingsPage } from '../services/apiServices';
 
 function Settings(): JSX.Element {
   const authContext = useContext(AuthContext);
@@ -74,13 +67,7 @@ function Settings(): JSX.Element {
   const selection = useParams<{ selection: string }>()
     .selection as SelectionComponentKey;
   const [validated, setValidated] = useState(false);
-
-  const { loading } = useApiCall<
-    ResponseTypesByStatus[keyof ResponseTypesByStatus]
-  >({
-    url: API_ENDPOINT,
-    method: API_METHOD,
-  });
+  const { loading } = useApiCall(getSettingsPage, { authContext });
 
   useEffect(() => {
     if (!loading) {

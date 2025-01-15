@@ -3,10 +3,10 @@ import { DeviceContext } from '../contexts/Device';
 import { paths, operations, components } from '../openapi_schema';
 import {
   defaultValidatedInputState,
-  ExtractResponseTypes,
   ModalType,
   ValidatedInputState,
 } from '../types';
+import { GetStylesPageResponses, getStylesPage } from '../services/apiServices';
 import { useApiCall } from '../utils/api';
 import { ToastContext } from '../contexts/Toast';
 import { AuthContext } from '../contexts/Auth';
@@ -33,14 +33,6 @@ import { Toggle1 } from '../components/Utils/Toggle';
 import { AuthModalsContext } from '../contexts/AuthModals';
 import { ValidatedInputPhoneNumber } from '../components/Form/ValidatedInputPhoneNumber';
 import { E164Number } from 'libphonenumber-js';
-import { VerifyOTP } from '../components/Auth/OTP';
-
-const API_ENDPOINT = '/pages/styles/';
-const API_METHOD = 'get';
-
-type ResponseTypesByStatus = ExtractResponseTypes<
-  paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
->;
 
 function Styles() {
   let deviceContext = useContext(DeviceContext);
@@ -74,9 +66,8 @@ function Styles() {
     ...defaultValidatedInputState<E164Number>(null),
   });
 
-  const {} = useApiCall<ResponseTypesByStatus[keyof ResponseTypesByStatus]>({
-    url: API_ENDPOINT,
-    method: API_METHOD,
+  const { data, status, loading } = useApiCall(getStylesPage, {
+    authContext,
   });
 
   const [counter, setCounter] = useState<number>(0);
