@@ -1,7 +1,10 @@
 import {
   createApiService,
-  ExtractRequestQueryParamsType,
+  ExtractRequestDataType,
+  ExtractRequestParamsType,
+  ExtractRequestPathParamsType,
   ExtractResponseTypes,
+  ExtractRequestContentType,
 } from '../utils/api';
 import { paths, operations, components } from '../openapi_schema';
 
@@ -182,23 +185,24 @@ type GetIsGalleryAvailableResponses = ExtractResponseTypes<
   paths['/galleries/details/available/']['get']
 >;
 
-getIsApiKeyAvailable({
-  params: {
-    name: 'asd',
-  },
-});
+type F = ExtractResponseTypes<paths['/galleries/']['post']>;
+type G = ExtractRequestDataType<paths['/galleries/']['post']>;
+type H = ExtractRequestDataType<paths['/galleries/']['post']>;
 
-type QueryParams = Parameters<typeof getIsGalleryAvailable>[0]['params'];
+type E = ExtractRequestContentType<paths['/galleries/']['post']>;
 
-type A = ExtractRequestQueryParamsType<
+type D = ExtractRequestDataType<paths['/galleries/']['post']>;
+
+type A = ExtractRequestParamsType<
   paths['/galleries/details/available/']['get']
 >;
 
-type PathParams = Parameters<typeof getIsGalleryAvailable>[0]['pathParams'];
-type Data = Parameters<typeof getIsGalleryAvailable>[0]['data'];
+type B = ExtractRequestParamsType<paths['/admin/users/{user_id}/']['get']>;
+type C = ExtractRequestParamsType<paths['/pages/settings/api-keys/']['get']>;
 
-type TestParams = paths['/galleries/details/available/']['get']['parameters'];
-type TestQuery = TestParams extends { query: infer Q } ? Q : never;
+postGallery({
+  requestContentType: 'application/json',
+});
 
 const postGallerySync = createApiService(
   '/galleries/{gallery_id}/sync/',
