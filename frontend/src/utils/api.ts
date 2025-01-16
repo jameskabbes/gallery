@@ -106,8 +106,13 @@ type RequestDataTypeProp<
     : RequestBody extends { content?: infer ContentTypes }
     ? { data?: ContentTypes[keyof ContentTypes & TRequestContentType] }
     : { data?: never }
-  : // whenever the generic isn't set
-    { data?: never };
+  : TOperation extends { requestBody?: infer RequestBody }
+  ? RequestBody extends
+      | { content: infer ContentTypes }
+      | { content?: infer ContentTypes }
+    ? { data?: ContentTypes[keyof ContentTypes & TRequestContentType] }
+    : { data?: never }
+  : { data?: never };
 
 type RequestDataType<
   TOperation,
@@ -278,100 +283,61 @@ function createApiService<
     });
     return response;
   };
-
-  //   async function call({
-  //     pathParams,
-  //     data,
-  //     headers = {},
-  //     ...rest
-  //   }: ApiServiceParams<
-  //     TPath,
-  //     TMethod,
-  //     TResponseContentType,
-  //     TRequestData
-  //   >): Promise<
-  //     ApiServiceReturn<
-  //       TPath,
-  //       TMethod,
-  //       TResponseContentType,
-  //       TResponseStatusCode,
-  //       TResponseData
-  //     >
-  //   > {
-  //     let url: CallApiOptions<TRequestData>['url'] = path;
-  //     if (pathParams && typeof pathParams === 'object') {
-  //       for (const key in pathParams) {
-  //         url = url.replace(`{${key}}`, pathParams[key]);
-  //       }
-  //     }
-
-  //     const response = await callApi<TResponseData, TRequestData>({
-  //       url,
-  //       method,
-  //       headers: {
-  //         'Content-Type': requestContentType,
-  //         Accept: responseContentType,
-  //         ...headers,
-  //       },
-  //       ...rest,
-  //     });
-  //     return response;
-  //   }
-  //   return call;
 }
 
-//   responseContentType = Object.keys(
-//     openapi_schema.paths[path][method as string].responses[
-//       Object.keys(openapi_schema.paths[path][method as string].responses)[0]
-//     ].content
-//   )[0],
+function useApiCall<
+  TPath extends keyof paths,
+  TMethod extends keyof paths[TPath] & AxiosRequestConfig['method'],
+  TResponseContentType extends ResponseContentType<paths[TPath][TMethod]>,
+  TRequestContentType extends RequestContentType<paths[TPath][TMethod]>,
+  TResponseStatusCode extends ResponseStatusCode<paths[TPath][TMethod]>,
+  TRequestData extends RequestDataType<
+    paths[TPath][TMethod],
+    TRequestContentType
+  >,
+  TResponseData extends ResponseDataType<
+    paths[TPath][TMethod],
+    TResponseContentType,
+    TResponseStatusCode
+  >
+>(
+  apiService: ApiService<
+    TPath,
+    TMethod,
+    TRequestContentType,
+    TResponseContentType,
+    TResponseStatusCode,
+    TRequestData,
+    TResponseData
+  >,
+  apiServiceOptions: ApiServiceParams<
+    TPath,
+    TMethod,
+    TRequestContentType,
+    TResponseData
+  >,
+  dependencies: any[] = []
+): UseApiCallReturn<TResponseData> {
+  const [loading, setLoading] = useState<boolean>(true);
+  const [response, setResponse] = useState<AxiosResponse<TResponseData>>(null);
 
-// function useApiCall<
-//   TPath extends keyof paths,
-//   TMethod extends keyof paths[TPath],
-//   TResponseContentType extends ResponseContentType<paths[TPath][TMethod]>,
-//   TRequestContentType extends RequestContentType<paths[TPath][TMethod]>,
-// >(
-//   apiService: ApiService<
-//     TPath,
-//     TMethod,
-//     TRequestContentType,
-//     TResponseContentType
-//   >,
-//   apiServiceOptions: ApiServiceParams<TPath, TMethod, TRequestContentType>,
-//   dependencies: any[] = []
-// ): UseApiCallReturn<
-//   ExtractResponseTypes<paths[TPath][TMethod]>[keyof ExtractResponseTypes<
-//     paths[TPath][TMethod]
-//   >]
-// > {
-//   const [loading, setLoading] = useState<boolean>(true);
-//   const [response, setResponse] =
-//     useState<
-//       AxiosResponse<
-//         ExtractResponseTypes<paths[Path][Method]>[keyof ExtractResponseTypes<
-//           paths[Path][Method]
-//         >]
-//       >
-//     >(null);
+  async function refetch() {
+    setLoading(true);
+    const b = await apiService(apiServiceOptions);
+    setResponse(b);
+    setLoading(false);
+  }
 
-//   async function refetch() {
-//     setLoading(true);
-//     const b = await apiService(apiServiceOptions);
-//     setResponse(b);
-//     setLoading(false);
-//   }
+  useEffect(() => {
+    refetch();
+  }, dependencies);
 
-//   useEffect(() => {
-//     refetch();
-//   }, dependencies);
-
-//   return { ...response, loading, refetch };
-// }
+  return { ...response, loading, refetch };
+}
 
 export {
   callApi,
-  //   useApiCall,
+  useApiCall,
   createApiService,
   ResponseContentType,
   RequestContentType,

@@ -100,6 +100,11 @@ type PatchMeResponses = ResponseDataTypeByStatusCode<
 const getMe = createApiService('/users/me/', 'get');
 type GetMeResponses = ResponseDataTypeByStatusCode<paths['/users/me/']['get']>;
 
+const deleteMe = createApiService('/users/me/', 'delete');
+type DeleteMeResponses = ResponseDataTypeByStatusCode<
+  paths['/users/me/']['delete']
+>;
+
 const getIsUserUsernameAvailable = createApiService(
   '/users/available/username/{username}/',
   'get'
@@ -109,6 +114,12 @@ type GetIsUserUsernameAvailableResponses = ResponseDataTypeByStatusCode<
 >;
 
 // User Access Tokens
+
+const getUserAccessTokens = createApiService('/user-access-tokens/', 'get');
+type GetUserAccessTokensResponses = ResponseDataTypeByStatusCode<
+  paths['/user-access-tokens/']['get']
+>;
+
 const deleteUserAccessToken = createApiService(
   '/user-access-tokens/{user_access_token_id}/',
   'delete'
@@ -185,34 +196,6 @@ type PostGalleryResponses = ResponseDataTypeByStatusCode<
   paths['/galleries/']['post']
 >;
 
-type A = RequestContentType<paths['/galleries/']['post']>;
-type B = ResponseContentType<paths['/galleries/']['post']>;
-type C = ResponseDataTypeByStatusCode<
-  paths['/galleries/']['post'],
-  'application/json',
-  200
->;
-type D = ResponseDataType<paths['/galleries/']['post']>;
-type E = RequestDataType<paths['/galleries/']['post']>;
-type F = RequestParamsType<paths['/galleries/']['post']>;
-type G = RequestPathParamsType<paths['/galleries/']['post']>;
-
-async function call() {
-  const response = await postGallery({
-    data: {
-      name: 'string',
-      parent_id: 'string',
-      visibility_level: 1,
-    },
-  });
-
-  const data = response['data'] as PostGalleryResponses['200'];
-}
-
-// postGallery({
-//   requestContentType: 'application/json',
-// });
-
 const patchGallery = createApiService('/galleries/{gallery_id}/', 'patch');
 type PatchGalleryResponses = ResponseDataTypeByStatusCode<
   paths['/galleries/{gallery_id}/']['patch']
@@ -264,13 +247,21 @@ type GetSettingsPageResponses = ResponseDataTypeByStatusCode<
   paths['/pages/settings/']['get']
 >;
 
-const getApiKeysSettingPage = createApiService(
+const getApiKeysSettingsPage = createApiService(
   '/pages/settings/api-keys/',
   'get'
 );
 
-type GetApiKeysSettingPageResponses = ResponseDataTypeByStatusCode<
+type GetApiKeysSettingsPageResponses = ResponseDataTypeByStatusCode<
   paths['/pages/settings/api-keys/']['get']
+>;
+
+const getUserAccessTokensSettingsPage = createApiService(
+  '/pages/settings/user-access-tokens/',
+  'get'
+);
+type GetUserAccessTokensSettingsPageResponses = ResponseDataTypeByStatusCode<
+  paths['/pages/settings/user-access-tokens/']['get']
 >;
 
 const getGalleryPage = createApiService(
@@ -312,8 +303,12 @@ export {
   PatchMeResponses,
   getMe,
   GetMeResponses,
+  deleteMe,
+  DeleteMeResponses,
   getIsUserUsernameAvailable,
   GetIsUserUsernameAvailableResponses,
+  getUserAccessTokens,
+  GetUserAccessTokensResponses,
   deleteUserAccessToken,
   DeleteUserAccessTokenResponses,
   getApiKey,
@@ -350,8 +345,10 @@ export {
   GetStylesPageResponses,
   getSettingsPage,
   GetSettingsPageResponses,
-  getApiKeysSettingPage,
-  GetApiKeysSettingPageResponses,
+  getApiKeysSettingsPage,
+  GetApiKeysSettingsPageResponses,
+  getUserAccessTokensSettingsPage,
+  GetUserAccessTokensSettingsPageResponses,
   getGalleryPage,
   GetGalleryPageResponses,
   getHomePage,

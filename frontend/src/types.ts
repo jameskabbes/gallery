@@ -3,6 +3,10 @@ import { paths, operations, components } from './openapi_schema';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { E164Number } from 'libphonenumber-js';
 
+type GetElementTypeFromArray<T extends any[]> = T extends (infer U)[]
+  ? U
+  : never;
+
 type FirstKey<T> = keyof {
   [K in keyof T as K extends string ? K : never]: T[K];
 } extends infer O
@@ -235,6 +239,7 @@ interface SurfaceContextType {
 type OrderByState = 'off' | 'asc' | 'desc';
 
 export {
+  GetElementTypeFromArray,
   FirstKey,
   ArrayElement,
   CallApiOptions,

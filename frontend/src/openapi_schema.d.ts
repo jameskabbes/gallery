@@ -3,260 +3,261 @@
  * Do not make direct changes to the file.
  */
 
+
 export interface paths {
-  '/auth/': {
+  "/auth/": {
     /** Get Auth Root */
-    get: operations['get_auth_root_auth__get'];
+    get: operations["get_auth_root_auth__get"];
   };
-  '/auth/token/': {
+  "/auth/token/": {
     /** Post Token */
-    post: operations['post_token_auth_token__post'];
+    post: operations["post_token_auth_token__post"];
   };
-  '/auth/login/password/': {
+  "/auth/login/password/": {
     /** Post Login Password */
-    post: operations['post_login_password_auth_login_password__post'];
+    post: operations["post_login_password_auth_login_password__post"];
   };
-  '/auth/login/magic-link/': {
+  "/auth/login/magic-link/": {
     /** Post Login Magic Link */
-    post: operations['post_login_magic_link_auth_login_magic_link__post'];
+    post: operations["post_login_magic_link_auth_login_magic_link__post"];
   };
-  '/auth/login/otp/email/': {
+  "/auth/login/otp/email/": {
     /** Post Login Otp Email */
-    post: operations['post_login_otp_email_auth_login_otp_email__post'];
+    post: operations["post_login_otp_email_auth_login_otp_email__post"];
   };
-  '/auth/login/otp/phone_number/': {
+  "/auth/login/otp/phone_number/": {
     /** Post Login Otp Phone Number */
-    post: operations['post_login_otp_phone_number_auth_login_otp_phone_number__post'];
+    post: operations["post_login_otp_phone_number_auth_login_otp_phone_number__post"];
   };
-  '/auth/login/google/': {
+  "/auth/login/google/": {
     /** Post Login Google */
-    post: operations['post_login_google_auth_login_google__post'];
+    post: operations["post_login_google_auth_login_google__post"];
   };
-  '/auth/signup/': {
+  "/auth/signup/": {
     /** Post Signup */
-    post: operations['post_signup_auth_signup__post'];
+    post: operations["post_signup_auth_signup__post"];
   };
-  '/auth/request/signup/email/': {
+  "/auth/request/signup/email/": {
     /** Post Request Sign Up Email */
-    post: operations['post_request_sign_up_email_auth_request_signup_email__post'];
+    post: operations["post_request_sign_up_email_auth_request_signup_email__post"];
   };
-  '/auth/request/signup/sms/': {
+  "/auth/request/signup/sms/": {
     /** Post Request Sign Up Sms */
-    post: operations['post_request_sign_up_sms_auth_request_signup_sms__post'];
+    post: operations["post_request_sign_up_sms_auth_request_signup_sms__post"];
   };
-  '/auth/request/magic-link/email/': {
+  "/auth/request/magic-link/email/": {
     /** Post Request Magic Link Email */
-    post: operations['post_request_magic_link_email_auth_request_magic_link_email__post'];
+    post: operations["post_request_magic_link_email_auth_request_magic_link_email__post"];
   };
-  '/auth/request/magic-link/sms/': {
+  "/auth/request/magic-link/sms/": {
     /** Post Request Magic Link Sms */
-    post: operations['post_request_magic_link_sms_auth_request_magic_link_sms__post'];
+    post: operations["post_request_magic_link_sms_auth_request_magic_link_sms__post"];
   };
-  '/auth/request/otp/email/': {
+  "/auth/request/otp/email/": {
     /** Post Request Otp Email */
-    post: operations['post_request_otp_email_auth_request_otp_email__post'];
+    post: operations["post_request_otp_email_auth_request_otp_email__post"];
   };
-  '/auth/request/otp/sms/': {
+  "/auth/request/otp/sms/": {
     /** Post Request Otp Email */
-    post: operations['post_request_otp_email_auth_request_otp_sms__post'];
+    post: operations["post_request_otp_email_auth_request_otp_sms__post"];
   };
-  '/auth/logout/': {
+  "/auth/logout/": {
     /** Logout */
-    post: operations['logout_auth_logout__post'];
+    post: operations["logout_auth_logout__post"];
   };
-  '/users/me/': {
+  "/users/me/": {
     /** Get User Me */
-    get: operations['get_user_me_users_me__get'];
+    get: operations["get_user_me_users_me__get"];
     /** Delete Self */
-    delete: operations['delete_self_users_me__delete'];
+    delete: operations["delete_self_users_me__delete"];
     /** Patch Self */
-    patch: operations['patch_self_users_me__patch'];
+    patch: operations["patch_self_users_me__patch"];
   };
-  '/users/{user_id}/': {
+  "/users/{user_id}/": {
     /** Get User By Id */
-    get: operations['get_user_by_id_users__user_id___get'];
+    get: operations["get_user_by_id_users__user_id___get"];
   };
-  '/users/': {
+  "/users/": {
     /** Get Users */
-    get: operations['get_users_users__get'];
+    get: operations["get_users_users__get"];
   };
-  '/users/available/username/{username}/': {
+  "/users/available/username/{username}/": {
     /** Get User Username Available */
-    get: operations['get_user_username_available_users_available_username__username___get'];
+    get: operations["get_user_username_available_users_available_username__username___get"];
   };
-  '/admin/users/{user_id}/': {
+  "/admin/users/{user_id}/": {
     /** Get User By Id Admin */
-    get: operations['get_user_by_id_admin_admin_users__user_id___get'];
+    get: operations["get_user_by_id_admin_admin_users__user_id___get"];
     /** Delete User Admin */
-    delete: operations['delete_user_admin_admin_users__user_id___delete'];
+    delete: operations["delete_user_admin_admin_users__user_id___delete"];
     /** Patch User Admin */
-    patch: operations['patch_user_admin_admin_users__user_id___patch'];
+    patch: operations["patch_user_admin_admin_users__user_id___patch"];
   };
-  '/admin/users/': {
+  "/admin/users/": {
     /** Get Users Admin */
-    get: operations['get_users_admin_admin_users__get'];
+    get: operations["get_users_admin_admin_users__get"];
     /** Post User Admin */
-    post: operations['post_user_admin_admin_users__post'];
+    post: operations["post_user_admin_admin_users__post"];
   };
-  '/user-access-tokens/{user_access_token_id}/': {
+  "/user-access-tokens/{user_access_token_id}/": {
     /** Get User Access Token By Id */
-    get: operations['get_user_access_token_by_id_user_access_tokens__user_access_token_id___get'];
+    get: operations["get_user_access_token_by_id_user_access_tokens__user_access_token_id___get"];
     /** Delete User Access Token */
-    delete: operations['delete_user_access_token_user_access_tokens__user_access_token_id___delete'];
+    delete: operations["delete_user_access_token_user_access_tokens__user_access_token_id___delete"];
   };
-  '/user-access-tokens/': {
+  "/user-access-tokens/": {
     /** Get User Access Tokens */
-    get: operations['get_user_access_tokens_user_access_tokens__get'];
+    get: operations["get_user_access_tokens_user_access_tokens__get"];
   };
-  '/user-access-tokens/details/count/': {
+  "/user-access-tokens/details/count/": {
     /** Get User Access Tokens Count */
-    get: operations['get_user_access_tokens_count_user_access_tokens_details_count__get'];
+    get: operations["get_user_access_tokens_count_user_access_tokens_details_count__get"];
   };
-  '/admin/user-access-tokens/{user_access_token_id}/': {
+  "/admin/user-access-tokens/{user_access_token_id}/": {
     /** Get User Access Token By Id Admin */
-    get: operations['get_user_access_token_by_id_admin_admin_user_access_tokens__user_access_token_id___get'];
+    get: operations["get_user_access_token_by_id_admin_admin_user_access_tokens__user_access_token_id___get"];
     /** Delete User Access Token Admin */
-    delete: operations['delete_user_access_token_admin_admin_user_access_tokens__user_access_token_id___delete'];
+    delete: operations["delete_user_access_token_admin_admin_user_access_tokens__user_access_token_id___delete"];
   };
-  '/admin/user-access-tokens/': {
+  "/admin/user-access-tokens/": {
     /** Post User Access Token Admin */
-    post: operations['post_user_access_token_admin_admin_user_access_tokens__post'];
+    post: operations["post_user_access_token_admin_admin_user_access_tokens__post"];
   };
-  '/admin/user-access-tokens/users/{user_id}/': {
+  "/admin/user-access-tokens/users/{user_id}/": {
     /** Get User Access Tokens Admin */
-    get: operations['get_user_access_tokens_admin_admin_user_access_tokens_users__user_id___get'];
+    get: operations["get_user_access_tokens_admin_admin_user_access_tokens_users__user_id___get"];
   };
-  '/api-keys/{api_key_id}/': {
+  "/api-keys/{api_key_id}/": {
     /** Get Api Key By Id */
-    get: operations['get_api_key_by_id_api_keys__api_key_id___get'];
+    get: operations["get_api_key_by_id_api_keys__api_key_id___get"];
     /** Delete Api Key */
-    delete: operations['delete_api_key_api_keys__api_key_id___delete'];
+    delete: operations["delete_api_key_api_keys__api_key_id___delete"];
     /** Patch Api Key */
-    patch: operations['patch_api_key_api_keys__api_key_id___patch'];
+    patch: operations["patch_api_key_api_keys__api_key_id___patch"];
   };
-  '/api-keys/': {
+  "/api-keys/": {
     /** Get User Api Keys */
-    get: operations['get_user_api_keys_api_keys__get'];
+    get: operations["get_user_api_keys_api_keys__get"];
     /** Post Api Key To User */
-    post: operations['post_api_key_to_user_api_keys__post'];
+    post: operations["post_api_key_to_user_api_keys__post"];
   };
-  '/api-keys/{api_key_id}/generate-jwt/': {
+  "/api-keys/{api_key_id}/generate-jwt/": {
     /** Get Api Key Jwt */
-    get: operations['get_api_key_jwt_api_keys__api_key_id__generate_jwt__get'];
+    get: operations["get_api_key_jwt_api_keys__api_key_id__generate_jwt__get"];
   };
-  '/api-keys/details/count/': {
+  "/api-keys/details/count/": {
     /** Get User Api Keys Count */
-    get: operations['get_user_api_keys_count_api_keys_details_count__get'];
+    get: operations["get_user_api_keys_count_api_keys_details_count__get"];
   };
-  '/api-keys/details/available/': {
+  "/api-keys/details/available/": {
     /** Get Api Key Available */
-    get: operations['get_api_key_available_api_keys_details_available__get'];
+    get: operations["get_api_key_available_api_keys_details_available__get"];
   };
-  '/admin/api-keys/{api_key_id}/': {
+  "/admin/api-keys/{api_key_id}/": {
     /** Get Api Key By Id Admin */
-    get: operations['get_api_key_by_id_admin_admin_api_keys__api_key_id___get'];
+    get: operations["get_api_key_by_id_admin_admin_api_keys__api_key_id___get"];
     /** Delete Api Key Admin */
-    delete: operations['delete_api_key_admin_admin_api_keys__api_key_id___delete'];
+    delete: operations["delete_api_key_admin_admin_api_keys__api_key_id___delete"];
     /** Patch Api Key Admin */
-    patch: operations['patch_api_key_admin_admin_api_keys__api_key_id___patch'];
+    patch: operations["patch_api_key_admin_admin_api_keys__api_key_id___patch"];
   };
-  '/admin/api-keys/': {
+  "/admin/api-keys/": {
     /** Post Api Key To User Admin */
-    post: operations['post_api_key_to_user_admin_admin_api_keys__post'];
+    post: operations["post_api_key_to_user_admin_admin_api_keys__post"];
   };
-  '/admin/api-keys/users/{user_id}/': {
+  "/admin/api-keys/users/{user_id}/": {
     /** Get User Api Keys Admin */
-    get: operations['get_user_api_keys_admin_admin_api_keys_users__user_id___get'];
+    get: operations["get_user_api_keys_admin_admin_api_keys_users__user_id___get"];
   };
-  '/admin/api-keys/details/available/': {
+  "/admin/api-keys/details/available/": {
     /** Get Api Key Available Admin */
-    get: operations['get_api_key_available_admin_admin_api_keys_details_available__get'];
+    get: operations["get_api_key_available_admin_admin_api_keys_details_available__get"];
   };
-  '/api-key-scopes/api-keys/{api_key_id}/scopes/{scope_id}/': {
+  "/api-key-scopes/api-keys/{api_key_id}/scopes/{scope_id}/": {
     /** Add Scope To Api Key */
-    post: operations['add_scope_to_api_key_api_key_scopes_api_keys__api_key_id__scopes__scope_id___post'];
+    post: operations["add_scope_to_api_key_api_key_scopes_api_keys__api_key_id__scopes__scope_id___post"];
     /** Remove Scope From Api Key */
-    delete: operations['remove_scope_from_api_key_api_key_scopes_api_keys__api_key_id__scopes__scope_id___delete'];
+    delete: operations["remove_scope_from_api_key_api_key_scopes_api_keys__api_key_id__scopes__scope_id___delete"];
   };
-  '/admin/api-key-scopes/api-keys/{api_key_id}/scopes/{scope_id}/': {
+  "/admin/api-key-scopes/api-keys/{api_key_id}/scopes/{scope_id}/": {
     /** Add Scope To Api Key Admin */
-    post: operations['add_scope_to_api_key_admin_admin_api_key_scopes_api_keys__api_key_id__scopes__scope_id___post'];
+    post: operations["add_scope_to_api_key_admin_admin_api_key_scopes_api_keys__api_key_id__scopes__scope_id___post"];
     /** Remove Scope From Api Key Admin */
-    delete: operations['remove_scope_from_api_key_admin_admin_api_key_scopes_api_keys__api_key_id__scopes__scope_id___delete'];
+    delete: operations["remove_scope_from_api_key_admin_admin_api_key_scopes_api_keys__api_key_id__scopes__scope_id___delete"];
   };
-  '/galleries/{gallery_id}/': {
+  "/galleries/{gallery_id}/": {
     /** Get Gallery By Id */
-    get: operations['get_gallery_by_id_galleries__gallery_id___get'];
+    get: operations["get_gallery_by_id_galleries__gallery_id___get"];
     /** Delete Gallery */
-    delete: operations['delete_gallery_galleries__gallery_id___delete'];
+    delete: operations["delete_gallery_galleries__gallery_id___delete"];
     /** Patch Gallery */
-    patch: operations['patch_gallery_galleries__gallery_id___patch'];
+    patch: operations["patch_gallery_galleries__gallery_id___patch"];
   };
-  '/galleries/': {
+  "/galleries/": {
     /** Get Galleries */
-    get: operations['get_galleries_galleries__get'];
+    get: operations["get_galleries_galleries__get"];
     /** Post Gallery */
-    post: operations['post_gallery_galleries__post'];
+    post: operations["post_gallery_galleries__post"];
   };
-  '/galleries/details/available/': {
+  "/galleries/details/available/": {
     /** Get Gallery Available */
-    get: operations['get_gallery_available_galleries_details_available__get'];
+    get: operations["get_gallery_available_galleries_details_available__get"];
   };
-  '/galleries/{gallery_id}/upload/': {
+  "/galleries/{gallery_id}/upload/": {
     /** Upload File To Gallery */
-    post: operations['upload_file_to_gallery_galleries__gallery_id__upload__post'];
+    post: operations["upload_file_to_gallery_galleries__gallery_id__upload__post"];
   };
-  '/galleries/{gallery_id}/sync/': {
+  "/galleries/{gallery_id}/sync/": {
     /** Sync Gallery */
-    post: operations['sync_gallery_galleries__gallery_id__sync__post'];
+    post: operations["sync_gallery_galleries__gallery_id__sync__post"];
   };
-  '/admin/galleries/{gallery_id}/': {
+  "/admin/galleries/{gallery_id}/": {
     /** Get Gallery By Id Admin */
-    get: operations['get_gallery_by_id_admin_admin_galleries__gallery_id___get'];
+    get: operations["get_gallery_by_id_admin_admin_galleries__gallery_id___get"];
     /** Delete Gallery Admin */
-    delete: operations['delete_gallery_admin_admin_galleries__gallery_id___delete'];
+    delete: operations["delete_gallery_admin_admin_galleries__gallery_id___delete"];
     /** Patch Gallery Admin */
-    patch: operations['patch_gallery_admin_admin_galleries__gallery_id___patch'];
+    patch: operations["patch_gallery_admin_admin_galleries__gallery_id___patch"];
   };
-  '/admin/galleries/': {
+  "/admin/galleries/": {
     /** Post Gallery Admin */
-    post: operations['post_gallery_admin_admin_galleries__post'];
+    post: operations["post_gallery_admin_admin_galleries__post"];
   };
-  '/admin/galleries/details/available/': {
+  "/admin/galleries/details/available/": {
     /** Get Gallery Available Admin */
-    get: operations['get_gallery_available_admin_admin_galleries_details_available__get'];
+    get: operations["get_gallery_available_admin_admin_galleries_details_available__get"];
   };
-  '/admin/galleries/users/{user_id}': {
+  "/admin/galleries/users/{user_id}": {
     /** Get Galleries By User Admin */
-    get: operations['get_galleries_by_user_admin_admin_galleries_users__user_id__get'];
+    get: operations["get_galleries_by_user_admin_admin_galleries_users__user_id__get"];
   };
-  '/pages/profile/': {
+  "/pages/profile/": {
     /** Get Pages Profile */
-    get: operations['get_pages_profile_pages_profile__get'];
+    get: operations["get_pages_profile_pages_profile__get"];
   };
-  '/pages/home/': {
+  "/pages/home/": {
     /** Get Home Page */
-    get: operations['get_home_page_pages_home__get'];
+    get: operations["get_home_page_pages_home__get"];
   };
-  '/pages/settings/': {
+  "/pages/settings/": {
     /** Get Settings Page */
-    get: operations['get_settings_page_pages_settings__get'];
+    get: operations["get_settings_page_pages_settings__get"];
   };
-  '/pages/settings/api-keys/': {
+  "/pages/settings/api-keys/": {
     /** Get Settings Api Keys Page */
-    get: operations['get_settings_api_keys_page_pages_settings_api_keys__get'];
+    get: operations["get_settings_api_keys_page_pages_settings_api_keys__get"];
   };
-  '/pages/settings/user-access-tokens/': {
+  "/pages/settings/user-access-tokens/": {
     /** Get Settings User Access Tokens Page */
-    get: operations['get_settings_user_access_tokens_page_pages_settings_user_access_tokens__get'];
+    get: operations["get_settings_user_access_tokens_page_pages_settings_user_access_tokens__get"];
   };
-  '/pages/styles/': {
+  "/pages/styles/": {
     /** Get Styles Page */
-    get: operations['get_styles_page_pages_styles__get'];
+    get: operations["get_styles_page_pages_styles__get"];
   };
-  '/pages/galleries/{gallery_id}/': {
+  "/pages/galleries/{gallery_id}/": {
     /** Get Gallery Page */
-    get: operations['get_gallery_page_pages_galleries__gallery_id___get'];
+    get: operations["get_gallery_page_pages_galleries__gallery_id___get"];
   };
 }
 
@@ -355,7 +356,7 @@ export interface components {
        * Type
        * @enum {string}
        */
-      type: 'access_token' | 'api_key' | 'otp' | 'sign_up';
+      type: "access_token" | "api_key" | "otp" | "sign_up";
       /**
        * Expiry
        * Format: date-time
@@ -533,63 +534,61 @@ export interface components {
     };
     /** GetAuthBaseReturn */
     GetAuthBaseReturn: {
-      user: components['schemas']['UserPrivate'] | null;
+      user: components["schemas"]["UserPrivate"] | null;
       /** Scope Ids */
       scope_ids: number[] | null;
-      auth_credential:
-        | components['schemas']['AuthCredentialIdTypeAndExpiry']
-        | null;
+      auth_credential: components["schemas"]["AuthCredentialIdTypeAndExpiry"] | null;
     };
     /** GetAuthReturn */
     GetAuthReturn: {
-      auth: components['schemas']['GetAuthBaseReturn'];
+      auth: components["schemas"]["GetAuthBaseReturn"];
     };
     /** GetGalleryPageResponse */
     GetGalleryPageResponse: {
-      auth: components['schemas']['GetAuthBaseReturn'];
-      gallery: components['schemas']['GalleryPublic'];
+      auth: components["schemas"]["GetAuthBaseReturn"];
+      gallery: components["schemas"]["GalleryPublic"];
       /** Parents */
-      parents: components['schemas']['GalleryPublic'][];
+      parents: components["schemas"]["GalleryPublic"][];
       /** Children */
-      children: components['schemas']['GalleryPublic'][];
+      children: components["schemas"]["GalleryPublic"][];
     };
     /** GetHomePageResponse */
     GetHomePageResponse: {
-      auth: components['schemas']['GetAuthBaseReturn'];
+      auth: components["schemas"]["GetAuthBaseReturn"];
     };
     /** GetProfilePageResponse */
     GetProfilePageResponse: {
-      auth: components['schemas']['GetAuthBaseReturn'];
-      user?: components['schemas']['UserPrivate'] | null;
+      auth: components["schemas"]["GetAuthBaseReturn"];
+      user?: components["schemas"]["UserPrivate"] | null;
     };
     /** GetSettingsApiKeysPageResponse */
     GetSettingsApiKeysPageResponse: {
-      auth: components['schemas']['GetAuthBaseReturn'];
+      auth: components["schemas"]["GetAuthBaseReturn"];
       /** Api Key Count */
       api_key_count: number;
       /** Api Keys */
-      api_keys: components['schemas']['ApiKeyPrivate'][];
+      api_keys: components["schemas"]["ApiKeyPrivate"][];
     };
     /** GetSettingsPageResponse */
     GetSettingsPageResponse: {
-      auth: components['schemas']['GetAuthBaseReturn'];
+      auth: components["schemas"]["GetAuthBaseReturn"];
     };
     /** GetSettingsUserAccessTokensPageResponse */
     GetSettingsUserAccessTokensPageResponse: {
-      auth: components['schemas']['GetAuthBaseReturn'];
+      auth: components["schemas"]["GetAuthBaseReturn"];
       /** User Access Token Count */
       user_access_token_count: number;
       /** User Access Tokens */
-      user_access_tokens: components['schemas']['UserAccessToken'][];
+      user_access_tokens: components["schemas"]["UserAccessToken"][];
     };
     /** GetStylesPageResponse */
     GetStylesPageResponse: {
-      auth: components['schemas']['GetAuthBaseReturn'];
+      auth: components["schemas"]["GetAuthBaseReturn"];
     };
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
-      detail?: components['schemas']['ValidationError'][];
+      detail?: components["schemas"]["ValidationError"][];
     };
     /** NotFoundResponse */
     NotFoundResponse: {
@@ -603,7 +602,7 @@ export interface components {
     };
     /** PostLoginWithGoogleResponse */
     PostLoginWithGoogleResponse: {
-      auth: components['schemas']['GetAuthBaseReturn'];
+      auth: components["schemas"]["GetAuthBaseReturn"];
     };
     /** PostLoginWithMagicLinkRequest */
     PostLoginWithMagicLinkRequest: {
@@ -612,7 +611,7 @@ export interface components {
     };
     /** PostLoginWithMagicLinkResponse */
     PostLoginWithMagicLinkResponse: {
-      auth: components['schemas']['GetAuthBaseReturn'];
+      auth: components["schemas"]["GetAuthBaseReturn"];
     };
     /** PostLoginWithOTPEmailRequest */
     PostLoginWithOTPEmailRequest: {
@@ -633,11 +632,11 @@ export interface components {
     };
     /** PostLoginWithOTPResponse */
     PostLoginWithOTPResponse: {
-      auth: components['schemas']['GetAuthBaseReturn'];
+      auth: components["schemas"]["GetAuthBaseReturn"];
     };
     /** PostLoginWithPasswordResponse */
     PostLoginWithPasswordResponse: {
-      auth: components['schemas']['GetAuthBaseReturn'];
+      auth: components["schemas"]["GetAuthBaseReturn"];
     };
     /** PostRequestMagicLinkEmailRequest */
     PostRequestMagicLinkEmailRequest: {
@@ -685,7 +684,7 @@ export interface components {
     };
     /** PostSignUpResponse */
     PostSignUpResponse: {
-      auth: components['schemas']['GetAuthBaseReturn'];
+      auth: components["schemas"]["GetAuthBaseReturn"];
     };
     /** PostTokenResponse */
     PostTokenResponse: {
@@ -826,13 +825,14 @@ export type $defs = Record<string, never>;
 export type external = Record<string, never>;
 
 export interface operations {
+
   /** Get Auth Root */
   get_auth_root_auth__get: {
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['GetAuthReturn'];
+          "application/json": components["schemas"]["GetAuthReturn"];
         };
       };
     };
@@ -841,20 +841,20 @@ export interface operations {
   post_token_auth_token__post: {
     requestBody: {
       content: {
-        'application/x-www-form-urlencoded': components['schemas']['Body_post_token_auth_token__post'];
+        "application/x-www-form-urlencoded": components["schemas"]["Body_post_token_auth_token__post"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['PostTokenResponse'];
+          "application/json": components["schemas"]["PostTokenResponse"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -863,26 +863,26 @@ export interface operations {
   post_login_password_auth_login_password__post: {
     requestBody: {
       content: {
-        'application/x-www-form-urlencoded': components['schemas']['Body_post_login_password_auth_login_password__post'];
+        "application/x-www-form-urlencoded": components["schemas"]["Body_post_login_password_auth_login_password__post"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['PostLoginWithPasswordResponse'];
+          "application/json": components["schemas"]["PostLoginWithPasswordResponse"];
         };
       };
       /** @description Could not validate credentials */
       401: {
         content: {
-          'application/json': components['schemas']['DetailOnlyResponse'];
+          "application/json": components["schemas"]["DetailOnlyResponse"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -891,26 +891,26 @@ export interface operations {
   post_login_magic_link_auth_login_magic_link__post: {
     requestBody: {
       content: {
-        'application/json': components['schemas']['PostLoginWithMagicLinkRequest'];
+        "application/json": components["schemas"]["PostLoginWithMagicLinkRequest"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['PostLoginWithMagicLinkResponse'];
+          "application/json": components["schemas"]["PostLoginWithMagicLinkResponse"];
         };
       };
       /** @description Invalid token */
       401: {
         content: {
-          'application/json': components['schemas']['DetailOnlyResponse'];
+          "application/json": components["schemas"]["DetailOnlyResponse"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -919,20 +919,20 @@ export interface operations {
   post_login_otp_email_auth_login_otp_email__post: {
     requestBody: {
       content: {
-        'application/json': components['schemas']['PostLoginWithOTPEmailRequest'];
+        "application/json": components["schemas"]["PostLoginWithOTPEmailRequest"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['PostLoginWithOTPResponse'];
+          "application/json": components["schemas"]["PostLoginWithOTPResponse"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -941,20 +941,20 @@ export interface operations {
   post_login_otp_phone_number_auth_login_otp_phone_number__post: {
     requestBody: {
       content: {
-        'application/json': components['schemas']['PostLoginWithOTPPhoneNumberRequest'];
+        "application/json": components["schemas"]["PostLoginWithOTPPhoneNumberRequest"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['PostLoginWithOTPResponse'];
+          "application/json": components["schemas"]["PostLoginWithOTPResponse"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -963,14 +963,14 @@ export interface operations {
   post_login_google_auth_login_google__post: {
     requestBody: {
       content: {
-        'application/json': components['schemas']['PostLoginWithGoogleRequest'];
+        "application/json": components["schemas"]["PostLoginWithGoogleRequest"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['PostLoginWithGoogleResponse'];
+          "application/json": components["schemas"]["PostLoginWithGoogleResponse"];
         };
       };
       /** @description Invalid token */
@@ -980,7 +980,7 @@ export interface operations {
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -989,20 +989,20 @@ export interface operations {
   post_signup_auth_signup__post: {
     requestBody: {
       content: {
-        'application/json': components['schemas']['PostSignUpRequest'];
+        "application/json": components["schemas"]["PostSignUpRequest"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['PostSignUpResponse'];
+          "application/json": components["schemas"]["PostSignUpResponse"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1011,20 +1011,20 @@ export interface operations {
   post_request_sign_up_email_auth_request_signup_email__post: {
     requestBody: {
       content: {
-        'application/json': components['schemas']['PostRequestSignUpEmailRequest'];
+        "application/json": components["schemas"]["PostRequestSignUpEmailRequest"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': unknown;
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1033,20 +1033,20 @@ export interface operations {
   post_request_sign_up_sms_auth_request_signup_sms__post: {
     requestBody: {
       content: {
-        'application/json': components['schemas']['PostRequestSignUpSMSRequest'];
+        "application/json": components["schemas"]["PostRequestSignUpSMSRequest"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': unknown;
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1055,20 +1055,20 @@ export interface operations {
   post_request_magic_link_email_auth_request_magic_link_email__post: {
     requestBody: {
       content: {
-        'application/json': components['schemas']['PostRequestMagicLinkEmailRequest'];
+        "application/json": components["schemas"]["PostRequestMagicLinkEmailRequest"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': unknown;
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1077,20 +1077,20 @@ export interface operations {
   post_request_magic_link_sms_auth_request_magic_link_sms__post: {
     requestBody: {
       content: {
-        'application/json': components['schemas']['PostRequestMagicLinkSMSRequest'];
+        "application/json": components["schemas"]["PostRequestMagicLinkSMSRequest"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': unknown;
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1099,20 +1099,20 @@ export interface operations {
   post_request_otp_email_auth_request_otp_email__post: {
     requestBody: {
       content: {
-        'application/json': components['schemas']['PostRequestOTPEmailRequest'];
+        "application/json": components["schemas"]["PostRequestOTPEmailRequest"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': unknown;
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1121,20 +1121,20 @@ export interface operations {
   post_request_otp_email_auth_request_otp_sms__post: {
     requestBody: {
       content: {
-        'application/json': components['schemas']['PostRequestOTPSMSRequest'];
+        "application/json": components["schemas"]["PostRequestOTPSMSRequest"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': unknown;
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1145,7 +1145,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['DetailOnlyResponse'];
+          "application/json": components["schemas"]["DetailOnlyResponse"];
         };
       };
     };
@@ -1156,7 +1156,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['UserPrivate'];
+          "application/json": components["schemas"]["UserPrivate"];
         };
       };
     };
@@ -1174,20 +1174,20 @@ export interface operations {
   patch_self_users_me__patch: {
     requestBody: {
       content: {
-        'application/json': components['schemas']['UserUpdate'];
+        "application/json": components["schemas"]["UserUpdate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['UserPrivate'];
+          "application/json": components["schemas"]["UserPrivate"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1203,13 +1203,13 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['UserPublic'];
+          "application/json": components["schemas"]["UserPublic"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1228,13 +1228,13 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['UserPublic'][];
+          "application/json": components["schemas"]["UserPublic"][];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1250,19 +1250,19 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': unknown;
+          "application/json": unknown;
         };
       };
       /** @description Username already exists */
       409: {
         content: {
-          'application/json': components['schemas']['DetailOnlyResponse'];
+          "application/json": components["schemas"]["DetailOnlyResponse"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1278,13 +1278,13 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['User'];
+          "application/json": components["schemas"]["User"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1304,7 +1304,7 @@ export interface operations {
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1318,20 +1318,20 @@ export interface operations {
     };
     requestBody: {
       content: {
-        'application/json': components['schemas']['UserAdminUpdate'];
+        "application/json": components["schemas"]["UserAdminUpdate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['User'];
+          "application/json": components["schemas"]["User"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1350,13 +1350,13 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['User'][];
+          "application/json": components["schemas"]["User"][];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1365,20 +1365,20 @@ export interface operations {
   post_user_admin_admin_users__post: {
     requestBody: {
       content: {
-        'application/json': components['schemas']['UserAdminCreate'];
+        "application/json": components["schemas"]["UserAdminCreate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['User'];
+          "application/json": components["schemas"]["User"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1394,13 +1394,13 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['UserAccessToken'];
+          "application/json": components["schemas"]["UserAccessToken"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1420,7 +1420,7 @@ export interface operations {
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1439,25 +1439,25 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['UserAccessToken'][];
+          "application/json": components["schemas"]["UserAccessToken"][];
         };
       };
       /** @description User does not have permission to view another user's access tokens */
       403: {
         content: {
-          'application/json': components['schemas']['DetailOnlyResponse'];
+          "application/json": components["schemas"]["DetailOnlyResponse"];
         };
       };
       /** @description User not found */
       404: {
         content: {
-          'application/json': components['schemas']['NotFoundResponse'];
+          "application/json": components["schemas"]["NotFoundResponse"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1468,7 +1468,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': number;
+          "application/json": number;
         };
       };
     };
@@ -1484,13 +1484,13 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['UserAccessToken'];
+          "application/json": components["schemas"]["UserAccessToken"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1510,7 +1510,7 @@ export interface operations {
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1519,20 +1519,20 @@ export interface operations {
   post_user_access_token_admin_admin_user_access_tokens__post: {
     requestBody: {
       content: {
-        'application/json': components['schemas']['UserAccessTokenAdminCreate'];
+        "application/json": components["schemas"]["UserAccessTokenAdminCreate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['UserAccessToken'];
+          "application/json": components["schemas"]["UserAccessToken"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1554,19 +1554,19 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['UserAccessToken'][];
+          "application/json": components["schemas"]["UserAccessToken"][];
         };
       };
       /** @description User not found */
       404: {
         content: {
-          'application/json': components['schemas']['NotFoundResponse'];
+          "application/json": components["schemas"]["NotFoundResponse"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1582,13 +1582,13 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['ApiKeyPrivate'];
+          "application/json": components["schemas"]["ApiKeyPrivate"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1608,7 +1608,7 @@ export interface operations {
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1622,20 +1622,20 @@ export interface operations {
     };
     requestBody: {
       content: {
-        'application/json': components['schemas']['ApiKeyUpdate'];
+        "application/json": components["schemas"]["ApiKeyUpdate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['ApiKeyPrivate'];
+          "application/json": components["schemas"]["ApiKeyPrivate"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1658,13 +1658,13 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['ApiKeyPrivate'][];
+          "application/json": components["schemas"]["ApiKeyPrivate"][];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1673,20 +1673,20 @@ export interface operations {
   post_api_key_to_user_api_keys__post: {
     requestBody: {
       content: {
-        'application/json': components['schemas']['ApiKeyCreate'];
+        "application/json": components["schemas"]["ApiKeyCreate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['ApiKeyPrivate'];
+          "application/json": components["schemas"]["ApiKeyPrivate"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1702,19 +1702,19 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['ApiKeyJWTResponse'];
+          "application/json": components["schemas"]["ApiKeyJWTResponse"];
         };
       };
       /** @description ApiKey not found */
       404: {
         content: {
-          'application/json': components['schemas']['NotFoundResponse'];
+          "application/json": components["schemas"]["NotFoundResponse"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1725,7 +1725,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': number;
+          "application/json": number;
         };
       };
     };
@@ -1741,19 +1741,19 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': unknown;
+          "application/json": unknown;
         };
       };
       /** @description ApiKey already exists */
       409: {
         content: {
-          'application/json': components['schemas']['DetailOnlyResponse'];
+          "application/json": components["schemas"]["DetailOnlyResponse"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1769,13 +1769,13 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['ApiKey'];
+          "application/json": components["schemas"]["ApiKey"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1795,7 +1795,7 @@ export interface operations {
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1809,20 +1809,20 @@ export interface operations {
     };
     requestBody: {
       content: {
-        'application/json': components['schemas']['ApiKeyAdminUpdate'];
+        "application/json": components["schemas"]["ApiKeyAdminUpdate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['ApiKey'];
+          "application/json": components["schemas"]["ApiKey"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1831,20 +1831,20 @@ export interface operations {
   post_api_key_to_user_admin_admin_api_keys__post: {
     requestBody: {
       content: {
-        'application/json': components['schemas']['ApiKeyAdminCreate'];
+        "application/json": components["schemas"]["ApiKeyAdminCreate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['ApiKey'];
+          "application/json": components["schemas"]["ApiKey"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1870,13 +1870,13 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['ApiKey'][];
+          "application/json": components["schemas"]["ApiKey"][];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1893,19 +1893,19 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': unknown;
+          "application/json": unknown;
         };
       };
       /** @description ApiKey already exists */
       409: {
         content: {
-          'application/json': components['schemas']['DetailOnlyResponse'];
+          "application/json": components["schemas"]["DetailOnlyResponse"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1922,19 +1922,19 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': unknown;
+          "application/json": unknown;
         };
       };
       /** @description ApiKey not found */
       404: {
         content: {
-          'application/json': components['schemas']['NotFoundResponse'];
+          "application/json": components["schemas"]["NotFoundResponse"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1955,13 +1955,13 @@ export interface operations {
       /** @description ApiKey not found */
       404: {
         content: {
-          'application/json': components['schemas']['NotFoundResponse'];
+          "application/json": components["schemas"]["NotFoundResponse"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1978,19 +1978,19 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': unknown;
+          "application/json": unknown;
         };
       };
       /** @description ApiKey not found */
       404: {
         content: {
-          'application/json': components['schemas']['NotFoundResponse'];
+          "application/json": components["schemas"]["NotFoundResponse"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -2011,13 +2011,13 @@ export interface operations {
       /** @description ApiKey not found */
       404: {
         content: {
-          'application/json': components['schemas']['NotFoundResponse'];
+          "application/json": components["schemas"]["NotFoundResponse"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -2033,13 +2033,13 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['GalleryPublic'];
+          "application/json": components["schemas"]["GalleryPublic"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -2059,7 +2059,7 @@ export interface operations {
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -2073,20 +2073,20 @@ export interface operations {
     };
     requestBody: {
       content: {
-        'application/json': components['schemas']['GalleryUpdate'];
+        "application/json": components["schemas"]["GalleryUpdate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['GalleryPrivate'];
+          "application/json": components["schemas"]["GalleryPrivate"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -2103,13 +2103,13 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['GalleryPrivate'][];
+          "application/json": components["schemas"]["GalleryPrivate"][];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -2118,22 +2118,20 @@ export interface operations {
   post_gallery_galleries__post: {
     requestBody: {
       content: {
-        'application/json': components['schemas']['GalleryCreate'];
-        'application/xml': { a: number; b: string };
+        "application/json": components["schemas"]["GalleryCreate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['GalleryPrivate'];
-          test: number;
+          "application/json": components["schemas"]["GalleryPrivate"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -2151,13 +2149,13 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': unknown;
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -2171,20 +2169,20 @@ export interface operations {
     };
     requestBody: {
       content: {
-        'multipart/form-data': components['schemas']['Body_upload_file_to_gallery_galleries__gallery_id__upload__post'];
+        "multipart/form-data": components["schemas"]["Body_upload_file_to_gallery_galleries__gallery_id__upload__post"];
       };
     };
     responses: {
       /** @description Successful Response */
       201: {
         content: {
-          'application/json': components['schemas']['UploadFileToGalleryResponse'];
+          "application/json": components["schemas"]["UploadFileToGalleryResponse"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -2200,13 +2198,13 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['DetailOnlyResponse'];
+          "application/json": components["schemas"]["DetailOnlyResponse"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -2222,13 +2220,13 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['Gallery'];
+          "application/json": components["schemas"]["Gallery"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -2248,7 +2246,7 @@ export interface operations {
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -2262,20 +2260,20 @@ export interface operations {
     };
     requestBody: {
       content: {
-        'application/json': components['schemas']['GalleryAdminUpdate'];
+        "application/json": components["schemas"]["GalleryAdminUpdate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['Gallery'];
+          "application/json": components["schemas"]["Gallery"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -2284,20 +2282,20 @@ export interface operations {
   post_gallery_admin_admin_galleries__post: {
     requestBody: {
       content: {
-        'application/json': components['schemas']['GalleryAdminCreate'];
+        "application/json": components["schemas"]["GalleryAdminCreate"];
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['Gallery'];
+          "application/json": components["schemas"]["Gallery"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -2316,13 +2314,13 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': unknown;
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -2342,13 +2340,13 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['Gallery'][];
+          "application/json": components["schemas"]["Gallery"][];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -2359,7 +2357,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['GetProfilePageResponse'];
+          "application/json": components["schemas"]["GetProfilePageResponse"];
         };
       };
     };
@@ -2370,7 +2368,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['GetHomePageResponse'];
+          "application/json": components["schemas"]["GetHomePageResponse"];
         };
       };
     };
@@ -2381,7 +2379,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['GetSettingsPageResponse'];
+          "application/json": components["schemas"]["GetSettingsPageResponse"];
         };
       };
     };
@@ -2404,13 +2402,13 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['GetSettingsApiKeysPageResponse'];
+          "application/json": components["schemas"]["GetSettingsApiKeysPageResponse"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -2429,13 +2427,13 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['GetSettingsUserAccessTokensPageResponse'];
+          "application/json": components["schemas"]["GetSettingsUserAccessTokensPageResponse"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -2446,7 +2444,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['GetStylesPageResponse'];
+          "application/json": components["schemas"]["GetStylesPageResponse"];
         };
       };
     };
@@ -2465,19 +2463,19 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          'application/json': components['schemas']['GetGalleryPageResponse'];
+          "application/json": components["schemas"]["GetGalleryPageResponse"];
         };
       };
       /** @description Gallery not found */
       404: {
         content: {
-          'application/json': components['schemas']['NotFoundResponse'];
+          "application/json": components["schemas"]["NotFoundResponse"];
         };
       };
       /** @description Validation Error */
       422: {
         content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
