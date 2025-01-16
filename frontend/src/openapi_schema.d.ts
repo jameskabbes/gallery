@@ -2119,6 +2119,7 @@ export interface operations {
     requestBody: {
       content: {
         'application/json': components['schemas']['GalleryCreate'];
+        'application/xml': { a: number; b: string };
       };
     };
     responses: {
@@ -2126,6 +2127,7 @@ export interface operations {
       200: {
         content: {
           'application/json': components['schemas']['GalleryPrivate'];
+          test: number;
         };
       };
       /** @description Validation Error */

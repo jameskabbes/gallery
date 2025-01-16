@@ -38,20 +38,6 @@ async function callApi<TResponseData, TRequestData = any>({
   }
 }
 
-type ExtractResponseTypes<T> = T extends {
-  responses: infer Responses;
-}
-  ? {
-      [K in keyof Responses]: Responses[K] extends {
-        content: infer ContentTypes;
-      }
-        ? {
-            [ContentType in keyof ContentTypes]: ContentTypes[ContentType];
-          }[keyof ContentTypes]
-        : never;
-    }
-  : never;
-
 type RequestContentType<TOperation> = TOperation extends {
   requestBody:
     | { content: infer ContentTypes }
@@ -60,21 +46,70 @@ type RequestContentType<TOperation> = TOperation extends {
   ? keyof ContentTypes
   : never;
 
-type ExtractRequestDataType<
+type ResponseContentType<TOperation> = TOperation extends {
+  responses: infer Responses;
+}
+  ? {
+      [StatusCode in keyof Responses]: Responses[StatusCode] extends {
+        content: infer ContentTypes;
+      }
+        ? keyof ContentTypes
+        : never;
+    }[keyof Responses]
+  : never;
+
+type ResponseStatusCode<TOperation> = TOperation extends {
+  responses: infer Responses;
+}
+  ? keyof Responses
+  : never;
+
+type ResponseDataTypeByStatusCode<
   TOperation,
-  TContentType extends RequestContentType<TOperation> = RequestContentType<TOperation>
+  TResponseContentType extends ResponseContentType<TOperation> = ResponseContentType<TOperation>,
+  TResponseStatusCode extends ResponseStatusCode<TOperation> = ResponseStatusCode<TOperation>
+> = TOperation extends {
+  responses: infer Responses;
+}
+  ? {
+      [K in keyof Responses]: K extends TResponseStatusCode
+        ? Responses[K] extends {
+            content: infer ContentTypes;
+          }
+          ? TResponseContentType extends keyof ContentTypes
+            ? ContentTypes[TResponseContentType]
+            : never
+          : never
+        : never;
+    }
+  : never;
+
+type ResponseDataType<
+  TOperation,
+  TResponseContentType extends ResponseContentType<TOperation> = ResponseContentType<TOperation>,
+  TResponseStatusCode extends ResponseStatusCode<TOperation> = ResponseStatusCode<TOperation>,
+  TResponseDataByStatus = ResponseDataTypeByStatusCode<
+    TOperation,
+    TResponseContentType,
+    TResponseStatusCode
+  >
+> = TResponseDataByStatus[keyof TResponseDataByStatus];
+
+type RequestDataType<
+  TOperation,
+  TRequestContentType extends RequestContentType<TOperation> = RequestContentType<TOperation>
 > = TOperation extends {
   requestBody: infer RequestBody;
 }
   ? RequestBody extends { content: infer ContentTypes }
-    ? { data: ContentTypes[keyof ContentTypes & TContentType] }
+    ? { data: ContentTypes[keyof ContentTypes & TRequestContentType] }
     : RequestBody extends { content?: infer ContentTypes }
-    ? { data?: ContentTypes[keyof ContentTypes & TContentType] }
+    ? { data?: ContentTypes[keyof ContentTypes & TRequestContentType] }
     : { data?: never }
   : // whenever the generic isn't set
     { data?: {} };
 
-type ExtractRequestParamsType<TOperation> = TOperation extends {
+type RequestParamsType<TOperation> = TOperation extends {
   parameters: infer Params;
 }
   ? Params extends { query: infer U }
@@ -85,7 +120,7 @@ type ExtractRequestParamsType<TOperation> = TOperation extends {
   : // whenever the generic isn't set
     { params?: {} };
 
-type ExtractRequestPathParamsType<TOperation> = TOperation extends {
+type RequestPathParamsType<TOperation> = TOperation extends {
   parameters: infer Params;
 }
   ? Params extends { path: infer U }
@@ -98,85 +133,133 @@ type ExtractRequestPathParamsType<TOperation> = TOperation extends {
 
 // Extract the parameters type for the ApiService function
 type ApiServiceParams<
-  Path extends keyof paths,
-  Method extends keyof paths[Path],
-  TRequestContentType extends RequestContentType<
-    paths[Path][Method]
-  > = RequestContentType<paths[Path][Method]>,
-  TRequestData = ExtractRequestDataType<
-    paths[Path][Method],
+  TPath extends keyof paths,
+  TMethod extends keyof paths[TPath],
+  TRequestContentType extends RequestContentType<paths[TPath][TMethod]>,
+  TRequestData = RequestDataType<
+    paths[TPath][TMethod],
     TRequestContentType
-  >['data'],
-  TPathParams =
-    | ExtractRequestPathParamsType<paths[Path][Method]>['pathParams']
-    | {}
+  >['data']
 > = Omit<
   CallApiOptions<TRequestData>,
   'url' | 'method' | 'data' | 'params' | 'pathParams'
 > &
-  ExtractRequestDataType<paths[Path][Method], TRequestContentType> &
-  ExtractRequestParamsType<paths[Path][Method]> &
-  ExtractRequestPathParamsType<paths[Path][Method]> & {
-    requestContentType?: TRequestContentType;
-    pathParams?: TPathParams;
-  };
+  RequestDataType<paths[TPath][TMethod], TRequestContentType> &
+  RequestParamsType<paths[TPath][TMethod]> &
+  RequestPathParamsType<paths[TPath][TMethod]>;
 
 // const a: ApiServiceParams<'/galleries/', 'post', 'application/json'> = {};
 
 // Extract the response type for the ApiService function
-type ApiServiceResponse<
-  Path extends keyof paths,
-  Method extends keyof paths[Path],
-  Responses = ExtractResponseTypes<paths[Path][Method]>
-> = Promise<AxiosResponse<Responses[keyof Responses]>>;
+type ApiServiceReturn<
+  TPath extends keyof paths,
+  TMethod extends keyof paths[TPath],
+  TResponseContentType extends ResponseContentType<
+    paths[TPath][TMethod]
+  > = ResponseContentType<paths[TPath][TMethod]>,
+  TResponseStatusCode extends ResponseStatusCode<
+    paths[TPath][TMethod]
+  > = ResponseStatusCode<paths[TPath][TMethod]>,
+  TResponseDataType = ResponseDataType<
+    paths[TPath][TMethod],
+    TResponseContentType,
+    TResponseStatusCode
+  >
+> = AxiosResponse<TResponseDataType>;
 
-// Combine ApiServiceParams and ApiServiceResponse into the function type
+// Combine ApiServiceParams and ApiServiceReturn into the function type
 
 type ApiService<
   TPath extends keyof paths,
-  TMethod extends keyof paths[TPath]
+  TMethod extends keyof paths[TPath],
+  TResponseContentType extends ResponseContentType<
+    paths[TPath][TMethod]
+  > = ResponseContentType<paths[TPath][TMethod]>,
+  TRequestContentType extends RequestContentType<
+    paths[TPath][TMethod]
+  > = RequestContentType<paths[TPath][TMethod]>,
+  TResponseStatusCode extends ResponseStatusCode<
+    paths[TPath][TMethod]
+  > = ResponseStatusCode<paths[TPath][TMethod]>
 > = (
-  options: ApiServiceParams<TPath, TMethod>
-) => ApiServiceResponse<TPath, TMethod>;
+  options: ApiServiceParams<TPath, TMethod, TRequestContentType>
+) => ApiServiceReturn<
+  TPath,
+  TMethod,
+  TResponseContentType,
+  TResponseStatusCode
+>;
 
 function createApiService<
-  Path extends keyof paths,
-  Method extends keyof paths[Path] & AxiosRequestConfig['method'],
+  TPath extends keyof paths,
+  TMethod extends keyof paths[TPath] & AxiosRequestConfig['method'],
+  TResponseContentType extends ResponseContentType<
+    paths[TPath][TMethod]
+  > = ResponseContentType<paths[TPath][TMethod]>,
   TRequestContentType extends RequestContentType<
-    paths[Path][Method]
-  > = RequestContentType<paths[Path][Method]>,
-  TRequestData = ExtractRequestDataType<
-    paths[Path][Method],
+    paths[TPath][TMethod]
+  > = RequestContentType<paths[TPath][TMethod]>,
+  TResponseStatusCode extends ResponseStatusCode<
+    paths[TPath][TMethod]
+  > = ResponseStatusCode<paths[TPath][TMethod]>,
+  TRequestData extends RequestDataType<
+    paths[TPath][TMethod],
     TRequestContentType
-  >['data'],
-  Responses = ExtractResponseTypes<paths[Path][Method]>,
-  TResponseData = Responses[keyof Responses]
->(path: Path, method: Method): ApiService<Path, Method> {
-  async function call({
-    pathParams,
+  > = RequestDataType<paths[TPath][TMethod], TRequestContentType>,
+  TResponseData extends ResponseDataType<
+    paths[TPath][TMethod],
+    TResponseContentType,
+    TResponseStatusCode
+  > = ResponseDataType<
+    paths[TPath][TMethod],
+    TResponseContentType,
+    TResponseStatusCode
+  >
+>(
+  path: TPath,
+  method: TMethod,
+  requestContentType?: TRequestContentType,
+  responseContentType?: TResponseContentType
+): ApiService<TPath, TMethod, TRequestContentType, TResponseContentType> {
+  if (!requestContentType) {
     requestContentType = Object.keys(
       openapi_schema.paths[path][method as string].requestBody.content
-    )[0] as TRequestContentType,
+    )[0] as TRequestContentType;
+  }
+  if (!responseContentType) {
+    responseContentType = Object.keys(
+      openapi_schema.paths[path][method as string].responses[
+        Object.keys(openapi_schema.paths[path][method as string].responses)[0]
+      ].content
+    )[0] as TResponseContentType;
+  }
+
+  async function call({
+    pathParams,
     headers = {},
     ...rest
-  }: ApiServiceParams<Path, Method, TRequestContentType>) {
+  }: ApiServiceParams<TPath, TMethod, TResponseContentType>): Promise<
+    ApiServiceReturn<TPath, TMethod, TResponseContentType, TResponseStatusCode>
+  > {
     let url: CallApiOptions<TRequestData>['url'] = path;
-    for (const key in pathParams) {
-      url = url.replace(`{${key}}`, pathParams[key]);
+    if (pathParams && typeof pathParams === 'object') {
+      for (const key in pathParams) {
+        url = url.replace(`{${key}}`, pathParams[key]);
+      }
     }
 
-    const response = await callApi<TRequestData, TResponseData>({
+    const response = await callApi({
       url,
       method,
       headers: {
         'Content-Type': requestContentType,
+        Accept: responseContentType,
         ...headers,
       },
       ...rest,
     });
-    return response;
+    return response as AxiosResponse<TResponseData>;
   }
-
   return call;
 }
 
@@ -186,45 +269,59 @@ function createApiService<
 //     ].content
 //   )[0],
 
-function useApiCall<Path extends keyof paths, Method extends keyof paths[Path]>(
-  apiService: ApiService<Path, Method>,
-  apiServiceOptions: ApiServiceParams<Path, Method>,
-  dependencies: any[] = []
-): UseApiCallReturn<
-  ExtractResponseTypes<paths[Path][Method]>[keyof ExtractResponseTypes<
-    paths[Path][Method]
-  >]
-> {
-  const [loading, setLoading] = useState<boolean>(true);
-  const [response, setResponse] =
-    useState<
-      AxiosResponse<
-        ExtractResponseTypes<paths[Path][Method]>[keyof ExtractResponseTypes<
-          paths[Path][Method]
-        >]
-      >
-    >(null);
+// function useApiCall<
+//   TPath extends keyof paths,
+//   TMethod extends keyof paths[TPath],
+//   TResponseContentType extends ResponseContentType<paths[TPath][TMethod]>,
+//   TRequestContentType extends RequestContentType<paths[TPath][TMethod]>,
+// >(
+//   apiService: ApiService<
+//     TPath,
+//     TMethod,
+//     TRequestContentType,
+//     TResponseContentType
+//   >,
+//   apiServiceOptions: ApiServiceParams<TPath, TMethod, TRequestContentType>,
+//   dependencies: any[] = []
+// ): UseApiCallReturn<
+//   ExtractResponseTypes<paths[TPath][TMethod]>[keyof ExtractResponseTypes<
+//     paths[TPath][TMethod]
+//   >]
+// > {
+//   const [loading, setLoading] = useState<boolean>(true);
+//   const [response, setResponse] =
+//     useState<
+//       AxiosResponse<
+//         ExtractResponseTypes<paths[Path][Method]>[keyof ExtractResponseTypes<
+//           paths[Path][Method]
+//         >]
+//       >
+//     >(null);
 
-  async function refetch() {
-    setLoading(true);
-    const b = await apiService(apiServiceOptions);
-    setResponse(b);
-    setLoading(false);
-  }
+//   async function refetch() {
+//     setLoading(true);
+//     const b = await apiService(apiServiceOptions);
+//     setResponse(b);
+//     setLoading(false);
+//   }
 
-  useEffect(() => {
-    refetch();
-  }, dependencies);
+//   useEffect(() => {
+//     refetch();
+//   }, dependencies);
 
-  return { ...response, loading, refetch };
-}
+//   return { ...response, loading, refetch };
+// }
 
 export {
   callApi,
-  useApiCall,
+  //   useApiCall,
   createApiService,
-  ExtractResponseTypes,
-  ExtractRequestDataType,
-  ExtractRequestParamsType,
-  ExtractRequestPathParamsType,
+  ResponseContentType,
+  RequestContentType,
+  ResponseDataType,
+  ResponseStatusCode,
+  ResponseDataTypeByStatusCode,
+  RequestDataType,
+  RequestParamsType,
+  RequestPathParamsType,
 };
