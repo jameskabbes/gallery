@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import {
-  ExtractResponseTypes,
-  AuthContextType,
-  ToastContextType,
-} from '../../types';
+import { AuthContextType, ToastContextType } from '../../types';
 import { useApiCall } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
 import {
   deleteUserAccessToken,
   DeleteUserAccessTokenResponses,
-} from '../../services/api/deleteUserAccessToken';
+  getUserAccessTokensSettingsPage,
+  GetUserAccessTokensSettingsPageResponses,
+} from '../../services/apiServices';
 import { Card1 } from '../Utils/Card';
 import { Button1 } from '../Utils/Button';
 import { useConfirmationModal } from '../../utils/useConfirmationModal';
@@ -17,16 +15,6 @@ import { Loader1 } from '../Utils/Loader';
 import { useLocation, useNavigate } from 'react-router-dom';
 import openapi_schema from '../../../../openapi_schema.json';
 import { Pagination } from '../Utils/Pagination';
-
-const API_ENDPOINT = '/pages/settings/user-access-tokens/';
-const API_METHOD = 'get';
-
-type ResponseTypesByStatus = ExtractResponseTypes<
-  paths[typeof API_ENDPOINT][typeof API_METHOD]['responses']
->;
-
-type QueryParams =
-  paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['query'];
 
 interface Props {
   authContext: AuthContextType;
@@ -42,20 +30,21 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
   const navigate = useNavigate();
   const query = new URLSearchParams(useLocation().search);
 
-  type QueryParamKey =
-    keyof paths[typeof API_ENDPOINT][typeof API_METHOD]['parameters']['query'];
-  const queryParameters =
-    openapi_schema['paths'][API_ENDPOINT][API_METHOD]['parameters'];
+  type Params = Parameters<typeof getUserAccessTokensSettingsPage>[0]['params'];
+  type ParamKey = keyof Params;
 
-  const queryParamObjects: Record<QueryParamKey, any> = queryParameters.reduce(
-    (acc, queryParam) => {
-      acc[queryParam.name] = queryParam;
+  const queryParameters =
+    openapi_schema['paths']['/pages/settings/api-keys/']['get']['parameters'];
+
+  const queryParamObjects: Record<ParamKey, any> = queryParameters.reduce(
+    (acc, param) => {
+      acc[param.name as ParamKey] = param;
       return acc;
     },
-    {} as Record<QueryParamKey, any>
+    {} as Record<ParamKey, any>
   );
 
-  function getLimitFromQuery(limit: string): QueryParams['limit'] {
+  function getLimitFromQuery(limit: string): Params['limit'] {
     if (!limit) {
       return queryParamObjects['limit'].schema.default;
     } else {
@@ -71,7 +60,7 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
     }
   }
 
-  function getOffsetFromQuery(offset: string): QueryParams['offset'] {
+  function getOffsetFromQuery(offset: string): Params['offset'] {
     if (!offset) {
       return queryParamObjects['offset'].schema.default;
     } else {
@@ -84,11 +73,11 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
     }
   }
 
-  const [limit, setLimit] = useState<QueryParams['limit']>(
+  const [limit, setLimit] = useState<Params['limit']>(
     getLimitFromQuery(query.get('limit'))
   );
 
-  const [offset, setOffset] = useState<QueryParams['offset']>(
+  const [offset, setOffset] = useState<Params['offset']>(
     getOffsetFromQuery(query.get('offset'))
   );
 
@@ -115,16 +104,15 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
     TUserAccessToken['id'][]
   >([]);
 
-  const { data, loading, status, refetch } = useApiCall<
-    ResponseTypesByStatus[keyof ResponseTypesByStatus]
-  >({
-    url: API_ENDPOINT,
-    method: API_METHOD,
-    params: {
-      limit: limit,
-      offset: offset,
-    },
-  });
+  const { data, loading, status, refetch } = useApiCall(
+    getUserAccessTokensSettingsPage,
+    {
+      params: {
+        limit: limit,
+        offset: offset,
+      },
+    }
+  );
 
   const hasMounted = React.useRef(false);
 
@@ -140,7 +128,7 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
   useEffect(() => {
     if (!loading) {
       if (status === 200) {
-        const apiData = data as ResponseTypesByStatus['200'];
+        const apiData = data as GetUserAccessTokensSettingsPageResponses['200'];
 
         setUserAccessTokenCount(apiData.user_access_token_count);
         setUserAccessTokens(() => {
@@ -174,10 +162,12 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
 
     setUserAccessTokenCount((prev) => prev - 1);
 
-    const { data, status } = await deleteUserAccessToken(
+    const { data, status } = await deleteUserAccessToken({
       authContext,
-      sessionId
-    );
+      pathParams: {
+        user_access_token_id: sessionId,
+      },
+    });
 
     if (status === 204) {
       toastContext.update(toastId, {

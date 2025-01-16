@@ -5,7 +5,7 @@ import openapi_schema from '../../../../openapi_schema.json';
 import { AuthContext } from '../../contexts/Auth';
 import { components } from '../../openapi_schema';
 import { ToastContext } from '../../contexts/Toast';
-import { patchUser, PatchUserResponses } from '../../services/api/patchUser';
+import { patchMe, PatchMeResponses } from '../../services/apiServices';
 import { Button1 } from '../Utils/Button';
 import { isPasswordValid } from '../../services/isPasswordValid';
 
@@ -54,12 +54,15 @@ function UpdatePassword() {
         message: 'Updating password...',
       });
 
-      const response = await patchUser(authContext, {
-        password: password.value,
+      const response = await patchMe({
+        authContext,
+        data: {
+          password: password.value,
+        },
       });
 
       if (response.status === 200) {
-        const apiData = response.data as PatchUserResponses['200'];
+        const apiData = response.data as PatchMeResponses['200'];
         setPassword({ ...defaultValidatedInputState<string>('') });
         setConfirmPassword({ ...defaultValidatedInputState<string>('') });
         toastContext.update(toastId, {

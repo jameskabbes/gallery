@@ -4,10 +4,12 @@ import { AuthContext } from '../../contexts/Auth';
 import { ToastContext } from '../../contexts/Toast';
 import { components } from '../../openapi_schema';
 import {
-  getIsUsernameAvailable,
-  isUsernameAvailable,
-} from '../../services/api/getIsUsernameAvailable';
-import { patchUser, PatchUserResponses } from '../../services/api/patchUser';
+  patchMe,
+  PatchMeResponses,
+  getIsApiKeyAvailable,
+  GetIsUserUsernameAvailableResponses,
+  getIsUserUsernameAvailable,
+} from '../../services/apiServices';
 import { defaultValidatedInputState, ValidatedInputState } from '../../types';
 import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { Button1, Button2 } from '../Utils/Button';
@@ -48,14 +50,17 @@ function UpdateUsername({ user }: Props) {
       message: 'Updating username...',
     });
 
-    const response = await patchUser(authContext, {
-      username,
+    const response = await patchMe({
+      authContext,
+      data: {
+        username,
+      },
     });
 
     setLoading(false);
 
     if (response.status === 200) {
-      const apiData = response.data as PatchUserResponses['200'];
+      const apiData = response.data as PatchMeResponses['200'];
       setStartingUsername(username ? username : '');
       toastContext.update(toastId, {
         message: 'Updated username',
@@ -78,6 +83,18 @@ function UpdateUsername({ user }: Props) {
     if (valid && authContext.state.user !== null) {
       await updateUsername(username.value);
     }
+  }
+
+  async function isUsernameAvailable() {
+    return (
+      (
+        await getIsUserUsernameAvailable({
+          pathParams: {
+            username: username.value,
+          },
+        })
+      ).status === 200
+    );
   }
 
   return (
@@ -104,7 +121,7 @@ function UpdateUsername({ user }: Props) {
               if (value === startingUsername) {
                 return true;
               } else {
-                return await isUsernameAvailable(value);
+                return await isUsernameAvailable();
               }
             }}
             showStatus={modified}

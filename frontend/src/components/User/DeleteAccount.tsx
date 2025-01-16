@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { deleteUser, DeleteUserResponses } from '../../services/api/deleteUser';
+import { deleteMe, DeleteMeResponses } from '../../services/apiServices';
 import {
   AuthContextType,
   ModalsContextType,
@@ -24,15 +24,17 @@ function setDeleteAccountModal({
   toastContext,
   modalsContext,
 }: Props) {
-  async function handleDeleteUser() {
+  async function handleDeleteMe() {
     const toastId = toastContext.makePending({
       message: 'Deleting account...',
     });
 
-    const response = await deleteUser(authContext);
+    const response = await deleteMe({
+      authContext,
+    });
 
     if (response.status === 204) {
-      const data = response.data as DeleteUserResponses['204'];
+      const data = response.data as DeleteMeResponses['204'];
       toastContext.update(toastId, {
         message: 'Account deleted',
         type: 'success',
@@ -57,7 +59,7 @@ function setDeleteAccountModal({
         </p>
       ),
       target: 'delete',
-      onConfirm: () => handleDeleteUser(),
+      onConfirm: () => handleDeleteMe(),
     },
   });
 }

@@ -9,6 +9,7 @@ import {
   ArrayElement,
   ModalType,
   ModalUpdateType,
+  GetElementTypeFromArray,
 } from '../../types';
 import { useApiCall } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
@@ -23,8 +24,8 @@ import {
   GetApiKeyJwtResponses,
   getIsApiKeyAvailable,
   patchApiKey,
-  getApiKeysSettingPage,
-  GetApiKeysSettingPageResponses,
+  getApiKeysSettingsPage,
+  GetApiKeysSettingsPageResponses,
 } from '../../services/apiServices';
 
 import { ModalsContext } from '../../contexts/Modals';
@@ -630,26 +631,27 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
   const navigate = useNavigate();
   const query = new URLSearchParams(useLocation().search);
 
-  type QueryParams = Parameters<typeof getApiKeysSettingPage>[0]['params'];
-  type QueryParamKey = keyof QueryParams;
-  type OrderByField = QueryParams['order_by'];
+  type Params = Parameters<typeof getApiKeysSettingsPage>[0]['params'];
+  type ParamKey = keyof Params;
+  type OrderByArray = Params['order_by'];
+  type OrderByField = GetElementTypeFromArray<OrderByArray>;
 
   const queryParameters =
     openapi_schema['paths']['/pages/settings/api-keys/']['get']['parameters'];
 
-  const queryParamObjects: Record<QueryParamKey, any> = queryParameters.reduce(
+  const queryParamObjects: Record<ParamKey, any> = queryParameters.reduce(
     (acc, param) => {
-      acc[param.name as QueryParamKey] = param;
+      acc[param.name as ParamKey] = param;
       return acc;
     },
-    {} as Record<QueryParamKey, any>
+    {} as Record<ParamKey, any>
   );
 
-  const orderByFields = new Set(
-    queryParamObjects['order_by'].schema.items.enum as OrderByField[]
+  const orderByFields = new Set<OrderByField>(
+    queryParamObjects['order_by'].schema.items.enum as OrderByArray
   );
 
-  function getLimitFromQuery(limit: string): QueryParams['limit'] {
+  function getLimitFromQuery(limit: string): Params['limit'] {
     if (!limit) {
       return queryParamObjects['limit'].schema.default;
     } else {
@@ -665,7 +667,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
     }
   }
 
-  function getOffsetFromQuery(offset: string): QueryParams['offset'] {
+  function getOffsetFromQuery(offset: string): Params['offset'] {
     if (!offset) {
       return queryParamObjects['offset'].schema.default;
     } else {
@@ -678,25 +680,23 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
     }
   }
 
-  function getOrderByFromQuery(orderBy: string[]): QueryParams['order_by'] {
-    return orderBy.filter((field: OrderByField) =>
-      orderByFields.has(field)
-    ) as QueryParams['order_by'];
+  function getOrderByFromQuery(orderBy: OrderByArray): OrderByArray {
+    return orderBy.filter((field: OrderByField) => orderByFields.has(field));
   }
 
-  const [limit, setLimit] = useState<QueryParams['limit']>(
+  const [limit, setLimit] = useState<Params['limit']>(
     getLimitFromQuery(query.get('limit'))
   );
 
-  const [offset, setOffset] = useState<QueryParams['offset']>(
+  const [offset, setOffset] = useState<Params['offset']>(
     getOffsetFromQuery(query.get('offset'))
   );
 
-  const [orderBy, setOrderBy] = useState<QueryParams['order_by']>(
+  const [orderBy, setOrderBy] = useState<Params['order_by']>(
     getOrderByFromQuery(query.getAll('order_by'))
   );
 
-  const [orderByDesc, setOrderByDesc] = useState<QueryParams['order_by_desc']>(
+  const [orderByDesc, setOrderByDesc] = useState<Params['order_by_desc']>(
     getOrderByFromQuery(query.getAll('order_by_desc'))
   );
 
@@ -737,15 +737,18 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
     }
   }, [authContext]);
 
-  const { data, status, loading, refetch } = useApiCall(getApiKeysSettingPage, {
-    authContext,
-    params: {
-      limit: limit,
-      offset: offset,
-      order_by: orderBy,
-      order_by_desc: orderByDesc,
-    },
-  });
+  const { data, status, loading, refetch } = useApiCall(
+    getApiKeysSettingsPage,
+    {
+      authContext,
+      params: {
+        limit: limit,
+        offset: offset,
+        order_by: orderBy,
+        order_by_desc: orderByDesc,
+      },
+    }
+  );
 
   const hasMounted = useRef(false);
 
@@ -762,7 +765,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
   useEffect(() => {
     if (!loading) {
       if (status === 200) {
-        const apiData = data as GetApiKeysSettingPageResponses['200'];
+        const apiData = data as GetApiKeysSettingsPageResponses['200'];
         setApiKeys(() => {
           const keys = {};
           for (const apiKey of apiData.api_keys) {
