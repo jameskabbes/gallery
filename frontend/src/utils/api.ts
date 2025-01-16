@@ -169,7 +169,7 @@ type ApiServiceReturn<
     TResponseContentType,
     TResponseStatusCode
   >
-> = AxiosResponse<TResponseDataType>;
+> = Promise<AxiosResponse<TResponseDataType>>;
 
 // Combine ApiServiceParams and ApiServiceReturn into the function type
 
