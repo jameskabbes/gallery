@@ -95,7 +95,7 @@ type ResponseDataType<
   >
 > = TResponseDataByStatus[keyof TResponseDataByStatus];
 
-type RequestDataType<
+type RequestDataTypeProp<
   TOperation,
   TRequestContentType extends RequestContentType<TOperation> = RequestContentType<TOperation>
 > = TOperation extends {
@@ -107,9 +107,14 @@ type RequestDataType<
     ? { data?: ContentTypes[keyof ContentTypes & TRequestContentType] }
     : { data?: never }
   : // whenever the generic isn't set
-    { data?: {} };
+    { data?: never };
 
-type RequestParamsType<TOperation> = TOperation extends {
+type RequestDataType<
+  TOperation,
+  TRequestContentType extends RequestContentType<TOperation> = RequestContentType<TOperation>
+> = RequestDataTypeProp<TOperation, TRequestContentType>['data'];
+
+type RequestParamsTypeProp<TOperation> = TOperation extends {
   parameters: infer Params;
 }
   ? Params extends { query: infer U }
@@ -118,9 +123,12 @@ type RequestParamsType<TOperation> = TOperation extends {
     ? { params?: U }
     : { params?: never }
   : // whenever the generic isn't set
-    { params?: {} };
+    { params?: never };
 
-type RequestPathParamsType<TOperation> = TOperation extends {
+type RequestParamsType<TOperation> =
+  RequestParamsTypeProp<TOperation>['params'];
+
+type RequestPathParamsTypeProp<TOperation> = TOperation extends {
   parameters: infer Params;
 }
   ? Params extends { path: infer U }
@@ -129,24 +137,24 @@ type RequestPathParamsType<TOperation> = TOperation extends {
     ? { pathParams?: U }
     : { pathParams?: never }
   : // whenever the generic isn't set
-    { pathParams?: {} };
+    { pathParams?: never };
+
+type RequestPathParamsType<TOperation> =
+  RequestPathParamsTypeProp<TOperation>['pathParams'];
 
 // Extract the parameters type for the ApiService function
 type ApiServiceParams<
   TPath extends keyof paths,
   TMethod extends keyof paths[TPath],
   TRequestContentType extends RequestContentType<paths[TPath][TMethod]>,
-  TRequestData = RequestDataType<
-    paths[TPath][TMethod],
-    TRequestContentType
-  >['data']
+  TRequestData
 > = Omit<
   CallApiOptions<TRequestData>,
   'url' | 'method' | 'data' | 'params' | 'pathParams'
 > &
-  RequestDataType<paths[TPath][TMethod], TRequestContentType> &
-  RequestParamsType<paths[TPath][TMethod]> &
-  RequestPathParamsType<paths[TPath][TMethod]>;
+  RequestDataTypeProp<paths[TPath][TMethod], TRequestContentType> &
+  RequestParamsTypeProp<paths[TPath][TMethod]> &
+  RequestPathParamsTypeProp<paths[TPath][TMethod]>;
 
 // const a: ApiServiceParams<'/galleries/', 'post', 'application/json'> = {};
 
@@ -154,13 +162,9 @@ type ApiServiceParams<
 type ApiServiceReturn<
   TPath extends keyof paths,
   TMethod extends keyof paths[TPath],
-  TResponseContentType extends ResponseContentType<
-    paths[TPath][TMethod]
-  > = ResponseContentType<paths[TPath][TMethod]>,
-  TResponseStatusCode extends ResponseStatusCode<
-    paths[TPath][TMethod]
-  > = ResponseStatusCode<paths[TPath][TMethod]>,
-  TResponseDataType = ResponseDataType<
+  TResponseContentType extends ResponseContentType<paths[TPath][TMethod]>,
+  TResponseStatusCode extends ResponseStatusCode<paths[TPath][TMethod]>,
+  TResponseDataType extends ResponseDataType<
     paths[TPath][TMethod],
     TResponseContentType,
     TResponseStatusCode
@@ -172,22 +176,31 @@ type ApiServiceReturn<
 type ApiService<
   TPath extends keyof paths,
   TMethod extends keyof paths[TPath],
-  TResponseContentType extends ResponseContentType<
-    paths[TPath][TMethod]
-  > = ResponseContentType<paths[TPath][TMethod]>,
-  TRequestContentType extends RequestContentType<
-    paths[TPath][TMethod]
-  > = RequestContentType<paths[TPath][TMethod]>,
-  TResponseStatusCode extends ResponseStatusCode<
-    paths[TPath][TMethod]
-  > = ResponseStatusCode<paths[TPath][TMethod]>
+  TResponseContentType extends ResponseContentType<paths[TPath][TMethod]>,
+  TRequestContentType extends RequestContentType<paths[TPath][TMethod]>,
+  TResponseStatusCode extends ResponseStatusCode<paths[TPath][TMethod]>,
+  TRequestDataType extends RequestDataType<
+    paths[TPath][TMethod],
+    TRequestContentType
+  >,
+  TResponseDataType extends ResponseDataType<
+    paths[TPath][TMethod],
+    TResponseContentType,
+    TResponseStatusCode
+  >
 > = (
-  options: ApiServiceParams<TPath, TMethod, TRequestContentType>
+  options: ApiServiceParams<
+    TPath,
+    TMethod,
+    TRequestContentType,
+    TRequestDataType
+  >
 ) => ApiServiceReturn<
   TPath,
   TMethod,
   TResponseContentType,
-  TResponseStatusCode
+  TResponseStatusCode,
+  TResponseDataType
 >;
 
 function createApiService<
@@ -220,7 +233,15 @@ function createApiService<
   method: TMethod,
   requestContentType?: TRequestContentType,
   responseContentType?: TResponseContentType
-): ApiService<TPath, TMethod, TRequestContentType, TResponseContentType> {
+): ApiService<
+  TPath,
+  TMethod,
+  TRequestContentType,
+  TResponseContentType,
+  TResponseStatusCode,
+  TRequestData,
+  TResponseData
+> {
   if (!requestContentType) {
     requestContentType = Object.keys(
       openapi_schema.paths[path][method as string].requestBody.content
@@ -234,13 +255,7 @@ function createApiService<
     )[0] as TResponseContentType;
   }
 
-  async function call({
-    pathParams,
-    headers = {},
-    ...rest
-  }: ApiServiceParams<TPath, TMethod, TResponseContentType>): Promise<
-    ApiServiceReturn<TPath, TMethod, TResponseContentType, TResponseStatusCode>
-  > {
+  return async ({ pathParams, headers = {}, ...rest }) => {
     let url: CallApiOptions<TRequestData>['url'] = path;
     if (pathParams && typeof pathParams === 'object') {
       for (const key in pathParams) {
@@ -248,7 +263,10 @@ function createApiService<
       }
     }
 
-    const response = await callApi({
+    const response: AxiosResponse<TResponseData> = await callApi<
+      TResponseData,
+      TRequestData
+    >({
       url,
       method,
       headers: {
@@ -258,9 +276,48 @@ function createApiService<
       },
       ...rest,
     });
-    return response as AxiosResponse<TResponseData>;
-  }
-  return call;
+    return response;
+  };
+
+  //   async function call({
+  //     pathParams,
+  //     data,
+  //     headers = {},
+  //     ...rest
+  //   }: ApiServiceParams<
+  //     TPath,
+  //     TMethod,
+  //     TResponseContentType,
+  //     TRequestData
+  //   >): Promise<
+  //     ApiServiceReturn<
+  //       TPath,
+  //       TMethod,
+  //       TResponseContentType,
+  //       TResponseStatusCode,
+  //       TResponseData
+  //     >
+  //   > {
+  //     let url: CallApiOptions<TRequestData>['url'] = path;
+  //     if (pathParams && typeof pathParams === 'object') {
+  //       for (const key in pathParams) {
+  //         url = url.replace(`{${key}}`, pathParams[key]);
+  //       }
+  //     }
+
+  //     const response = await callApi<TResponseData, TRequestData>({
+  //       url,
+  //       method,
+  //       headers: {
+  //         'Content-Type': requestContentType,
+  //         Accept: responseContentType,
+  //         ...headers,
+  //       },
+  //       ...rest,
+  //     });
+  //     return response;
+  //   }
+  //   return call;
 }
 
 //   responseContentType = Object.keys(
@@ -321,7 +378,10 @@ export {
   ResponseDataType,
   ResponseStatusCode,
   ResponseDataTypeByStatusCode,
+  RequestDataTypeProp,
   RequestDataType,
+  RequestParamsTypeProp,
   RequestParamsType,
+  RequestPathParamsTypeProp,
   RequestPathParamsType,
 };

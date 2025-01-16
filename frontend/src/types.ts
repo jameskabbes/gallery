@@ -11,8 +11,8 @@ type FirstKey<T> = keyof {
 
 interface CallApiOptions<TRequestData>
   extends AxiosRequestConfig<TRequestData> {
-  url: AxiosRequestConfig['url'];
-  method: AxiosRequestConfig['method'];
+  url: AxiosRequestConfig<TRequestData>['url'];
+  method: AxiosRequestConfig<TRequestData>['method'];
   authContext?: AuthContextType;
 }
 

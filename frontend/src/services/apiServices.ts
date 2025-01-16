@@ -177,12 +177,10 @@ type DeleteApiKeyScopeResponses = ResponseDataTypeByStatusCode<
 >;
 
 // Gallery
-const postGallery = createApiService<
+const postGallery = createApiService<'/galleries/', 'post'>(
   '/galleries/',
-  'post',
-  'test',
-  'application/xml'
->('/galleries/', 'post', 'application/xml');
+  'post'
+);
 type PostGalleryResponses = ResponseDataTypeByStatusCode<
   paths['/galleries/']['post']
 >;
@@ -198,6 +196,18 @@ type D = ResponseDataType<paths['/galleries/']['post']>;
 type E = RequestDataType<paths['/galleries/']['post']>;
 type F = RequestParamsType<paths['/galleries/']['post']>;
 type G = RequestPathParamsType<paths['/galleries/']['post']>;
+
+async function call() {
+  const response = await postGallery({
+    data: {
+      name: 'string',
+      parent_id: 'string',
+      visibility_level: 1,
+    },
+  });
+
+  const data = response['data'] as PostGalleryResponses['200'];
+}
 
 // postGallery({
 //   requestContentType: 'application/json',
