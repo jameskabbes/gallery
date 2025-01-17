@@ -4,9 +4,7 @@ import { useApiCall } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
 import {
   deleteUserAccessToken,
-  DeleteUserAccessTokenResponses,
   getUserAccessTokensSettingsPage,
-  GetUserAccessTokensSettingsPageResponses,
 } from '../../services/apiServices';
 import { Card1 } from '../Utils/Card';
 import { Button1 } from '../Utils/Button';
@@ -30,7 +28,9 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
   const navigate = useNavigate();
   const query = new URLSearchParams(useLocation().search);
 
-  type Params = Parameters<typeof getUserAccessTokensSettingsPage>[0]['params'];
+  type Params = Parameters<
+    typeof getUserAccessTokensSettingsPage.call
+  >[0]['params'];
   type ParamKey = keyof Params;
 
   const queryParameters =
@@ -128,7 +128,8 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
   useEffect(() => {
     if (!loading) {
       if (status === 200) {
-        const apiData = data as GetUserAccessTokensSettingsPageResponses['200'];
+        const apiData =
+          data as (typeof getUserAccessTokensSettingsPage.responses)['200'];
 
         setUserAccessTokenCount(apiData.user_access_token_count);
         setUserAccessTokens(() => {
@@ -162,7 +163,7 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
 
     setUserAccessTokenCount((prev) => prev - 1);
 
-    const { data, status } = await deleteUserAccessToken({
+    const { data, status } = await deleteUserAccessToken.call({
       authContext,
       pathParams: {
         user_access_token_id: sessionId,

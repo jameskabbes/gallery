@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { deleteMe, DeleteMeResponses } from '../../services/apiServices';
+import { deleteMe } from '../../services/apiServices';
 import {
   AuthContextType,
   ModalsContextType,
@@ -29,12 +29,12 @@ function setDeleteAccountModal({
       message: 'Deleting account...',
     });
 
-    const response = await deleteMe({
+    const response = await deleteMe.call({
       authContext,
     });
 
     if (response.status === 204) {
-      const data = response.data as DeleteMeResponses['204'];
+      const data = response.data as (typeof deleteMe.responses)['204'];
       toastContext.update(toastId, {
         message: 'Account deleted',
         type: 'success',

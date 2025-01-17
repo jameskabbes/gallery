@@ -5,7 +5,7 @@ import { AuthContext } from '../../contexts/Auth';
 import { ToastContext } from '../../contexts/Toast';
 import { isEmailValid } from '../../services/isEmailValid';
 import { defaultValidatedInputState, ValidatedInputState } from '../../types';
-import { patchMe, PatchMeResponses } from '../../services/apiServices';
+import { patchMe } from '../../services/apiServices';
 import { ValidatedInputString } from '../Form/ValidatedInputString';
 import { Button1, Button2, ButtonSubmit } from '../Utils/Button';
 
@@ -40,7 +40,7 @@ function UpdateEmail({ user }: Props) {
         message: 'Updating email...',
       });
 
-      const response = await patchMe({
+      const response = await patchMe.call({
         authContext,
         data: {
           email: email.value,
@@ -49,7 +49,7 @@ function UpdateEmail({ user }: Props) {
       setLoading(false);
 
       if (response.status === 200) {
-        const apiData = response.data as PatchMeResponses['200'];
+        const apiData = response.data as (typeof patchMe.responses)['200'];
         setStartingEmail(email.value);
         toastContext.update(toastId, {
           message: 'Updated user',

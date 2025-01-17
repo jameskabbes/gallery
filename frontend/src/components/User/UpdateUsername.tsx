@@ -5,9 +5,7 @@ import { ToastContext } from '../../contexts/Toast';
 import { components } from '../../openapi_schema';
 import {
   patchMe,
-  PatchMeResponses,
   getIsApiKeyAvailable,
-  GetIsUserUsernameAvailableResponses,
   getIsUserUsernameAvailable,
 } from '../../services/apiServices';
 import { defaultValidatedInputState, ValidatedInputState } from '../../types';
@@ -50,7 +48,7 @@ function UpdateUsername({ user }: Props) {
       message: 'Updating username...',
     });
 
-    const response = await patchMe({
+    const response = await patchMe.call({
       authContext,
       data: {
         username,
@@ -60,7 +58,7 @@ function UpdateUsername({ user }: Props) {
     setLoading(false);
 
     if (response.status === 200) {
-      const apiData = response.data as PatchMeResponses['200'];
+      const apiData = response.data as (typeof patchMe.responses)['200'];
       setStartingUsername(username ? username : '');
       toastContext.update(toastId, {
         message: 'Updated username',
@@ -88,7 +86,7 @@ function UpdateUsername({ user }: Props) {
   async function isUsernameAvailable() {
     return (
       (
-        await getIsUserUsernameAvailable({
+        await getIsUserUsernameAvailable.call({
           pathParams: {
             username: username.value,
           },

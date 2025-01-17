@@ -1,8 +1,5 @@
 import { useGoogleLogin } from '@react-oauth/google';
-import {
-  postLogInGoogle,
-  PostLogInGoogleResponses,
-} from '../../services/apiServices';
+import { postLogInGoogle } from '../../services/apiServices';
 import { useContext } from 'react';
 import { ToastContext } from '../../contexts/Toast';
 import { AuthContext } from '../../contexts/Auth';
@@ -19,7 +16,7 @@ function useLogInWithGoogle() {
         message: 'Logging in with Google...',
       });
 
-      const { data, status } = await postLogInGoogle({
+      const { data, status } = await postLogInGoogle.call({
         authContext,
         data: {
           access_token: res.access_token,
@@ -31,7 +28,7 @@ function useLogInWithGoogle() {
           message: 'Logged in with Google',
           type: 'success',
         });
-        const apiData = data as PostLogInGoogleResponses['200'];
+        const apiData = data as (typeof postLogInGoogle.responses)['200'];
         authModalsContext.activate(null);
       } else {
         toastContext.update(toastId, {

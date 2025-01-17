@@ -5,11 +5,7 @@ import {
   defaultValidatedInputState,
 } from '../../types';
 import { paths, operations, components } from '../../openapi_schema';
-import {
-  postGallery,
-  PostGalleryResponses,
-  getIsGalleryAvailable,
-} from '../../services/apiServices';
+import { postGallery, getIsGalleryAvailable } from '../../services/apiServices';
 
 import { AuthContext } from '../../contexts/Auth';
 import { ToastContext } from '../../contexts/Toast';
@@ -23,7 +19,7 @@ import { useValidatedInput } from '../../utils/useValidatedInput';
 import { CheckOrX } from '../Form/CheckOrX';
 
 interface AddGalleryProps {
-  onSuccess: (gallery: PostGalleryResponses['200']) => void;
+  onSuccess: (gallery: (typeof postGallery.responses)['200']) => void;
   modalsContext: ModalsContextType;
   parentGalleryId: components['schemas']['Gallery']['id'];
 }
@@ -72,7 +68,7 @@ function AddGallery({
     checkAvailability: true,
     checkValidity: true,
     isAvailable: async () => {
-      const response = await getIsGalleryAvailable({
+      const response = await getIsGalleryAvailable.call({
         authContext,
         params: {
           name: name.value,
@@ -113,7 +109,7 @@ function AddGallery({
 
     modalsContext.deleteModals([addGalleryModalKey]);
 
-    const { data, status } = await postGallery({
+    const { data, status } = await postGallery.call({
       authContext,
       data: {
         name: name.value,
@@ -128,7 +124,7 @@ function AddGallery({
         message: 'Gallery added',
         type: 'success',
       });
-      onSuccess(data as PostGalleryResponses['200']);
+      onSuccess(data as (typeof postGallery.responses)['200']);
     } else {
       toastContext.update(toastId, {
         message: 'Error adding gallery',

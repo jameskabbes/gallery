@@ -1,13 +1,8 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
 import { paths, operations, components } from '../../openapi_schema';
 
-import {
-  postSignUp,
-  PostSignUpResponses,
-  postRequestSignUpEmail,
-} from '../../services/apiServices';
+import { postSignUp, postRequestSignUpEmail } from '../../services/apiServices';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-
 import openapi_schema from '../../../../openapi_schema.json';
 
 import { RequestSignUpContext } from '../../contexts/RequestSignUp';
@@ -81,7 +76,7 @@ function RequestSignUp() {
 
       requestSignUpContext.setLoading(true);
 
-      await postRequestSignUpEmail({
+      await postRequestSignUpEmail.call({
         authContext,
         data: {
           email: requestSignUpContext.email.value,
@@ -169,10 +164,11 @@ function VerifySignUp() {
   const authContext = useContext(AuthContext);
   const navigate = useNavigate();
 
+  type PostSignUpResponses = typeof postSignUp.responses;
   const [status, setStatus] = useState<keyof PostSignUpResponses>(null);
 
   const [token, setToken] = useState<
-    Parameters<typeof postSignUp>[0]['data']['token']
+    Parameters<typeof postSignUp.call>[0]['data']['token']
   >(new URLSearchParams(location.search).get('token'));
 
   useEffect(() => {
@@ -181,7 +177,7 @@ function VerifySignUp() {
 
   useEffect(() => {
     async function verifySignUp() {
-      const { data, status } = await postSignUp({
+      const { data, status } = await postSignUp.call({
         authContext,
         data: {
           token: token,

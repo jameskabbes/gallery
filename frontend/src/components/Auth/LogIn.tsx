@@ -15,10 +15,7 @@ import { ValidatedInputCheckbox } from '../Form/ValidatedInputCheckbox';
 import { Button2, ButtonSubmit } from '../Utils/Button';
 import { Loader1, Loader2 } from '../Utils/Loader';
 import { Surface } from '../Utils/Surface';
-import {
-  postLogInPassword,
-  PostLogInPasswordResponses,
-} from '../../services/apiServices';
+import { postLogInPassword } from '../../services/apiServices';
 import { ModalsContext } from '../../contexts/Modals';
 import { AuthModalType } from '../../types';
 import { useLogInWithGoogle } from './useLogInWithGoogle';
@@ -60,7 +57,7 @@ function LogIn() {
     if (logInContext.valid) {
       logInContext.setLoading(true);
 
-      const { data, status } = await postLogInPassword({
+      const { data, status } = await postLogInPassword.call({
         authContext,
         data: {
           username: logInContext.username.value,
@@ -71,6 +68,7 @@ function LogIn() {
 
       logInContext.setLoading(false);
 
+      type PostLogInPasswordResponses = typeof postLogInPassword.responses;
       if (status == 200) {
         const apiData = data as PostLogInPasswordResponses['200'];
         modalsContext.deleteModals([key]);

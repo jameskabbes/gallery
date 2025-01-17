@@ -51,14 +51,14 @@ function RequestOTP() {
     authModalsContext.activate('verifyOTP');
 
     if (requestOTPContext.medium === 'email') {
-      var { status } = await postRequestOTPEmail({
+      var { status } = await postRequestOTPEmail.call({
         authContext,
         data: {
           email: requestOTPContext.email.value,
         },
       });
     } else if (requestOTPContext.medium === 'sms') {
-      var { status } = await postRequestOTPSMS({
+      var { status } = await postRequestOTPSMS.call({
         authContext,
         data: {
           phone_number: requestOTPContext.phoneNumber.value,
@@ -234,7 +234,7 @@ function VerifyOTP() {
     setLoading(true);
 
     if (requestOTPContext.medium === 'email') {
-      var { data, status } = await postLogInOTPEmail({
+      var { data, status } = await postLogInOTPEmail.call({
         authContext,
         data: {
           email: requestOTPContext.email.value,
@@ -242,7 +242,7 @@ function VerifyOTP() {
         },
       });
     } else if (requestOTPContext.medium === 'sms') {
-      var { data, status } = await postLogInOTPPhoneNumber({
+      var { data, status } = await postLogInOTPPhoneNumber.call({
         authContext,
         data: {
           phone_number: requestOTPContext.phoneNumber.value,

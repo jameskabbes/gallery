@@ -15,17 +15,13 @@ import { useApiCall } from '../../utils/api';
 import { paths, operations, components } from '../../openapi_schema';
 import {
   deleteApiKey,
-  DeleteApiKeyResponses,
   postApiKey,
-  PostApiKeyResponses,
   postApiKeyScope,
   deleteApiKeyScope,
   getApiKeyJwt,
-  GetApiKeyJwtResponses,
   getIsApiKeyAvailable,
   patchApiKey,
   getApiKeysSettingsPage,
-  GetApiKeysSettingsPageResponses,
 } from '../../services/apiServices';
 
 import { ModalsContext } from '../../contexts/Modals';
@@ -47,6 +43,8 @@ import { Loader1 } from '../Utils/Loader';
 import { Surface } from '../Utils/Surface';
 import { Pagination } from '../Utils/Pagination';
 
+type GetApiKeyJwtResponses = typeof getApiKeyJwt.responses;
+
 type ScopeID = number;
 type TApiKey = components['schemas']['ApiKeyPrivate'];
 type TApiKeys = Record<TApiKey['id'], TApiKey>;
@@ -59,11 +57,11 @@ type TModifyApiKeyScopeFunc = (
   scopeId: ScopeID
 ) => Promise<void>;
 type TAddApiKeyFunc = (
-  apiKeyCreate: Parameters<typeof postApiKey>[0]['data']
+  apiKeyCreate: Parameters<typeof postApiKey.call>[0]['data']
 ) => Promise<boolean>;
 type TUpdateApiKeyFunc = (
-  apiKeyId: Parameters<typeof patchApiKey>[0]['pathParams']['api_key_id'],
-  apiKeyUpdate: Parameters<typeof patchApiKey>[0]['data']
+  apiKeyId: Parameters<typeof patchApiKey.call>[0]['pathParams']['api_key_id'],
+  apiKeyUpdate: Parameters<typeof patchApiKey.call>[0]['data']
 ) => Promise<boolean>;
 type TDeleteApiKeyFunc = (index: number) => Promise<boolean>;
 
@@ -80,7 +78,7 @@ function ApiKeyCodeModal({ apiKey, authContext }: ApiKeyCodeModalProps) {
   async function fetchJwt(apiKeyId: TApiKey['id']) {
     setLoading(true);
     setCopySuccess(false);
-    const { data, status } = await getApiKeyJwt({
+    const { data, status } = await getApiKeyJwt.call({
       authContext,
       pathParams: {
         api_key_id: apiKeyId,
@@ -236,7 +234,7 @@ function UpdateApiKey({
               if (name === apiKey.name) {
                 return true;
               } else {
-                const { status } = await getIsApiKeyAvailable({
+                const { status } = await getIsApiKeyAvailable.call({
                   authContext,
                   params: {
                     name: name,
@@ -360,7 +358,7 @@ function AddApiKey({
     checkAvailability: true,
     checkValidity: true,
     isAvailable: async (state) => {
-      const { status } = await getIsApiKeyAvailable({
+      const { status } = await getIsApiKeyAvailable.call({
         authContext,
         params: {
           name: state.name.value,
@@ -631,7 +629,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
   const navigate = useNavigate();
   const query = new URLSearchParams(useLocation().search);
 
-  type Params = Parameters<typeof getApiKeysSettingsPage>[0]['params'];
+  type Params = Parameters<typeof getApiKeysSettingsPage.call>[0]['params'];
   type ParamKey = keyof Params;
   type OrderByArray = Params['order_by'];
   type OrderByField = GetElementTypeFromArray<OrderByArray>;
@@ -765,7 +763,8 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
   useEffect(() => {
     if (!loading) {
       if (status === 200) {
-        const apiData = data as GetApiKeysSettingsPageResponses['200'];
+        const apiData =
+          data as (typeof getApiKeysSettingsPage.responses)['200'];
         setApiKeys(() => {
           const keys = {};
           for (const apiKey of apiData.api_keys) {
@@ -805,7 +804,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
       };
     });
 
-    const { data, status } = await postApiKeyScope({
+    const { data, status } = await postApiKeyScope.call({
       authContext,
       pathParams: {
         api_key_id: apiKey.id,
@@ -840,7 +839,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
       };
     });
 
-    const { data, status } = await deleteApiKeyScope({
+    const { data, status } = await deleteApiKeyScope.call({
       authContext,
       pathParams: {
         api_key_id: apiKey.id,
@@ -866,13 +865,13 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
       message: 'Creating API Key...',
     });
 
-    const { data, status } = await postApiKey({
+    const { data, status } = await postApiKey.call({
       authContext,
       data: apiKeyCreate,
     });
 
     if (status === 200) {
-      const apiData = data as PostApiKeyResponses['200'];
+      const apiData = data as (typeof postApiKey.responses)['200'];
       toastContext.update(toastId, {
         message: `Created API Key ${apiData.name}`,
         type: 'success',
@@ -904,7 +903,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
       return updated;
     });
 
-    const { data, status } = await patchApiKey({
+    const { data, status } = await patchApiKey.call({
       authContext,
       pathParams: {
         api_key_id: apiKeyId,
@@ -913,7 +912,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
     });
 
     if (status === 200) {
-      const apiData = data as PostApiKeyResponses['200'];
+      const apiData = data as (typeof postApiKey.responses)['200'];
       toastContext.update(toastId, {
         message: `Created API Key ${apiData.name}`,
         type: 'success',
@@ -952,7 +951,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
     });
     setApiKeyCount((prev) => prev - 1);
 
-    const { data, status } = await deleteApiKey({
+    const { data, status } = await deleteApiKey.call({
       authContext,
       pathParams: {
         api_key_id: apiKeyId,
@@ -960,7 +959,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
     });
 
     if (status === 204) {
-      const apiData = data as DeleteApiKeyResponses['204'];
+      const apiData = data as (typeof deleteApiKey.responses)['204'];
       toastContext.update(toastId, {
         message: `Deleted API Key ${apiKey.name}`,
         type: 'success',

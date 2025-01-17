@@ -1,8 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import {
-  postGalleryFile,
-  PostGalleryFileResponses,
-} from '../../services/apiServices';
+import { postGalleryFile } from '../../services/apiServices';
 import { AuthContext } from '../../contexts/Auth';
 import { AxiosProgressEvent } from 'axios';
 import {
@@ -50,7 +47,7 @@ function FileProgress({ file, authContext, galleryId }: FileProgressProps) {
         }
       };
 
-      const response = await postGalleryFile({
+      const response = await postGalleryFile.call({
         authContext: authContext,
         data: {
           file: 'NEEDS TO BE FIXED',
@@ -62,7 +59,7 @@ function FileProgress({ file, authContext, galleryId }: FileProgressProps) {
       });
 
       if (response.status === 201) {
-        const data = response.data as PostGalleryFileResponses['201'];
+        const data = response.data as (typeof postGalleryFile.responses)['201'];
         setUploadProgress((prev) => ({
           ...prev,
           status: 'valid',

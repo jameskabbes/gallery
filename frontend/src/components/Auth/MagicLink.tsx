@@ -20,11 +20,8 @@ import { IoLogInOutline, IoWarning } from 'react-icons/io5';
 import { IoCheckmark } from 'react-icons/io5';
 import {
   postRequestMagicLinkEmail,
-  PostRequestMagicLinkEmailResponses,
   postRequestMagicLinkSMS,
-  PostRequestMagicLinkSMSResponses,
   postLogInMagicLink,
-  PostLogInMagicLinkResponses,
 } from '../../services/apiServices';
 import { Card1 } from '../Utils/Card';
 import { Surface } from '../Utils/Surface';
@@ -60,14 +57,14 @@ function RequestMagicLink() {
     authModalsContext.activate(null);
 
     if (requestMagicLinkContext.medium === 'email') {
-      var { status } = await postRequestMagicLinkEmail({
+      var { status } = await postRequestMagicLinkEmail.call({
         authContext,
         data: {
           email: requestMagicLinkContext.email.value,
         },
       });
     } else if (requestMagicLinkContext.medium === 'sms') {
-      var { status } = await postRequestMagicLinkSMS({
+      var { status } = await postRequestMagicLinkSMS.call({
         authContext,
         data: {
           phone_number: requestMagicLinkContext.phoneNumber.value,
@@ -190,7 +187,7 @@ function VerifyMagicLink() {
   useEffect(() => {
     async function verifyMagicLink() {
       setStatus(null);
-      const { status } = await postLogInMagicLink({
+      const { status } = await postLogInMagicLink.call({
         authContext,
         data: {
           token: token,
