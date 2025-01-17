@@ -19,6 +19,10 @@ REQUIREMENTS_INSTALLED_PATH = SRC_DIR / 'requirements_installed.txt'
 SHARED_CONFIG = json.loads(PROJECT_CONFIG_PATH.read_text())
 SHARED_CONSTANTS = json.loads(PROJECT_CONSTANTS_PATH.read_text())
 
+# info from constants
+AUTH_KEY: str = SHARED_CONSTANTS['auth_key']
+HEADER_KEYS: dict[str, str] = SHARED_CONSTANTS['header_keys']
+FRONTEND_URLS: dict[str, str] = SHARED_CONSTANTS['frontend_urls']
 
 SCOPE_NAME_MAPPING: dict[types.ScopeTypes.name,
                          types.ScopeTypes.id] = SHARED_CONSTANTS['scope_name_mapping']

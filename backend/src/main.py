@@ -293,6 +293,7 @@ async def get_auth_root(authorization: typing.Annotated[GetAuthorizationReturn, 
 
 
 async def authenticate_user_with_username_and_password(form_data: typing.Annotated[OAuth2PasswordRequestForm, Depends()]) -> models.User:
+
     with Session(c.db_engine) as session:
         user = await models.User.authenticate(
             session, form_data.username, form_data.password)
@@ -334,8 +335,11 @@ class PostLoginWithPasswordResponse(GetAuthReturn):
 async def post_login_password(
     user: typing.Annotated[models.User, Depends(authenticate_user_with_username_and_password)],
     response: Response,
+    request: Request,
     stay_signed_in: bool = Form(c.authentication['stay_signed_in_default'])
 ) -> PostLoginWithPasswordResponse:
+
+    print(request.__dict__)
 
     with Session(c.db_engine) as session:
 
@@ -499,7 +503,7 @@ class PostLoginWithGoogleResponse(GetAuthReturn):
     pass
 
 
-@ auth_router.post("/login/google/", responses={status.HTTP_400_BAD_REQUEST: {"description": 'Invalid token'}})
+@ auth_router.post("/login/google/", responses={status.HTTP_400_BAD_REQUEST: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
 async def post_login_google(request_token: PostLoginWithGoogleRequest, response: Response) -> PostLoginWithGoogleResponse:
 
     async with httpx.AsyncClient() as client:
@@ -593,8 +597,8 @@ async def send_signup_link(session: Session, user: models.User,  email: typing.O
             session=session, c=c,  authorized_user_id=None, admin=True,
             create_model=models.UserAccessTokenAdminCreate(user_id=user._id, lifespan=c.authentication['expiry_timedeltas']['magic_link']))
 
-        url = '{}{}/?token={}'.format(c.frontend_urls['base'],
-                                      c.frontend_urls['verify_magic_link'], c.jwt_encode(user_access_token.encode()))
+        url = '{}{}/?token={}'.format(config.FRONTEND_URLS['base'],
+                                      config.FRONTEND_URLS['verify_magic_link'], c.jwt_encode(user_access_token.encode()))
 
         if email:
             c.send_email(
@@ -608,8 +612,8 @@ async def send_signup_link(session: Session, user: models.User,  email: typing.O
             email=email, lifespan=c.authentication['expiry_timedeltas']['request_sign_up']
         ))
         sign_up_jwt = c.jwt_encode(sign_up.encode())
-        url = '{}{}/?token={}'.format(c.frontend_urls['base'],
-                                      c.frontend_urls['verify_signup'], sign_up_jwt)
+        url = '{}{}/?token={}'.format(config.FRONTEND_URLS['base'],
+                                      config.FRONTEND_URLS['verify_signup'], sign_up_jwt)
 
         if email:
             c.send_email(email, 'Sign Up',
@@ -659,8 +663,8 @@ async def send_magic_link(session: Session, user: models.User, email: typing.Opt
         session=session, c=c,  authorized_user_id=None, admin=True,
         create_model=models.UserAccessTokenAdminCreate(user_id=user._id, lifespan=c.authentication['expiry_timedeltas']['magic_link']))
 
-    url = '{}{}/?token={}'.format(c.frontend_urls['base'],
-                                  c.frontend_urls['verify_magic_link'], c.jwt_encode(user_access_token.encode()))
+    url = '{}{}/?token={}'.format(config.FRONTEND_URLS['base'],
+                                  config.FRONTEND_URLS['verify_magic_link'], c.jwt_encode(user_access_token.encode()))
 
     if email:
         c.send_email(email, 'Magic Link', 'Click to login: {}'.format(url))

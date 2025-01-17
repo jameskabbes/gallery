@@ -975,7 +975,9 @@ export interface operations {
       };
       /** @description Invalid token */
       400: {
-        content: never;
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
       };
       /** @description Validation Error */
       422: {

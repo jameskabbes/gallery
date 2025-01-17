@@ -8,4 +8,11 @@ const apiClient = axios.create({
   paramsSerializer: (params) => qs.stringify(params, { arrayFormat: 'repeat' }), // Ensure consistent array serialization
 });
 
+apiClient.interceptors.request.use((config) => {
+  if (config.headers['Content-Type'] === 'application/x-www-form-urlencoded') {
+    config.data = qs.stringify(config.data);
+  }
+  return config;
+});
+
 export { apiClient };

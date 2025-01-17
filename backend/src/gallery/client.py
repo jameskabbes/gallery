@@ -92,11 +92,6 @@ class Client:
     jwt_algorithm: str
     google_client: dict
 
-    auth_key: str
-    header_keys: dict[str, str]
-    cookie_keys: dict[str, str]
-    frontend_urls: dict[str, str]
-
     def __init__(self, config: Config = {}):
 
         merged_config: Config = utils.deep_merge_dicts(DefaultConfig, config)

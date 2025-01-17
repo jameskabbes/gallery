@@ -242,17 +242,30 @@ function createApiService<
   TRequestContentType,
   TRequestData
 > {
+  // default to find the content type from the first request content
   if (!requestContentType) {
-    requestContentType = Object.keys(
-      openapi_schema.paths[path][method as string].requestBody.content
-    )[0] as TRequestContentType;
+    requestContentType = openapi_schema.paths[path][method as string]
+      ?.requestBody?.content
+      ? (Object.keys(
+          openapi_schema.paths[path][method as string].requestBody.content
+        )[0] as TRequestContentType)
+      : null;
   }
+
+  // default to find the content type from the first request content
   if (!responseContentType) {
-    responseContentType = Object.keys(
-      openapi_schema.paths[path][method as string].responses[
-        Object.keys(openapi_schema.paths[path][method as string].responses)[0]
-      ].content
-    )[0] as TResponseContentType;
+    responseContentType = openapi_schema.paths[path][method as string]
+      .responses[
+      Object.keys(openapi_schema.paths[path][method as string].responses)[0]
+    ]?.content
+      ? (Object.keys(
+          openapi_schema.paths[path][method as string].responses[
+            Object.keys(
+              openapi_schema.paths[path][method as string].responses
+            )[0]
+          ].content
+        )[0] as TResponseContentType)
+      : null;
   }
 
   const call = async ({
@@ -276,8 +289,8 @@ function createApiService<
       url,
       method,
       headers: {
-        'Content-Type': requestContentType,
-        Accept: responseContentType,
+        ...(requestContentType ? { 'Content-Type': requestContentType } : {}),
+        ...(responseContentType ? { Accept: responseContentType } : {}),
         ...headers,
       },
       ...rest,

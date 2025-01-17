@@ -10,11 +10,8 @@ import { setFileUploaderModal } from '../components/Gallery/FileUploader';
 
 import {
   deleteGallery,
-  DeleteGalleryResponses,
   getGalleryPage,
-  GetGalleryPageResponses,
   postGallerySync,
-  PostGallerySyncResponses,
 } from '../services/apiServices';
 
 import { IoCloudUploadOutline } from 'react-icons/io5';
@@ -59,7 +56,7 @@ function Gallery({ root = false }: Props) {
         gallery.name
       }`,
     });
-    const response = await postGallerySync({
+    const response = await postGallerySync.call({
       pathParams: {
         gallery_id: gallery.id,
       },
@@ -83,7 +80,7 @@ function Gallery({ root = false }: Props) {
     let toastId = toastContext.makePending({
       message: `Delete gallery ${gallery.date} ${gallery.name}`,
     });
-    const response = await deleteGallery({
+    const response = await deleteGallery.call({
       pathParams: {
         gallery_id: gallery.id,
       },
@@ -107,7 +104,7 @@ function Gallery({ root = false }: Props) {
     return <div>Loading...</div>;
   } else {
     if (status === 200) {
-      const apiData = data as GetGalleryPageResponses['200'];
+      const apiData = data as (typeof getGalleryPage.responses)['200'];
       return (
         <>
           <div className="flex flex-row space-x-2 ">

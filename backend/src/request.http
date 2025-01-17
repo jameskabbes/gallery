@@ -11,10 +11,10 @@
 # username=a@a.com&password=password
 
 # login 
-# POST http://localhost:8087/auth/login/password/
-# Content-Type: application/x-www-form-urlencoded
+POST http://localhost:8087/auth/login/password/
+Content-Type: application/x-www-form-urlencoded
 
-# username=a@a.com&password=password
+username=a@a.com&password=password
 
 #logout
 # POST http://localhost:8087/auth/logout/
@@ -138,10 +138,10 @@
 #     "lifespan": 100
 # }
 
-POST http://localhost:8087/auth/login/otp/email
-Content-Type: application/json
+# POST http://localhost:8087/auth/login/otp/email
+# Content-Type: application/json
 
-{
-    "code": "588793",
-    "email": "a@a.com"
-}
+# {
+#     "code": "588793",
+#     "email": "a@a.com"
+# }

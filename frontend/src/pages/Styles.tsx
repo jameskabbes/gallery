@@ -6,7 +6,7 @@ import {
   ModalType,
   ValidatedInputState,
 } from '../types';
-import { GetStylesPageResponses, getStylesPage } from '../services/apiServices';
+import { getStylesPage } from '../services/apiServices';
 import { useApiCall } from '../utils/api';
 import { ToastContext } from '../contexts/Toast';
 import { AuthContext } from '../contexts/Auth';
