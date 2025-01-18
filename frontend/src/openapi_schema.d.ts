@@ -1651,9 +1651,9 @@ export interface operations {
         /** @description Index of the first result */
         offset?: number;
         /** @description Ordered series of fields to sort the results by, in the order they should be applied */
-        order_by?: string[];
+        order_by?: ("issued" | "expiry" | "name")[];
         /** @description Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields */
-        order_by_desc?: string[];
+        order_by_desc?: ("issued" | "expiry" | "name")[];
       };
     };
     responses: {
@@ -1860,9 +1860,9 @@ export interface operations {
         /** @description Index of the first result */
         offset?: number;
         /** @description Ordered series of fields to sort the results by, in the order they should be applied */
-        order_by?: string[];
+        order_by?: ("issued" | "expiry" | "name")[];
         /** @description Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields */
-        order_by_desc?: string[];
+        order_by_desc?: ("issued" | "expiry" | "name")[];
       };
       path: {
         user_id: string;
@@ -2395,9 +2395,9 @@ export interface operations {
         /** @description Index of the first result */
         offset?: number;
         /** @description Ordered series of fields to sort the results by, in the order they should be applied */
-        order_by?: string[];
+        order_by?: ("issued" | "expiry" | "name")[];
         /** @description Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields */
-        order_by_desc?: string[];
+        order_by_desc?: ("issued" | "expiry" | "name")[];
       };
     };
     responses: {

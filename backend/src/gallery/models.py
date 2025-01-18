@@ -598,6 +598,7 @@ class AuthCredential:
         lifespan: typing.Optional[AuthCredentialTypes.lifespan] = None
         expiry: typing.Optional[AuthCredentialTypes.expiry] = None
 
+    class Create(Import):
         @ model_validator(mode='after')
         def check_lifespan_or_expiry(self):
             if self.lifespan == None and self.expiry == None:
@@ -610,6 +611,9 @@ class AuthCredential:
                 return self.expiry
             return datetime_module.datetime.now(
                 datetime_module.UTC) + self.lifespan
+
+    class Update(Import):
+        pass
 
     class JwtEncodeBase(typing.TypedDict):
         exp: AuthCredentialTypes.expiry_timestamp
@@ -683,7 +687,7 @@ class UserAccessTokenAdminUpdate(BaseModel):
     pass
 
 
-class UserAccessTokenAdminCreate(AuthCredential.Import):
+class UserAccessTokenAdminCreate(AuthCredential.Create):
     user_id: UserTypes.id
 
 
@@ -761,7 +765,7 @@ class OTPAdminUpdate(BaseModel):
     pass
 
 
-class OTPAdminCreate(AuthCredential.Import):
+class OTPAdminCreate(AuthCredential.Create):
     user_id: UserTypes.id
     hashed_code: OTPTypes.hashed_code
 
@@ -835,7 +839,7 @@ class ApiKeyImport(AuthCredential.Import):
     pass
 
 
-class ApiKeyUpdate(ApiKeyImport):
+class ApiKeyUpdate(ApiKeyImport, AuthCredential.Update):
     name: typing.Optional[ApiKeyTypes.name] = None
 
 
@@ -843,7 +847,7 @@ class ApiKeyAdminUpdate(ApiKeyUpdate):
     pass
 
 
-class ApiKeyCreate(ApiKeyImport):
+class ApiKeyCreate(ApiKeyImport, AuthCredential.Create):
     name: ApiKeyTypes.name
 
 
@@ -884,7 +888,7 @@ class ApiKey(
         **AuthCredential.Model._JWT_CLAIMS_MAPPING_BASE, **{'sub': 'id'}}
 
     _ROUTER_TAG = 'Api Key'
-    _ORDER_BY_OPTIONS: typing.ClassVar['ApiKeyTypes.order_by']
+    _ORDER_BY_OPTIONS: typing.ClassVar = ApiKeyTypes.order_by
 
     async def get_scope_ids(self, session: Session = None, c: client.Client = None) -> list[types.ScopeTypes.id]:
         return [api_key_scope.scope_id for api_key_scope in self.api_key_scopes]
@@ -956,7 +960,7 @@ class SignUpJwt:
         email: UserTypes.email
 
 
-class SignUpAdminCreate(AuthCredential.Import):
+class SignUpAdminCreate(AuthCredential.Create):
     email: UserTypes.email
 
 

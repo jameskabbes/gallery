@@ -19,6 +19,7 @@ import { postLogInPassword } from '../../services/apiServices';
 import { ModalsContext } from '../../contexts/Modals';
 import { AuthModalType } from '../../types';
 import { useLogInWithGoogle } from './useLogInWithGoogle';
+import { ValidatedInputToggle } from '../Form/ValidatedInputToggle';
 
 function LogIn() {
   const logInContext = useContext(LogInContext);
@@ -162,16 +163,23 @@ function LogIn() {
               />
             </section>
             <section className="flex flex-row items-center justify-center space-x-2">
-              <ValidatedInputCheckbox
+              <ValidatedInputToggle
                 state={logInContext.staySignedIn}
                 setState={logInContext.setStaySignedIn}
-                id="login-stay-signed-in"
+                toggleProps={{
+                  type: 'button',
+                }}
+                inputProps={{
+                  id: 'login-stay-signed-in',
+                }}
               />
               <label htmlFor="login-stay-signed-in">Remember Me</label>
             </section>
           </fieldset>
 
-          <ButtonSubmit disabled={!logInContext.valid}>Login</ButtonSubmit>
+          <ButtonSubmit type="submit" disabled={!logInContext.valid}>
+            Login
+          </ButtonSubmit>
         </form>
         <Surface keepParentMode={true}>
           <div className="flex flex-row items-center space-x-2 my-2">

@@ -626,13 +626,13 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
   const modalsContext = useContext(ModalsContext);
   const { activateButtonConfirmation } = useConfirmationModal();
 
-  const navigate = useNavigate();
-  const query = new URLSearchParams(useLocation().search);
-
   type Params = Parameters<typeof getApiKeysSettingsPage.call>[0]['params'];
   type ParamKey = keyof Params;
   type OrderByArray = Params['order_by'];
   type OrderByField = GetElementTypeFromArray<OrderByArray>;
+
+  const navigate = useNavigate();
+  const query = new URLSearchParams(useLocation().search);
 
   const queryParameters =
     openapi_schema['paths']['/pages/settings/api-keys/']['get']['parameters'];
@@ -691,11 +691,11 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
   );
 
   const [orderBy, setOrderBy] = useState<Params['order_by']>(
-    getOrderByFromQuery(query.getAll('order_by'))
+    getOrderByFromQuery(query.getAll('order_by') as OrderByArray)
   );
 
   const [orderByDesc, setOrderByDesc] = useState<Params['order_by_desc']>(
-    getOrderByFromQuery(query.getAll('order_by_desc'))
+    getOrderByFromQuery(query.getAll('order_by_desc') as OrderByArray)
   );
 
   //   Update URL when state changes
@@ -1088,56 +1088,54 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
             <table className="min-w-full">
               <thead className="text-left">
                 <tr>
-                  {['name', 'issued', 'expiry'].map((field) => (
+                  {['name', 'issued', 'expiry'].map((field: OrderByField) => (
                     <th key={field}>
                       {(() => {
-                        const typedField = field as OrderByField; // Type assertion
                         let orderByState: OrderByState = 'off';
 
                         // get index of field in orderBy
-                        const orderByIndex = orderBy.indexOf(typedField);
+                        const orderByIndex = orderBy.indexOf(field);
                         if (orderByIndex !== -1) {
                           orderByState = 'asc';
                         }
-                        const orderByDescIndex =
-                          orderByDesc.indexOf(typedField);
+                        const orderByDescIndex = orderByDesc.indexOf(field);
                         if (orderByDescIndex !== -1) {
                           orderByState = 'desc';
                         }
 
                         return (
                           <>
-                            {orderByFields.has(typedField) ? (
+                            {orderByFields.has(field) ? (
                               <div
                                 className="flex flex-row items-center surface-hover cursor-pointer pl-2"
                                 onClick={() => {
                                   if (orderByState === 'off') {
                                     setOrderBy((prev) => {
-                                      const updated = [...prev, typedField];
+                                      const updated = [...prev, field];
                                       return updated;
                                     });
                                   } else if (orderByState === 'asc') {
                                     setOrderByDesc((prev) => {
-                                      const updated = [...prev, typedField];
+                                      const updated = [...prev, field];
                                       return updated;
                                     });
                                   } else if (orderByState === 'desc') {
                                     setOrderBy((prev) => {
                                       const updated = prev.filter(
-                                        (item) => item !== typedField
+                                        (item) => item !== field
                                       );
                                       return updated;
                                     });
                                     setOrderByDesc((prev) => {
                                       const updated = prev.filter(
-                                        (item) => item !== typedField
+                                        (item) => item !== field
                                       );
                                       return updated;
                                     });
                                   }
                                 }}
                               >
-                                {typedField}
+                                {field}
                                 {orderByState === 'off' ? (
                                   <IoCaretForward />
                                 ) : (
@@ -1148,14 +1146,14 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
                                       <IoCaretUp />
                                     )}
                                     {(() => {
-                                      const index = orderBy.indexOf(typedField);
+                                      const index = orderBy.indexOf(field);
                                       return index + 1;
                                     })()}
                                   </>
                                 )}
                               </div>
                             ) : (
-                              typedField
+                              field
                             )}
                           </>
                         );

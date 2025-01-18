@@ -91,7 +91,7 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
                             content={"detail": exc.detail}, headers=exc.headers)
 
     # in get_auhorization, a special header 'X-Auth-Logout' is set, signaling the user should be logged out
-    if exc.headers and exc.headers.get(c.header_keys['auth_logout']) != None:
+    if exc.headers and exc.headers.get(config.HEADER_KEYS['auth_logout']) != None:
         auth.delete_access_token_cookie(response)
     return response
 

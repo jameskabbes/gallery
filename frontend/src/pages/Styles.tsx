@@ -150,20 +150,20 @@ function Styles() {
   }, [counter]);
 
   return (
-    <div>
+    <div className="p-2">
       <header>
         <h1>Design tokens</h1>
       </header>
-      <div className="grid grid-cols-1 md:grid-cols-2">
-        <section className="flex-1">
-          <Card1 className="m-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <section className="flex flex-col space-y-2">
+          <Card1>
             <div className="overflow-x-scroll">
               <p>
                 asdasdkjaksldjkalsjdkalsjdlkajsdklasjdaksljdlkasdjlkasjdkalsdjklasjkdalskjdlaksjdklasjdlkasjdlkasjdlkasjdlkasjdlkajskdljsa
               </p>
             </div>
           </Card1>
-          <Card1 className="m-2">
+          <Card1 className="flex flex-col ">
             <h2>Buttons</h2>
             <div className="flex flex-row space-x-2">
               <div className="flex-1 flex flex-col space-y-4">
@@ -180,7 +180,7 @@ function Styles() {
               </div>
             </div>
           </Card1>
-          <Card1 className="flex flex-col space-y-2 m-2 ">
+          <Card1 className="flex flex-col space-y-2">
             <h2>Loaders</h2>
             <div className="flex flex-col border-inherit space-y-2">
               <div className="flex flex-row justify-around">
@@ -215,7 +215,7 @@ function Styles() {
               </Surface>
             </div>
           </Card1>
-          <Card1 className="flex flex-col space-y-2 m-2 ">
+          <Card1 className="flex flex-col space-y-2">
             <h2>Modals</h2>
             <p>Counter: {counter}</p>
             <Button2 onClick={() => setCounter((prev) => prev + 1)}>
@@ -265,8 +265,8 @@ function Styles() {
             </Card1>
           </Card1>
         </section>
-        <section className="flex-1 flex-col">
-          <Card1 className="flex flex-col space-y-2 m-2 overflow-x-auto">
+        <section className="flex flex-col space-y-2">
+          <Card1 className="flex flex-col space-y-2 overflow-x-auto">
             <form
               action="submit"
               onSubmit={(e) => {
@@ -315,57 +315,73 @@ function Styles() {
                     <ValidatedInputToggle
                       state={toggleState}
                       setState={setToggleState}
-                      id="toggle-input-1"
                       showStatus={true}
+                      inputProps={{
+                        id: 'toggle-input-1',
+                      }}
                     />
                   </h1>
                   <h2>
                     <ValidatedInputToggle
                       state={toggleState}
                       setState={setToggleState}
-                      id="toggle-input-2"
+                      inputProps={{
+                        id: 'toggle-input-2',
+                      }}
                     />
                   </h2>
                   <h3>
                     <ValidatedInputToggle
                       state={toggleState}
                       setState={setToggleState}
-                      id="toggle-input-3"
+                      inputProps={{
+                        id: 'toggle-input-3',
+                      }}
                     />
                   </h3>
                   <h4>
                     <ValidatedInputToggle
                       state={toggleState}
                       setState={setToggleState}
-                      id="toggle-input-4"
+                      inputProps={{
+                        id: 'toggle-input-4',
+                      }}
                     />
                   </h4>
                   <h5>
                     <ValidatedInputToggle
                       state={toggleState}
                       setState={setToggleState}
-                      id="toggle-input-5"
+                      inputProps={{
+                        id: 'toggle-input-5',
+                      }}
                     />
                   </h5>
                   <h6>
                     <ValidatedInputToggle
                       state={toggleState}
                       setState={setToggleState}
-                      id="toggle-input-6"
+                      inputProps={{
+                        id: 'toggle-input-6',
+                      }}
                     />
                   </h6>
                   <span className="p mb-0">
                     <ValidatedInputToggle
                       state={toggleState}
                       setState={setToggleState}
-                      id="toggle-input-7"
+                      inputProps={{
+                        id: 'toggle-input-7',
+                      }}
                     />
                   </span>
                   <span>
                     <ValidatedInputToggle
                       state={toggleState}
                       setState={setToggleState}
-                      id="toggle-input-8"
+                      inputProps={{
+                        id: 'toggle-input-8',
+                      }}
                     />
                   </span>
                   <span>
@@ -451,7 +467,7 @@ function Styles() {
               </ButtonSubmit>
             </form>
           </Card1>
-          <Card1 className="flex flex-col space-y-2 m-2">
+          <Card1 className="flex flex-col space-y-2">
             <h2>Toast</h2>
 
             <Button1
@@ -476,7 +492,7 @@ function Styles() {
               Add Random Toast
             </Button1>
           </Card1>
-          <Card1 className="flex flex-col space-y-2 m-2">
+          <Card1 className="flex flex-col space-y-2">
             <h2 className="mb-12">Headings</h2>
             <h1>Heading 1</h1>
             <h2>Heading 2</h2>

@@ -19,7 +19,6 @@ async function callApi<TResponseData, TRequestData = any>({
       ...rest,
     };
 
-    console.log(requestConfig);
     console.log(method, url);
     const response = await apiClient.request<TResponseData>(requestConfig);
 
@@ -30,7 +29,6 @@ async function callApi<TResponseData, TRequestData = any>({
       authContext.updateFromApiResponse(response.data);
     }
 
-    console.log(response.data);
     return response;
   } catch (error) {
     console.log(error);

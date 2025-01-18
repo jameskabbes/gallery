@@ -22,4 +22,8 @@ function InputCheckboxBase({ setChecked, ...rest }: InputCheckboxBaseProps) {
   );
 }
 
-export { InputCheckboxBase, InputCheckboxBaseInputProps };
+export {
+  InputCheckboxBase,
+  InputCheckboxBaseInputProps,
+  InputCheckboxBaseProps,
+};
