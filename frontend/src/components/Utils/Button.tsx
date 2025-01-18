@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import createStyledSurfaceComponentCreator from '../../utils/createStyledSurfaceComponent';
 
 const createStyledButton = createStyledSurfaceComponentCreator<
@@ -17,51 +17,56 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   isActive?: boolean;
 }
 
-function Button1({ children, isActive, ref, ...rest }: ButtonProps) {
-  return (
-    <Button1Base {...rest} className={`${rest.className} }`}>
-      {children}
-    </Button1Base>
-  );
-}
+const Button1 = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ children, isActive, className = '', ...rest }, ref) => {
+    return (
+      <Button1Base ref={ref} {...rest} className={`${className}`}>
+        {children}
+      </Button1Base>
+    );
+  }
+);
 
-function Button2({ children, isActive, ...rest }: ButtonProps) {
-  return (
-    <Button2Base
-      {...rest}
-      className={`${rest.className} ${
-        isActive ? 'border-primary-light dark:border-primary-dark' : ''
-      } hover:border-primary-light dark:hover:border-primary-dark`}
-    >
-      {children}
-    </Button2Base>
-  );
-}
+const Button2 = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ children, isActive, className = '', ...rest }, ref) => {
+    return (
+      <Button2Base
+        ref={ref}
+        {...rest}
+        className={`${className} ${
+          isActive ? 'border-primary-light dark:border-primary-dark' : ''
+        } hover:border-primary-light dark:hover:border-primary-dark`}
+      >
+        {children}
+      </Button2Base>
+    );
+  }
+);
 
-function Button3({ children, isActive, ...rest }: ButtonProps) {
-  return (
-    <Button3Base
-      {...rest}
-      className={`${rest.className} ${
-        isActive ? 'border-primary-light dark:border-primary-dark' : ''
-      }`}
-    >
-      {children}
-    </Button3Base>
-  );
-}
+const Button3 = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ children, isActive, className = '', ...rest }, ref) => {
+    return (
+      <Button3Base
+        ref={ref}
+        {...rest}
+        className={`${className} ${
+          isActive ? 'border-primary-light dark:border-primary-dark' : ''
+        }`}
+      >
+        {children}
+      </Button3Base>
+    );
+  }
+);
 
-function ButtonSubmit({ children, isActive, ...rest }: ButtonProps) {
-  return (
-    <ButtonSubmitBase
-      {...rest}
-      className={`${rest.className} ${
-        isActive ? 'border-primary-light dark:border-primary-dark' : ''
-      }`}
-    >
-      {children}
-    </ButtonSubmitBase>
-  );
-}
+const ButtonSubmit = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ children, isActive, className = '', ...rest }, ref) => {
+    return (
+      <ButtonSubmitBase ref={ref} {...rest} className={`${className} `}>
+        {children}
+      </ButtonSubmitBase>
+    );
+  }
+);
 
 export { Button1, Button2, Button3, ButtonSubmit, createStyledButton };
