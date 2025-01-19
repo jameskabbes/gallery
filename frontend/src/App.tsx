@@ -35,7 +35,7 @@ function App(): JSX.Element {
               {/* /galleries/galleryId */}
               <Route
                 path={`${constants.frontend_urls.galleries}/:galleryId`}
-                element={<Gallery />}
+                element={<Gallery root={false} />}
               />
               <Route
                 path={`${constants.frontend_urls.verify_signup}`}

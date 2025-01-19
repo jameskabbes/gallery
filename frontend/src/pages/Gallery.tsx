@@ -34,19 +34,19 @@ function Gallery({ root = false }: Props) {
   const galleryId: components['schemas']['Gallery']['id'] =
     useParams().galleryId;
 
-  // params: {
-  //     root: root,
-  //   },
-
-  const { data, loading, status, refetch } = useApiCall(getGalleryPage, {
-    params: {
-      root: root,
+  const { data, loading, status, refetch } = useApiCall(
+    getGalleryPage,
+    {
+      authContext,
+      pathParams: {
+        gallery_id: galleryId,
+      },
+      params: {
+        root: root,
+      },
     },
-    pathParams: {
-      gallery_id: galleryId,
-    },
-    authContext,
-  });
+    [galleryId]
+  );
 
   async function handleSyncGallery(
     gallery: components['schemas']['GalleryPublic']
@@ -66,11 +66,13 @@ function Gallery({ root = false }: Props) {
         message: 'Gallery synced with local',
         type: 'success',
       });
+      refetch();
     } else {
       toastContext.update(toastId, {
         message: 'Error syncing gallery with local',
         type: 'error',
       });
+      refetch();
     }
   }
 

@@ -30,49 +30,49 @@ function FileProgress({ file, authContext, galleryId }: FileProgressProps) {
     status: 'loading',
   });
 
-  useEffect(() => {
-    const handleFileUpload = async () => {
-      const formData = new FormData();
-      formData.append('file', file);
+  console.log(file);
 
-      const onUploadProgress = (event: AxiosProgressEvent) => {
-        if (event.lengthComputable) {
-          const percentComplete = Math.round(
-            (event.loaded / event.total) * 100
-          );
-          setUploadProgress((prev) => ({
-            ...prev,
-            value: percentComplete,
-          }));
-        }
-      };
+  const handleFileUpload = async () => {
+    const formData = new FormData();
+    formData.append('file', file);
 
-      const response = await postGalleryFile.call({
-        authContext: authContext,
-        data: {
-          file: 'NEEDS TO BE FIXED',
-        },
-        pathParams: {
-          gallery_id: galleryId,
-        },
-        onUploadProgress: onUploadProgress,
-      });
-
-      if (response.status === 201) {
-        const data = response.data as (typeof postGalleryFile.responses)['201'];
+    const onUploadProgress = (event: AxiosProgressEvent) => {
+      if (event.lengthComputable) {
+        const percentComplete = Math.round((event.loaded / event.total) * 100);
         setUploadProgress((prev) => ({
           ...prev,
-          status: 'valid',
-        }));
-      } else {
-        setUploadProgress((prev) => ({
-          ...prev,
-          status: 'invalid',
-          error: 'Failed to upload file',
+          value: percentComplete,
         }));
       }
     };
 
+    const response = await postGalleryFile.call({
+      authContext: authContext,
+      data: {
+        file: formData.get('file') as string,
+      },
+      pathParams: {
+        gallery_id: galleryId,
+      },
+      onUploadProgress: onUploadProgress,
+    });
+
+    if (response.status === 201) {
+      const data = response.data as (typeof postGalleryFile.responses)['201'];
+      setUploadProgress((prev) => ({
+        ...prev,
+        status: 'valid',
+      }));
+    } else {
+      setUploadProgress((prev) => ({
+        ...prev,
+        status: 'invalid',
+        error: 'Failed to upload file',
+      }));
+    }
+  };
+
+  useEffect(() => {
     handleFileUpload();
   }, [file, authContext, galleryId]);
 

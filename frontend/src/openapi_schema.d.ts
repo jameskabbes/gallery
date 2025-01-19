@@ -2097,7 +2097,9 @@ export interface operations {
   get_galleries_galleries__get: {
     parameters: {
       query?: {
+        /** @description Quantity of results */
         limit?: number;
+        /** @description Index of the first result */
         offset?: number;
       };
     };
@@ -2331,7 +2333,9 @@ export interface operations {
   get_galleries_by_user_admin_admin_galleries_users__user_id__get: {
     parameters: {
       query?: {
+        /** @description Quantity of results */
         limit?: number;
+        /** @description Index of the first result */
         offset?: number;
       };
       path: {

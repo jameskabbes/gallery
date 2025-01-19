@@ -131,23 +131,23 @@ async def get_auth_from_auth_credential_table_inst(
 ) -> GetAuthorizationReturn:
 
     if not auth_credential_table_inst:
-        return GetAuthorizationReturn(exception='authorization_expired')
+        return GetAuthorizationReturn(exception=auth.authorization_expired_exception)
 
     # if it expired, delete it
     if dt_now > auth_credential_table_inst.expiry:
         session.delete(auth_credential_table_inst)
         session.commit()
-        return GetAuthorizationReturn(exception='authorization_expired')
+        return GetAuthorizationReturn(exception=auth.authorization_expired_exception)
 
     if override_lifetime != None:
         if dt_now > (auth_credential_table_inst.issued + override_lifetime):
             session.delete(auth_credential_table_inst)
             session.commit()
-            return GetAuthorizationReturn(exception='authorization_expired')
+            return GetAuthorizationReturn(exception=auth.authorization_expired_exception)
 
     user = auth_credential_table_inst.user
     if user == None:
-        return GetAuthorizationReturn(exception='user_not_found')
+        return GetAuthorizationReturn(exception=auth.user_not_found_exception)
 
     scope_ids = await auth_credential_table_inst.get_scope_ids(session)
 
@@ -389,7 +389,7 @@ async def post_login_magic_link(
         token_lifespan = c.authentication['expiry_timedeltas']['access_token']
         user_access_token = await models.UserAccessToken.api_post(
             session=session, c=c,  authorized_user_id=authorization._user_id, admin=False, create_model=models.UserAccessTokenAdminCreate(
-                user_id=authorization.user.id, lifespan=token_lifespan
+                user_id=authorization._user_id, lifespan=token_lifespan
             )
         )
         auth.set_access_token_cookie(response, c.jwt_encode(
@@ -1024,7 +1024,7 @@ async def get_api_key_by_id(
         make_get_auth_dependency())]
 ) -> models.ApiKeyPrivate:
     with Session(c.db_engine) as session:
-        return models.ApiKeyPrivate.model_validate(await models.ApiKey.api_get(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=False))
+        return models.ApiKeyPrivate.model_validate(await models.ApiKey.api_get(session=session, c=c, authorized_user_id=authorization._user_id, id=api_key_id, admin=False))
 
 
 @ api_key_admin_router.get('/{api_key_id}/', responses=models.ApiKey.get_responses())
@@ -1034,7 +1034,7 @@ async def get_api_key_by_id_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ) -> models.ApiKey:
     with Session(c.db_engine) as session:
-        return await models.ApiKey.api_get(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=True)
+        return await models.ApiKey.api_get(session=session, c=c, authorized_user_id=authorization._user_id, id=api_key_id, admin=True)
 
 
 @ api_key_router.post('/', responses=models.ApiKey.post_responses())
@@ -1056,7 +1056,7 @@ async def post_api_key_to_user_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ) -> models.ApiKey:
     with Session(c.db_engine) as session:
-        return await models.ApiKey.api_post(session=session, c=c, authorized_user_id=authorization.user.id, admin=True, create_model=models.ApiKeyAdminCreate(**api_key_create_admin.model_dump(exclude_unset=True)))
+        return await models.ApiKey.api_post(session=session, c=c, authorized_user_id=authorization._user_id, admin=True, create_model=models.ApiKeyAdminCreate(**api_key_create_admin.model_dump(exclude_unset=True)))
 
 
 @ api_key_router.patch('/{api_key_id}/', responses=models.ApiKey.patch_responses())
@@ -1067,7 +1067,7 @@ async def patch_api_key(
         make_get_auth_dependency())]
 ) -> models.ApiKeyPrivate:
     with Session(c.db_engine) as session:
-        return models.ApiKeyPrivate.from_api_key(await models.ApiKey.api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=False, update_model=models.ApiKeyAdminUpdate(**api_key_update.model_dump(exclude_unset=True))))
+        return models.ApiKeyPrivate.from_api_key(await models.ApiKey.api_patch(session=session, c=c, authorized_user_id=authorization._user_id, id=api_key_id, admin=False, update_model=models.ApiKeyAdminUpdate(**api_key_update.model_dump(exclude_unset=True))))
 
 
 @ api_key_admin_router.patch('/{api_key_id}/', responses=models.ApiKey.patch_responses())
@@ -1078,7 +1078,7 @@ async def patch_api_key_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ) -> models.ApiKey:
     with Session(c.db_engine) as session:
-        return await models.ApiKey.api_patch(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=True, update_model=models.ApiKeyAdminUpdate(**api_key_update_admin.model_dump(exclude_unset=True)))
+        return await models.ApiKey.api_patch(session=session, c=c, authorized_user_id=authorization._user_id, id=api_key_id, admin=True, update_model=models.ApiKeyAdminUpdate(**api_key_update_admin.model_dump(exclude_unset=True)))
 
 
 @ api_key_router.delete('/{api_key_id}/', responses=models.ApiKey.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
@@ -1088,7 +1088,7 @@ async def delete_api_key(
         make_get_auth_dependency())]
 ):
     with Session(c.db_engine) as session:
-        return await models.ApiKey.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=False)
+        return await models.ApiKey.api_delete(session=session, c=c, authorized_user_id=authorization._user_id, id=api_key_id, admin=False)
 
 
 @ api_key_admin_router.delete('/{api_key_id}/', responses=models.ApiKey.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
@@ -1098,7 +1098,7 @@ async def delete_api_key_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ):
     with Session(c.db_engine) as session:
-        return await models.ApiKey.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=True)
+        return await models.ApiKey.api_delete(session=session, c=c, authorized_user_id=authorization._user_id, id=api_key_id, admin=True)
 
 
 class ApiKeyJWTResponse(BaseModel):
@@ -1112,7 +1112,7 @@ async def get_api_key_jwt(
         make_get_auth_dependency())]
 ) -> ApiKeyJWTResponse:
     with Session(c.db_engine) as session:
-        api_key = await models.ApiKey.api_get(session=session, c=c, authorized_user_id=authorization.user.id, id=api_key_id, admin=False)
+        api_key = await models.ApiKey.api_get(session=session, c=c, authorized_user_id=authorization._user_id, id=api_key_id, admin=False)
         return ApiKeyJWTResponse(
             jwt=c.jwt_encode(api_key.encode())
         )
@@ -1194,7 +1194,7 @@ async def get_api_key_available(
 ):
     with Session(c.db_engine) as session:
         await models.ApiKey.api_get_is_available(session, models.ApiKeyAdminAvailable(
-            **api_key_available.model_dump(exclude_unset=True), user_id=authorization.user.id
+            **api_key_available.model_dump(exclude_unset=True), user_id=authorization._user_id
         ))
 
 
@@ -1232,7 +1232,7 @@ async def add_scope_to_api_key(
         make_get_auth_dependency())]
 ):
     with Session(c.db_engine) as session:
-        return await models.ApiKeyScope.api_post(session=session, c=c, authorized_user_id=authorization.user.id, create_model=models.ApiKeyScopeAdminCreate(api_key_id=api_key_id, scope_id=scope_id), admin=False)
+        return await models.ApiKeyScope.api_post(session=session, c=c, authorized_user_id=authorization._user_id, create_model=models.ApiKeyScopeAdminCreate(api_key_id=api_key_id, scope_id=scope_id), admin=False)
 
 
 @ api_key_scope_admin_router.post('/api-keys/{api_key_id}/scopes/{scope_id}/',
@@ -1246,7 +1246,7 @@ async def add_scope_to_api_key_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ):
     with Session(c.db_engine) as session:
-        return await models.ApiKeyScope.api_post(session=session, c=c, authorized_user_id=authorization.user.id, create_model=models.ApiKeyScopeAdminCreate(api_key_id=api_key_id, scope_id=scope_id), admin=True)
+        return await models.ApiKeyScope.api_post(session=session, c=c, authorized_user_id=authorization._user_id, create_model=models.ApiKeyScopeAdminCreate(api_key_id=api_key_id, scope_id=scope_id), admin=True)
 
 
 @ api_key_scope_router.delete('/api-keys/{api_key_id}/scopes/{scope_id}/',
@@ -1261,7 +1261,7 @@ async def remove_scope_from_api_key(
         make_get_auth_dependency())]
 ):
     with Session(c.db_engine) as session:
-        return await models.ApiKeyScope.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=models.ApiKeyScopeIdBase(api_key_id=api_key_id, scope_id=scope_id)._id, admin=False)
+        return await models.ApiKeyScope.api_delete(session=session, c=c, authorized_user_id=authorization._user_id, id=models.ApiKeyScopeIdBase(api_key_id=api_key_id, scope_id=scope_id)._id, admin=False)
 
 
 @ api_key_scope_admin_router.delete('/api-keys/{api_key_id}/scopes/{scope_id}/',
@@ -1276,7 +1276,7 @@ async def remove_scope_from_api_key_admin(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ):
     with Session(c.db_engine) as session:
-        return await models.ApiKeyScope.api_delete(session=session, c=c, authorized_user_id=authorization.user.id, id=models.ApiKeyScopeIdBase(api_key_id=api_key_id, scope_id=scope_id)._id, admin=True)
+        return await models.ApiKeyScope.api_delete(session=session, c=c, authorized_user_id=authorization._user_id, id=models.ApiKeyScopeIdBase(api_key_id=api_key_id, scope_id=scope_id)._id, admin=True)
 
 app.include_router(api_key_scope_router)
 app.include_router(api_key_scope_admin_router)
@@ -1381,7 +1381,7 @@ async def get_gallery_available(
 ):
     with Session(c.db_engine) as session:
         await models.Gallery.api_get_is_available(session, models.GalleryAdminAvailable(
-            **gallery_available.model_dump(exclude_unset=True), user_id=authorization.user.id
+            **gallery_available.model_dump(exclude_unset=True), user_id=authorization._user_id
         ))
 
 
@@ -1394,18 +1394,20 @@ async def get_gallery_available_admin(
     with Session(c.db_engine) as session:
         await models.Gallery.api_get_is_available(session, gallery_available_admin)
 
+get_galleries_pagination = get_pagination()
+
 
 @ gallery_router.get('/')
 async def get_galleries(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())],
-    limit: int = Query(10, ge=1, le=100),
-    offset: int = Query(0, ge=0),
+    pagination: models.Pagination = Depends(get_galleries_pagination)
+
 ) -> list[models.GalleryPrivate]:
 
     with Session(c.db_engine) as session:
         galleries = session.exec(select(models.Gallery).where(
-            models.Gallery.user_id == authorization._user_id).offset(offset).limit(limit)).all()
+            models.Gallery.user_id == authorization._user_id).offset(pagination.offset).limit(pagination.limit)).all()
         return [models.GalleryPrivate.model_validate(gallery) for gallery in galleries]
 
 
@@ -1430,13 +1432,12 @@ async def get_galleries_by_user_admin(
     user_id: models.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))],
-    limit: int = Query(10, ge=1, le=100),
-    offset: int = Query(0, ge=0),
+    pagination: models.Pagination = Depends(get_galleries_pagination)
 ) -> list[models.Gallery]:
 
     with Session(c.db_engine) as session:
         galleries = session.exec(select(models.Gallery).where(
-            models.Gallery.user_id == user_id).offset(offset).limit(limit)).all()
+            models.Gallery.user_id == user_id).offset(pagination.offset).limit(pagination.limit)).all()
         return galleries
 
 
@@ -1449,29 +1450,32 @@ async def upload_file_to_gallery(
     gallery_id: models.GalleryTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())],
-    file: UploadFile = File(...)
+    file: UploadFile
 ) -> UploadFileToGalleryResponse:
 
-    # with Session(c.db_engine) as session:
-    #     gallery = await models.Gallery.get(session, gallery_id)
-    #     if not gallery:
-    #         raise HTTPException(status.HTTP_404_NOT_FOUND,
-    #                             detail=models.Gallery.not_found_message())
+    with Session(c.db_engine) as session:
 
-    #     gallery_permission = await models.GalleryPermission.GalleryPermissionModel.get(
-    #         session, (gallery_id, authorization.user.id))
+        gallery = await models.Gallery._basic_api_get(session, gallery_id)
 
-    #     if not gallery_permission:
-    #         raise HTTPException(status.HTTP_404_NOT_FOUND,
-    #                             detail=models.Gallery.not_found_message())
-    #     if gallery_permission.permission_level < c.permission_level_name_mapping['editor']:
-    #         raise HTTPException(status.HTTP_403_FORBIDDEN,
-    #                             detail='User does not have permission to add files to this gallery')
+        if gallery.user.id != authorization._user_id:
+            gallery_permission = await models.GalleryPermission.api_get(session=session, c=c, authorized_user_id=authorization._user_id, id=models.GalleryPermissionIdBase(gallery_id=gallery_id, user_id=authorization._user_id)._id, admin=False)
 
-    #     print(file.__dict__)
-    #     file_path = gallery.get_dir(c.galleries_dir) / file.filename
-    #     with open(file_path, "wb") as buffer:
-    #         shutil.copyfileobj(file.file, buffer)
+            if not gallery_permission:
+                if gallery.visibility_level == config.VISIBILITY_LEVEL_NAME_MAPPING['private']:
+                    raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                        detail=models.Gallery.not_found_message())
+
+                if gallery.visibility_level == config.VISIBILITY_LEVEL_NAME_MAPPING['public']:
+                    raise HTTPException(status.HTTP_403_FORBIDDEN,
+                                        detail='User does not have permission to add files to this gallery')
+
+            if gallery_permission.permission_level < config.PERMISSION_LEVEL_NAME_MAPPING['editor']:
+                raise HTTPException(status.HTTP_403_FORBIDDEN,
+                                    detail='User does not have permission to add files to this gallery')
+
+        file_path = (await gallery.get_dir(session, c.galleries_dir)) / file.filename
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
 
     return UploadFileToGalleryResponse(message="Files uploaded successfully")
 
@@ -1484,7 +1488,7 @@ async def sync_gallery(
 ) -> DetailOnlyResponse:
 
     with Session(c.db_engine) as session:
-        gallery = await models.Gallery.api_get(session=session, c=c, authorized_user_id=authorization.user.id, id=gallery_id, admin=False)
+        gallery = await models.Gallery.api_get(session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id, admin=False)
         dir = await gallery.get_dir(session, c.galleries_dir)
         await gallery.sync_with_local(session, c, dir)
         return DetailOnlyResponse(detail='Synced gallery')
@@ -1598,18 +1602,18 @@ async def get_gallery_page(
     root: bool = Query(False),
 ) -> GetGalleryPageResponse:
 
-    if root:
-        with Session(c.db_engine) as session:
+    with Session(c.db_engine) as session:
+        if root:
             if not authorization.isAuthorized:
                 raise HTTPException(status.HTTP_404_NOT_FOUND,
                                     detail=models.Gallery.not_found_message())
 
-            gallery = await models.Gallery.get_root_gallery(session, authorization.user.id)
+            gallery = await models.Gallery.get_root_gallery(session, authorization._user_id)
             gallery_id = gallery._id
 
-    with Session(c.db_engine) as session:
-        gallery = await models.Gallery.api_get(
-            session=session, c=c,  authorized_user_id=None if not authorization.isAuthorized else authorization.user.id, id=gallery_id, admin=False)
+        else:
+            gallery = await models.Gallery.api_get(
+                session=session, c=c,  authorized_user_id=authorization._user_id, id=gallery_id, admin=False)
 
         return GetGalleryPageResponse(
             **get_auth(authorization).model_dump(),

@@ -1358,6 +1358,12 @@ class Gallery(
             new_gallery = await Gallery.api_post(
                 session=session, c=c, authorized_user_id=self.user_id, admin=False, mkdir=False, create_model=GalleryAdminCreate(name=name, user_id=self.user_id, visibility_level=self.visibility_level, parent_id=self.id, date=date))
 
+        for file in files:
+            print(file)
+            print(file.name)
+            print(file.stem)
+            print(file.suffix)
+
         # add new files, remove old ones
         local_file_by_names = {
             file.name: file for file in files}
@@ -1374,7 +1380,10 @@ class Gallery(
             file = db_files_by_names[file_name]
 
             # if this is the last image tied to that version, delete the version too
-            if file.suffix in ImageFileMetadata._SUFFIXES:
+            if file.suffix in ImageFileMetadataConfig._SUFFIXES:
+                print(file)
+                print(file.image_file_metadata)
+
                 image_version = await ImageVersion.get_one_by_id(session, file.image_file_metadata.version_id)
                 if len(image_version.image_file_metadatas) == 1:
                     await ImageVersion.api_delete(session=session, c=c, id=image_version.id, authorized_user_id=self.user_id, admin=False)
@@ -1395,7 +1404,7 @@ class Gallery(
             local_file_by_names[file_name].rename(
                 local_file_by_names[file_name].with_name(new_file.name))
 
-            if suffix in ImageFileMetadata._SUFFIXES:
+            if suffix in ImageFileMetadataConfig._SUFFIXES:
                 image_files.append(new_file)
 
         # loop through files twice, adding the original images first
@@ -1524,7 +1533,7 @@ class GalleryPermission(
     async def _check_authorization_existing(self, **kwargs):
 
         if not kwargs['admin']:
-            if self.gallery.user != kwargs['authorized_user_id']:
+            if self.gallery.user._id != kwargs['authorized_user_id']:
                 authorized_user_gallery_permission = await self.get_one_by_id(kwargs['session'], GalleryPermissionIdBase(
                     gallery_id=self.gallery._id, user_id=kwargs['authorized_user_id']
                 )._id)
@@ -1598,7 +1607,7 @@ class FileModel(
 
     @ property
     def name(self) -> str:
-        return self.stem + self.suffix
+        return self.stem + '' if self.suffix is None else self.suffix
 
 
 class ImageVersionTypes:

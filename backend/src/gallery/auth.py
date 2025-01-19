@@ -1,9 +1,6 @@
 from gallery import client, config, types
 import typing
 from fastapi import Request, HTTPException, status, Response
-from fastapi.security import OAuth2
-from fastapi.openapi.models import OAuthFlows
-from fastapi.security.utils import get_authorization_scheme_param
 import datetime
 
 ACCESS_TOKEN_COOKIE_KEY = "access_token"
