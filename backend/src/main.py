@@ -11,6 +11,7 @@ from sqlalchemy import and_
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql import func
 from gallery import get_client, models, utils, auth, client, types, config
+from gallery.models import User, ApiKey, ApiKeyScope, File, Gallery, OTP, UserAccessToken
 import datetime
 from sqlmodel import Session, SQLModel, select
 import typing
@@ -318,7 +319,7 @@ async def post_token(
         lifespan = None if not stay_signed_in else c.authentication[
             'expiry_timedeltas']['access_token']
         user_access_token = await models.UserAccessToken.api_post(
-            session=session, c=c,  authorized_user_id=user._id, admin=False, create_model=models.UserAccessTokenAdminCreate(
+            session=session, c=c, authorized_user_id=user._id, admin=False, create_model=models.UserAccessTokenAdminCreate(
                 user_id=user._id, lifespan=lifespan
             ))
 
@@ -1331,6 +1332,10 @@ async def post_gallery_admin(
         return await models.Gallery.api_post(session=session, c=c, authorized_user_id=authorization._user_id, admin=True, create_model=models.GalleryAdminCreate(**gallery_create_admin.model_dump(exclude_unset=True)))
 
 
+a = models.Gallery.api_post(models.Gallery.ApiPostKwargs(
+    session=Session(c.db_engine)))
+
+
 @ gallery_router.patch('/{gallery_id}/', responses=models.Gallery.patch_responses())
 async def patch_gallery(
     gallery_id: models.GalleryTypes.id,
@@ -1455,15 +1460,16 @@ async def upload_file_to_gallery(
 
     with Session(c.db_engine) as session:
 
-        gallery = await models.Gallery._basic_api_get(session, gallery_id)
+        gallery = await models.Gallery.get_one_by_id(session, gallery_id)
+        if not gallery:
+            raise models.Gallery.not_found_exception()
 
         if gallery.user.id != authorization._user_id:
             gallery_permission = await models.GalleryPermission.api_get(session=session, c=c, authorized_user_id=authorization._user_id, id=models.GalleryPermissionIdBase(gallery_id=gallery_id, user_id=authorization._user_id)._id, admin=False)
 
             if not gallery_permission:
                 if gallery.visibility_level == config.VISIBILITY_LEVEL_NAME_MAPPING['private']:
-                    raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                        detail=models.Gallery.not_found_message())
+                    raise models.Gallery.not_found_exception()
 
                 if gallery.visibility_level == config.VISIBILITY_LEVEL_NAME_MAPPING['public']:
                     raise HTTPException(status.HTTP_403_FORBIDDEN,
@@ -1605,8 +1611,7 @@ async def get_gallery_page(
     with Session(c.db_engine) as session:
         if root:
             if not authorization.isAuthorized:
-                raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                    detail=models.Gallery.not_found_message())
+                raise models.Gallery.not_found_exception()
 
             gallery = await models.Gallery.get_root_gallery(session, authorization._user_id)
             gallery_id = gallery._id
