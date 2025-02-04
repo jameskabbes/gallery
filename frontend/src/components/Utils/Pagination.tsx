@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { IoArrowBackSharp, IoArrowForwardSharp } from 'react-icons/io5';
 import { Loader1, Loader2 } from './Loader';
+import { pagination } from '../../../config';
 
 interface PaginationProps {
   loading: boolean;
@@ -45,7 +46,7 @@ function Pagination({
         debounceTimeout.current = setTimeout(async () => {
           setOffset(debouncedOffset);
           setDebouncedLoading(false);
-        }, 200);
+        }, pagination.debounceTimeoutLength);
       }
     }
   }, [debouncedOffset, offset]);
@@ -65,7 +66,7 @@ function Pagination({
 
   return (
     <div className="flex flex-row items-center space-x-1">
-      {loading && <Loader1 />}
+      {showLoading && <Loader1 />}
       <span>
         {total !== null ? (
           <>

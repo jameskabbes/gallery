@@ -12,6 +12,10 @@ const validatedInput = {
   debounceTimeoutLength: 200,
 };
 
+const pagination = {
+  debounceTimeoutLength: 100,
+};
+
 const scopeNameMapping: Record<string, number> = constants.scope_name_mapping;
 const scopeIdMapping: Record<string, number> = Object.entries(
   scopeNameMapping
@@ -54,6 +58,7 @@ const userRoleIdMapping: Record<number, string> = Object.entries(
 export {
   zIndex,
   validatedInput,
+  pagination,
   scopeIdMapping,
   visibilityLevelIdMapping,
   permissionLevelIdMapping,
