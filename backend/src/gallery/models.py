@@ -55,36 +55,39 @@ def validate_and_normalize_datetime(value: datetime_module.datetime, info: Valid
     return value.astimezone(datetime_module.timezone.utc)
 
 
-class ApiMethodBaseParams(BaseModel):
+class MethodParamsBase(BaseModel):
     session: Session
     c: client.Client
     authorized_user_id: typing.Optional['UserTypes.id'] = None
     admin: bool = False
 
+    class Config:
+        arbitrary_types_allowed = True
 
-class ApiMethodBaseParamsWithId[IdType](ApiMethodBaseParams):
+
+class MethodParamsBaseWithId[IdType](MethodParamsBase):
     id: IdType
 
 
-class GetParams[IdType, TGetParams](ApiMethodBaseParamsWithId[IdType]):
-    get_method_kwargs: TGetParams = TGetParams
+class PostParams[TPostModel: BaseModel, TPostParams: BaseModel](MethodParamsBase):
+    create_model: TPostModel
+    create_method_params: typing.Optional[TPostParams] = None
 
 
-class PostParams[TPost, TPostParams](ApiMethodBaseParams):
-    create_model: TPost
-    create_method_kwargs: TPostParams = TPostParams
+class GetParams[IdType, TGetParams: BaseModel](MethodParamsBaseWithId[IdType]):
+    read_method_params: typing.Optional[TGetParams] = None
 
 
-class PatchParams[IdType, TPatch, TPatchParams](ApiMethodBaseParamsWithId[IdType]):
-    update_model: TPatch
-    update_method_kwargs: TPatchParams = TPatchParams
+class PatchParams[IdType, TPatchModel: BaseModel, TPatchParams: BaseModel](MethodParamsBaseWithId[IdType]):
+    update_model: TPatchModel
+    update_method_params: typing.Optional[TPatchParams] = None
 
 
-class DeleteParams[IdType, TDeleteParams](ApiMethodBaseParamsWithId[IdType]):
-    delete_method_kwargs: TDeleteParams = TDeleteParams
+class DeleteParams[IdType, TDeleteParams: BaseModel](MethodParamsBaseWithId[IdType]):
+    delete_method_params: typing.Optional[TDeleteParams] = None
 
 
-class CheckAuthorizationExistingParams(ApiMethodBaseParams):
+class CheckAuthorizationExistingParams[IdType](MethodParamsBaseWithId[IdType]):
     method: typing.Literal['get', 'patch', 'delete']
 
 
@@ -144,27 +147,27 @@ def api_endpoint(func):
 class Table[
     T: 'Table',
     IdType,
-    TPost: BaseModel,
-    TPatch: BaseModel,
-    TGetParams: BaseModel,
-    TPostParams: BaseModel,
-    TPatchParams: BaseModel,
-    TDeleteParams: BaseModel,
+    TCreateMethodModel: BaseModel,
+    TCreateMethodParams: BaseModel,
+    TReadMethodParams: BaseModel,
+    TUpdateMethodModel: BaseModel,
+    TUpdateMethodParams: BaseModel,
+    TDeleteMethodParams: BaseModel,
 ](SQLModel, IdObject[IdType]):
 
     _ROUTER_TAG: typing.ClassVar[str] = 'asdf'
     _ORDER_BY_OPTIONS: typing.ClassVar = str
 
-    class GetParams(GetParams[IdType, TGetParams]):
+    class PostParams(PostParams[TCreateMethodModel, TCreateMethodParams]):
         pass
 
-    class PostParams(PostParams[TPost, TPostParams]):
+    class GetParams(GetParams[IdType, TReadMethodParams]):
         pass
 
-    class PatchParams(PatchParams[IdType, TPatch, TPatchParams]):
+    class PatchParams(PatchParams[IdType, TUpdateMethodModel, TUpdateMethodParams]):
         pass
 
-    class DeleteParams(DeleteParams[IdType, TDeleteParams]):
+    class DeleteParams(DeleteParams[IdType, TDeleteMethodParams]):
         pass
 
     @classmethod
@@ -266,7 +269,7 @@ class Table[
         return query
 
     @classmethod
-    async def create(cls, params: PostParams[TPost, TPostParams]) -> T:
+    async def create(cls, params: PostParams) -> T:
 
         id = cls.generate_id()
         if len(cls._ID_COLS) == 1:
@@ -278,33 +281,33 @@ class Table[
             ** params.create_model.model_dump(),
         )
 
-    async def update(self, params: PatchParams[IdType, TPatch, TPatchParams]):
+    async def update(self, params: PatchParams):
         self.sqlmodel_update(
             params.update_model.model_dump(exclude_unset=True))
 
-    async def delete(self, params: DeleteParams[IdType, TDeleteParams]):
+    async def delete(self, params: DeleteParams):
         pass
 
-    async def _check_authorization_existing(self, params: CheckAuthorizationExistingParams):
-        pass
-
-    @classmethod
-    async def _check_authorization_post(cls, params: PostParams[TPost, TPostParams]):
-        pass
-
-    async def _check_validation_delete(self, params: DeleteParams[IdType, TDeleteParams]):
-        pass
-
-    async def _check_validation_patch(self, params: PatchParams[IdType, TPatch, TPatchParams]):
+    async def _check_authorization_existing(self, params: CheckAuthorizationExistingParams[IdType]):
         pass
 
     @classmethod
-    async def _check_validation_post(cls, params: PostParams[TPost, TPostParams]):
+    async def _check_authorization_post(cls, params: PostParams):
+        pass
+
+    async def _check_validation_delete(self, params: DeleteParams):
+        pass
+
+    async def _check_validation_patch(self, params: PatchParams):
+        pass
+
+    @classmethod
+    async def _check_validation_post(cls, params: PostParams):
         pass
 
     @classmethod
     @api_endpoint
-    async def api_get(cls, params: GetParams[IdType, TGetParams]):
+    async def api_get(cls, params: GetParams):
         """Get a model by its ID, raise an exception if not found"""
 
         instance = await cls.get_one_by_id(params.session, params.id)
@@ -317,7 +320,7 @@ class Table[
 
     @classmethod
     @api_endpoint
-    async def api_post(cls, params: PostParams[TPost, TPostParams]):
+    async def api_post(cls, params: PostParams):
         await cls._check_authorization_post(params)
         await cls._check_validation_post(params)
 
@@ -329,7 +332,7 @@ class Table[
 
     @classmethod
     @api_endpoint
-    async def api_patch(self, params: PatchParams[IdType, TPatch, TPatchParams]):
+    async def api_patch(self, params: PatchParams):
 
         instance = await self.get_one_by_id(params.session, params.id)
         if not instance:
@@ -347,7 +350,7 @@ class Table[
 
     @classmethod
     @api_endpoint
-    async def api_delete(cls, params: DeleteParams[IdType, TDeleteParams]) -> None:
+    async def api_delete(cls, params: DeleteParams) -> None:
 
         instance = await cls.get_one_by_id(params.session, params.id)
         if not instance:
@@ -403,7 +406,7 @@ class UserAdminCreate(UserCreate):
     user_role_id: UserTypes.user_role_id
 
 
-class User(Table['User', UserTypes.id, UserAdminCreate, UserAdminUpdate, BaseModel, BaseModel, BaseModel, BaseModel], UserIdBase, table=True):
+class User(Table['User', UserTypes.id, UserAdminCreate, BaseModel, BaseModel, UserAdminUpdate, BaseModel, BaseModel], UserIdBase, table=True):
     __tablename__ = 'user'
 
     email: UserTypes.email = Field(index=True, unique=True)
@@ -483,13 +486,13 @@ class User(Table['User', UserTypes.id, UserAdminCreate, UserAdminUpdate, BaseMod
     def hash_password(cls, password: UserTypes.password) -> UserTypes.hashed_password:
         return utils.hash_password(password)
 
-    async def _check_authorization_existing(self, **kwargs):
-        if not kwargs['admin']:
-            if self._id != kwargs['authorized_user_id']:
+    async def _check_authorization_existing(self, params):
+        if not params.admin:
+            if self._id != params.authorized_user_id:
                 if self.is_public:
-                    if kwargs['method'] == 'delete' or kwargs['method'] == 'patch':
+                    if params.method == 'delete' or params.method == 'patch':
                         raise HTTPException(
-                            status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this user'.format(method=kwargs['method']))
+                            status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this user'.format(method=params.method))
                 else:
                     raise self.not_found_exception()
 
@@ -514,39 +517,42 @@ class User(Table['User', UserTypes.id, UserAdminCreate, UserAdminUpdate, BaseMod
                 await User.api_get_is_email_available(params.session, params.update_model.email)
 
     @ classmethod
-    async def create(cls, **kwargs) -> typing.Self:
+    async def create(cls, params) -> typing.Self:
 
         new_user = cls(
             id=cls.generate_id(),
             hashed_password=cls.hash_password(
-                kwargs['create_model'].password) if 'password' in kwargs['create_model'].model_fields_set else None,
-            **kwargs['create_model'].model_dump(exclude=['password'])
+                params.create_model.password) if 'password' in params.create_model.model_fields_set else None,
+            **params.create_model.model_dump(exclude=['password'])
         )
 
-        root_gallery = await Gallery.api_post(session=kwargs['session'], c=kwargs['c'], authorized_user_id=new_user._id, admin=kwargs['admin'], create_model=GalleryAdminCreate(
+        root_gallery = await Gallery.api_post(Gallery.PostParams(**params.model_dump(exclude=['create_model', 'create_method_params', 'authorized_user_id']), authorized_user_id=new_user._id, create_model=GalleryAdminCreate(
             name='root', user_id=new_user._id, visibility_level=config.VISIBILITY_LEVEL_NAME_MAPPING['private']
-        ))
+        )))
 
         return new_user
 
-    async def update(self, **kwargs):
+    async def update(self, params):
 
-        self.sqlmodel_update(kwargs['update_model'].model_dump(
+        self.sqlmodel_update(params.update_model.model_dump(
             exclude_unset=True, exclude=['password']))
-        if 'password' in kwargs['update_model'].model_fields_set:
+        if 'password' in params.update_model.model_fields_set:
             self.hashed_password = self.hash_password(
-                kwargs['update_model'].password)
+                params.update_model.password)
 
         # rename the root gallery if the username is updated
-        if 'username' in kwargs['update_model'].model_fields_set:
-            root_gallery = await Gallery.get_root_gallery(kwargs['session'], self._id)
-            await root_gallery.update(session=kwargs['session'], c=kwargs['c'], authorized_user_id=kwargs['authorized_user_id'], admin=kwargs['admin'], update_model=GalleryAdminUpdate(
-                name=self._id if self.username == None else self.username
-            ))
+        if 'username' in params.update_model.model_fields_set:
+            root_gallery = await Gallery.get_root_gallery(params.session, self._id)
+            await root_gallery.update(
+                Gallery.PatchParams(**params.model_dump(exclude=['update_model', 'update_method_params']),
+                                    update_model=GalleryAdminUpdate(
+                    name=self._id if self.username == None else self.username
+                ))
+            )
 
-    async def delete(self, **kwargs):
-        await (await Gallery.get_root_gallery(kwargs['session'], self._id)).delete(session=kwargs['session'], c=kwargs['c'],
-                                                                                   authorized_user_id=kwargs['authorized_user_id'], admin=kwargs['admin'])
+    async def delete(self, params):
+        await (await Gallery.get_root_gallery(params.session, self._id)).delete(session=params.session, c=params.c,
+                                                                                authorized_user_id=params.authorized_user_id, admin=params.admin)
 
 
 class UserExport(TableExport, UserIdBase):
@@ -662,17 +668,17 @@ class AuthCredential:
             index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0], const=True, ondelete='CASCADE')
 
         @ classmethod
-        async def create(cls, **kwargs: Unpack[PostParams['AuthCredential.Create', BaseModel]]) -> typing.Self:
+        async def create(cls, params: PostParams['AuthCredential.Create', BaseModel]) -> typing.Self:
 
             return cls(
                 id=cls.generate_id(),
                 issued=datetime_module.datetime.now(
                     datetime_module.timezone.utc),
-                expiry=kwargs['create_model'].get_expiry(),
-                **kwargs['create_model'].model_dump(exclude=['lifespan', 'expiry'])
+                expiry=params.create_model.get_expiry(),
+                **params.create_model.model_dump(exclude=['lifespan', 'expiry'])
             )
 
-        @classmethod
+        @ classmethod
         async def get_scope_ids(cls, session: Session = None) -> list[types.ScopeTypes.id]:
             return []
 
@@ -705,8 +711,8 @@ class UserAccessTokenJwt:
 
 
 class UserAccessToken(
-        Table['UserAccessToken', UserAccessTokenTypes.id,
-              UserAccessTokenAdminCreate, UserAccessTokenAdminUpdate, BaseModel, BaseModel, BaseModel, BaseModel],
+        Table['UserAccessToken', UserAccessTokenTypes.id, UserAccessTokenAdminCreate,
+              BaseModel, BaseModel, UserAccessTokenAdminUpdate, BaseModel, BaseModel],
         AuthCredential.Table,
         AuthCredential.JwtIO[UserAccessTokenJwt.Encode,
                              UserAccessTokenJwt.Decode],
@@ -730,16 +736,16 @@ class UserAccessToken(
     _ROUTER_TAG: typing.ClassVar[str] = 'User Access Token'
 
     @ classmethod
-    async def _check_authorization_post(cls, **kwargs):
+    async def _check_authorization_post(cls, params):
 
-        if not kwargs['admin']:
-            if kwargs['authorized_user_id'] != kwargs['create_model'].user_id:
+        if not params.admin:
+            if params.authorized_user_id != params.create_model.user_id:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to post access token for another user')
 
-    async def _check_authorization_existing(self, **kwargs):
-        if not kwargs['admin']:
-            if self.user_id != kwargs['authorized_user_id']:
+    async def _check_authorization_existing(self, params):
+        if not params.admin:
+            if self.user_id != params.authorized_user_id:
                 raise self.not_found_exception()
 
     async def get_scope_ids(self, session: Session = None) -> list[types.ScopeTypes.id]:
@@ -776,7 +782,7 @@ class OTPAdminCreate(AuthCredential.Create):
 
 class OTP(
         Table['OTP', OTPTypes.id,
-              OTPAdminCreate, OTPAdminUpdate, BaseModel, BaseModel, BaseModel, BaseModel],
+              OTPAdminCreate, BaseModel, BaseModel, OTPAdminUpdate, BaseModel, BaseModel],
         AuthCredential.Table,
         AuthCredential.Model,
         OTPIdBase,
@@ -796,16 +802,16 @@ class OTP(
 
     _ROUTER_TAG = 'One Time Password'
 
-    @classmethod
+    @ classmethod
     def generate_code(cls) -> OTPTypes.code:
         characters = string.digits
         return ''.join(secrets.choice(characters) for _ in range(OTPConfig.CODE_LENGTH))
 
-    @classmethod
+    @ classmethod
     def hash_code(cls, code: OTPTypes.code) -> OTPTypes.hashed_code:
         return utils.hash_password(code)
 
-    @classmethod
+    @ classmethod
     def verify_code(cls, code: OTPTypes.code, hashed_code: OTPTypes.hashed_code) -> bool:
 
         import time
@@ -869,7 +875,7 @@ class ApiKeyJwt:
 
 class ApiKey(
         Table['ApiKey', ApiKeyTypes.id,
-              ApiKeyAdminCreate, ApiKeyAdminUpdate, BaseModel, BaseModel, BaseModel, BaseModel],
+              ApiKeyAdminCreate, BaseModel, BaseModel,  ApiKeyAdminUpdate, BaseModel, BaseModel],
         AuthCredential.Table,
         AuthCredential.JwtIO[ApiKeyJwt.Encode, ApiKeyJwt.Decode],
         AuthCredential.Model,
@@ -909,27 +915,27 @@ class ApiKey(
                 status_code=status.HTTP_409_CONFLICT, detail=cls.already_exists_message())
 
     @ classmethod
-    async def _check_authorization_post(cls, **kwargs):
-        if not kwargs['admin']:
-            if kwargs['authorized_user_id'] != kwargs['create_model'].user_id:
+    async def _check_authorization_post(cls, params):
+        if not params.admin:
+            if params.authorized_user_id != params.create_model.user_id:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to post api key for another user')
 
-    async def _check_authorization_existing(self, **kwargs):
-        if not kwargs['admin']:
-            if self.user_id != kwargs['authorized_user_id']:
+    async def _check_authorization_existing(self, params):
+        if not params.admin:
+            if self.user_id != params.authorized_user_id:
                 raise self.not_found_exception()
 
     @ classmethod
-    async def _check_validation_post(cls, **kwargs):
-        await cls.api_get_is_available(kwargs['session'], ApiKeyAdminAvailable(
-            name=kwargs['create_model'].name, user_id=kwargs['create_model'].user_id)
+    async def _check_validation_post(cls, params):
+        await cls.api_get_is_available(params.session, ApiKeyAdminAvailable(
+            name=params.create_model.name, user_id=params.create_model.user_id)
         )
 
-    async def _check_validation_patch(self, **kwargs):
-        if 'name' in kwargs['update_model'].model_fields_set:
-            await self.api_get_is_available(kwargs['session'], ApiKeyAdminAvailable(
-                name=kwargs['update_model'].name, user_id=kwargs['authorized_user_id']))
+    async def _check_validation_patch(self, params):
+        if 'name' in params.update_model.model_fields_set:
+            await self.api_get_is_available(params.session, ApiKeyAdminAvailable(
+                name=params.update_model.name, user_id=params.authorized_user_id))
 
 
 class ApiKeyExport(TableExport):
@@ -947,7 +953,7 @@ class ApiKeyPublic(ApiKeyExport):
 class ApiKeyPrivate(ApiKeyExport):
     scope_ids: list[types.ScopeTypes.id]
 
-    @classmethod
+    @ classmethod
     def from_api_key(cls, api_key: ApiKey) -> typing.Self:
         return cls.model_construct(**api_key.model_dump(), scope_ids=[api_key_scope.scope_id for api_key_scope in api_key.api_key_scopes])
 
@@ -981,7 +987,7 @@ class SignUp(
     _JWT_CLAIMS_MAPPING = {
         **AuthCredential.Model._JWT_CLAIMS_MAPPING_BASE, **{'sub': 'email'}}
 
-    @classmethod
+    @ classmethod
     def create(cls, create_model: SignUpAdminCreate) -> typing.Self:
         return cls(
             issued=datetime_module.datetime.now(
@@ -1039,7 +1045,7 @@ class ApiKeyScopeAdminCreate(ApiKeyScopeIdBase):
 
 class ApiKeyScope(
         Table['ApiKeyScope', ApiKeyScopeTypes.id,
-              ApiKeyScopeAdminCreate, ApiKeyScopeAdminUpdate, BaseModel, BaseModel, BaseModel, BaseModel],
+              ApiKeyScopeAdminCreate, BaseModel, BaseModel, ApiKeyScopeAdminUpdate, BaseModel, BaseModel],
         ApiKeyScopeIdBase,
         table=True):
 
@@ -1054,30 +1060,30 @@ class ApiKeyScope(
     _ROUTER_TAG: typing.ClassVar[str] = 'Api Key Scope'
 
     @ classmethod
-    async def create(cls, **kwargs):
+    async def create(cls, params):
         return ApiKeyScope(
-            **kwargs['create_model'].model_dump(),
+            **params.create_model.model_dump(),
         )
 
     @ classmethod
-    async def _check_authorization_post(cls, **kwargs):
-        api_key = await ApiKey.get_one_by_id(kwargs['session'], kwargs['create_model'].api_key_id)
+    async def _check_authorization_post(cls, params):
+        api_key = await ApiKey.get_one_by_id(params.session, params.create_model.api_key_id)
         if not api_key:
             raise ApiKey.not_found_exception()
 
-        if not kwargs['admin']:
-            if api_key.user_id != kwargs['authorized_user_id']:
+        if not params.admin:
+            if api_key.user_id != params.authorized_user_id:
                 raise cls.not_found_exception()
 
     @ classmethod
-    async def _check_validation_post(cls, **kwargs):
-        if await cls.get_one_by_id(kwargs['session'], kwargs['create_model']._id):
+    async def _check_validation_post(cls, params):
+        if await cls.get_one_by_id(params.session, params.create_model._id):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail='Api key scope already exists')
 
-    async def _check_authorization_existing(self, **kwargs):
-        if not kwargs['admin']:
-            if self.api_key.user_id != kwargs['authorized_user_id']:
+    async def _check_authorization_existing(self, params):
+        if not params.admin:
+            if self.api_key.user_id != params.authorized_user_id:
                 raise self.not_found_exception()
 
 
@@ -1138,7 +1144,7 @@ class GalleryAdminUpdate(GalleryUpdate):
     pass
 
 
-class GalleryAdminUpdateKwargs(BaseModel):
+class GalleryAdminUpdateParams(BaseModel):
     pass
 
 
@@ -1155,7 +1161,7 @@ class GalleryAdminCreate(GalleryCreate):
     parent_id: typing.Optional[GalleryTypes.parent_id] = None
 
 
-class GalleryAdminCreateKwargs(BaseModel):
+class GalleryAdminCreateParams(BaseModel):
     mkdir: bool = True
 
 
@@ -1169,13 +1175,13 @@ class GalleryAdminAvailable(GalleryAvailable):
     user_id: UserTypes.id
 
 
-class GalleryAdminDeleteKwargs(BaseModel):
+class GalleryAdminDeleteParams(BaseModel):
     rmtree: bool = True
 
 
 class Gallery(
-        Table['Gallery', GalleryTypes.id,
-              GalleryAdminCreate, GalleryAdminUpdate, BaseModel, GalleryAdminCreateKwargs, GalleryAdminUpdateKwargs, GalleryAdminDeleteKwargs],
+        Table['Gallery', GalleryTypes.id, GalleryAdminCreate, GalleryAdminCreateParams,
+              BaseModel, GalleryAdminUpdate, GalleryAdminUpdateParams, GalleryAdminDeleteParams],
         GalleryIdBase,
         table=True):
     __tablename__ = 'gallery'
@@ -1257,90 +1263,80 @@ class Gallery(
                 status_code=status.HTTP_409_CONFLICT, detail=cls.already_exists_message())
 
     @ classmethod
-    async def _check_authorization_post(cls, **kwargs):
-        if not kwargs['admin']:
-            if kwargs['authorized_user_id'] != kwargs['create_model'].user_id:
+    async def _check_authorization_post(cls, params):
+        if not params.admin:
+            if params.authorized_user_id != params.create_model.user_id:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to post gallery for another user')
 
-    async def _check_authorization_existing(self, **kwargs):
+    async def _check_authorization_existing(self, params):
 
-        if not kwargs['admin']:
-            if kwargs['authorized_user_id'] != self.user_id:
+        if not params.admin:
+            if params.authorized_user_id != self.user_id:
 
-                if kwargs['method'] == 'delete':
+                if params.method == 'delete':
                     raise HTTPException(
-                        status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this gallery'.format(method=kwargs['method']))
+                        status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this gallery'.format(method=params.method))
 
-                gallery_permission = await GalleryPermission.get_one_by_id(kwargs['session'], (kwargs['id'], kwargs['authorized_user_id']))
+                gallery_permission = await GalleryPermission.get_one_by_id(params.session, (params.id, params.authorized_user_id))
 
                 # if the gallery is private and user has no access, pretend it doesn't exist
                 if not gallery_permission and self.visibility_level == config.VISIBILITY_LEVEL_NAME_MAPPING['private']:
                     raise self.not_found_exception()
 
-                elif kwargs['method'] == 'get':
+                elif params.method == 'get':
                     if gallery_permission.permission_level < config.PERMISSION_LEVEL_NAME_MAPPING['viewer']:
                         raise HTTPException(
-                            status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this gallery'.format(method=kwargs['method']))
+                            status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this gallery'.format(method=params.method))
 
-                elif kwargs['method'] == 'patch':
+                elif params.method == 'patch':
                     if gallery_permission.permission_level < config.PERMISSION_LEVEL_NAME_MAPPING['editor']:
                         raise HTTPException(
-                            status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this gallery'.format(method=kwargs['method']))
+                            status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this gallery'.format(method=params.method))
 
     @ classmethod
-    async def _check_validation_post(cls, **kwargs):
-        await cls.api_get_is_available(kwargs['session'], GalleryAdminAvailable(**kwargs['create_model'].model_dump(include=GalleryAdminAvailable.model_fields.keys(), exclude_unset=True)))
+    async def _check_validation_post(cls, params):
+        await cls.api_get_is_available(params.session, GalleryAdminAvailable(**params.create_model.model_dump(include=GalleryAdminAvailable.model_fields.keys(), exclude_unset=True)))
 
-    async def _check_validation_patch(self, **kwargs):
+    async def _check_validation_patch(self, params):
         # take self, overwrite it with the update_model, and see if the combined model is available
-        await self.api_get_is_available(kwargs['session'], GalleryAdminAvailable(**{
-            **self.model_dump(include=list(GalleryAdminAvailable.model_fields.keys())), **kwargs['update_model'].model_dump(include=GalleryAdminAvailable.model_fields.keys(), exclude_unset=True)
+        await self.api_get_is_available(params.session, GalleryAdminAvailable(**{
+            **self.model_dump(include=list(GalleryAdminAvailable.model_fields.keys())), **params.update_model.model_dump(include=GalleryAdminAvailable.model_fields.keys(), exclude_unset=True)
         }))
 
     @ classmethod
-    async def create(cls, **kwargs):
+    async def create(cls, params):
         gallery = cls(
             id=cls.generate_id(),
-            **kwargs['create_model'].model_dump()
+            **params.create_model.model_dump()
         )
 
-        create_method_kwargs = kwargs.get('create_method_kwargs')
-        if not create_method_kwargs:
-            create_method_kwargs = GalleryAdminCreateKwargs()
-
-        if create_method_kwargs.mkdir:
-            (await gallery.get_dir(kwargs['session'], kwargs['c'].galleries_dir)).mkdir()
+        if params.create_method_params.mkdir:
+            (await gallery.get_dir(params.session, params.c.galleries_dir)).mkdir()
 
         return gallery
 
-    async def update(self, **kwargs) -> None:
+    async def update(self, params) -> None:
 
-        update_model = kwargs['update_model']
         rename_folder = False
 
         # rename the folder
-        if 'name' in update_model.model_fields_set or 'date' in update_model.model_fields_set or 'parent_id' in update_model.model_fields_set:
+        if 'name' in params.update_model.model_fields_set or 'date' in params.update_model.model_fields_set or 'parent_id' in params.update_model.model_fields_set:
             rename_folder = True
             original_dir = await self.get_dir(
-                kwargs['session'], kwargs['c'].galleries_dir)
+                params.session, params.c.galleries_dir)
 
         self.sqlmodel_update(
-            kwargs['update_model'].model_dump(exclude_unset=True))
+            params.update_model.model_dump(exclude_unset=True))
 
         if rename_folder:
-            new_dir = (await self.get_dir(kwargs['session'], kwargs['c'].galleries_dir)).parent / self.folder_name
+            new_dir = (await self.get_dir(params.session, params.c.galleries_dir)).parent / self.folder_name
             original_dir.rename(new_dir)
 
-    async def delete(self, **kwargs) -> None:
+    async def delete(self, params) -> None:
 
-        delete_method_kwargs = kwargs.get('delete_method_kwargs')
-        if not delete_method_kwargs:
-            delete_method_kwargs = GalleryAdminDeleteKwargs()
-
-        # default is to delete the folder
-        if delete_method_kwargs.rmtree:
-            shutil.rmtree((await self.get_dir(kwargs['session'], kwargs['c'].galleries_dir)))
+        if params.delete_method_params.rmtree:
+            shutil.rmtree((await self.get_dir(params.session, params.c.galleries_dir)))
 
     async def sync_with_local(self, session: Session, c: client.Client, dir: pathlib.Path) -> None:
 
@@ -1375,14 +1371,14 @@ class Gallery(
 
         for folder_name in to_remove:
             gallery = db_galleries_by_folder_name[folder_name]
-            await Gallery.api_delete(session=session, c=c, id=gallery._id, authorized_user_id=self.user_id, admin=False, delete_method_kwargs=GalleryAdminDeleteKwargs(rmtree=False))
+            await Gallery.api_delete(session=session, c=c, id=gallery._id, authorized_user_id=self.user_id, admin=False, delete_method_kwargs=GalleryAdminDeleteParams(rmtree=False))
 
         for folder_name in to_add:
             date, name = self.get_date_and_name_from_folder_name(
                 folder_name)
             new_gallery = await Gallery.api_post(
                 session=session, c=c, authorized_user_id=self.user_id, admin=False, create_model=GalleryAdminCreate(name=name, user_id=self.user_id, visibility_level=self.visibility_level, parent_id=self.id, date=date),
-                create_method_kwargs=GalleryAdminCreateKwargs(mkdir=False))
+                create_method_kwargs=GalleryAdminCreateParams(mkdir=False))
 
         # add new files, remove old ones
         local_file_by_names = {
@@ -1512,7 +1508,7 @@ class GalleryPermissionAdminCreate(GalleryPermissionImport, GalleryPermissionIdB
 
 class GalleryPermission(
         Table['GalleryPermission',
-              GalleryPermissionTypes.id, GalleryPermissionAdminCreate, GalleryPermissionAdminUpdate, BaseModel, BaseModel, BaseModel, BaseModel],
+              GalleryPermissionTypes.id, GalleryPermissionAdminCreate,  BaseModel, BaseModel, GalleryPermissionAdminUpdate, BaseModel, BaseModel],
         GalleryPermissionIdBase,
         table=True):
     __tablename__ = 'gallery_permission'
@@ -1528,39 +1524,39 @@ class GalleryPermission(
         back_populates='gallery_permissions')
 
     @ classmethod
-    async def _check_authorization_post(cls, **kwargs):
+    async def _check_authorization_post(cls, params):
 
-        if not kwargs['admin']:
-            if not kwargs['authorized_user_id'] == kwargs['create_model'].user_id:
+        if not params.admin:
+            if not params.authorized_user_id == params.create_model.user_id:
                 raise HTTPException(
                     status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to post gallery permission for another user')
 
     @ classmethod
-    async def _check_validation_post(cls, **kwargs):
-        if await GalleryPermission.get_one_by_id(kwargs['session'], kwargs['create_model']._id):
+    async def _check_validation_post(cls, params):
+        if await GalleryPermission.get_one_by_id(params.session, params.create_model._id):
             raise HTTPException(
                 status.HTTP_409_CONFLICT, detail='Gallery permission already exists')
 
     @ classmethod
-    async def create(cls, **kwargs):
+    async def create(cls, params):
         return cls(
-            **kwargs['create_model'].model_dump()
+            params.create_model.model_dump()
         )
 
-    async def _check_authorization_existing(self, **kwargs):
+    async def _check_authorization_existing(self, params):
 
-        if not kwargs['admin']:
-            if self.gallery.user._id != kwargs['authorized_user_id']:
-                authorized_user_gallery_permission = await self.get_one_by_id(kwargs['session'], GalleryPermissionIdBase(
-                    gallery_id=self.gallery._id, user_id=kwargs['authorized_user_id']
+        if not params.admin:
+            if self.gallery.user._id != params.authorized_user_id:
+                authorized_user_gallery_permission = await self.get_one_by_id(params.session, GalleryPermissionIdBase(
+                    gallery_id=self.gallery._id, user_id=params.authorized_user_id
                 )._id)
 
                 if not authorized_user_gallery_permission:
                     raise self.not_found_exception()
 
-                if kwargs['method'] == 'delete' or kwargs['method'] == 'patch':
+                if params.method == 'delete' or params.method == 'patch':
                     raise HTTPException(
-                        status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this gallery permission'.format(method=kwargs['method']))
+                        status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {} this gallery permission'.format(params.method))
 
 
 class FileTypes:
@@ -1609,8 +1605,8 @@ class FileAdminCreate(FileCreate):
 
 
 class File(
-        Table['File', FileTypes.id, FileAdminCreate,
-              FileAdminUpdate, BaseModel, BaseModel, BaseModel, BaseModel],
+        Table['File', FileTypes.id, FileAdminCreate, BaseModel, BaseModel,
+              FileAdminUpdate,  BaseModel, BaseModel],
         FileIdBase,
         table=True):
 
@@ -1702,7 +1698,7 @@ class ImageVersionAdminCreate(ImageVersionCreate):
 
 class ImageVersion(
         Table['ImageVersion', ImageVersionTypes.id,
-              ImageVersionAdminCreate, ImageVersionAdminUpdate, BaseModel, BaseModel, BaseModel, BaseModel],
+              ImageVersionAdminCreate,  BaseModel, BaseModel, ImageVersionAdminUpdate, BaseModel, BaseModel],
         ImageVersionIdBase,
         table=True):
     __tablename__ = 'image_version'
@@ -1805,7 +1801,7 @@ class ImageFileMetadataAdminCreate(ImageFileMetadataCreate):
 
 class ImageFileMetadata(
         Table['ImageFileMetadata', ImageFileMetadataTypes.file_id,
-              ImageFileMetadataAdminCreate, ImageFileMetadataAdminUpdate, BaseModel, BaseModel, BaseModel, BaseModel],
+              ImageFileMetadataAdminCreate, BaseModel, BaseModel, ImageFileMetadataAdminUpdate, BaseModel, BaseModel],
         ImageFileMetadataIdBase,
         table=True):
     __tablename__ = 'image_file_metadata'
@@ -1836,11 +1832,7 @@ class ImageFileMetadata(
         return file_stem, version, scale
 
     @ classmethod
-    async def create(cls, **kwargs):
+    async def create(cls, params):
         return cls(
-            **kwargs['create_model'].model_dump()
+            params.create_model.model_dump()
         )
-
-
-if __name__ == '__main__':
-    print()

@@ -38,6 +38,10 @@ app = FastAPI(lifespan=lifespan)
 c = get_client()
 
 
+a = Gallery.PostParams(session=Session(c.db_engine), c=c,
+                       create_model=models.GalleryAdminCreate(name='asdf', visibility_level=1, user_id='123'))
+
+
 class OAuth2PasswordBearerMultiSource(OAuth2):
     def __init__(
         self,
