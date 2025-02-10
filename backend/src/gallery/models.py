@@ -1311,6 +1311,9 @@ class Gallery(
             **params.create_model.model_dump()
         )
 
+        if params.create_method_params == None:
+            params.create_method_params = GalleryAdminCreateParams()
+
         if params.create_method_params.mkdir:
             (await gallery.get_dir(params.session, params.c.galleries_dir)).mkdir()
 
@@ -1334,6 +1337,9 @@ class Gallery(
             original_dir.rename(new_dir)
 
     async def delete(self, params) -> None:
+
+        if params.delete_method_params == None:
+            params.delete_method_params = GalleryAdminCreateParams()
 
         if params.delete_method_params.rmtree:
             shutil.rmtree((await self.get_dir(params.session, params.c.galleries_dir)))
