@@ -156,7 +156,6 @@ class Table[
     TOrderBy
 ](SQLModel, IdObject[IdType]):
 
-    _ORDER_BY_OPTIONS: typing.ClassVar = str
     _ROUTER_TAG: typing.ClassVar[str] = 'asdf'
 
     class PostParams(PostParams[TCreateMethodModel, TCreateMethodParams]):
@@ -215,9 +214,11 @@ class Table[
     def make_order_by_dependency(cls):
 
         def order_by_depends(
-                order_by: list[cls._ORDER_BY_OPTIONS] = Query(
+                order_by: list[TOrderBy] = Query(
                     [], description='Ordered series of fields to sort the results by, in the order they should be applied'),
-                order_by_desc: list[cls._ORDER_BY_OPTIONS] = Query([], description='Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields')) -> list[OrderBy[cls._ORDER_BY_OPTIONS]]:
+                order_by_desc: list[TOrderBy] = Query(
+                    [], description='Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields')
+        ) -> list[OrderBy[TOrderBy]]:
 
             order_by_set = set(order_by)
             order_by_desc_set = set(order_by_desc)
@@ -227,7 +228,7 @@ class Table[
                                     detail='"order_by_desc" fields must be a subset of "order_by" fields')
 
             return [
-                OrderBy[cls._ORDER_BY_OPTIONS](
+                OrderBy[TOrderBy](
                     field=field, ascending=field not in order_by_desc_set)
                 for field in order_by
             ]
@@ -250,7 +251,7 @@ class Table[
         return and_(*conditions)
 
     @classmethod
-    def _build_order_by[TQuery: Select](cls, query: TQuery, order_by: list[OrderBy]):
+    def _build_order_by[TQuery: Select, TOrderBy](cls, query: TQuery, order_by: list[OrderBy[TOrderBy]]):
         for order in order_by:
             field: InstrumentedAttribute = getattr(cls, order.field)
             if order.ascending:
