@@ -173,6 +173,9 @@ async def get_auth_from_token(
         override_lifetime: typing.Optional[datetime.timedelta] = None
 ) -> GetAuthorizationReturn:
 
+    if token == None:
+        return GetAuthorizationReturn(exception=auth.missing_authorization_exception)
+
     # make sure the token is a valid jwt
     try:
         payload: dict = c.jwt_decode(token)
@@ -1151,10 +1154,8 @@ class GetApiKeysQueryParamsReturn(BaseModel):
 
 
 def get_api_keys_query_params(
-    pagination: typing.Annotated[models.Pagination, Depends(get_pagination())],
-    order_bys: typing.Annotated[list[models.OrderBy[models.ApiKeyTypes.order_by]], Depends(
-        models.ApiKey.get_order_by_depends())]
-):
+        pagination: typing.Annotated[models.Pagination, Depends(get_pagination())],
+        order_bys: typing.Annotated[list[models.OrderBy[models.ApiKeyTypes.order_by]], Depends(models.ApiKey.make_order_by_dependency())]):
     return GetApiKeysQueryParamsReturn(pagination=pagination, order_bys=order_bys)
 
 

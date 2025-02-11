@@ -28,6 +28,10 @@ def both_authorization_header_and_cookie_exception(**kwargs: typing.Unpack[Excep
     return base_exception(status_code=status.HTTP_400_BAD_REQUEST, detail="Both Bearer token in the Authorization header and {} cookie supplied, which is prohibited".format(ACCESS_TOKEN_COOKIE_KEY), **kwargs)
 
 
+def missing_authorization_exception(**kwargs: typing.Unpack[ExceptionKwargs]) -> HTTPException:
+    return base_exception(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing Authorization header or {} cookie".format(ACCESS_TOKEN_COOKIE_KEY), **kwargs)
+
+
 def improper_format_exception(**kwargs: typing.Unpack[ExceptionKwargs]) -> HTTPException:
     return base_exception(status_code=status.HTTP_400_BAD_REQUEST, detail="Improper format for authorization token", **kwargs)
 

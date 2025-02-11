@@ -153,9 +153,10 @@ class Table[
     TUpdateMethodModel: BaseModel,
     TUpdateMethodParams: BaseModel,
     TDeleteMethodParams: BaseModel,
-    TOrderByOptions
+    TOrderBy
 ](SQLModel, IdObject[IdType]):
 
+    _ORDER_BY_OPTIONS: typing.ClassVar = str
     _ROUTER_TAG: typing.ClassVar[str] = 'asdf'
 
     class PostParams(PostParams[TCreateMethodModel, TCreateMethodParams]):
@@ -211,11 +212,12 @@ class Table[
         return {}
 
     @classmethod
-    def get_order_by_depends(cls):
+    def make_order_by_dependency(cls):
+
         def order_by_depends(
-                order_by: list[TOrderByOptions] = Query(
+                order_by: list[cls._ORDER_BY_OPTIONS] = Query(
                     [], description='Ordered series of fields to sort the results by, in the order they should be applied'),
-                order_by_desc: list[TOrderByOptions] = Query([], description='Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields')) -> list[OrderBy[TOrderByOptions]]:
+                order_by_desc: list[cls._ORDER_BY_OPTIONS] = Query([], description='Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields')) -> list[OrderBy[cls._ORDER_BY_OPTIONS]]:
 
             order_by_set = set(order_by)
             order_by_desc_set = set(order_by_desc)
@@ -225,7 +227,7 @@ class Table[
                                     detail='"order_by_desc" fields must be a subset of "order_by" fields')
 
             return [
-                OrderBy[TOrderByOptions](
+                OrderBy[cls._ORDER_BY_OPTIONS](
                     field=field, ascending=field not in order_by_desc_set)
                 for field in order_by
             ]
