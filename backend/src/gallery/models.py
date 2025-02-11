@@ -109,7 +109,7 @@ class IdObject[IdType](BaseModel):
 
     _ID_COLS: typing.ClassVar[list[str]] = ['id']
 
-    @ property
+    @property
     def _id(self) -> IdType:
         """Return the ID of the model"""
 
@@ -118,7 +118,7 @@ class IdObject[IdType](BaseModel):
         else:
             return getattr(self, self._ID_COLS[0])
 
-    @ classmethod
+    @classmethod
     def generate_id(cls) -> IdType:
         """Generate a new ID for the model"""
 
@@ -127,7 +127,7 @@ class IdObject[IdType](BaseModel):
         else:
             return str(uuid.uuid4())
 
-    @ classmethod
+    @classmethod
     def export_plural_to_dict(cls, items: collections.abc.Iterable[typing.Self]) -> dict[IdType, typing.Self]:
         return {item._id: item for item in items}
 
@@ -138,7 +138,7 @@ class TableExport(BaseModel):
 
 
 def api_endpoint(func):
-    @ wraps(func)
+    @wraps(func)
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)
     return wrapper
@@ -153,10 +153,10 @@ class Table[
     TUpdateMethodModel: BaseModel,
     TUpdateMethodParams: BaseModel,
     TDeleteMethodParams: BaseModel,
+    TOrderByOptions
 ](SQLModel, IdObject[IdType]):
 
     _ROUTER_TAG: typing.ClassVar[str] = 'asdf'
-    _ORDER_BY_OPTIONS: typing.ClassVar = str
 
     class PostParams(PostParams[TCreateMethodModel, TCreateMethodParams]):
         pass
@@ -212,7 +212,11 @@ class Table[
 
     @classmethod
     def get_order_by_depends(cls):
-        def order_by_depends(order_by: list[cls._ORDER_BY_OPTIONS] = Query([], description='Ordered series of fields to sort the results by, in the order they should be applied'), order_by_desc: list[cls._ORDER_BY_OPTIONS] = Query([], description='Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields')) -> list[OrderBy[cls._ORDER_BY_OPTIONS]]:
+        def order_by_depends(
+                order_by: list[TOrderByOptions] = Query(
+                    [], description='Ordered series of fields to sort the results by, in the order they should be applied'),
+                order_by_desc: list[TOrderByOptions] = Query([], description='Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields')) -> list[OrderBy[TOrderByOptions]]:
+
             order_by_set = set(order_by)
             order_by_desc_set = set(order_by_desc)
 
@@ -221,26 +225,12 @@ class Table[
                                     detail='"order_by_desc" fields must be a subset of "order_by" fields')
 
             return [
-                OrderBy[cls._ORDER_BY_OPTIONS](
+                OrderBy[TOrderByOptions](
                     field=field, ascending=field not in order_by_desc_set)
                 for field in order_by
             ]
 
         return order_by_depends
-
-    @ classmethod
-    async def get_one_by_id(cls, session: Session, id: IdType) -> T | None:
-        """Get a model by its ID"""
-
-        query = select(cls)
-        if len(cls._ID_COLS) == 1:
-            id = [id]
-
-        for i in range(len(cls._ID_COLS)):
-            field: InstrumentedAttribute = getattr(cls, cls._ID_COLS[i])
-            query = query.where(field == id[i])
-
-        return session.exec(query).one_or_none()
 
     @classmethod
     def _build_conditions(cls, filters: dict[str, typing.Any]):
@@ -267,6 +257,20 @@ class Table[
                 query = query.order_by(field.desc())
 
         return query
+
+    @classmethod
+    async def read(cls, session: Session, id: IdType) -> T | None:
+        """Get a model by its ID"""
+
+        query = select(cls)
+        if len(cls._ID_COLS) == 1:
+            id = [id]
+
+        for i in range(len(cls._ID_COLS)):
+            field: InstrumentedAttribute = getattr(cls, cls._ID_COLS[i])
+            query = query.where(field == id[i])
+
+        return session.exec(query).one_or_none()
 
     @classmethod
     async def create(cls, params: PostParams) -> T:
@@ -310,7 +314,7 @@ class Table[
     async def api_get(cls, params: GetParams):
         """Get a model by its ID, raise an exception if not found"""
 
-        instance = await cls.get_one_by_id(params.session, params.id)
+        instance = await cls.read(params.session, params.id)
         if not instance:
             raise cls.not_found_exception()
 
@@ -334,7 +338,7 @@ class Table[
     @api_endpoint
     async def api_patch(self, params: PatchParams):
 
-        instance = await self.get_one_by_id(params.session, params.id)
+        instance = await self.read(params.session, params.id)
         if not instance:
             raise self.not_found_exception()
 
@@ -352,7 +356,7 @@ class Table[
     @api_endpoint
     async def api_delete(cls, params: DeleteParams) -> None:
 
-        instance = await cls.get_one_by_id(params.session, params.id)
+        instance = await cls.read(params.session, params.id)
         if not instance:
             raise cls.not_found_exception()
 
@@ -406,7 +410,7 @@ class UserAdminCreate(UserCreate):
     user_role_id: UserTypes.user_role_id
 
 
-class User(Table['User', UserTypes.id, UserAdminCreate, BaseModel, BaseModel, UserAdminUpdate, BaseModel, BaseModel], UserIdBase, table=True):
+class User(Table['User', UserTypes.id, UserAdminCreate, BaseModel, BaseModel, UserAdminUpdate, BaseModel, BaseModel, typing.Literal[()]], UserIdBase, table=True):
     __tablename__ = 'user'
 
     email: UserTypes.email = Field(index=True, unique=True)
@@ -430,7 +434,7 @@ class User(Table['User', UserTypes.id, UserAdminCreate, BaseModel, BaseModel, Us
 
     _ROUTER_TAG = 'User'
 
-    @ property
+    @property
     def is_public(self) -> bool:
         return self.username is not None
 
@@ -440,7 +444,7 @@ class User(Table['User', UserTypes.id, UserAdminCreate, BaseModel, BaseModel, Us
         else:
             return root / self.id
 
-    @ classmethod
+    @classmethod
     async def authenticate(cls, session: Session, username_or_email: UserTypes.email | UserTypes.username, password: UserTypes.password) -> typing.Self | None:
 
         query = select(cls).where(
@@ -455,34 +459,34 @@ class User(Table['User', UserTypes.id, UserAdminCreate, BaseModel, BaseModel, Us
             return None
         return user
 
-    @ classmethod
-    @ api_endpoint
+    @classmethod
+    @api_endpoint
     async def is_username_available(cls, session: Session, username: UserTypes.username) -> bool:
 
         if session.exec(select(cls).where(User.username == username)).one_or_none():
             return False
         return True
 
-    @ classmethod
+    @classmethod
     async def api_get_is_username_available(cls, session: Session, username: UserTypes.username) -> None:
         if not await cls.is_username_available(session, username):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail='Username already exists')
 
-    @ classmethod
+    @classmethod
     async def is_email_available(cls, session: Session, email: UserTypes.email) -> bool:
         if session.exec(select(cls).where(User.email == email)).one_or_none():
             return False
         return True
 
-    @ classmethod
-    @ api_endpoint
+    @classmethod
+    @api_endpoint
     async def api_get_is_email_available(cls, session: Session, email: UserTypes.email) -> None:
         if not await cls.is_email_available(session, email):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail='Email already exists')
 
-    @ classmethod
+    @classmethod
     def hash_password(cls, password: UserTypes.password) -> UserTypes.hashed_password:
         return utils.hash_password(password)
 
@@ -496,7 +500,7 @@ class User(Table['User', UserTypes.id, UserAdminCreate, BaseModel, BaseModel, Us
                 else:
                     raise self.not_found_exception()
 
-    @ classmethod
+    @classmethod
     async def _check_validation_post(cls, params):
 
         if 'username' in params.create_model.model_fields_set:
@@ -516,7 +520,7 @@ class User(Table['User', UserTypes.id, UserAdminCreate, BaseModel, BaseModel, Us
             if params.update_model.email is not None:
                 await User.api_get_is_email_available(params.session, params.update_model.email)
 
-    @ classmethod
+    @classmethod
     async def create(cls, params) -> typing.Self:
 
         new_user = cls(
@@ -576,11 +580,11 @@ class JwtIO[TEncode: dict, TDecode: dict](BaseModel):
 
     _JWT_CLAIMS_MAPPING: typing.ClassVar[dict[str, str]] = {}
 
-    @ classmethod
+    @classmethod
     def validate_jwt_claims(cls, payload: TEncode) -> bool:
         return all(claim in payload for claim in cls._JWT_CLAIMS_MAPPING)
 
-    @ classmethod
+    @classmethod
     def decode(cls, payload: TEncode) -> TDecode:
         return {cls._JWT_CLAIMS_MAPPING[claim]: payload.get(claim) for claim in cls._JWT_CLAIMS_MAPPING}
 
@@ -609,7 +613,7 @@ class AuthCredential:
         expiry: typing.Optional[AuthCredentialTypes.expiry] = None
 
     class Create(Import):
-        @ model_validator(mode='after')
+        @model_validator(mode='after')
         def check_lifespan_or_expiry(self):
             if self.lifespan == None and self.expiry == None:
                 raise ValueError(
@@ -653,12 +657,12 @@ class AuthCredential:
             'type': 'auth_type',
         }
 
-        @ field_validator('issued', 'expiry')
-        @ classmethod
+        @field_validator('issued', 'expiry')
+        @classmethod
         def validate_datetime(cls, value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime:
             return validate_and_normalize_datetime(value, info)
 
-        @ field_serializer('issued', 'expiry')
+        @field_serializer('issued', 'expiry')
         def serialize_datetime(value: datetime_module.datetime) -> datetime_module.datetime:
             return value.replace(tzinfo=datetime_module.timezone.utc)
 
@@ -667,7 +671,7 @@ class AuthCredential:
         user_id: UserTypes.id = Field(
             index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0], const=True, ondelete='CASCADE')
 
-        @ classmethod
+        @classmethod
         async def create(cls, params: PostParams['AuthCredential.Create', BaseModel]) -> typing.Self:
 
             return cls(
@@ -678,7 +682,7 @@ class AuthCredential:
                 **params.create_model.model_dump(exclude=['lifespan', 'expiry'])
             )
 
-        @ classmethod
+        @classmethod
         async def get_scope_ids(cls, session: Session = None) -> list[types.ScopeTypes.id]:
             return []
 
@@ -712,7 +716,7 @@ class UserAccessTokenJwt:
 
 class UserAccessToken(
         Table['UserAccessToken', UserAccessTokenTypes.id, UserAccessTokenAdminCreate,
-              BaseModel, BaseModel, UserAccessTokenAdminUpdate, BaseModel, BaseModel],
+              BaseModel, BaseModel, UserAccessTokenAdminUpdate, BaseModel, BaseModel, typing.Literal[()]],
         AuthCredential.Table,
         AuthCredential.JwtIO[UserAccessTokenJwt.Encode,
                              UserAccessTokenJwt.Decode],
@@ -735,7 +739,7 @@ class UserAccessToken(
         **AuthCredential.Model._JWT_CLAIMS_MAPPING_BASE, **{'sub': 'id'}}
     _ROUTER_TAG: typing.ClassVar[str] = 'User Access Token'
 
-    @ classmethod
+    @classmethod
     async def _check_authorization_post(cls, params):
 
         if not params.admin:
@@ -782,7 +786,7 @@ class OTPAdminCreate(AuthCredential.Create):
 
 class OTP(
         Table['OTP', OTPTypes.id,
-              OTPAdminCreate, BaseModel, BaseModel, OTPAdminUpdate, BaseModel, BaseModel],
+              OTPAdminCreate, BaseModel, BaseModel, OTPAdminUpdate, BaseModel, BaseModel, typing.Literal[()]],
         AuthCredential.Table,
         AuthCredential.Model,
         OTPIdBase,
@@ -802,16 +806,16 @@ class OTP(
 
     _ROUTER_TAG = 'One Time Password'
 
-    @ classmethod
+    @classmethod
     def generate_code(cls) -> OTPTypes.code:
         characters = string.digits
         return ''.join(secrets.choice(characters) for _ in range(OTPConfig.CODE_LENGTH))
 
-    @ classmethod
+    @classmethod
     def hash_code(cls, code: OTPTypes.code) -> OTPTypes.hashed_code:
         return utils.hash_password(code)
 
-    @ classmethod
+    @classmethod
     def verify_code(cls, code: OTPTypes.code, hashed_code: OTPTypes.hashed_code) -> bool:
 
         import time
@@ -875,7 +879,7 @@ class ApiKeyJwt:
 
 class ApiKey(
         Table['ApiKey', ApiKeyTypes.id,
-              ApiKeyAdminCreate, BaseModel, BaseModel,  ApiKeyAdminUpdate, BaseModel, BaseModel],
+              ApiKeyAdminCreate, BaseModel, BaseModel,  ApiKeyAdminUpdate, BaseModel, BaseModel, ApiKeyTypes.order_by],
         AuthCredential.Table,
         AuthCredential.JwtIO[ApiKeyJwt.Encode, ApiKeyJwt.Decode],
         AuthCredential.Model,
@@ -898,23 +902,22 @@ class ApiKey(
         **AuthCredential.Model._JWT_CLAIMS_MAPPING_BASE, **{'sub': 'id'}}
 
     _ROUTER_TAG = 'Api Key'
-    _ORDER_BY_OPTIONS: typing.ClassVar = ApiKeyTypes.order_by
 
     async def get_scope_ids(self, session: Session = None, c: client.Client = None) -> list[types.ScopeTypes.id]:
         return [api_key_scope.scope_id for api_key_scope in self.api_key_scopes]
 
-    @ classmethod
+    @classmethod
     async def is_available(cls, session: Session, api_key_available_admin: ApiKeyAdminAvailable) -> bool:
         return not session.exec(select(cls).where(cls._build_conditions(api_key_available_admin.model_dump()))).one_or_none()
 
-    @ classmethod
+    @classmethod
     async def api_get_is_available(cls, session: Session, api_key_available_admin: ApiKeyAdminAvailable) -> None:
 
         if not await cls.is_available(session, api_key_available_admin):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail=cls.already_exists_message())
 
-    @ classmethod
+    @classmethod
     async def _check_authorization_post(cls, params):
         if not params.admin:
             if params.authorized_user_id != params.create_model.user_id:
@@ -926,7 +929,7 @@ class ApiKey(
             if self.user_id != params.authorized_user_id:
                 raise self.not_found_exception()
 
-    @ classmethod
+    @classmethod
     async def _check_validation_post(cls, params):
         await cls.api_get_is_available(params.session, ApiKeyAdminAvailable(
             name=params.create_model.name, user_id=params.create_model.user_id)
@@ -953,7 +956,7 @@ class ApiKeyPublic(ApiKeyExport):
 class ApiKeyPrivate(ApiKeyExport):
     scope_ids: list[types.ScopeTypes.id]
 
-    @ classmethod
+    @classmethod
     def from_api_key(cls, api_key: ApiKey) -> typing.Self:
         return cls.model_construct(**api_key.model_dump(), scope_ids=[api_key_scope.scope_id for api_key_scope in api_key.api_key_scopes])
 
@@ -987,7 +990,7 @@ class SignUp(
     _JWT_CLAIMS_MAPPING = {
         **AuthCredential.Model._JWT_CLAIMS_MAPPING_BASE, **{'sub': 'email'}}
 
-    @ classmethod
+    @classmethod
     def create(cls, create_model: SignUpAdminCreate) -> typing.Self:
         return cls(
             issued=datetime_module.datetime.now(
@@ -1045,7 +1048,7 @@ class ApiKeyScopeAdminCreate(ApiKeyScopeIdBase):
 
 class ApiKeyScope(
         Table['ApiKeyScope', ApiKeyScopeTypes.id,
-              ApiKeyScopeAdminCreate, BaseModel, BaseModel, ApiKeyScopeAdminUpdate, BaseModel, BaseModel],
+              ApiKeyScopeAdminCreate, BaseModel, BaseModel, ApiKeyScopeAdminUpdate, BaseModel, BaseModel, typing.Literal[()]],
         ApiKeyScopeIdBase,
         table=True):
 
@@ -1059,15 +1062,15 @@ class ApiKeyScope(
 
     _ROUTER_TAG: typing.ClassVar[str] = 'Api Key Scope'
 
-    @ classmethod
+    @classmethod
     async def create(cls, params):
         return ApiKeyScope(
             **params.create_model.model_dump(),
         )
 
-    @ classmethod
+    @classmethod
     async def _check_authorization_post(cls, params):
-        api_key = await ApiKey.get_one_by_id(params.session, params.create_model.api_key_id)
+        api_key = await ApiKey.read(params.session, params.create_model.api_key_id)
         if not api_key:
             raise ApiKey.not_found_exception()
 
@@ -1075,9 +1078,9 @@ class ApiKeyScope(
             if api_key.user_id != params.authorized_user_id:
                 raise cls.not_found_exception()
 
-    @ classmethod
+    @classmethod
     async def _check_validation_post(cls, params):
-        if await cls.get_one_by_id(params.session, params.create_model._id):
+        if await cls.read(params.session, params.create_model._id):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail='Api key scope already exists')
 
@@ -1181,7 +1184,7 @@ class GalleryAdminDeleteParams(BaseModel):
 
 class Gallery(
         Table['Gallery', GalleryTypes.id, GalleryAdminCreate, GalleryAdminCreateParams,
-              BaseModel, GalleryAdminUpdate, GalleryAdminUpdateParams, GalleryAdminDeleteParams],
+              BaseModel, GalleryAdminUpdate, GalleryAdminUpdateParams, GalleryAdminDeleteParams, typing.Literal[()]],
         GalleryIdBase,
         table=True):
     __tablename__ = 'gallery'
@@ -1210,7 +1213,7 @@ class Gallery(
 
     _ROUTER_TAG: typing.ClassVar[str] = 'Gallery'
 
-    @ property
+    @property
     def folder_name(self) -> GalleryTypes.folder_name:
         if self.parent_id is None and self.name == 'root':
             return self.user_id
@@ -1219,7 +1222,7 @@ class Gallery(
         else:
             return self.date.isoformat() + ' ' + self.name
 
-    @ classmethod
+    @classmethod
     def get_date_and_name_from_folder_name(cls, folder_name: GalleryTypes.folder_name) -> tuple[GalleryTypes.date | None, GalleryTypes.name]:
 
         match = re.match(r'^(\d{4}-\d{2}-\d{2}) (.+)$', folder_name)
@@ -1235,7 +1238,7 @@ class Gallery(
         if self.parent_id is None:
             return root / self.folder_name
         else:
-            a = await (await self.get_one_by_id(session, self.parent_id)).get_dir(session, root)
+            a = await (await self.read(session, self.parent_id)).get_dir(session, root)
             return a / self.folder_name
 
     async def get_parents(self, session: Session) -> list[typing.Self]:
@@ -1245,16 +1248,16 @@ class Gallery(
         else:
             return (await self.parent.get_parents(session)) + [self.parent]
 
-    @ classmethod
+    @classmethod
     async def get_root_gallery(cls, session: Session, user_id: GalleryTypes.user_id) -> typing.Self | None:
         return session.exec(select(cls).where(cls.user_id == user_id).where(cls.parent_id == None)).one_or_none()
 
-    @ classmethod
+    @classmethod
     async def api_get_is_available(cls, session: Session, gallery_available_admin: GalleryAdminAvailable) -> None:
 
         # raise an exception if the parent gallery does not exist
         if gallery_available_admin.parent_id:
-            if not await cls.get_one_by_id(session, gallery_available_admin.parent_id):
+            if not await cls.read(session, gallery_available_admin.parent_id):
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail='Parent gallery does not exist')
 
@@ -1262,7 +1265,7 @@ class Gallery(
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail=cls.already_exists_message())
 
-    @ classmethod
+    @classmethod
     async def _check_authorization_post(cls, params):
         if not params.admin:
             if params.authorized_user_id != params.create_model.user_id:
@@ -1278,7 +1281,7 @@ class Gallery(
                     raise HTTPException(
                         status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this gallery'.format(method=params.method))
 
-                gallery_permission = await GalleryPermission.get_one_by_id(params.session, (params.id, params.authorized_user_id))
+                gallery_permission = await GalleryPermission.read(params.session, (params.id, params.authorized_user_id))
 
                 # if the gallery is private and user has no access, pretend it doesn't exist
                 if not gallery_permission and self.visibility_level == config.VISIBILITY_LEVEL_NAME_MAPPING['private']:
@@ -1294,7 +1297,7 @@ class Gallery(
                         raise HTTPException(
                             status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this gallery'.format(method=params.method))
 
-    @ classmethod
+    @classmethod
     async def _check_validation_post(cls, params):
         await cls.api_get_is_available(params.session, GalleryAdminAvailable(**params.create_model.model_dump(include=GalleryAdminAvailable.model_fields.keys(), exclude_unset=True)))
 
@@ -1304,7 +1307,7 @@ class Gallery(
             **self.model_dump(include=list(GalleryAdminAvailable.model_fields.keys())), **params.update_model.model_dump(include=GalleryAdminAvailable.model_fields.keys(), exclude_unset=True)
         }))
 
-    @ classmethod
+    @classmethod
     async def create(cls, params):
         gallery = cls(
             id=cls.generate_id(),
@@ -1403,7 +1406,7 @@ class Gallery(
 
             # if this is the last image tied to that version, delete the version too
             if file.suffix in ImageFileMetadataConfig._SUFFIXES:
-                image_version = await ImageVersion.get_one_by_id(session, file.image_file_metadata.version_id)
+                image_version = await ImageVersion.read(session, file.image_file_metadata.version_id)
                 if len(image_version.image_file_metadatas) == 1:
                     await ImageVersion.api_delete(session=session, c=c, id=image_version.id, authorized_user_id=self.user_id, admin=False)
 
@@ -1514,7 +1517,7 @@ class GalleryPermissionAdminCreate(GalleryPermissionImport, GalleryPermissionIdB
 
 class GalleryPermission(
         Table['GalleryPermission',
-              GalleryPermissionTypes.id, GalleryPermissionAdminCreate,  BaseModel, BaseModel, GalleryPermissionAdminUpdate, BaseModel, BaseModel],
+              GalleryPermissionTypes.id, GalleryPermissionAdminCreate,  BaseModel, BaseModel, GalleryPermissionAdminUpdate, BaseModel, BaseModel, typing.Literal[()]],
         GalleryPermissionIdBase,
         table=True):
     __tablename__ = 'gallery_permission'
@@ -1529,7 +1532,7 @@ class GalleryPermission(
     user: 'User' = Relationship(
         back_populates='gallery_permissions')
 
-    @ classmethod
+    @classmethod
     async def _check_authorization_post(cls, params):
 
         if not params.admin:
@@ -1537,13 +1540,13 @@ class GalleryPermission(
                 raise HTTPException(
                     status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to post gallery permission for another user')
 
-    @ classmethod
+    @classmethod
     async def _check_validation_post(cls, params):
-        if await GalleryPermission.get_one_by_id(params.session, params.create_model._id):
+        if await GalleryPermission.read(params.session, params.create_model._id):
             raise HTTPException(
                 status.HTTP_409_CONFLICT, detail='Gallery permission already exists')
 
-    @ classmethod
+    @classmethod
     async def create(cls, params):
         return cls(
             params.create_model.model_dump()
@@ -1553,7 +1556,7 @@ class GalleryPermission(
 
         if not params.admin:
             if self.gallery.user._id != params.authorized_user_id:
-                authorized_user_gallery_permission = await self.get_one_by_id(params.session, GalleryPermissionIdBase(
+                authorized_user_gallery_permission = await self.read(params.session, GalleryPermissionIdBase(
                     gallery_id=self.gallery._id, user_id=params.authorized_user_id
                 )._id)
 
@@ -1612,7 +1615,7 @@ class FileAdminCreate(FileCreate):
 
 class File(
         Table['File', FileTypes.id, FileAdminCreate, BaseModel, BaseModel,
-              FileAdminUpdate,  BaseModel, BaseModel],
+              FileAdminUpdate,  BaseModel, BaseModel, typing.Literal[()]],
         FileIdBase,
         table=True):
 
@@ -1628,7 +1631,7 @@ class File(
     image_file_metadata: typing.Optional['ImageFileMetadata'] = Relationship(
         back_populates='file', cascade_delete=True)
 
-    @ property
+    @property
     def name(self) -> str:
         return self.stem + ('' if self.suffix is None else self.suffix)
 
@@ -1704,7 +1707,7 @@ class ImageVersionAdminCreate(ImageVersionCreate):
 
 class ImageVersion(
         Table['ImageVersion', ImageVersionTypes.id,
-              ImageVersionAdminCreate,  BaseModel, BaseModel, ImageVersionAdminUpdate, BaseModel, BaseModel],
+              ImageVersionAdminCreate,  BaseModel, BaseModel, ImageVersionAdminUpdate, BaseModel, BaseModel, typing.Literal[()]],
         ImageVersionIdBase,
         table=True):
     __tablename__ = 'image_version'
@@ -1734,17 +1737,17 @@ class ImageVersion(
     gallery: 'Gallery' = Relationship(
         back_populates='image_versions')
 
-    @ model_validator(mode='after')
+    @model_validator(mode='after')
     def validate_model(self, info: ValidationInfo) -> None:
         if self.base_name is None and self.parent_id is None:
             raise ValueError('Unnamed versions must have a parent_id')
 
-    @ field_validator('datetime')
-    @ classmethod
+    @field_validator('datetime')
+    @classmethod
     def validate_datetime(cls, value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime:
         return validate_and_normalize_datetime(value, info)
 
-    @ field_serializer('datetime')
+    @field_serializer('datetime')
     def serialize_datetime(value: datetime_module.datetime) -> datetime_module.datetime:
         return value.replace(tzinfo=datetime_module.timezone.utc)
 
@@ -1807,7 +1810,7 @@ class ImageFileMetadataAdminCreate(ImageFileMetadataCreate):
 
 class ImageFileMetadata(
         Table['ImageFileMetadata', ImageFileMetadataTypes.file_id,
-              ImageFileMetadataAdminCreate, BaseModel, BaseModel, ImageFileMetadataAdminUpdate, BaseModel, BaseModel],
+              ImageFileMetadataAdminCreate, BaseModel, BaseModel, ImageFileMetadataAdminUpdate, BaseModel, BaseModel, typing.Literal[()]],
         ImageFileMetadataIdBase,
         table=True):
     __tablename__ = 'image_file_metadata'
@@ -1822,7 +1825,7 @@ class ImageFileMetadata(
     file: 'File' = Relationship(
         back_populates='image_file_metadata')
 
-    @ classmethod
+    @classmethod
     def parse_file_stem(cls, file_stem: str) -> tuple[ImageVersionTypes.base_name, ImageVersionTypes.version | None, ImageFileMetadataTypes.scale | None]:
 
         scale = None
@@ -1837,7 +1840,7 @@ class ImageFileMetadata(
 
         return file_stem, version, scale
 
-    @ classmethod
+    @classmethod
     async def create(cls, params):
         return cls(
             params.create_model.model_dump()
