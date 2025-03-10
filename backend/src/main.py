@@ -10,19 +10,17 @@ from contextlib import asynccontextmanager
 from sqlalchemy import and_
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql import func
-from gallery import get_client, models, utils, auth, client, types, config
+from gallery import models, utils, auth, client, types, config
 from gallery.models import User, ApiKey, ApiKeyScope, File, Gallery, OTP, UserAccessToken
 import datetime
 from sqlmodel import Session, SQLModel, select
 import typing
 import httpx
-import jwt
 from jwt.exceptions import InvalidTokenError, MissingRequiredClaimError, DecodeError
 from pydantic import BaseModel, model_validator
 import datetime
 from functools import wraps
 from urllib.parse import urlencode
-import pathlib
 import shutil
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -35,7 +33,7 @@ async def lifespan(app: FastAPI):
     print('closingdown')
 
 app = FastAPI(lifespan=lifespan)
-c = get_client()
+c = client.Client(config={})
 
 
 class OAuth2PasswordBearerMultiSource(OAuth2):
