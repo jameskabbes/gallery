@@ -22,24 +22,24 @@ AUTH_KEY: str = SHARED_CONSTANTS['auth_key']
 HEADER_KEYS: dict[str, str] = SHARED_CONSTANTS['header_keys']
 FRONTEND_URLS: dict[str, str] = SHARED_CONSTANTS['frontend_urls']
 
-SCOPE_NAME_MAPPING: dict[types.ScopeTypes.name,
-                         types.ScopeTypes.id] = SHARED_CONSTANTS['scope_name_mapping']
-SCOPE_ID_MAPPING: dict[types.ScopeTypes.id, types.ScopeTypes.name] = {
+SCOPE_NAME_MAPPING: dict[types.Scope.name,
+                         types.Scope.id] = SHARED_CONSTANTS['scope_name_mapping']
+SCOPE_ID_MAPPING: dict[types.Scope.id, types.Scope.name] = {
     SCOPE_NAME_MAPPING[scope_name]: scope_name for scope_name in SCOPE_NAME_MAPPING
 }
 
-VISIBILITY_LEVEL_NAME_MAPPING: dict[types.VisibilityLevelTypes.name,
-                                    types.VisibilityLevelTypes.id] = SHARED_CONSTANTS['visibility_level_name_mapping']
+VISIBILITY_LEVEL_NAME_MAPPING: dict[types.VisibilityLevel.name,
+                                    types.VisibilityLevel.id] = SHARED_CONSTANTS['visibility_level_name_mapping']
 
 
-PERMISSION_LEVEL_NAME_MAPPING: dict[types.PermissionLevelTypes.name,
-                                    types.PermissionLevelTypes.id] = SHARED_CONSTANTS['permission_level_name_mapping']
+PERMISSION_LEVEL_NAME_MAPPING: dict[types.PermissionLevel.name,
+                                    types.PermissionLevel.id] = SHARED_CONSTANTS['permission_level_name_mapping']
 
-USER_ROLE_NAME_MAPPING: dict[types.UserRoleTypes.name,
-                             types.UserRoleTypes.id] = SHARED_CONSTANTS['user_role_name_mapping']
+USER_ROLE_NAME_MAPPING: dict[types.UserRole.name,
+                             types.UserRole.id] = SHARED_CONSTANTS['user_role_name_mapping']
 
-USER_ROLE_ID_SCOPE_IDS: dict[types.UserRoleTypes.id,
-                             set[types.ScopeTypes.id]] = {
+USER_ROLE_ID_SCOPE_IDS: dict[types.UserRole.id,
+                             set[types.Scope.id]] = {
     USER_ROLE_NAME_MAPPING[user_role_name]: set([
         SCOPE_NAME_MAPPING[scope_name] for scope_name in SHARED_CONSTANTS['user_role_scopes'][user_role_name]
     ]) for user_role_name in USER_ROLE_NAME_MAPPING

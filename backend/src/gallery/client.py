@@ -3,12 +3,13 @@ import pathlib
 from gallery import utils, types
 from gallery.config import settings
 from sqlalchemy import create_engine, Engine
+from sqlalchemy.orm import sessionmaker, Session as SQLASession
+from sqlalchemy.engine.url import URL
 import datetime
 import json
 from pathlib import Path
 import jwt
 import secrets
-
 
 UvicornPortType = int
 
@@ -18,8 +19,7 @@ class UvicornConfig(typing.TypedDict):
 
 
 class DbConfig(typing.TypedDict):
-    engine: Engine
-    path: Path
+    url: str | URL
 
 
 class MediaRootConfig(typing.TypedDict):
@@ -55,7 +55,7 @@ DefaultConfig: Config = {
         'port': 8087,
     },
     'db': {
-        'path': settings.BACKEND_DATA_DIR / 'gallery.db'
+        'url': f'sqlite:///{settings.BACKEND_DATA_DIR / 'gallery.db'}',
     },
     'media_root': {
         'path': settings.BACKEND_DATA_DIR / 'media_root'
@@ -84,6 +84,7 @@ DefaultConfig: Config = {
 class Client:
 
     uvicorn_port: UvicornPortType
+    Session: sessionmaker[SQLASession]
     db_engine: Engine
     media_dir: pathlib.Path
     galleries_dir: pathlib.Path
@@ -100,8 +101,9 @@ class Client:
         self.uvicorn_port = merged_config['uvicorn']['port']
 
         # db
-        db_engine_path = merged_config['db']['path']
-        self.db_engine = create_engine(f'sqlite:///{db_engine_path}')
+        self.db_engine = create_engine(merged_config['db']['url'])
+        self.Session = sessionmaker[SQLASession](
+            bind=self.db_engine)
 
         # media dir
         self.media_dir = merged_config['media_root']['path']
