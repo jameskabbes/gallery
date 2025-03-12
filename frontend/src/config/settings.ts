@@ -1,6 +1,6 @@
 // Import the static JSON file
-import config from '../config.json';
-import constants from '../constants.json';
+import settings from '../../../settings.json';
+import constants from '../../../constants.json';
 
 const zIndex = {
   modalOverlay: 100,

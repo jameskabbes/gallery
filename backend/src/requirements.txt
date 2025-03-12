@@ -1,6 +1,5 @@
 pydantic
 fastapi[standard]
-sqlmodel
 sqlalchemy
 uvicorn
 google-auth

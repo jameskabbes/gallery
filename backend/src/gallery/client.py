@@ -1,8 +1,8 @@
 import typing
 import pathlib
-from gallery import utils, config, types
+from gallery import utils, types
+from gallery.config import settings
 from sqlalchemy import create_engine, Engine
-from sqlmodel import SQLModel
 import datetime
 import json
 from pathlib import Path
@@ -55,10 +55,10 @@ DefaultConfig: Config = {
         'port': 8087,
     },
     'db': {
-        'path': config.BACKEND_DATA_DIR / 'gallery.db'
+        'path': settings.BACKEND_DATA_DIR / 'gallery.db'
     },
     'media_root': {
-        'path': config.BACKEND_DATA_DIR / 'media_root'
+        'path': settings.BACKEND_DATA_DIR / 'media_root'
     },
 
     'authentication': {
@@ -72,11 +72,11 @@ DefaultConfig: Config = {
 
     },
     'jwt': {
-        'secret_key_path': config.BACKEND_DATA_DIR / 'jwt_secret_key.txt',
+        'secret_key_path': settings.BACKEND_DATA_DIR / 'jwt_secret_key.txt',
         'algorithm': 'HS256'
     },
     'google_client': {
-        'path': config.REPO_DATA_DIR / 'google_client_secret.json'
+        'path': settings.REPO_DATA_DIR / 'google_client_secret.json'
     }
 }
 
@@ -132,9 +132,6 @@ class Client:
 
     def generate_jwt_secret_key(self):
         return secrets.token_hex(32)
-
-    def create_tables(self):
-        SQLModel.metadata.create_all(self.db_engine)
 
     def jwt_encode(self, payload: dict) -> types.JwtEncodedStr:
         return jwt.encode(payload, self.jwt_secret_key, algorithm=self.jwt_algorithm)

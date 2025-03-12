@@ -5,13 +5,16 @@ import typing
 from typing import Unpack, TypeVarTuple
 import uuid
 from fastapi import HTTPException, status, Response, APIRouter, Query
-from sqlmodel import SQLModel, Field, Column, Session, select, delete, Relationship
-from sqlalchemy import PrimaryKeyConstraint, and_, or_, event
-from sqlalchemy.sql import Select
-from sqlalchemy.orm import declarative_base, declared_attr
+
+# from sqlmodel import SQLModel, Field, Column, Session, select, delete, Relationship
+
+from sqlalchemy import PrimaryKeyConstraint, and_, or_, event, Column, Table
+from sqlalchemy.types import Integer, String
+from sqlalchemy.sql import select
+from sqlalchemy.orm import declarative_base, declared_attr, Session
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.engine import Result
-from sqlalchemy.types import TypeDecorator, String, DateTime
+
 from pydantic import BaseModel, EmailStr, constr, StringConstraints, field_validator, ValidationInfo, ValidatorFunctionWrapHandler, ValidationError, field_serializer, model_validator, conint
 from pydantic.functional_validators import WrapValidator
 from gallery import utils, types, config
@@ -27,7 +30,506 @@ from gallery import client
 import shutil
 from functools import wraps, lru_cache
 
-#
+
+Base = declarative_base()
+
+
+def api_endpoint(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapper
+
+
+class MethodParamsBase(typing.TypedDict):
+    session: Session
+    c: client.Client
+    authorized_user_id: typing.Optional[types.UserTypes.id]
+    admin: bool
+
+
+class MethodParamsBaseWithId[IdType](MethodParamsBase):
+    id: IdType
+
+
+class PostParams[TPostModel: BaseModel](MethodParamsBase):
+    create_model: TPostModel
+
+
+class GetParams[IdType](MethodParamsBaseWithId[IdType]):
+    pass
+
+
+class PatchParams[IdType, TPatchModel: BaseModel](MethodParamsBaseWithId[IdType]):
+    update_model: TPatchModel
+
+
+class DeleteParams[IdType](MethodParamsBaseWithId[IdType]):
+    pass
+
+
+class CheckAuthorizationExistingParams[IdType](MethodParamsBaseWithId[IdType]):
+    method: typing.Literal['get', 'patch', 'delete']
+
+
+class Pagination(BaseModel):
+    limit: int
+    offset: int
+
+
+class TableExport(BaseModel):
+    class Config:
+        from_attributes = True
+
+
+class TableDB(Base):
+    __abstract__ = True
+
+
+class IdObject[IdType]:
+    _ID_COLS: typing.ClassVar[list[str]] = ['id']
+
+    @property
+    def _id(self) -> IdType:
+        """Return the ID of the model"""
+
+        if len(self._ID_COLS) > 1:
+            return tuple(getattr(self, key) for key in self._ID_COLS)
+        else:
+            return getattr(self, self._ID_COLS[0])
+
+    @classmethod
+    def generate_id(cls) -> IdType:
+        """Generate a new ID for the model"""
+
+        if len(cls._ID_COLS) > 1:
+            return tuple(str(uuid.uuid4()) for _ in range(len(cls._ID_COLS)))
+        else:
+            return str(uuid.uuid4())
+
+    @classmethod
+    def export_plural_to_dict(cls, items: collections.abc.Iterable[typing.Self]) -> dict[IdType, typing.Self]:
+        return {item._id: item for item in items}
+
+
+class TableService[
+    T: 'Table',
+    IdType,
+    TCreateMethodModel: BaseModel,
+    TUpdateMethodModel: BaseModel,
+    TOrderBy
+](IdObject[IdType]):
+
+    _ROUTER_TAG: typing.ClassVar[str] = 'asdf'
+    _TABLE_DB: typing.ClassVar = typing.Any
+
+    @classmethod
+    def _get_by_id(cls, session: Session, id: IdType) -> T | None:
+
+        query = select(cls)
+        if len(cls._ID_COLS) == 1:
+            id = [id]
+
+        for i in range(len(cls._ID_COLS)):
+            field: InstrumentedAttribute = getattr(cls, cls._ID_COLS[i])
+            query = query.where(field == id[i])
+
+        return session.execute(query).one_or_none()
+
+    @classmethod
+    async def _create(cls, session: Session, create_model: T) -> T:
+        session.add(create_model)
+        session.commit()
+        session.refresh(create_model)
+        return create_model
+
+    async def _update(self, session: Session, patch_model: T):
+        pass
+
+        # for key, value in patch_model.model_dump(exclude_unset=True):
+        #     setattr(self, key, value)
+
+    async def delete(self, id: IdType):
+        pass
+
+    # async def create(self):
+
+    #     id = cls.generate_id()
+    #     if len(cls._ID_COLS) == 1:
+    #         id = [id]
+
+    #     return cls(
+    #         **{key: value for key, value in zip(
+    #             cls._ID_COLS, id)},
+    #         **post_model.model_dump()
+    #     )
+
+    #     pass
+
+    # @classmethod
+    # @lru_cache(maxsize=None)
+    # def not_found_message(cls) -> str:
+    #     return f'{cls.__name__} not found'
+
+    # @classmethod
+    # @lru_cache(maxsize=None)
+    # def already_exists_message(cls) -> str:
+    #     return f'{cls.__name__} already exists'
+
+    # @classmethod
+    # @lru_cache(maxsize=None)
+    # def not_found_exception(cls) -> HTTPException:
+    #     return HTTPException(status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
+
+    # @classmethod
+    # @lru_cache(maxsize=None)
+    # def already_exists_exception(cls) -> HTTPException:
+    #     return HTTPException(status.HTTP_409_CONFLICT, detail=cls.already_exists_message())
+
+    # @classmethod
+    # @lru_cache(maxsize=None)
+    # def get_responses(cls):
+    #     return {}
+
+    # @classmethod
+    # @lru_cache(maxsize=None)
+    # def post_responses(cls):
+    #     return {}
+
+    # @classmethod
+    # @lru_cache(maxsize=None)
+    # def patch_responses(cls):
+    #     return {}
+
+    # @classmethod
+    # @lru_cache(maxsize=None)
+    # def delete_responses(cls):
+    #     return {}
+
+    # @classmethod
+    # def make_order_by_dependency(cls):
+
+    #     def order_by_depends(
+    #             order_by: list[TOrderBy] = Query(
+    #                 [], description='Ordered series of fields to sort the results by, in the order they should be applied'),
+    #             order_by_desc: list[TOrderBy] = Query(
+    #                 [], description='Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields')
+    #     ) -> list[OrderBy[TOrderBy]]:
+
+    #         order_by_set = set(order_by)
+    #         order_by_desc_set = set(order_by_desc)
+
+    #         if not order_by_desc_set.issubset(order_by_set):
+    #             raise HTTPException(status.HTTP_400_BAD_REQUEST,
+    #                                 detail='"order_by_desc" fields must be a subset of "order_by" fields')
+
+    #         return [
+    #             OrderBy[TOrderBy](
+    #                 field=field, ascending=field not in order_by_desc_set)
+    #             for field in order_by
+    #         ]
+
+    #     return order_by_depends
+
+    # @classmethod
+    # def _build_conditions(cls, filters: dict[str, typing.Any]):
+
+    #     conditions = []
+    #     for key in filters:
+    #         value = filters[key]
+    #         field: InstrumentedAttribute = getattr(cls, key)
+
+    #         if isinstance(value, list):
+    #             conditions.append(field.in_(value))
+    #         else:
+    #             conditions.append(field == value)
+
+    #     return and_(*conditions)
+
+    # @classmethod
+    # def _build_order_by[TQuery: Select, TOrderBy](cls, query: TQuery, order_by: list[OrderBy[TOrderBy]]):
+    #     for order in order_by:
+    #         field: InstrumentedAttribute = getattr(cls, order.field)
+    #         if order.ascending:
+    #             query = query.order_by(field.asc())
+    #         else:
+    #             query = query.order_by(field.desc())
+
+    #     return query
+
+    # async def _check_authorization_existing(self, params: CheckAuthorizationExistingParams[IdType]):
+    #     pass
+
+    # @classmethod
+    # async def _check_authorization_post(cls, params: PostParams):
+    #     pass
+
+    # async def _check_validation_delete(self, params: DeleteParams):
+    #     pass
+
+    # async def _check_validation_patch(self, params: PatchParams):
+    #     pass
+
+    # @classmethod
+    # async def _check_validation_post(cls, params: PostParams):
+    #     pass
+
+    # @classmethod
+    # @api_endpoint
+    # async def api_get(cls, params: GetParams):
+    #     """Get a model by its ID, raise an exception if not found"""
+
+    #     instance = await cls.read(params.session, params.id)
+    #     if not instance:
+    #         raise cls.not_found_exception()
+
+    #     # use model construct to bypass the validation
+    #     await instance._check_authorization_existing(CheckAuthorizationExistingParams.model_construct(**params.model_dump(), method='get'))
+    #     return instance
+
+    # @classmethod
+    # @api_endpoint
+    # async def api_post(cls, params: PostParams):
+    #     await cls._check_authorization_post(params)
+    #     await cls._check_validation_post(params)
+
+    #     instance = await cls.create(params)
+    #     params.session.add(instance)
+    #     params.session.commit()
+    #     params.session.refresh(instance)
+    #     return instance
+
+    # @classmethod
+    # @api_endpoint
+    # async def api_patch(self, params: PatchParams):
+
+    #     instance = await self.read(params.session, params.id)
+    #     if not instance:
+    #         raise self.not_found_exception()
+
+    #     # use model construct to bypass the validation
+    #     await instance._check_authorization_existing(CheckAuthorizationExistingParams.model_construct(**params.model_dump(), method='patch'))
+    #     await instance._check_validation_patch(params)
+    #     await instance.update(params)
+
+    #     params.session.add(instance)
+    #     params.session.commit()
+    #     params.session.refresh(instance)
+    #     return instance
+
+    # @classmethod
+    # @api_endpoint
+    # async def api_delete(cls, params: DeleteParams) -> None:
+
+    #     instance = await cls.read(params.session, params.id)
+    #     if not instance:
+    #         raise cls.not_found_exception()
+
+    #     # use model construct to bypass the validation
+    #     await instance._check_authorization_existing(CheckAuthorizationExistingParams.model_construct(**params.model_dump(), method='delete'))
+    #     await instance._check_validation_delete(params)
+    #     await instance.delete(params)
+
+    #     params.session.delete(instance)
+    #     params.session.commit()
+    #     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+class UserDB(TableDB):
+    __tablename__ = 'user'
+    id = Column(String, primary_key=True, index=True, unique=True)
+    email = Column(String, index=True, unique=True)
+    phone_number = Column(String, unique=True, nullable=True)
+    username = Column(String, index=True, unique=True, nullable=True)
+    hashed_password = Column(String, nullable=True)
+    user_role_id = Column(Integer)
+
+
+class UserIdBase(IdObject[types.UserTypes.id]):
+    id: types.UserTypes.id
+
+
+class UserImport(BaseModel):
+    phone_number: typing.Optional[types.UserTypes.phone_number] = None
+    username: typing.Optional[types.UserTypes.username] = None
+    password: typing.Optional[types.UserTypes.password] = None
+
+
+class UserUpdate(UserImport):
+    email: typing.Optional[types.UserTypes.email] = None
+
+
+class UserAdminUpdate(UserUpdate):
+    user_role_id: typing.Optional[types.UserTypes.user_role_id] = None
+
+
+class UserCreate(UserImport):
+    email: types.UserTypes.email
+
+
+class UserAdminCreate(UserCreate):
+    user_role_id: types.UserTypes.user_role_id
+
+
+# class User(Table['User', types.UserTypes.id, UserAdminCreate, BaseModel, BaseModel, UserAdminUpdate, BaseModel, BaseModel, typing.Literal[()]], UserIdBase, table=True):
+class User(TableService['User', types.UserTypes.id, UserAdminCreate, UserAdminUpdate, typing.Literal[()]]):
+
+    _DBClass = UserDB
+
+    # api_keys: list['ApiKey'] = Relationship(
+    #     back_populates='user', cascade_delete=True)
+    # user_access_tokens: list['UserAccessToken'] = Relationship(
+    #     back_populates='user', cascade_delete=True)
+    # galleries: list['Gallery'] = Relationship(
+    #     back_populates='user', cascade_delete=True)
+    # gallery_permissions: list['GalleryPermission'] = Relationship(
+    #     back_populates='user', cascade_delete=True)
+    # otps: list['OTP'] = Relationship(
+    #     back_populates='user', cascade_delete=True)
+
+    _ROUTER_TAG = 'User'
+
+    # @property
+    # def is_public(self) -> bool:
+    #     return self.username is not None
+
+    # def get_dir(self, root: pathlib.Path) -> pathlib.Path:
+    #     if self.is_public:
+    #         return root / self.username
+    #     else:
+    #         return root / self.id
+
+    # @classmethod
+    # async def authenticate(cls, session: Session, username_or_email: types.UserTypes.email | types.UserTypes.username, password: types.UserTypes.password) -> typing.Self | None:
+
+    #     query = select(cls).where(
+    #         or_(cls.email == username_or_email, cls.username == username_or_email))
+    #     user = session.exec(query).one_or_none()
+
+    #     if not user:
+    #         return None
+    #     if user.hashed_password is None:
+    #         return None
+    #     if not utils.verify_password(password, user.hashed_password):
+    #         return None
+    #     return user
+
+    # @classmethod
+    # @api_endpoint
+    # async def is_username_available(cls, session: Session, username: types.UserTypes.username) -> bool:
+
+    #     if session.exec(select(cls).where(User.username == username)).one_or_none():
+    #         return False
+    #     return True
+
+    # @classmethod
+    # async def api_get_is_username_available(cls, session: Session, username: types.UserTypes.username) -> None:
+    #     if not await cls.is_username_available(session, username):
+    #         raise HTTPException(
+    #             status_code=status.HTTP_409_CONFLICT, detail='Username already exists')
+
+    # @classmethod
+    # async def is_email_available(cls, session: Session, email: types.UserTypes.email) -> bool:
+    #     if session.exec(select(cls).where(User.email == email)).one_or_none():
+    #         return False
+    #     return True
+
+    # @classmethod
+    # @api_endpoint
+    # async def api_get_is_email_available(cls, session: Session, email: types.UserTypes.email) -> None:
+    #     if not await cls.is_email_available(session, email):
+    #         raise HTTPException(
+    #             status_code=status.HTTP_409_CONFLICT, detail='Email already exists')
+
+    # @classmethod
+    # def hash_password(cls, password: types.UserTypes.password) -> types.UserTypes.hashed_password:
+    #     return utils.hash_password(password)
+
+    # async def _check_authorization_existing(self, params):
+    #     if not params.admin:
+    #         if self._id != params.authorized_user_id:
+    #             if self.is_public:
+    #                 if params.method == 'delete' or params.method == 'patch':
+    #                     raise HTTPException(
+    #                         status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this user'.format(method=params.method))
+    #             else:
+    #                 raise self.not_found_exception()
+
+    # @classmethod
+    # async def _check_validation_post(cls, params):
+
+    #     if 'username' in params.create_model.model_fields_set:
+    #         if params.create_model.username != None:
+    #             await User.api_get_is_username_available(
+    #                 params.session, params.create_model.username)
+    #     if 'email' in params.create_model.model_fields_set:
+    #         if params.create_model.email != None:
+    #             await User.api_get_is_email_available(params.session, params.create_model.email)
+
+    # async def _check_validation_patch(self, params):
+    #     if 'username' in params.update_model.model_fields_set:
+    #         if params.update_model.username is not None:
+    #             await User.api_get_is_username_available(
+    #                 params.session, params.update_model.username)
+    #     if 'email' in params.update_model.model_fields_set:
+    #         if params.update_model.email is not None:
+    #             await User.api_get_is_email_available(params.session, params.update_model.email)
+
+    # @classmethod
+    # async def create(cls, params) -> typing.Self:
+
+    #     new_user = cls(
+    #         id=cls.generate_id(),
+    #         hashed_password=cls.hash_password(
+    #             params.create_model.password) if 'password' in params.create_model.model_fields_set else None,
+    #         **params.create_model.model_dump(exclude=['password'])
+    #     )
+
+    #     root_gallery = await Gallery.api_post(Gallery.PostParams(**params.model_dump(exclude=['create_model', 'create_method_params', 'authorized_user_id']), authorized_user_id=new_user._id, create_model=GalleryAdminCreate(
+    #         name='root', user_id=new_user._id, visibility_level=config.VISIBILITY_LEVEL_NAME_MAPPING['private']
+    #     )))
+
+    #     return new_user
+
+    # async def update(self, params):
+
+    #     self.sqlmodel_update(params.update_model.model_dump(
+    #         exclude_unset=True, exclude=['password']))
+    #     if 'password' in params.update_model.model_fields_set:
+    #         self.hashed_password = self.hash_password(
+    #             params.update_model.password)
+
+    #     # rename the root gallery if the username is updated
+    #     if 'username' in params.update_model.model_fields_set:
+    #         root_gallery = await Gallery.get_root_gallery(params.session, self._id)
+    #         await root_gallery.update(
+    #             Gallery.PatchParams(**params.model_dump(exclude=['update_model', 'update_method_params']),
+    #                                 update_model=GalleryAdminUpdate(
+    #                 name=self._id if self.username == None else self.username
+    #             ))
+    #         )
+
+    # async def delete(self, params):
+    #     await (await Gallery.get_root_gallery(params.session, self._id)).delete(session=params.session, c=params.c,
+    #                                                                             authorized_user_id=params.authorized_user_id, admin=params.admin)
+
+
+class UserExport(TableExport, UserIdBase):
+    id: types.UserTypes.id
+    username: typing.Optional[types.UserTypes.username]
+
+
+class UserPublic(UserExport):
+    pass
+
+
+class UserPrivate(UserExport):
+    email: types.UserTypes.email
+    user_role_id: types.UserTypes.user_role_id
+
+
+'''
+
 
 
 # Define a custom SQLAlchemy type for string serialization
@@ -55,45 +557,6 @@ def validate_and_normalize_datetime(value: datetime_module.datetime, info: Valid
     return value.astimezone(datetime_module.timezone.utc)
 
 
-class MethodParamsBase(BaseModel):
-    session: Session
-    c: client.Client
-    authorized_user_id: typing.Optional['UserTypes.id'] = None
-    admin: bool = False
-
-    class Config:
-        arbitrary_types_allowed = True
-
-
-class MethodParamsBaseWithId[IdType](MethodParamsBase):
-    id: IdType
-
-
-class PostParams[TPostModel: BaseModel, TPostParams: BaseModel](MethodParamsBase):
-    create_model: TPostModel
-    create_method_params: typing.Optional[TPostParams] = None
-
-
-class GetParams[IdType, TGetParams: BaseModel](MethodParamsBaseWithId[IdType]):
-    read_method_params: typing.Optional[TGetParams] = None
-
-
-class PatchParams[IdType, TPatchModel: BaseModel, TPatchParams: BaseModel](MethodParamsBaseWithId[IdType]):
-    update_model: TPatchModel
-    update_method_params: typing.Optional[TPatchParams] = None
-
-
-class DeleteParams[IdType, TDeleteParams: BaseModel](MethodParamsBaseWithId[IdType]):
-    delete_method_params: typing.Optional[TDeleteParams] = None
-
-
-class CheckAuthorizationExistingParams[IdType](MethodParamsBaseWithId[IdType]):
-    method: typing.Literal['get', 'patch', 'delete']
-
-
-class Pagination(BaseModel):
-    limit: int
-    offset: int
 
 
 def build_pagination[TQuery: Select](query: TQuery, pagination: Pagination):
@@ -105,475 +568,9 @@ class OrderBy[T](BaseModel):
     ascending: bool
 
 
-class IdObject[IdType](BaseModel):
 
-    _ID_COLS: typing.ClassVar[list[str]] = ['id']
 
-    @property
-    def _id(self) -> IdType:
-        """Return the ID of the model"""
 
-        if len(self._ID_COLS) > 1:
-            return tuple(getattr(self, key) for key in self._ID_COLS)
-        else:
-            return getattr(self, self._ID_COLS[0])
-
-    @classmethod
-    def generate_id(cls) -> IdType:
-        """Generate a new ID for the model"""
-
-        if len(cls._ID_COLS) > 1:
-            return tuple(str(uuid.uuid4()) for _ in range(len(cls._ID_COLS)))
-        else:
-            return str(uuid.uuid4())
-
-    @classmethod
-    def export_plural_to_dict(cls, items: collections.abc.Iterable[typing.Self]) -> dict[IdType, typing.Self]:
-        return {item._id: item for item in items}
-
-
-class TableExport(BaseModel):
-    class Config:
-        from_attributes = True
-
-
-def api_endpoint(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        return func(*args, **kwargs)
-    return wrapper
-
-
-class Table[
-    T: 'Table',
-    IdType,
-    TCreateMethodModel: BaseModel,
-    TCreateMethodParams: BaseModel,
-    TReadMethodParams: BaseModel,
-    TUpdateMethodModel: BaseModel,
-    TUpdateMethodParams: BaseModel,
-    TDeleteMethodParams: BaseModel,
-    TOrderBy
-](SQLModel, IdObject[IdType]):
-
-    _ROUTER_TAG: typing.ClassVar[str] = 'asdf'
-
-    class PostParams(PostParams[TCreateMethodModel, TCreateMethodParams]):
-        pass
-
-    class GetParams(GetParams[IdType, TReadMethodParams]):
-        pass
-
-    class PatchParams(PatchParams[IdType, TUpdateMethodModel, TUpdateMethodParams]):
-        pass
-
-    class DeleteParams(DeleteParams[IdType, TDeleteMethodParams]):
-        pass
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def not_found_message(cls) -> str:
-        return f'{cls.__name__} not found'
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def already_exists_message(cls) -> str:
-        return f'{cls.__name__} already exists'
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def not_found_exception(cls) -> HTTPException:
-        return HTTPException(status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def already_exists_exception(cls) -> HTTPException:
-        return HTTPException(status.HTTP_409_CONFLICT, detail=cls.already_exists_message())
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def get_responses(cls):
-        return {}
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def post_responses(cls):
-        return {}
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def patch_responses(cls):
-        return {}
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def delete_responses(cls):
-        return {}
-
-    @classmethod
-    def make_order_by_dependency(cls):
-
-        def order_by_depends(
-                order_by: list[TOrderBy] = Query(
-                    [], description='Ordered series of fields to sort the results by, in the order they should be applied'),
-                order_by_desc: list[TOrderBy] = Query(
-                    [], description='Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields')
-        ) -> list[OrderBy[TOrderBy]]:
-
-            order_by_set = set(order_by)
-            order_by_desc_set = set(order_by_desc)
-
-            if not order_by_desc_set.issubset(order_by_set):
-                raise HTTPException(status.HTTP_400_BAD_REQUEST,
-                                    detail='"order_by_desc" fields must be a subset of "order_by" fields')
-
-            return [
-                OrderBy[TOrderBy](
-                    field=field, ascending=field not in order_by_desc_set)
-                for field in order_by
-            ]
-
-        return order_by_depends
-
-    @classmethod
-    def _build_conditions(cls, filters: dict[str, typing.Any]):
-
-        conditions = []
-        for key in filters:
-            value = filters[key]
-            field: InstrumentedAttribute = getattr(cls, key)
-
-            if isinstance(value, list):
-                conditions.append(field.in_(value))
-            else:
-                conditions.append(field == value)
-
-        return and_(*conditions)
-
-    @classmethod
-    def _build_order_by[TQuery: Select, TOrderBy](cls, query: TQuery, order_by: list[OrderBy[TOrderBy]]):
-        for order in order_by:
-            field: InstrumentedAttribute = getattr(cls, order.field)
-            if order.ascending:
-                query = query.order_by(field.asc())
-            else:
-                query = query.order_by(field.desc())
-
-        return query
-
-    @classmethod
-    async def read(cls, session: Session, id: IdType) -> T | None:
-        """Get a model by its ID"""
-
-        query = select(cls)
-        if len(cls._ID_COLS) == 1:
-            id = [id]
-
-        for i in range(len(cls._ID_COLS)):
-            field: InstrumentedAttribute = getattr(cls, cls._ID_COLS[i])
-            query = query.where(field == id[i])
-
-        return session.exec(query).one_or_none()
-
-    @classmethod
-    async def create(cls, params: PostParams) -> T:
-
-        id = cls.generate_id()
-        if len(cls._ID_COLS) == 1:
-            id = [id]
-
-        return cls(
-            **{key: value for key, value in zip(
-                cls._ID_COLS, id)},
-            ** params.create_model.model_dump(),
-        )
-
-    async def update(self, params: PatchParams):
-        self.sqlmodel_update(
-            params.update_model.model_dump(exclude_unset=True))
-
-    async def delete(self, params: DeleteParams):
-        pass
-
-    async def _check_authorization_existing(self, params: CheckAuthorizationExistingParams[IdType]):
-        pass
-
-    @classmethod
-    async def _check_authorization_post(cls, params: PostParams):
-        pass
-
-    async def _check_validation_delete(self, params: DeleteParams):
-        pass
-
-    async def _check_validation_patch(self, params: PatchParams):
-        pass
-
-    @classmethod
-    async def _check_validation_post(cls, params: PostParams):
-        pass
-
-    @classmethod
-    @api_endpoint
-    async def api_get(cls, params: GetParams):
-        """Get a model by its ID, raise an exception if not found"""
-
-        instance = await cls.read(params.session, params.id)
-        if not instance:
-            raise cls.not_found_exception()
-
-        # use model construct to bypass the validation
-        await instance._check_authorization_existing(CheckAuthorizationExistingParams.model_construct(**params.model_dump(), method='get'))
-        return instance
-
-    @classmethod
-    @api_endpoint
-    async def api_post(cls, params: PostParams):
-        await cls._check_authorization_post(params)
-        await cls._check_validation_post(params)
-
-        instance = await cls.create(params)
-        params.session.add(instance)
-        params.session.commit()
-        params.session.refresh(instance)
-        return instance
-
-    @classmethod
-    @api_endpoint
-    async def api_patch(self, params: PatchParams):
-
-        instance = await self.read(params.session, params.id)
-        if not instance:
-            raise self.not_found_exception()
-
-        # use model construct to bypass the validation
-        await instance._check_authorization_existing(CheckAuthorizationExistingParams.model_construct(**params.model_dump(), method='patch'))
-        await instance._check_validation_patch(params)
-        await instance.update(params)
-
-        params.session.add(instance)
-        params.session.commit()
-        params.session.refresh(instance)
-        return instance
-
-    @classmethod
-    @api_endpoint
-    async def api_delete(cls, params: DeleteParams) -> None:
-
-        instance = await cls.read(params.session, params.id)
-        if not instance:
-            raise cls.not_found_exception()
-
-        # use model construct to bypass the validation
-        await instance._check_authorization_existing(CheckAuthorizationExistingParams.model_construct(**params.model_dump(), method='delete'))
-        await instance._check_validation_delete(params)
-        await instance.delete(params)
-
-        params.session.delete(instance)
-        params.session.commit()
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-class UserTypes:
-    id = str
-    email = types.Email
-    phone_number = types.PhoneNumber
-
-    password = typing.Annotated[str, StringConstraints(
-        min_length=1, max_length=64)]
-    username = typing.Annotated[str, StringConstraints(
-        min_length=3, max_length=20, pattern=re.compile(r'^[a-zA-Z0-9_.-]+$'), to_lower=True)]
-    hashed_password = str
-    user_role_id = types.UserRoleTypes.id
-
-
-class UserIdBase(IdObject[UserTypes.id]):
-    id: UserTypes.id = Field(
-        primary_key=True, index=True, unique=True, const=True)
-
-
-class UserImport(BaseModel):
-    phone_number: typing.Optional[UserTypes.phone_number] = None
-    username: typing.Optional[UserTypes.username] = None
-    password: typing.Optional[UserTypes.password] = None
-
-
-class UserUpdate(UserImport):
-    email: typing.Optional[UserTypes.email] = None
-
-
-class UserAdminUpdate(UserUpdate):
-    user_role_id: typing.Optional[UserTypes.user_role_id] = None
-
-
-class UserCreate(UserImport):
-    email: UserTypes.email
-
-
-class UserAdminCreate(UserCreate):
-    user_role_id: UserTypes.user_role_id
-
-
-class User(Table['User', UserTypes.id, UserAdminCreate, BaseModel, BaseModel, UserAdminUpdate, BaseModel, BaseModel, typing.Literal[()]], UserIdBase, table=True):
-    __tablename__ = 'user'
-
-    email: UserTypes.email = Field(index=True, unique=True)
-    phone_number: UserTypes.phone_number = Field(
-        unique=True, nullable=True)
-    username: UserTypes.username = Field(
-        index=True, unique=True, nullable=True)
-    hashed_password: UserTypes.hashed_password = Field(nullable=True)
-    user_role_id: UserTypes.user_role_id = Field()
-
-    api_keys: list['ApiKey'] = Relationship(
-        back_populates='user', cascade_delete=True)
-    user_access_tokens: list['UserAccessToken'] = Relationship(
-        back_populates='user', cascade_delete=True)
-    galleries: list['Gallery'] = Relationship(
-        back_populates='user', cascade_delete=True)
-    gallery_permissions: list['GalleryPermission'] = Relationship(
-        back_populates='user', cascade_delete=True)
-    otps: list['OTP'] = Relationship(
-        back_populates='user', cascade_delete=True)
-
-    _ROUTER_TAG = 'User'
-
-    @property
-    def is_public(self) -> bool:
-        return self.username is not None
-
-    def get_dir(self, root: pathlib.Path) -> pathlib.Path:
-        if self.is_public:
-            return root / self.username
-        else:
-            return root / self.id
-
-    @classmethod
-    async def authenticate(cls, session: Session, username_or_email: UserTypes.email | UserTypes.username, password: UserTypes.password) -> typing.Self | None:
-
-        query = select(cls).where(
-            or_(cls.email == username_or_email, cls.username == username_or_email))
-        user = session.exec(query).one_or_none()
-
-        if not user:
-            return None
-        if user.hashed_password is None:
-            return None
-        if not utils.verify_password(password, user.hashed_password):
-            return None
-        return user
-
-    @classmethod
-    @api_endpoint
-    async def is_username_available(cls, session: Session, username: UserTypes.username) -> bool:
-
-        if session.exec(select(cls).where(User.username == username)).one_or_none():
-            return False
-        return True
-
-    @classmethod
-    async def api_get_is_username_available(cls, session: Session, username: UserTypes.username) -> None:
-        if not await cls.is_username_available(session, username):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail='Username already exists')
-
-    @classmethod
-    async def is_email_available(cls, session: Session, email: UserTypes.email) -> bool:
-        if session.exec(select(cls).where(User.email == email)).one_or_none():
-            return False
-        return True
-
-    @classmethod
-    @api_endpoint
-    async def api_get_is_email_available(cls, session: Session, email: UserTypes.email) -> None:
-        if not await cls.is_email_available(session, email):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail='Email already exists')
-
-    @classmethod
-    def hash_password(cls, password: UserTypes.password) -> UserTypes.hashed_password:
-        return utils.hash_password(password)
-
-    async def _check_authorization_existing(self, params):
-        if not params.admin:
-            if self._id != params.authorized_user_id:
-                if self.is_public:
-                    if params.method == 'delete' or params.method == 'patch':
-                        raise HTTPException(
-                            status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this user'.format(method=params.method))
-                else:
-                    raise self.not_found_exception()
-
-    @classmethod
-    async def _check_validation_post(cls, params):
-
-        if 'username' in params.create_model.model_fields_set:
-            if params.create_model.username != None:
-                await User.api_get_is_username_available(
-                    params.session, params.create_model.username)
-        if 'email' in params.create_model.model_fields_set:
-            if params.create_model.email != None:
-                await User.api_get_is_email_available(params.session, params.create_model.email)
-
-    async def _check_validation_patch(self, params):
-        if 'username' in params.update_model.model_fields_set:
-            if params.update_model.username is not None:
-                await User.api_get_is_username_available(
-                    params.session, params.update_model.username)
-        if 'email' in params.update_model.model_fields_set:
-            if params.update_model.email is not None:
-                await User.api_get_is_email_available(params.session, params.update_model.email)
-
-    @classmethod
-    async def create(cls, params) -> typing.Self:
-
-        new_user = cls(
-            id=cls.generate_id(),
-            hashed_password=cls.hash_password(
-                params.create_model.password) if 'password' in params.create_model.model_fields_set else None,
-            **params.create_model.model_dump(exclude=['password'])
-        )
-
-        root_gallery = await Gallery.api_post(Gallery.PostParams(**params.model_dump(exclude=['create_model', 'create_method_params', 'authorized_user_id']), authorized_user_id=new_user._id, create_model=GalleryAdminCreate(
-            name='root', user_id=new_user._id, visibility_level=config.VISIBILITY_LEVEL_NAME_MAPPING['private']
-        )))
-
-        return new_user
-
-    async def update(self, params):
-
-        self.sqlmodel_update(params.update_model.model_dump(
-            exclude_unset=True, exclude=['password']))
-        if 'password' in params.update_model.model_fields_set:
-            self.hashed_password = self.hash_password(
-                params.update_model.password)
-
-        # rename the root gallery if the username is updated
-        if 'username' in params.update_model.model_fields_set:
-            root_gallery = await Gallery.get_root_gallery(params.session, self._id)
-            await root_gallery.update(
-                Gallery.PatchParams(**params.model_dump(exclude=['update_model', 'update_method_params']),
-                                    update_model=GalleryAdminUpdate(
-                    name=self._id if self.username == None else self.username
-                ))
-            )
-
-    async def delete(self, params):
-        await (await Gallery.get_root_gallery(params.session, self._id)).delete(session=params.session, c=params.c,
-                                                                                authorized_user_id=params.authorized_user_id, admin=params.admin)
-
-
-class UserExport(TableExport, UserIdBase):
-    id: UserTypes.id
-    username: typing.Optional[UserTypes.username]
-
-
-class UserPublic(UserExport):
-    pass
-
-
-class UserPrivate(UserExport):
-    email: UserTypes.email
-    user_role_id: UserTypes.user_role_id
 
 
 # JWT
@@ -671,7 +668,7 @@ class AuthCredential:
 
     class Table(Table):
 
-        user_id: UserTypes.id = Field(
+        user_id: types.UserTypes.id = Field(
             index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0], const=True, ondelete='CASCADE')
 
         @classmethod
@@ -706,15 +703,15 @@ class UserAccessTokenAdminUpdate(BaseModel):
 
 
 class UserAccessTokenAdminCreate(AuthCredential.Create):
-    user_id: UserTypes.id
+    user_id: types.UserTypes.id
 
 
 class UserAccessTokenJwt:
     class Encode(AuthCredential.JwtEncodeBase):
-        sub: UserTypes.id
+        sub: types.UserTypes.id
 
     class Decode(AuthCredential.JwtDecodeBase):
-        id: UserTypes.id
+        id: types.UserTypes.id
 
 
 class UserAccessToken(
@@ -783,7 +780,7 @@ class OTPAdminUpdate(BaseModel):
 
 
 class OTPAdminCreate(AuthCredential.Create):
-    user_id: UserTypes.id
+    user_id: types.UserTypes.id
     hashed_code: OTPTypes.hashed_code
 
 
@@ -849,7 +846,7 @@ class ApiKeyAvailable(BaseModel):
 
 
 class ApiKeyAdminAvailable(ApiKeyAvailable):
-    user_id: UserTypes.id
+    user_id: types.UserTypes.id
 
 
 class ApiKeyImport(AuthCredential.Import):
@@ -869,15 +866,15 @@ class ApiKeyCreate(ApiKeyImport, AuthCredential.Create):
 
 
 class ApiKeyAdminCreate(ApiKeyCreate):
-    user_id: UserTypes.id
+    user_id: types.UserTypes.id
 
 
 class ApiKeyJwt:
     class Encode(AuthCredential.JwtEncodeBase):
-        sub: UserTypes.id
+        sub: types.UserTypes.id
 
     class Decode(AuthCredential.JwtDecodeBase):
-        id: UserTypes.id
+        id: types.UserTypes.id
 
 
 class ApiKey(
@@ -946,7 +943,7 @@ class ApiKey(
 
 class ApiKeyExport(TableExport):
     id: ApiKeyTypes.id
-    user_id: UserTypes.id
+    user_id: types.UserTypes.id
     name: ApiKeyTypes.name
     issued: ApiKeyTypes.issued
     expiry: ApiKeyTypes.expiry
@@ -969,14 +966,14 @@ class ApiKeyPrivate(ApiKeyExport):
 
 class SignUpJwt:
     class Encode(AuthCredential.JwtEncodeBase):
-        sub: UserTypes.email
+        sub: types.UserTypes.email
 
     class Decode(AuthCredential.JwtDecodeBase):
-        email: UserTypes.email
+        email: types.UserTypes.email
 
 
 class SignUpAdminCreate(AuthCredential.Create):
-    email: UserTypes.email
+    email: types.UserTypes.email
 
 
 class SignUp(
@@ -984,7 +981,7 @@ class SignUp(
     AuthCredential.Model,
 ):
     auth_type = 'sign_up'
-    email: UserTypes.email = Field()
+    email: types.UserTypes.email = Field()
     issued: AuthCredentialTypes.issued = Field(
         const=True, sa_column=Column(DateTimeWithTimeZoneString))
     expiry: AuthCredentialTypes.expiry = Field(
@@ -1098,7 +1095,7 @@ class GalleryTypes:
         id = str
 
     id = BaseTypes.id
-    user_id = UserTypes.id
+    user_id = types.UserTypes.id
 
     # name can't start with the `YYYY-MM-DD ` pattern
     name = typing.Annotated[str, StringConstraints(
@@ -1178,7 +1175,7 @@ class GalleryAvailable(BaseModel):
 
 
 class GalleryAdminAvailable(GalleryAvailable):
-    user_id: UserTypes.id
+    user_id: types.UserTypes.id
 
 
 class GalleryAdminDeleteParams(BaseModel):
@@ -1474,7 +1471,7 @@ class Gallery(
 class GalleryPermissionTypes:
     class BaseTypes:
         gallery_id = GalleryTypes.id
-        user_id = UserTypes.id
+        user_id = types.UserTypes.id
 
     id = typing.Annotated[tuple[BaseTypes.gallery_id,
                                 BaseTypes.user_id], '(gallery_id, user_id)']
@@ -1848,3 +1845,5 @@ class ImageFileMetadata(
         return cls(
             params.create_model.model_dump()
         )
+
+'''

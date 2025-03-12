@@ -1,8 +1,8 @@
 from pathlib import Path
 import json
-from gallery import client, config
+from gallery.config import constants, settings
 from main import app as fastapi_app
 
 export_Path = Path(
-    config.REPO_DIR, config.SHARED_CONFIG['openapi_schema_path'])
+    constants.REPO_DIR, settings.SHARED_SETTINGS['openapi_schema_path'])
 export_Path.write_text(json.dumps(fastapi_app.openapi()))

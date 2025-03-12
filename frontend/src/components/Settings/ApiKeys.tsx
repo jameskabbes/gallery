@@ -33,7 +33,7 @@ import { ValidatedInputDatetimeLocal } from '../Form/ValidatedInputDatetimeLocal
 import { Button1, Button2, ButtonSubmit } from '../Utils/Button';
 import { Card1, CardButton } from '../Utils/Card';
 import { Toggle1 } from '../Utils/Toggle';
-import { scopeIdMapping, userRoleIdMapping } from '../../../config';
+import { scopeIdMapping, userRoleIdMapping } from '../../config/settings';
 import constants from '../../../../constants.json';
 import { useValidatedInput } from '../../utils/useValidatedInput';
 import { CheckOrX } from '../Form/CheckOrX';

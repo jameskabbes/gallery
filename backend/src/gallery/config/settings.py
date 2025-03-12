@@ -1,22 +1,20 @@
-from pathlib import Path
+# Backend congif, edit with caution
+
 import json
 from gallery import types
+from gallery.config import constants
 
-GALLERY_DIR = Path(__file__).parent
-SRC_DIR = GALLERY_DIR.parent
-BACKEND_DIR = SRC_DIR.parent
-BACKEND_DATA_DIR = BACKEND_DIR / 'data'
-REPO_DIR = BACKEND_DIR.parent
-REPO_DATA_DIR = REPO_DIR / 'data'
-PROJECT_CONFIG_PATH = REPO_DIR / 'config.json'
-PROJECT_CONSTANTS_PATH = REPO_DIR / 'constants.json'
+BACKEND_DATA_DIR = constants.BACKEND_DIR / 'data'
+REPO_DATA_DIR = constants.REPO_DIR / 'data'
+PROJECT_SETTINGS_PATH = constants.REPO_DIR / 'settings.json'
+PROJECT_CONSTANTS_PATH = constants.REPO_DIR / 'constants.json'
 
-FASTAPI_RUN_PATH = SRC_DIR / 'fastapi_run.sh'
-FASTAPI_DEV_PATH = SRC_DIR / 'fastapi_dev.sh'
+FASTAPI_RUN_PATH = constants.SRC_DIR / 'fastapi_run.sh'
+FASTAPI_DEV_PATH = constants.SRC_DIR / 'fastapi_dev.sh'
 
-REQUIREMENTS_INSTALLED_PATH = SRC_DIR / 'requirements_installed.txt'
+REQUIREMENTS_INSTALLED_PATH = constants.SRC_DIR / 'requirements_installed.txt'
 
-SHARED_CONFIG = json.loads(PROJECT_CONFIG_PATH.read_text())
+SHARED_SETTINGS = json.loads(PROJECT_SETTINGS_PATH.read_text())
 SHARED_CONSTANTS = json.loads(PROJECT_CONSTANTS_PATH.read_text())
 
 # info from constants

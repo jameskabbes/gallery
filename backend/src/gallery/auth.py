@@ -1,4 +1,5 @@
-from gallery import client, config, types
+from gallery import client, types
+from gallery.config import settings
 import typing
 from fastapi import Request, HTTPException, status, Response
 import datetime
@@ -16,7 +17,8 @@ AuthExceptionFunction = typing.Callable[[bool], HTTPException]
 def base_exception(status_code: int, detail: str, logout_on_exception: bool = True) -> HTTPException:
     headers = {"WWW-Authenticate": "Bearer, Cookie"}
     if logout_on_exception:
-        headers[config.SHARED_CONSTANTS['header_keys']['auth_logout']] = 'true'
+        headers[settings.SHARED_CONSTANTS['header_keys']
+                ['auth_logout']] = 'true'
     return HTTPException(
         status_code=status_code,
         detail=detail,
