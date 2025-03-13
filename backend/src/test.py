@@ -16,6 +16,11 @@ async def main():
 
         input('press enter')
 
+        b = await models.User.api_get(session=session, c=c, id=new_user._id, admin=True)
+        print(b.__dict__)
+
+        input('press enter')
+
         await models.User.api_delete(session=session, c=c, id=new_user._id, admin=True)
 
 
