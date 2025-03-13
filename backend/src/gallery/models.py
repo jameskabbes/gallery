@@ -127,37 +127,6 @@ class TableService[
     _BASE_DB: BaseDB
 
     @classmethod
-    def get(cls, session: Session, id: IdType) -> T | None:
-
-        query = select(cls)
-        if len(cls._ID_COLS) == 1:
-            id = [id]
-
-        for i in range(len(cls._ID_COLS)):
-            field: InstrumentedAttribute = getattr(cls, cls._ID_COLS[i])
-            query = query.where(field == id[i])
-
-        return session.execute(query).one_or_none()
-
-    @classmethod
-    async def add(cls, session: Session, create_model: TAddModel):
-        session.add(cls._BASE_DB(**create_model))
-
-    @classmethod
-    async def update(cls, session: Session, id: IdType, patch_model: TUpdateModel):
-        inst = await cls.get(session, id)
-        await cls.update_by_instance(session, inst, patch_model)
-
-    @classmethod
-    async def update_by_instance(cls, session: Session, db_inst: T, patch_model: TUpdateModel):
-        for key, value in patch_model.model_dump(exclude_unset=True).items():
-            setattr(db_inst, key, value)
-
-    @classmethod
-    async def delete(cls, session: Session, id: IdType):
-        session.delete(cls.get(session, id))
-
-    @classmethod
     @lru_cache(maxsize=None)
     def not_found_message(cls) -> str:
         return f'{cls.__name__} not found'
@@ -266,61 +235,121 @@ class TableService[
         pass
 
     @classmethod
+    def get(cls, session: Session, id: IdType) -> T | None:
+
+        query = select(cls)
+        if len(cls._ID_COLS) == 1:
+            id = [id]
+
+        for i in range(len(cls._ID_COLS)):
+            field: InstrumentedAttribute = getattr(cls, cls._ID_COLS[i])
+            query = query.where(field == id[i])
+
+        return session.execute(query).one_or_none()
+
+    @staticmethod
+    def api_get_wrapper(func):
+        @classmethod
+        @wraps(func)
+        async def wrapper(cls: TableService, *args, **kwargs: typing.Unpack[GetParams]) -> T:
+            inst = await func(cls, *args, **kwargs)
+            if not inst:
+                raise cls.not_found_exception()
+
+            await cls._check_authorization_existing(**kwargs, inst=inst, method='get')
+            return inst
+        return wrapper
+
     @api_endpoint
     async def api_get(cls, **kwargs: typing.Unpack[GetParams[IdType]]) -> T:
-        """Get a model by its ID, raise an exception if not found"""
-
-        instance = await cls.get(kwargs['session'], kwargs['id'])
-        if not instance:
-            raise cls.not_found_exception()
-
-        # use model construct to bypass the validation
-        await cls._check_authorization_existing(**kwargs, inst=instance, method='get')
-        return instance
+        return await cls.get(kwargs['session'], kwargs['id'])
 
     @classmethod
-    @api_endpoint
-    async def api_post(cls, **kwargs: typing.Unpack[PostParams[TAddModel]]):
-        await cls._check_authorization_post(**kwargs)
-        await cls._check_validation_post(**kwargs)
+    async def add(cls, session: Session, create_model: TAddModel):
+        session.add(cls._BASE_DB(**create_model))
 
-        instance = await cls.add(kwargs['session'], kwargs['create_model'])
-        kwargs['session'].add(instance)
-        kwargs['session'].commit()
-        kwargs['session'].refresh(instance)
-        return instance
+    @staticmethod
+    def api_post_wrapper(func):
+        @classmethod
+        @wraps(func)
+        async def wrapper(cls: TableService, *args, **kwargs: typing.Unpack[PostParams[TAddModel]]) -> T:
+
+            await cls._check_authorization_post(**kwargs)
+            await cls._check_validation_post(**kwargs)
+
+            instance = await func(cls, *args, **kwargs)
+
+            kwargs['session'].add(instance)
+            kwargs['session'].commit()
+            kwargs['session'].refresh(instance)
+            return instance
+
+        return wrapper
+
+    @api_post_wrapper
+    async def api_post(cls, **kwargs: typing.Unpack[PostParams[TAddModel]]) -> T:
+        return await cls.add(kwargs['session'], kwargs['create_model'])
 
     @classmethod
-    @api_endpoint
+    async def update(cls, session: Session, id: IdType, patch_model: TUpdateModel):
+        inst = await cls.get(session, id)
+        await cls.update_by_instance(session, inst, patch_model)
+
+    @classmethod
+    async def update_by_instance(cls, db_inst: T, patch_model: TUpdateModel):
+        for key, value in patch_model.model_dump(exclude_unset=True).items():
+            setattr(db_inst, key, value)
+
+    @staticmethod
+    def api_patch_wrapper(func):
+        @classmethod
+        @wraps(func)
+        async def wrapper(cls: TableService, *args, **kwargs: typing.Unpack[PatchParams[IdType, TUpdateModel]]) -> T:
+
+            inst = await cls.get(kwargs['session'], kwargs['id'])
+            if not inst:
+                raise cls.not_found_exception()
+
+            await cls._check_authorization_existing(**kwargs, inst=instance, method='patch')
+            await cls._check_validation_patch(**kwargs)
+
+            instance = await func(cls, *args, **kwargs)
+            kwargs['session'].commit()
+            kwargs['session'].refresh(instance)
+            return instance
+        return wrapper
+
+    @api_patch_wrapper
     async def api_patch(self, **kwargs: typing.Unpack[PatchParams[IdType, TUpdateModel]]) -> T:
+        return await self.update_by_instance(kwargs['session'], None, kwargs['update_model'])
 
-        instance = await self.get(kwargs['session'], kwargs['id'])
-        if not instance:
-            raise self.not_found_exception()
+    @staticmethod
+    def api_delete_wrapper(func):
+        @classmethod
+        @wraps(func)
+        async def wrapper(cls: TableService, *args, **kwargs: typing.Unpack[DeleteParams[IdType]]) -> None:
+            instance = await cls.get(kwargs['session'], kwargs['id'])
+            if not instance:
+                raise cls.not_found_exception()
 
-        # use model construct to bypass the validation
-        await self._check_authorization_existing(**kwargs, inst=instance, method='patch')
-        await self._check_validation_patch(**kwargs)
-        await self.update_by_instance(kwargs['session'], instance, kwargs['update_model'])
+            # use model construct to bypass the validation
+            await cls._check_authorization_existing(**kwargs, inst=instance, method='delete')
+            await cls._check_validationdelete(**kwargs)
 
-        kwargs['session'].commit()
-        kwargs['session'].refresh(instance)
-        return instance
+            await func(cls, *args, **kwargs)
+
+            kwargs['session'].commit()
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+        return wrapper
 
     @classmethod
-    @api_endpoint
+    async def delete(cls, session: Session, id: IdType):
+        session.delete(cls.get(session, id))
+
+    @api_delete_wrapper
     async def api_delete(cls, **kwargs: typing.Unpack[DeleteParams[IdType]]) -> None:
-
-        instance = await cls.get(kwargs['session'], kwargs['id'])
-        if not instance:
-            raise cls.not_found_exception()
-
-        # use model construct to bypass the validation
-        await cls._check_authorization_existing(**kwargs, inst=instance, method='delete')
-        await cls._check_validationdelete(**kwargs)
-        await cls.delete(kwargs['session'], kwargs['id'])
-        kwargs['session'].commit()
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
+        return await cls.delete(kwargs['session'], kwargs['id'])
 
 
 class UserDB(BaseDB):
@@ -461,10 +490,12 @@ class User(TableService[UserDB, types.User.id, UserAdminCreate, UserAdminUpdate,
     #         if params.update_model.email is not None:
     #             await User.api_get_is_email_available(params.session, params.update_model.email)
 
-    @classmethod
-    async def add(cls, session: Session, create_model: UserAdminCreate):
+    @TableService.post
+    async def api_post(cls, **kwargs: typing.Unpack[PostParams[UserAdminCreate]]) -> UserDB:
+        return cls.add(kwargs['session'], kwargs['create_model'])
 
-        print('adding new user')
+    @classmethod
+    async def add(cls, session: Session, create_model: UserAdminCreate) -> UserDB:
 
         new_user = UserDB(
             id=cls.generate_id(),
