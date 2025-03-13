@@ -2,8 +2,8 @@ import typing
 import pathlib
 from gallery import utils, types
 from gallery.config import settings
-from sqlalchemy import create_engine, Engine
-from sqlalchemy.orm import sessionmaker, Session as SQLASession
+from sqlalchemy.ext.asyncio import AsyncSession as SQLAAsyncSession, create_async_engine, AsyncEngine
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine.url import URL
 import datetime
 import json
@@ -55,7 +55,7 @@ DefaultConfig: Config = {
         'port': 8087,
     },
     'db': {
-        'url': f'sqlite:///{settings.BACKEND_DATA_DIR / 'gallery.db'}',
+        'url': f'sqlite+aiosqlite:///{settings.BACKEND_DATA_DIR / 'gallery.db'}',
     },
     'media_root': {
         'path': settings.BACKEND_DATA_DIR / 'media_root'
@@ -84,8 +84,8 @@ DefaultConfig: Config = {
 class Client:
 
     uvicorn_port: UvicornPortType
-    Session: sessionmaker[SQLASession]
-    db_engine: Engine
+    AsyncSession: sessionmaker[SQLAAsyncSession]
+    db_async_engine: AsyncEngine
     media_dir: pathlib.Path
     galleries_dir: pathlib.Path
     authentication: AuthenticationConfig
@@ -101,9 +101,12 @@ class Client:
         self.uvicorn_port = merged_config['uvicorn']['port']
 
         # db
-        self.db_engine = create_engine(merged_config['db']['url'])
-        self.Session = sessionmaker[SQLASession](
-            bind=self.db_engine)
+        self.db_async_engine = create_async_engine(merged_config['db']['url'])
+        self.AsyncSession = sessionmaker[SQLAAsyncSession](
+            bind=self.db_async_engine,
+            class_=SQLAAsyncSession,
+            expire_on_commit=False
+        )
 
         # media dir
         self.media_dir = merged_config['media_root']['path']

@@ -8,3 +8,4 @@ requests
 bcrypt
 pyjwt
 pytest
+aiosqlite
