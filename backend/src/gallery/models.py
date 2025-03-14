@@ -3,7 +3,7 @@ import secrets
 from pydantic import BaseModel, field_validator
 import typing
 from collections.abc import Callable, Awaitable
-from typing import Unpack, TypeVarTuple
+from typing import Unpack, TypeVarTuple, Concatenate
 import uuid
 from fastapi import HTTPException, status, Response, APIRouter, Query
 
@@ -33,6 +33,7 @@ from functools import wraps, lru_cache
 
 
 P = typing.ParamSpec('P')
+TDB = typing.TypeVar('TDB', bound='BaseDB')
 
 
 class IdObject[IdType]:
@@ -73,8 +74,8 @@ class OrderBy[T](BaseModel):
 class MethodParamsBase(typing.TypedDict):
     session: AsyncSession
     c: client.Client
-    authorized_user_id: typing.Optional[types.User.id]
-    admin: bool
+    authorized_user_id: typing.NotRequired[types.User.id]
+    admin: typing.NotRequired[bool]
 
 
 class MethodParamsBaseWithId[IdType](MethodParamsBase):
@@ -87,10 +88,6 @@ class PostParams[TPostModel: BaseModel](MethodParamsBase):
 
 class GetParams[IdType](MethodParamsBaseWithId[IdType]):
     pass
-
-
-class APIGetParams[T, IdType](GetParams[IdType]):
-    db_inst: T
 
 
 class PatchParams[IdType, TPatchModel: BaseModel](MethodParamsBaseWithId[IdType]):
@@ -129,7 +126,7 @@ class TableService[
 ]:
 
     _ROUTER_TAG: typing.ClassVar[str] = 'asdf'
-    _BASE_DB: BaseDB
+    _BASE_DB: T
 
     @classmethod
     @lru_cache(maxsize=None)
@@ -256,29 +253,18 @@ class TableService[
         result = await session.execute(query)
         return result.scalar_one_or_none()
 
-    @staticmethod
-    async def api_get_wrapper(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
-        @classmethod
+    @classmethod
+    async def api_get(cls, **kwargs: typing.Unpack[GetParams[T, IdType]]) -> T:
+        inst = await cls._get(kwargs['session'], kwargs['id'])
+        if not inst:
+            raise cls.not_found_exception()
+        await cls._check_authorization_existing(**kwargs, inst=inst, method='get')
+        return inst
+
+    @classmethod
+    async def api_post_wrapper(cls, func: Callable[Concatenate["TableService", P], Awaitable[T]]) -> Callable[Concatenate["TableService", P], Awaitable[T]]:
         @wraps(func)
         async def wrapper(cls: 'TableService', *args: P.args, **kwargs: P.kwargs) -> T:
-            inst = await cls._get(kwargs['session'], kwargs['id'])
-            if not inst:
-                raise cls.not_found_exception()
-
-            await cls._check_authorization_existing(**kwargs, inst=inst, method='get')
-            await func(cls, *args, **kwargs, db_inst=inst)
-            return inst
-        return wrapper
-
-    @api_get_wrapper
-    async def api_get(cls, **kwargs: typing.Unpack[APIGetParams[T, IdType]]) -> T:
-        pass
-
-    @staticmethod
-    def api_post_wrapper(func):
-        @classmethod
-        @wraps(func)
-        async def wrapper(cls: 'TableService', *args, **kwargs: typing.Unpack[PostParams[TAddModel]]) -> T:
 
             await cls._check_authorization_new(**kwargs)
             await cls._check_validation_post(**kwargs)
@@ -293,7 +279,11 @@ class TableService[
         return wrapper
 
     @api_post_wrapper
-    async def api_post(cls, **kwargs: typing.Unpack[PostParams[TAddModel]]) -> T:
+    async def api_post(cls, **kwargs: Unpack[PostParams[TAddModel]]) -> T:
+        return cls._BASE_DB(**kwargs['create_model'].model_dump())
+
+    @classmethod
+    async def api_post2(cls, **kwargs: Unpack[PostParams[TAddModel]]) -> T:
         return cls._BASE_DB(**kwargs['create_model'].model_dump())
 
     @staticmethod
