@@ -32,6 +32,9 @@ import shutil
 from functools import wraps, lru_cache
 
 
+P = typing.ParamSpec('P')
+
+
 class IdObject[IdType]:
     _ID_COLS: typing.ClassVar[list[str]] = ['id']
 
@@ -115,16 +118,6 @@ class Pagination(BaseModel):
 class TableExport(BaseModel):
     class Config:
         from_attributes = True
-
-
-class APIGetWrapperReturnFunc[T, IdType, TAddModel, TUpdateModel, TOrderBy](typing.Protocol):
-    async def __call__(self, cls: 'TableService[T, IdType, TAddModel, TUpdateModel, TOrderBy]', **kwargs: typing.Unpack[GetParams[IdType]]) -> T:
-        ...
-
-
-class APIGetFunc[T, IdType](typing.Protocol):
-    async def __call__(self, cls: 'TableService', **kwargs: typing.Unpack[APIGetParams[T, IdType]]) -> None:
-        ...
 
 
 class TableService[
@@ -264,17 +257,16 @@ class TableService[
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def api_get_wrapper(func: APIGetFunc) -> APIGetWrapperReturnFunc:
+    async def api_get_wrapper(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
         @classmethod
         @wraps(func)
-        async def wrapper(cls: 'TableService', a: int = 1, **kwargs: typing.Unpack[GetParams[IdType]]) -> T:
-            inst = cls._get(kwargs['session'], kwargs['id'])
+        async def wrapper(cls: 'TableService', *args: P.args, **kwargs: P.kwargs) -> T:
+            inst = await cls._get(kwargs['session'], kwargs['id'])
             if not inst:
                 raise cls.not_found_exception()
 
             await cls._check_authorization_existing(**kwargs, inst=inst, method='get')
-            await func(cls, **kwargs, db_inst=inst)
-
+            await func(cls, *args, **kwargs, db_inst=inst)
             return inst
         return wrapper
 

@@ -1,10 +1,11 @@
-from typing import Callable, TypeVar
+from typing import Callable, TypeVar, ParamSpec
 
 T = TypeVar('T')
+P = ParamSpec('P')
 
 
-def my_decorator(func: Callable[..., T]) -> Callable[..., T]:
-    def wrapper(*args, **kwargs) -> T:
+def my_decorator(func: Callable[P, T]) -> Callable[P, str]:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> str:
         print("Before the function call")
         result = func(*args, **kwargs)
         print("After the function call")
