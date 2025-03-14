@@ -33,6 +33,7 @@ from functools import wraps, lru_cache
 
 
 P = typing.ParamSpec('P')
+R = typing.TypeVar('R')
 TDB = typing.TypeVar('TDB', bound='BaseDB')
 
 
@@ -71,38 +72,54 @@ class OrderBy[T](BaseModel):
     ascending: bool
 
 
-class MethodParamsBase(typing.TypedDict):
+class ApiMethodParamsBase(typing.TypedDict):
     session: AsyncSession
     c: client.Client
     authorized_user_id: typing.NotRequired[types.User.id]
     admin: typing.NotRequired[bool]
 
 
-class MethodParamsBaseWithId[IdType](MethodParamsBase):
+class ApiMethodParamsBaseWithId[IdType](ApiMethodParamsBase):
     id: IdType
 
 
-class PostParams[TPostModel: BaseModel](MethodParamsBase):
-    create_model: TPostModel
-
-
-class GetParams[IdType](MethodParamsBaseWithId[IdType]):
-    pass
-
-
-class PatchParams[IdType, TPatchModel: BaseModel](MethodParamsBaseWithId[IdType]):
-    update_model: TPatchModel
-
-
-class APIPatchParams[T, IdType, TPatchModel: BaseModel](PatchParams[IdType, TPatchModel]):
+class ApiMethodParamsCustom[T](typing.TypedDict):
     db_inst: T
 
 
-class DeleteParams[IdType](MethodParamsBaseWithId[IdType]):
+class ApiPostParams[TPostModel: BaseModel](ApiMethodParamsBase):
+    create_model: TPostModel
+
+
+class ApiPostParamsCustom[T, TPostModel](ApiPostParams[TPostModel], ApiMethodParamsCustom[T]):
     pass
 
 
-class CheckAuthorizationExistingParams[IdType, T: BaseDB](MethodParamsBase[IdType]):
+class ApiGetParams[IdType](ApiMethodParamsBaseWithId[IdType]):
+    pass
+
+
+class ApiGetParamsCustom[T, IdType](ApiGetParams[IdType], ApiMethodParamsCustom[T]):
+    pass
+
+
+class ApiPatchParams[IdType, TPatchModel: BaseModel](ApiMethodParamsBaseWithId[IdType]):
+    update_model: TPatchModel
+
+
+class ApiPatchParamsCustom[T, IdType, TPatchModel: BaseModel](ApiPatchParams[IdType, TPatchModel], ApiMethodParamsCustom[T]):
+    pass
+
+
+class ApiDeleteParams[IdType](ApiMethodParamsBaseWithId[IdType]):
+    pass
+
+
+class ApiDeleteParamsCustom[T, IdType](ApiDeleteParams[IdType], ApiMethodParamsCustom[T]):
+    pass
+
+
+class CheckAuthorizationExistingParams[IdType, T: BaseDB](ApiMethodParamsBase[IdType]):
     inst: T
     method: typing.Literal['get', 'patch', 'delete']
 
@@ -221,22 +238,27 @@ class TableService[
 
     @classmethod
     async def _check_authorization_existing(cls, **kwargs: typing.Unpack[CheckAuthorizationExistingParams[IdType, T]]) -> None:
+        """Check if the user is authorized to access the instance"""
         pass
 
     @classmethod
-    async def _check_authorization_new(cls, **kwargs: typing.Unpack[PostParams[TAddModel]]) -> None:
+    async def _check_authorization_new(cls, **kwargs: typing.Unpack[ApiPostParams[TAddModel]]) -> None:
+        """Check if the user is authorized to create a new instance"""
         pass
 
     @classmethod
-    async def _check_validation_delete(cls, **kwargs: typing.Unpack[DeleteParams[IdType]]) -> None:
+    async def _check_validation_delete(cls, **kwargs: typing.Unpack[ApiDeleteParams[IdType]]) -> None:
+        """Check if the user is authorized to delete the instance"""
         pass
 
     @classmethod
-    async def _check_validation_patch(cls, **kwargs: typing.Unpack[PatchParams[IdType, TUpdateModel]]) -> None:
+    async def _check_validation_patch(cls, **kwargs: typing.Unpack[ApiPatchParams[IdType, TUpdateModel]]) -> None:
+        """Check if the user is authorized to update the instance"""
         pass
 
     @classmethod
-    async def _check_validation_post(cls, **kwargs: typing.Unpack[PostParams[TAddModel]]) -> None:
+    async def _check_validation_post(cls, **kwargs: typing.Unpack[ApiPostParams[TAddModel]]) -> None:
+        """Check if the user is authorized to create a new instance"""
         pass
 
     @classmethod
@@ -254,80 +276,96 @@ class TableService[
         return result.scalar_one_or_none()
 
     @classmethod
-    async def api_get(cls, **kwargs: typing.Unpack[GetParams[T, IdType]]) -> T:
+    async def api_get(cls, **kwargs: Unpack[ApiGetParams[IdType]]) -> T:
+        """Used in conjunction with API endpoints, raises exceptions while trying to get an instance of the model by ID"""
+
         inst = await cls._get(kwargs['session'], kwargs['id'])
         if not inst:
             raise cls.not_found_exception()
         await cls._check_authorization_existing(**kwargs, inst=inst, method='get')
+        await cls.api_get_custom(**kwargs, db_inst=inst)
         return inst
 
     @classmethod
-    async def api_post_wrapper(cls, func: Callable[Concatenate["TableService", P], Awaitable[T]]) -> Callable[Concatenate["TableService", P], Awaitable[T]]:
-        @wraps(func)
-        async def wrapper(cls: 'TableService', *args: P.args, **kwargs: P.kwargs) -> T:
+    async def api_get_custom(cls, **kwargs: Unpack[ApiGetParamsCustom[T, IdType]]) -> None:
+        """Functionality to run after getting an instance of the model by ID but before returning"""
+        pass
 
-            await cls._check_authorization_new(**kwargs)
-            await cls._check_validation_post(**kwargs)
+    @classmethod
+    async def api_post(cls, **kwargs: Unpack[ApiPostParams[TAddModel]]) -> T:
+        """Used in conjunction with API endpoints, raises exceptions while trying to create a new instance of the model"""
 
-            db_inst: T = await func(cls, *args, **kwargs)
+        await cls._check_authorization_new(**kwargs)
+        await cls._check_validation_post(**kwargs)
 
-            kwargs['session'].add(db_inst)
-            await kwargs['session'].commit()
-            await kwargs['session'].refresh(db_inst)
-            return db_inst
+        db_inst = await cls.db_inst_from_add_model(**kwargs)
+        await cls.api_post_custom(**kwargs)
 
-        return wrapper
+        kwargs['session'].add(db_inst)
+        await kwargs['session'].commit()
+        await kwargs['session'].refresh(db_inst)
+        return db_inst
 
-    @api_post_wrapper
-    async def api_post(cls, **kwargs: Unpack[PostParams[TAddModel]]) -> T:
+    @classmethod
+    async def db_inst_from_add_model(cls, **kwargs: Unpack[ApiPostParams[TAddModel]]) -> T:
+        """Create a new instance of the model from the create model (TAddModel), don't overwrite this method"""
         return cls._BASE_DB(**kwargs['create_model'].model_dump())
 
     @classmethod
-    async def api_post2(cls, **kwargs: Unpack[PostParams[TAddModel]]) -> T:
-        return cls._BASE_DB(**kwargs['create_model'].model_dump())
+    async def api_post_custom(cls, **kwargs: Unpack[ApiPostParamsCustom[T, TAddModel]]) -> None:
+        """Functionality to run after creating a new instance of the model but before returning"""
+        pass
 
-    @staticmethod
-    def api_patch_wrapper(func):
-        @classmethod
-        @wraps(func)
-        async def wrapper(cls: 'TableService', *args, **kwargs: typing.Unpack[PatchParams[IdType, TUpdateModel]]) -> T:
+    @classmethod
+    async def api_patch(cls, **kwargs: Unpack[ApiPatchParams[IdType, TUpdateModel]]) -> T:
+        """Used in conjunction with API endpoints, raises exceptions while trying to update an instance of the model by ID"""
 
-            db_inst = await cls._get(kwargs['session'], kwargs['id'])
-            if not db_inst:
-                raise cls.not_found_exception()
+        db_inst = await cls._get(kwargs['session'], kwargs['id'])
+        if not db_inst:
+            raise cls.not_found_exception()
 
-            await cls._check_authorization_existing(**kwargs, inst=db_inst, method='patch')
-            await cls._check_validation_patch(**kwargs)
+        await cls._check_authorization_existing(**kwargs, inst=db_inst, method='patch')
+        await cls._check_validation_patch(**kwargs)
 
-            await func(cls, *args, **kwargs, db_inst=db_inst)
-            await kwargs['session'].commit()
-            await kwargs['session'].refresh(db_inst)
-            return db_inst
-        return wrapper
+        await cls.update_db_inst_from_update_model(db_inst, **kwargs)
+        await cls.api_patch_custom(**kwargs, db_inst=db_inst)
 
-    @api_patch_wrapper
-    async def api_patch(cls, **kwargs: typing.Unpack[APIPatchParams[T, IdType, TUpdateModel]]) -> None:
+        await kwargs['session'].commit()
+        await kwargs['session'].refresh(db_inst)
+        return db_inst
+
+    @classmethod
+    async def update_db_inst_from_update_model(cls, db_inst: T, **kwargs: typing.Unpack[ApiPatchParams[IdType, TUpdateModel]]) -> None:
+        """Update an instance of the model from the update model (TUpdateModel)"""
         for key, value in kwargs['update_model'].model_dump(exclude_unset=True).items():
-            setattr(kwargs['db_inst'], key, value)
+            setattr(db_inst, key, value)
 
-    @staticmethod
-    def api_delete_wrapper(func):
-        @classmethod
-        @wraps(func)
-        async def wrapper(cls: 'TableService', *args, **kwargs: typing.Unpack[DeleteParams[IdType]]) -> None:
-            inst = await cls._get(kwargs['session'], kwargs['id'])
-            if not inst:
-                raise cls.not_found_exception()
+    @classmethod
+    async def api_patch_custom(cls, **kwargs: typing.Unpack[ApiPatchParamsCustom[T, IdType, TUpdateModel]]) -> None:
+        """Functionality to run after updating an instance of the model but before returning"""
+        pass
 
-            await cls._check_authorization_existing(**kwargs, inst=inst, method='delete')
-            await cls._check_validation_delete(**kwargs)
+    @classmethod
+    async def api_delete(cls, **kwargs: typing.Unpack[ApiDeleteParams[IdType]]) -> None:
+        """Used in conjunction with API endpoints, raises exceptions while trying to delete an instance of the model by ID"""
 
-            await func(cls, *args, **kwargs)
-            await kwargs['session'].delete(inst)
-            await kwargs['session'].commit()
-            return Response(status_code=status.HTTP_204_NO_CONTENT)
+        inst = await cls._get(kwargs['session'], kwargs['id'])
+        if not inst:
+            raise cls.not_found_exception()
 
-        return wrapper
+        await cls._check_authorization_existing(**kwargs, inst=inst, method='delete')
+        await cls._check_validation_delete(**kwargs)
+
+        await cls.api_delete_custom(**kwargs, inst=inst)
+
+        await cls._delete(kwargs['session'], kwargs['id'])
+        await kwargs['session'].commit()
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    @classmethod
+    async def api_delete_custom(cls, **kwargs: typing.Unpack[ApiDeleteParamsCustom[T, IdType]]) -> None:
+        """Functionality to run after deleting an instance of the model but before returning"""
+        pass
 
     @classmethod
     async def _delete(cls, session: AsyncSession, id: IdType):
@@ -340,10 +378,6 @@ class TableService[
             field: InstrumentedAttribute = getattr(cls._BASE_DB, col)
             stmt = stmt.where(field == id[i])
         return await session.execute(stmt)
-
-    @api_delete_wrapper
-    async def api_delete(cls, **kwargs: typing.Unpack[DeleteParams[IdType]]) -> None:
-        pass
 
 
 class UserDB(BaseDB):
@@ -497,43 +531,47 @@ class User(TableService[UserDB, types.User.id, UserAdminCreate, UserAdminUpdate,
             if kwargs['update_model'].email is not None:
                 await User.api_get_is_email_available(kwargs['session'], kwargs['update_model'].email)
 
-    @TableService.api_post_wrapper
-    async def api_post(cls, **kwargs: typing.Unpack[PostParams[UserAdminCreate]]) -> UserDB:
-        new_user = UserDB(
+    @classmethod
+    async def db_inst_from_add_model(cls, **kwargs):
+        return UserDB(
             id=UserDB.generate_id(),
             hashed_password=cls.hash_password(
                 kwargs['create_model'].password) if 'password' in kwargs['create_model'].model_fields_set else None,
             **kwargs['create_model'].model_dump(exclude=['password'])
         )
 
-        # root_gallery = await Gallery.api_post(Gallery.PostParams(**params.model_dump(exclude=['create_model', 'create_method_params', 'authorized_user_id']), authorized_user_id=new_user._id, create_model=GalleryAdminCreate(
+    @classmethod
+    async def api_post_custom(cls, **kwargs):
+        pass
+        # root_gallery = await Gallery.api_post(Gallery.ApiPostParams(**params.model_dump(exclude=['create_model', 'create_method_params', 'authorized_user_id']), authorized_user_id=new_user._id, create_model=GalleryAdminCreate(
         #     name='root', user_id=new_user._id, visibility_level=config.VISIBILITY_LEVEL_NAME_MAPPING['private']
         # )))
 
-        return new_user
-
-    @TableService.api_patch_wrapper
-    async def api_patch(cls, **kwargs):
-
+    @classmethod
+    async def update_db_inst_from_update_model(cls, db_inst, **kwargs):
         for key, value in kwargs['update_model'].model_dump(exclude_unset=True, exclude=['password']).items():
-            setattr(kwargs['db_inst'], key, value)
+            setattr(db_inst, key, value)
 
         if 'password' in kwargs['update_model'].model_fields_set:
-            kwargs['db_inst'].hashed_password = cls.hash_password(
+            db_inst.hashed_password = cls.hash_password(
                 kwargs['update_model'].password)
 
+    @classmethod
+    async def api_patch_custom(cls, **kwargs):
         # rename the root gallery if the username is updated
         # if 'username' in params.update_model.model_fields_set:
         #     root_gallery = await Gallery.get_root_gallery(params.session, self._id)
         #     await root_gallery.update(
-        #         Gallery.PatchParams(**params.model_dump(exclude=['update_model', 'update_method_params']),
+        #         Gallery.ApiGetParams(**params.model_dump(exclude=['update_model', 'update_method_params']),
         #                             update_model=GalleryAdminUpdate(
         #             name=self._id if self.username == None else self.username
         #         ))
         #     )
 
-    @TableService.api_delete_wrapper
-    async def api_delete(cls, **kwargs):
+        pass
+
+    @classmethod
+    async def api_delete_custom(cls, **kwargs):
         pass
         # await (await Gallery.get_root_gallery(params.session, self._id)).delete(session=params.session, c=params.c,
         #                                                                         authorized_user_id=params.authorized_user_id, admin=params.admin)
@@ -694,7 +732,7 @@ class AuthCredential:
             index=True, foreign_key=User.__tablename__ + '.' + User._ID_COLS[0], const=True, ondelete='CASCADE')
 
         @classmethod
-        async def create(cls, params: PostParams['AuthCredential.Create', BaseModel]) -> typing.Self:
+        async def create(cls, params: ApiPostParams['AuthCredential.Create', BaseModel]) -> typing.Self:
 
             return cls(
                 id=cls.generate_id(),
@@ -1200,13 +1238,13 @@ class GalleryAdminAvailable(GalleryAvailable):
     user_id: types.User.id
 
 
-class GalleryAdminDeleteParams(BaseModel):
+class GalleryAdminApiDeleteParams(BaseModel):
     rmtree: bool = True
 
 
 class Gallery(
         Table['Gallery', GalleryTypes.id, GalleryAdminCreate, GalleryAdminCreateParams,
-              BaseModel, GalleryAdminUpdate, GalleryAdminUpdateParams, GalleryAdminDeleteParams, typing.Literal[()]],
+              BaseModel, GalleryAdminUpdate, GalleryAdminUpdateParams, GalleryAdminApiDeleteParams, typing.Literal[()]],
         GalleryIdBase,
         table=True):
     __tablename__ = 'gallery'
@@ -1402,7 +1440,7 @@ class Gallery(
 
         for folder_name in to_remove:
             gallery = db_galleries_by_folder_name[folder_name]
-            await Gallery.api_delete(session=session, c=c, id=gallery._id, authorized_user_id=self.user_id, admin=False, delete_method_kwargs=GalleryAdminDeleteParams(rmtree=False))
+            await Gallery.api_delete(session=session, c=c, id=gallery._id, authorized_user_id=self.user_id, admin=False, delete_method_kwargs=GalleryAdminApiDeleteParams(rmtree=False))
 
         for folder_name in toadd:
             date, name = self.get_date_and_name_from_folder_name(
