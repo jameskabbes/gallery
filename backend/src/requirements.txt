@@ -9,3 +9,5 @@ bcrypt
 pyjwt
 pytest
 aiosqlite
+sqlmodel
+greenlet

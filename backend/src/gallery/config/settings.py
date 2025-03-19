@@ -44,3 +44,5 @@ USER_ROLE_ID_SCOPE_IDS: dict[types.UserRole.id,
         SCOPE_NAME_MAPPING[scope_name] for scope_name in SHARED_CONSTANTS['user_role_scopes'][user_role_name]
     ]) for user_role_name in USER_ROLE_NAME_MAPPING
 }
+
+OTP_LENGTH: int = 6

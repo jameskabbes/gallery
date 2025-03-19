@@ -8,7 +8,7 @@ ACCESS_TOKEN_COOKIE_KEY = "access_token"
 
 
 class ExceptionKwargs(typing.TypedDict):
-    logout_on_exception: bool = True
+    logout_on_exception: bool
 
 
 AuthExceptionFunction = typing.Callable[[bool], HTTPException]
@@ -78,7 +78,7 @@ def set_access_token_cookie(response: Response, access_token: types.JwtEncodedSt
         value=access_token,
         httponly=True,
         secure=True,
-        samesite="Lax",
+        samesite="lax",
         **kwargs
     )
 
