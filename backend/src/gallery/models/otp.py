@@ -15,7 +15,8 @@ ID_COL = 'id'
 
 
 class Id(SQLModel):
-    id: types.OTP.id
+    id: types.OTP.id = Field(
+        primary_key=True, index=False, unique=True, const=True)
 
 
 class AdminUpdate(BaseModel):
@@ -29,13 +30,13 @@ class AdminCreate(auth_credential.Create):
 
 class OTP(
         BaseTable['OTP', Id],
+        Id,
         auth_credential.Table,
         auth_credential.Model,
         table=True):
 
     auth_type = 'otp'
 
-    id: types.OTP.id = Field(primary_key=True, index=True, unique=True)
     # issued: types.OTP.issued = Field(
     #     const=True, sa_column=Column(DateTimeWithTimeZoneString))
     # expiry: AuthCredentialTypes.expiry = Field(

@@ -4,9 +4,10 @@ from gallery.models.bases.table import Table as BaseTable
 from gallery import types
 from pydantic import BaseModel
 from sqlalchemy.ext.declarative import declared_attr
+from gallery.models import user
 
 if TYPE_CHECKING:
-    from gallery.models import user
+    pass
 
 ID_COL = 'id'
 
@@ -86,6 +87,7 @@ class AdminAvailable(Available):
 
 class Gallery(
         BaseTable['Gallery', types.Gallery.id],
+        Id,
         table=True):
 
     name: types.Gallery.name = Field()

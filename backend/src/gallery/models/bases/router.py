@@ -3,6 +3,7 @@ from typing import TypeVar, Type, List, Callable, ClassVar
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import SQLModel, Session, select
 from functools import wraps
+from gallery.client import Client
 from enum import Enum
 
 
@@ -11,8 +12,13 @@ class Router:
     _PREFIX: ClassVar[str] = ""
     _TAGS: ClassVar[list[str | Enum] | None] = None
 
-    def __init__(self):
+    def __init__(self, client: Client):
         self.router = APIRouter(prefix=self._PREFIX, tags=self._TAGS)
+        self.client = client
+        self._set_routes()
+
+    def _set_routes(self) -> None:
+        pass
 
     # def get_item(self, func: Callable) -> Callable:
     #     @wraps(func)

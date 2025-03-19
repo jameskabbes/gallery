@@ -52,6 +52,7 @@ class JwtModel(auth_credential.JwtModelBase):
 
 class ApiKey(
         BaseTable['ApiKey', Id],
+        Id,
         auth_credential.Table,
         auth_credential.Model,
         auth_credential.JwtIO[JwtPayload, JwtModel],

@@ -1,4 +1,3 @@
-from gallery.config import settings
 import typing
 from pydantic import EmailStr, StringConstraints
 import re
@@ -58,7 +57,7 @@ class AuthCredential:
 class OTP(AuthCredential):
     id = str
     code = typing.Annotated[str, StringConstraints(
-        min_length=settings.OTP_LENGTH, max_length=settings.OTP_LENGTH, pattern=re.compile(r'^\d{' + str(settings.OTP_LENGTH) + r'}$'))]
+        min_length=6, max_length=6, pattern=re.compile(r'^\d{' + str(6) + r'}$'))]
     hashed_code = str
 
 

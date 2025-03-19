@@ -4,7 +4,8 @@ import datetime as datetime_module
 from gallery import types
 from gallery.models.bases import jwtio
 from gallery.models.bases.table import Table as BaseTable
-from gallery.models import user, validate_and_normalize_datetime
+from gallery.models import user
+from gallery.models.custom_field_types.timestamp import validate_and_normalize_datetime
 
 from typing import Optional, TypedDict, ClassVar
 

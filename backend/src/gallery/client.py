@@ -49,6 +49,14 @@ class Config(typing.TypedDict):
     jwt: JWTConfig
     google_client: GoogleClientConfig
 
+class OverrideConfig(typing.TypedDict, total=False):
+    uvicorn: UvicornConfig
+    db: DbConfig
+    media_root: MediaRootConfig
+    authentication: AuthenticationConfig
+    jwt: JWTConfig
+    google_client: GoogleClientConfig
+
 
 DefaultConfig: Config = {
     'uvicorn': {
@@ -93,7 +101,7 @@ class Client:
     jwt_algorithm: str
     google_client: dict
 
-    def __init__(self, config: Config = {}):
+    def __init__(self, config: OverrideConfig = {}):
 
         merged_config: Config = utils.deep_merge_dicts(DefaultConfig, config)
 

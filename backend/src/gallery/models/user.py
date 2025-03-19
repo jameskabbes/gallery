@@ -1,9 +1,10 @@
 from sqlmodel import Field, Relationship, select, SQLModel
 from typing import TYPE_CHECKING, TypedDict, Optional
 from gallery.models.bases.table import Table as BaseTable
-from gallery import types
+from gallery.models.bases.router import Router as BaseRouter
+from gallery import types, client
 from pydantic import BaseModel
-from sqlalchemy.ext.declarative import declared_attr
+from fastapi import APIRouter
 
 if TYPE_CHECKING:
     pass
@@ -38,6 +39,19 @@ class AdminCreate(Create):
     user_role_id: types.User.user_role_id
 
 
+class Export(Id):
+    username: Optional[types.User.username]
+
+
+class Public(Export):
+    pass
+
+
+class Private(Export):
+    email: types.User.email
+    user_role_id: types.User.user_role_id
+
+
 class User(BaseTable['User', Id], Id, table=True):
 
     id: types.User.id = Field(primary_key=True, index=True, unique=True)
@@ -52,6 +66,19 @@ class User(BaseTable['User', Id], Id, table=True):
     @classmethod
     def _build_get_by_id_query(cls, id: Id):
         return select(cls).where(cls.id == id.id)
+
+
+class Router(BaseRouter):
+
+    _PREFIX = '/user'
+    _TAGS = ['User']
+
+    def _set_routes(self):
+
+        @self.router.get("/{user_id}", response_model=Public)
+        async def get_user_by_id(user_id: types.User.id):
+            async with self.client.AsyncSession() as session:
+                return Public(id='1', username='test')
 
 
 '''
@@ -253,18 +280,6 @@ class User(TableService[UserDB, types.User.id, UserAdminCreate, UserAdminUpdate,
         #                                                                         authorized_user_id=params.authorized_user_id, admin=params.admin)
 
 
-class UserExport(TableExport, UserIdBase):
-    id: types.User.id
-    username: typing.Optional[types.User.username]
-
-
-class UserPublic(UserExport):
-    pass
-
-
-class UserPrivate(UserExport):
-    email: types.User.email
-    user_role_id: types.User.user_role_id
 
 
 '''

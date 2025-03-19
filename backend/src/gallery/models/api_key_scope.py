@@ -10,7 +10,8 @@ from pydantic import BaseModel
 class Id(SQLModel):
     api_key_id: types.ApiKeyScope.api_key_id = Field(
         primary_key=True, index=True, const=True, foreign_key=str(api_key_module.ApiKey.__tablename__) + '.' + api_key_module.ID_COL, ondelete='CASCADE')
-    scope_id: types.ApiKeyScope.scope_id = Field(primary_key=True, index=True)
+    scope_id: types.ApiKeyScope.scope_id = Field(
+        primary_key=True, index=True, const=True)
 
 
 class AdminUpdate(BaseModel):

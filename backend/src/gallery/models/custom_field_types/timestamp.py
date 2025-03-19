@@ -48,3 +48,9 @@ class Timestamp(TypeDecorator):
         else:
             # For other databases, return the raw datetime object
             return typing.cast(datetime_module.datetime, value)
+
+
+def validate_and_normalize_datetime(value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime:
+    if value.tzinfo == None:
+        raise ValueError(str(info.field_name) + ' must have a timezone')
+    return value.astimezone(datetime_module.timezone.utc)

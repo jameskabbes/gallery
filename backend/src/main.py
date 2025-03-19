@@ -11,8 +11,9 @@ from sqlalchemy import and_
 from sqlalchemy.orm import selectinload, Session
 from sqlalchemy.sql import func, select
 from gallery import models, utils, auth, client, types, config
-from gallery.models import User, ApiKey, ApiKeyScope, File, Gallery, OTP, UserAccessToken
 from gallery.config import constants, settings
+from gallery.models import api_key_scope, api_key, file, gallery_permission, gallery, image_file_metadata, image_version, otp, sign_up, user_access_token, user
+
 import datetime
 import typing
 import httpx
@@ -790,7 +791,7 @@ user_admin_router = APIRouter(
 async def get_user_me(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())]
-) -> models.UserPrivate:
+) -> models.User.Private:
     return models.UserPrivate.model_validate(authorization.user)
 
 

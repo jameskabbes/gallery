@@ -2,7 +2,7 @@ from sqlmodel import SQLModel
 from sqlmodel.sql.expression import SelectOfScalar
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from gallery.models import Pagination
+from gallery.models.pagination import Pagination
 from typing import Protocol, Unpack, TypeVar, TypedDict, Generic
 
 
@@ -10,14 +10,11 @@ class Id(TypedDict):
     pass
 
 
-class TableProtocol[T, TId](Protocol):
+class Table[T: 'Table', TId](SQLModel):
 
     @classmethod
     def _build_get_by_id_query(cls, id: TId) -> SelectOfScalar[T]:
         raise NotImplementedError
-
-
-class Table[T: 'Table', TId](SQLModel, TableProtocol[T, TId]):
 
     @classmethod
     async def _get_by_id(cls, session: AsyncSession, id: TId) -> T | None:
@@ -140,9 +137,6 @@ class CheckAuthorizationExistingParams[IdType, T: BaseDB](ApiMethodParamsBase):
 
 
 
-class TableExport(BaseModel):
-    class Config:
-        from_attributes = True
 
 
 
