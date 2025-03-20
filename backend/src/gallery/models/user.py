@@ -12,47 +12,47 @@ if TYPE_CHECKING:
 ID_COL = 'id'
 
 
-class Id(SQLModel):
+class UserId(SQLModel):
     id: types.ImageVersion.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
 
-class Import(BaseModel):
+class UserImport(BaseModel):
     phone_number: Optional[types.User.phone_number] = None
     username: Optional[types.User.username] = None
     password: Optional[types.User.password] = None
 
 
-class Update(Import):
+class UserUpdate(UserImport):
     email: Optional[types.User.email] = None
 
 
-class AdminUpdate(Update):
+class UserAdminUpdate(UserUpdate):
     user_role_id: Optional[types.User.user_role_id] = None
 
 
-class Create(Import):
+class UserCreate(UserImport):
     email: types.User.email
 
 
-class AdminCreate(Create):
+class UserAdminCreate(UserCreate):
     user_role_id: types.User.user_role_id
 
 
-class Export(Id):
+class UserExport(UserId):
     username: Optional[types.User.username]
 
 
-class Public(Export):
+class UserPublic(UserExport):
     pass
 
 
-class Private(Export):
+class UserPrivate(UserExport):
     email: types.User.email
     user_role_id: types.User.user_role_id
 
 
-class User(BaseTable['User', Id], Id, table=True):
+class User(BaseTable['User', UserId], UserId, table=True):
 
     id: types.User.id = Field(primary_key=True, index=True, unique=True)
     email: types.User.email = Field(index=True, unique=True, nullable=False)
@@ -64,7 +64,7 @@ class User(BaseTable['User', Id], Id, table=True):
     user_role_id: types.User.user_role_id = Field(nullable=False)
 
     @classmethod
-    def _build_get_by_id_query(cls, id: Id):
+    def _build_get_by_id_query(cls, id: UserId):
         return select(cls).where(cls.id == id.id)
 
 
@@ -75,10 +75,10 @@ class Router(BaseRouter):
 
     def _set_routes(self):
 
-        @self.router.get("/{user_id}", response_model=Public)
+        @self.router.get("/{user_id}", response_model=UserPublic)
         async def get_user_by_id(user_id: types.User.id):
             async with self.client.AsyncSession() as session:
-                return Public(id='1', username='test')
+                return UserPublic(id='1', username='test')
 
 
 '''
@@ -106,25 +106,25 @@ class UserDB(BaseDB):
             return root / self.id
 
 
-class UserIdBase(IdObject[types.User.id]):
+class UserUserIdBase(UserIdObject[types.User.id]):
     id: types.User.id
 
 
-class UserImport(BaseModel):
+class UserUserImport(BaseModel):
     phone_number: typing.Optional[types.User.phone_number] = None
     username: typing.Optional[types.User.username] = None
     password: typing.Optional[types.User.password] = None
 
 
-class UserUpdate(UserImport):
+class UserUserUpdate(UserUserImport):
     email: typing.Optional[types.User.email] = None
 
 
-class UserAdminUpdate(UserUpdate):
+class UserAdminUserUpdate(UserUserUpdate):
     user_role_id: typing.Optional[types.User.user_role_id] = None
 
 
-class UserCCreate(UserImport):
+class UserCCreate(UserUserImport):
     email: types.User.email
 
 
@@ -136,7 +136,7 @@ class Test2(Test):
     test2: str
 
 
-class User(TableService[UserDB, types.User.id, UserAdminCreate, UserAdminUpdate, Test2, typing.Literal[()]]):
+class User(TableService[UserDB, types.User.id, UserAdminCreate, UserAdminUserUpdate, Test2, typing.Literal[()]]):
 
     # api_keys: list['ApiKey'] = Relationship(
     #     back_populates='user', cascadedelete=True)
@@ -266,7 +266,7 @@ class User(TableService[UserDB, types.User.id, UserAdminCreate, UserAdminUpdate,
         #     root_gallery = await Gallery.get_root_gallery(params.session, self._id)
         #     await root_gallery.update(
         #         Gallery.ApiGetParams(**params.model_dump(exclude=['update_model', 'update_method_params']),
-        #                             update_model=GalleryAdminUpdate(
+        #                             update_model=GalleryAdminUserUpdate(
         #             name=self._id if self.username == None else self.username
         #         ))
         #     )

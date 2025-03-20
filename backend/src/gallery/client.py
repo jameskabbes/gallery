@@ -2,8 +2,7 @@ import typing
 import pathlib
 from gallery import utils, types
 from gallery.config import settings
-from sqlalchemy.ext.asyncio import AsyncSession as SQLAAsyncSession, create_async_engine, AsyncEngine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession as SQLAAsyncSession, create_async_engine, AsyncEngine, async_sessionmaker
 from sqlalchemy.engine.url import URL
 import datetime
 import json
@@ -49,6 +48,7 @@ class Config(typing.TypedDict):
     jwt: JWTConfig
     google_client: GoogleClientConfig
 
+
 class OverrideConfig(typing.TypedDict, total=False):
     uvicorn: UvicornConfig
     db: DbConfig
@@ -58,7 +58,7 @@ class OverrideConfig(typing.TypedDict, total=False):
     google_client: GoogleClientConfig
 
 
-DefaultConfig: Config = {
+DEFAULT_CONFIG: Config = {
     'uvicorn': {
         'port': 8087,
     },
@@ -92,7 +92,7 @@ DefaultConfig: Config = {
 class Client:
 
     uvicorn_port: UvicornPortType
-    AsyncSession: sessionmaker[SQLAAsyncSession]
+    AsyncSession: async_sessionmaker[SQLAAsyncSession]
     db_async_engine: AsyncEngine
     media_dir: pathlib.Path
     galleries_dir: pathlib.Path
@@ -103,14 +103,15 @@ class Client:
 
     def __init__(self, config: OverrideConfig = {}):
 
-        merged_config: Config = utils.deep_merge_dicts(DefaultConfig, config)
+        merged_config: Config = utils.deep_merge_dicts(
+            DEFAULT_CONFIG, config)  # type: ignore
 
         # uvicorn
         self.uvicorn_port = merged_config['uvicorn']['port']
 
         # db
         self.db_async_engine = create_async_engine(merged_config['db']['url'])
-        self.AsyncSession = sessionmaker[SQLAAsyncSession](
+        self.AsyncSession = async_sessionmaker(
             bind=self.db_async_engine,
             class_=SQLAAsyncSession,
             expire_on_commit=False

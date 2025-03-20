@@ -14,23 +14,23 @@ if TYPE_CHECKING:
 ID_COL = 'id'
 
 
-class Id(SQLModel):
+class OTPId(SQLModel):
     id: types.OTP.id = Field(
         primary_key=True, index=False, unique=True, const=True)
 
 
-class AdminUpdate(BaseModel):
+class OTPAdminUpdate(BaseModel):
     pass
 
 
-class AdminCreate(auth_credential.Create):
+class OTPAdminCreate(auth_credential.Create):
     user_id: types.User.id
     hashed_code: types.OTP.hashed_code
 
 
 class OTP(
-        BaseTable['OTP', Id],
-        Id,
+        BaseTable['OTP', OTPId],
+        OTPId,
         auth_credential.Table,
         auth_credential.Model,
         table=True):
@@ -68,7 +68,7 @@ class OTP(
         return a
 
     @classmethod
-    def _build_get_by_id_query(cls, id: Id):
+    def _build_get_by_id_query(cls, id: OTPId):
         return select(cls).where(cls.id == id.id)
 
 
@@ -88,7 +88,7 @@ class OTPTypes(AuthCredentialTypes):
     hashed_code = str
 
 
-class OTPIdBase(IdObject[OTPTypes.id]):
+class OTPOTPIdBase(OTPIdObject[OTPTypes.id]):
     id: OTPTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
@@ -97,17 +97,17 @@ class OTPAdminUpdate(BaseModel):
     pass
 
 
-class OTPAdminCreate(AuthCredential.Create):
+class OTPOTPAdminCreate(AuthCredential.Create):
     user_id: types.User.id
     hashed_code: OTPTypes.hashed_code
 
 
 class OTP(
         Table['OTP', OTPTypes.id,
-              OTPAdminCreate, BaseModel, BaseModel, OTPAdminUpdate, BaseModel, BaseModel, typing.Literal[()]],
+              OTPOTPAdminCreate, BaseModel, BaseModel, OTPAdminUpdate, BaseModel, BaseModel, typing.Literal[()]],
         AuthCredential.Table,
         AuthCredential.Model,
-        OTPIdBase,
+        OTPOTPIdBase,
         table=True):
 
     auth_type = 'otp'

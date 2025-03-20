@@ -12,7 +12,7 @@ class JwtModel(auth_credential.JwtModelBase):
     email: types.User.email
 
 
-class AdminCreate(auth_credential.Create):
+class SignUpAdminCreate(auth_credential.Create):
     email: types.User.email
 
 

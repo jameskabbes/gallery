@@ -8,7 +8,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from gallery.models import user, gallery
 
 
-class Id(SQLModel):
+class GalleryPermissionId(SQLModel):
     gallery_id: types.GalleryPermission.gallery_id = Field(
         primary_key=True, index=True, foreign_key=str(gallery.Gallery.__tablename__) + '.' + gallery.ID_COL, ondelete='CASCADE')
     user_id: types.GalleryPermission.user_id = Field(
@@ -29,15 +29,15 @@ class Id(SQLModel):
 #     pass
 
 
-class Import(BaseModel):
+class GalleryPermissionImport(BaseModel):
     pass
 
 
-class AdminUpdate(Import):
+class GalleryPermissionAdminUpdate(GalleryPermissionImport):
     permission_level: Optional[types.GalleryPermission.permission_level] = None
 
 
-class AdminCreate(Import):
+class GalleryPermissionAdminCreate(GalleryPermissionImport):
     gallery_id: types.GalleryPermission.gallery_id
     user_id: types.GalleryPermission.user_id
     permission_level: types.GalleryPermission.permission_level
@@ -45,8 +45,8 @@ class AdminCreate(Import):
 
 class GalleryPermission(
         BaseTable['GalleryPermission',
-                  Id],
-        Id,
+                  GalleryPermissionId],
+        GalleryPermissionId,
         table=True):
 
     # __table_args__ = (
@@ -84,7 +84,7 @@ class GalleryPermission(
 
     #     if not params.admin:
     #         if self.gallery.user._id != params.authorized_user_id:
-    #             authorized_user_gallery_permission = await self.read(params.session, GalleryPermissionIdBase(
+    #             authorized_user_gallery_permission = await self.read(params.session, GalleryPermissionGalleryPermissionIdBase(
     #                 gallery_id=self.gallery._id, user_id=params.authorized_user_id
     #             )._id)
 
@@ -109,7 +109,7 @@ class GalleryPermissionTypes:
     permission_level = types.PermissionLevelTypes.id
 
 
-class GalleryPermissionIdBase(IdObject[GalleryPermissionTypes.id]):
+class GalleryPermissionGalleryPermissionIdBase(GalleryPermissionIdObject[GalleryPermissionTypes.id]):
     ID_COLS: typing.ClassVar[list[str]] = ['gallery_id', 'user_id']
 
     gallery_id: GalleryPermissionTypes.gallery_id = Field(
@@ -132,22 +132,22 @@ class GalleryPermissionPrivate(GalleryPermissionExport):
     pass
 
 
-class GalleryPermissionImport(BaseModel):
+class GalleryPermissionGalleryPermissionImport(BaseModel):
     pass
 
 
-class GalleryPermissionAdminUpdate(GalleryPermissionImport):
+class GalleryPermissionAdminUpdate(GalleryPermissionGalleryPermissionImport):
     permission_level: typing.Optional[GalleryPermissionTypes.permission_level] = None
 
 
-class GalleryPermissionAdminCreate(GalleryPermissionImport, GalleryPermissionIdBase):
+class GalleryPermissionGalleryPermissionAdminCreate(GalleryPermissionGalleryPermissionImport, GalleryPermissionGalleryPermissionIdBase):
     permission_level: GalleryPermissionTypes.permission_level
 
 
 class GalleryPermission(
         Table['GalleryPermission',
-              GalleryPermissionTypes.id, GalleryPermissionAdminCreate,  BaseModel, BaseModel, GalleryPermissionAdminUpdate, BaseModel, BaseModel, typing.Literal[()]],
-        GalleryPermissionIdBase,
+              GalleryPermissionTypes.id, GalleryPermissionGalleryPermissionAdminCreate,  BaseModel, BaseModel, GalleryPermissionAdminUpdate, BaseModel, BaseModel, typing.Literal[()]],
+        GalleryPermissionGalleryPermissionIdBase,
         table=True):
     __tablename__ = 'gallery_permission'
     __table_args__ = (
@@ -185,7 +185,7 @@ class GalleryPermission(
 
         if not params.admin:
             if self.gallery.user._id != params.authorized_user_id:
-                authorized_user_gallery_permission = await self.read(params.session, GalleryPermissionIdBase(
+                authorized_user_gallery_permission = await self.read(params.session, GalleryPermissionGalleryPermissionIdBase(
                     gallery_id=self.gallery._id, user_id=params.authorized_user_id
                 )._id)
 

@@ -9,36 +9,36 @@ from pydantic import BaseModel
 ID_COL = 'id'
 
 
-class Id(SQLModel):
+class ApiKeyId(SQLModel):
     id: types.ApiKey.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
 
-class Available(BaseModel):
+class ApiKeyAvailable(BaseModel):
     name: types.ApiKey.name
 
 
-class AdminAvailable(Available):
+class ApiKeyAdminAvailable(ApiKeyAvailable):
     user_id: types.User.id
 
 
-class Import(auth_credential.Import):
+class ApiKeyImport(auth_credential.Import):
     pass
 
 
-class Update(Import, auth_credential.Update):
+class ApiKeyUpdate(ApiKeyImport, auth_credential.Update):
     name: Optional[types.ApiKey.name] = None
 
 
-class AdminUpdate(Update):
+class AdminUpdate(ApiKeyUpdate):
     pass
 
 
-class Create(Import, auth_credential.Create):
+class ApiKeyUpdateCreate(ApiKeyImport, auth_credential.Create):
     name: types.ApiKey.name
 
 
-class AdminCreate(Create):
+class ApiKeyUpdateAdminCreate(ApiKeyUpdateCreate):
     user_id: types.User.id
 
 
@@ -51,8 +51,8 @@ class JwtModel(auth_credential.JwtModelBase):
 
 
 class ApiKey(
-        BaseTable['ApiKey', Id],
-        Id,
+        BaseTable['ApiKey', ApiKeyId],
+        ApiKeyId,
         auth_credential.Table,
         auth_credential.Model,
         auth_credential.JwtIO[JwtPayload, JwtModel],
@@ -79,11 +79,11 @@ class ApiKey(
     #     return [api_key_scope.scope_id for api_key_scope in self.api_key_scopes]
 
     # @classmethod
-    # async def is_available(cls, session: Session, api_key_available_admin: AdminAvailable) -> bool:
+    # async def is_available(cls, session: Session, api_key_available_admin: ApiKeyAdminAvailable) -> bool:
     #     return not session.exec(select(cls).where(cls._build_conditions(api_key_available_admin.model_dump()))).one_or_none()
 
     # @classmethod
-    # async def api_get_is_available(cls, session: Session, api_key_available_admin: AdminAvailable) -> None:
+    # async def api_get_is_available(cls, session: Session, api_key_available_admin: ApiKeyAdminAvailable) -> None:
 
     #     if not await cls.is_available(session, api_key_available_admin):
     #         raise HTTPException(
@@ -103,13 +103,13 @@ class ApiKey(
 
     # @classmethod
     # async def _check_validation_post(cls, params):
-    #     await cls.api_get_is_available(params.session, AdminAvailable(
+    #     await cls.api_get_is_available(params.session, ApiKeyAdminAvailable(
     #         name=params.create_model.name, user_id=params.create_model.user_id)
     #     )
 
     # async def _check_validation_patch(self, params):
     #     if 'name' in params.update_model.model_fields_set:
-    #         await self.api_get_is_available(params.session, AdminAvailable(
+    #         await self.api_get_is_available(params.session, ApiKeyAdminAvailable(
     #             name=params.update_model.name, user_id=params.authorized_user_id))
 
 
@@ -144,24 +144,24 @@ class ApiKeyTypes(AuthCredentialTypes):
     order_by = typing.Literal['issued', 'expiry', 'name']
 
 
-class ApiKeyIdBase(IdObject[ApiKeyTypes.id]):
+class ApiKeyApiKeyIdBase(ApiKeyIdObject[ApiKeyTypes.id]):
     id: ApiKeyTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
 
-class ApiKeyAvailable(BaseModel):
+class ApiKeyApiKeyAvailable(BaseModel):
     name: ApiKeyTypes.name
 
 
-class ApiKeyAdminAvailable(ApiKeyAvailable):
+class ApiKeyApiKeyAdminAvailable(ApiKeyApiKeyAvailable):
     user_id: types.User.id
 
 
-class ApiKeyImport(AuthCredential.Import):
+class ApiKeyApiKeyImport(AuthCredential.ApiKeyImport):
     pass
 
 
-class ApiKeyUpdate(ApiKeyImport, AuthCredential.Update):
+class ApiKeyUpdate(ApiKeyApiKeyImport, AuthCredential.Update):
     name: typing.Optional[ApiKeyTypes.name] = None
 
 
@@ -169,7 +169,7 @@ class ApiKeyAdminUpdate(ApiKeyUpdate):
     pass
 
 
-class ApiKeyCreate(ApiKeyImport, AuthCredential.Create):
+class ApiKeyCreate(ApiKeyApiKeyImport, AuthCredential.Create):
     name: ApiKeyTypes.name
 
 
@@ -191,7 +191,7 @@ class ApiKey(
         AuthCredential.Table,
         AuthCredential.JwtIO[ApiKeyJwt.Encode, ApiKeyJwt.Decode],
         AuthCredential.Model,
-        ApiKeyIdBase,
+        ApiKeyApiKeyIdBase,
         table=True):
     auth_type = 'api_key'
     __tablename__ = 'api_key'
@@ -215,11 +215,11 @@ class ApiKey(
         return [api_key_scope.scope_id for api_key_scope in self.api_key_scopes]
 
     @classmethod
-    async def is_available(cls, session: Session, api_key_available_admin: ApiKeyAdminAvailable) -> bool:
+    async def is_available(cls, session: Session, api_key_available_admin: ApiKeyApiKeyAdminAvailable) -> bool:
         return not session.exec(select(cls).where(cls._build_conditions(api_key_available_admin.model_dump()))).one_or_none()
 
     @classmethod
-    async def api_get_is_available(cls, session: Session, api_key_available_admin: ApiKeyAdminAvailable) -> None:
+    async def api_get_is_available(cls, session: Session, api_key_available_admin: ApiKeyApiKeyAdminAvailable) -> None:
 
         if not await cls.is_available(session, api_key_available_admin):
             raise HTTPException(
@@ -239,13 +239,13 @@ class ApiKey(
 
     @classmethod
     async def _check_validation_post(cls, params):
-        await cls.api_get_is_available(params.session, ApiKeyAdminAvailable(
+        await cls.api_get_is_available(params.session, ApiKeyApiKeyAdminAvailable(
             name=params.create_model.name, user_id=params.create_model.user_id)
         )
 
     async def _check_validation_patch(self, params):
         if 'name' in params.update_model.model_fields_set:
-            await self.api_get_is_available(params.session, ApiKeyAdminAvailable(
+            await self.api_get_is_available(params.session, ApiKeyApiKeyAdminAvailable(
                 name=params.update_model.name, user_id=params.authorized_user_id))
 
 

@@ -9,16 +9,16 @@ from pydantic import BaseModel
 ID_COL = 'id'
 
 
-class Id(SQLModel):
+class UserAccessTokenId(SQLModel):
     id: types.ImageVersion.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
 
-class AdminUpdate(BaseModel):
+class UserAccessTokenAdminUpdate(BaseModel):
     pass
 
 
-class AdminCreate(auth_credential.Create):
+class UserAccessTokenAdminCreate(auth_credential.Create):
     user_id: types.User.id
 
 
@@ -31,8 +31,8 @@ class JwtModel(auth_credential.JwtModelBase):
 
 
 class UserAccessToken(
-        BaseTable['UserAccessToken', Id],
-        Id,
+        BaseTable['UserAccessToken', UserAccessTokenId],
+        UserAccessTokenId,
         auth_credential.Table,
         auth_credential.Model,
         auth_credential.JwtIO[JwtPayload, JwtModel],
@@ -76,12 +76,12 @@ class UserAccessTokenTypes(AuthCredentialTypes):
     id = str
 
 
-class UserAccessTokenIdBase(IdObject[UserAccessTokenTypes.id]):
+class UserAccessTokenUserAccessTokenIdBase(UserAccessTokenIdObject[UserAccessTokenTypes.id]):
     id: UserAccessTokenTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
 
-class UserAccessTokenAdminUpdate(BaseModel):
+class UserAccessTokenUserAccessTokenAdminUpdate(BaseModel):
     pass
 
 
@@ -99,12 +99,12 @@ class UserAccessTokenJwt:
 
 class UserAccessToken(
         Table['UserAccessToken', UserAccessTokenTypes.id, UserAccessTokenAdminCreate,
-              BaseModel, BaseModel, UserAccessTokenAdminUpdate, BaseModel, BaseModel, typing.Literal[()]],
+              BaseModel, BaseModel, UserAccessTokenUserAccessTokenAdminUpdate, BaseModel, BaseModel, typing.Literal[()]],
         AuthCredential.Table,
         AuthCredential.JwtIO[UserAccessTokenJwt.Encode,
                              UserAccessTokenJwt.Decode],
         AuthCredential.Model,
-        UserAccessTokenIdBase,
+        UserAccessTokenUserAccessTokenIdBase,
         table=True):
 
     auth_type = 'access_token'

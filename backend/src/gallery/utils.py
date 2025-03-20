@@ -1,4 +1,5 @@
 import bcrypt
+import typing
 
 
 def deep_merge_dicts(primary_dict: dict, secondary_dict: dict) -> dict:

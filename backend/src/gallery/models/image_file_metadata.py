@@ -12,7 +12,7 @@ from sqlalchemy.ext.declarative import declared_attr
 #         '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'}
 
 
-class Id(SQLModel):
+class ImageFileMetadataId(SQLModel):
     file_id: types.ImageFileMetadata.file_id = Field(
         primary_key=True, index=True, unique=True, const=True, foreign_key=str(file_module.File.__tablename__) + '.' + file_module.ID_COL, ondelete='CASCADE')
 
@@ -23,32 +23,32 @@ class Id(SQLModel):
 #     scale: types.ImageFileMetadata.scale | None
 
 
-class Import(BaseModel):
+class ImageFileMetadataImport(BaseModel):
     pass
 
 
-class Update(Import, Id):
+class ImageFileMetadataUpdate(ImageFileMetadataImport, ImageFileMetadataId):
     pass
 
 
-class AdminUpdate(Update):
+class ImageFileMetadataAdminUpdate(ImageFileMetadataUpdate):
     pass
 
 
-class Create(Import):
+class ImageFileMetadataCreate(ImageFileMetadataImport):
     file_id: types.ImageFileMetadata.file_id
     version_id: types.ImageFileMetadata.version_id
     scale: Optional[types.ImageFileMetadata.scale] = Field(
         default=None, ge=1, le=99)
 
 
-class AdminCreate(Create):
+class ImageFileMetadataAdminCreate(ImageFileMetadataCreate):
     pass
 
 
 class ImageFileMetadata(
-        BaseTable['ImageFileMetadata', Id],
-        Id,
+        BaseTable['ImageFileMetadata', ImageFileMetadataId],
+        ImageFileMetadataId,
         table=True):
 
     version_id: types.ImageFileMetadata.version_id = Field(

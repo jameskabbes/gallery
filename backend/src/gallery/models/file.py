@@ -10,7 +10,7 @@ from pydantic import BaseModel
 ID_COL = 'id'
 
 
-class Id(SQLModel):
+class FileId(SQLModel):
     id: types.File.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
@@ -47,8 +47,8 @@ class FileAdminCreate(FileCreate):
 
 
 class File(
-        BaseTable['File', Id],
-        Id,
+        BaseTable['File', FileId],
+        FileId,
         table=True):
 
     stem: types.File.stem = Field()

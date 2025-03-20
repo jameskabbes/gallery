@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 ID_COL = 'id'
 
 
-class Id(SQLModel):
+class GalleryId(SQLModel):
     id: types.ApiKey.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
@@ -34,11 +34,11 @@ class Id(SQLModel):
 #     visibility_level: types.Gallery.visibility_level
 
 
-class Import(BaseModel):
+class GalleryImport(BaseModel):
     pass
 
 
-class Update(Import):
+class GalleryUpdate(GalleryImport):
     name: Optional[types.Gallery.name] = None
     user_id: Optional[types.Gallery.user_id] = None
     visibility_level: Optional[types.Gallery.visibility_level] = None
@@ -47,22 +47,22 @@ class Update(Import):
     date: Optional[types.Gallery.date] = None
 
 
-class AdminUpdate(Update):
+class GalleryAdminUpdate(GalleryUpdate):
     pass
 
 
-class _CreateBase(Import):
+class _CreateBase(GalleryImport):
     name: types.Gallery.name
     visibility_level: types.Gallery.visibility_level
     description: Optional[types.Gallery.description] = None
     date: Optional[types.Gallery.date] = None
 
 
-class Create(_CreateBase):
+class GalleryCreate(_CreateBase):
     parent_id: types.Gallery.parent_id
 
 
-class AdminCreate(_CreateBase):
+class GalleryAdminCreate(_CreateBase):
     user_id: types.Gallery.user_id
     parent_id: Optional[types.Gallery.parent_id] = None
 
@@ -71,13 +71,13 @@ class AdminCreate(_CreateBase):
 #     mkdir: bool = True
 
 
-class Available(BaseModel):
+class GalleryAvailable(BaseModel):
     name: types.Gallery.name
     parent_id: Optional[types.Gallery.parent_id] = None
     date: Optional[types.Gallery.date] = None
 
 
-class AdminAvailable(Available):
+class GalleryAdminAvailable(GalleryAvailable):
     user_id: types.User.id
 
 
@@ -87,7 +87,7 @@ class AdminAvailable(Available):
 
 class Gallery(
         BaseTable['Gallery', types.Gallery.id],
-        Id,
+        GalleryId,
         table=True):
 
     name: types.Gallery.name = Field()
@@ -154,7 +154,7 @@ class Gallery(
     #     return session.exec(select(cls).where(cls.user_id == user_id).where(cls.parent_id == None)).one_or_none()
 
     # @classmethod
-    # async def api_get_is_available(cls, session: Session, gallery_available_admin: GalleryAdminAvailable) -> None:
+    # async def api_get_is_available(cls, session: Session, gallery_available_admin: GalleryAdminGalleryAvailable) -> None:
 
     #     # raise an exception if the parent gallery does not exist
     #     if gallery_available_admin.parent_id:
@@ -200,12 +200,12 @@ class Gallery(
 
     # @classmethod
     # async def _check_validation_post(cls, params):
-    #     await cls.api_get_is_available(params.session, GalleryAdminAvailable(**params.create_model.model_dump(include=GalleryAdminAvailable.model_fields.keys(), exclude_unset=True)))
+    #     await cls.api_get_is_available(params.session, GalleryAdminGalleryAvailable(**params.create_model.model_dump(include=GalleryAdminGalleryAvailable.model_fields.keys(), exclude_unset=True)))
 
     # async def _check_validation_patch(self, params):
     #     # take self, overwrite it with the update_model, and see if the combined model is available
-    #     await self.api_get_is_available(params.session, GalleryAdminAvailable(**{
-    #         **self.model_dump(include=list(GalleryAdminAvailable.model_fields.keys())), **params.update_model.model_dump(include=GalleryAdminAvailable.model_fields.keys(), exclude_unset=True)
+    #     await self.api_get_is_available(params.session, GalleryAdminGalleryAvailable(**{
+    #         **self.model_dump(include=list(GalleryAdminGalleryAvailable.model_fields.keys())), **params.update_model.model_dump(include=GalleryAdminGalleryAvailable.model_fields.keys(), exclude_unset=True)
     #     }))
 
     # @classmethod
@@ -388,7 +388,7 @@ class GalleryTypes:
     folder_name = str
 
 
-class GalleryIdBase(IdObject[GalleryTypes.id]):
+class GalleryGalleryIdBase(GalleryIdObject[GalleryTypes.id]):
     id: GalleryTypes.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
@@ -410,11 +410,11 @@ class GalleryPrivate(GalleryExport):
     visibility_level: GalleryTypes.visibility_level
 
 
-class GalleryImport(BaseModel):
+class GalleryGalleryImport(BaseModel):
     pass
 
 
-class GalleryUpdate(GalleryImport):
+class GalleryGalleryUpdate(GalleryGalleryImport):
     name: typing.Optional[GalleryTypes.name] = None
     user_id: typing.Optional[GalleryTypes.user_id] = None
     visibility_level: typing.Optional[GalleryTypes.visibility_level] = None
@@ -423,15 +423,15 @@ class GalleryUpdate(GalleryImport):
     date: typing.Optional[GalleryTypes.date] = None
 
 
-class GalleryAdminUpdate(GalleryUpdate):
+class GalleryGalleryAdminUpdate(GalleryGalleryUpdate):
     pass
 
 
-class GalleryAdminUpdateParams(BaseModel):
+class GalleryGalleryAdminUpdateParams(BaseModel):
     pass
 
 
-class GalleryCreate(GalleryImport):
+class GalleryCreate(GalleryGalleryImport):
     name: GalleryTypes.name
     visibility_level: GalleryTypes.visibility_level
     parent_id: GalleryTypes.parent_id
@@ -448,13 +448,13 @@ class GalleryAdminCreateParams(BaseModel):
     mkdir: bool = True
 
 
-class GalleryAvailable(BaseModel):
+class GalleryGalleryAvailable(BaseModel):
     name: GalleryTypes.name
     parent_id: typing.Optional[GalleryTypes.parent_id] = None
     date: typing.Optional[GalleryTypes.date] = None
 
 
-class GalleryAdminAvailable(GalleryAvailable):
+class GalleryAdminGalleryAvailable(GalleryGalleryAvailable):
     user_id: types.User.id
 
 
@@ -464,8 +464,8 @@ class GalleryAdminApiDeleteParams(BaseModel):
 
 class Gallery(
         Table['Gallery', GalleryTypes.id, GalleryAdminCreate, GalleryAdminCreateParams,
-              BaseModel, GalleryAdminUpdate, GalleryAdminUpdateParams, GalleryAdminApiDeleteParams, typing.Literal[()]],
-        GalleryIdBase,
+              BaseModel, GalleryGalleryAdminUpdate, GalleryGalleryAdminUpdateParams, GalleryAdminApiDeleteParams, typing.Literal[()]],
+        GalleryGalleryIdBase,
         table=True):
     __tablename__ = 'gallery'
 
@@ -533,7 +533,7 @@ class Gallery(
         return session.exec(select(cls).where(cls.user_id == user_id).where(cls.parent_id == None)).one_or_none()
 
     @classmethod
-    async def api_get_is_available(cls, session: Session, gallery_available_admin: GalleryAdminAvailable) -> None:
+    async def api_get_is_available(cls, session: Session, gallery_available_admin: GalleryAdminGalleryAvailable) -> None:
 
         # raise an exception if the parent gallery does not exist
         if gallery_available_admin.parent_id:
@@ -579,12 +579,12 @@ class Gallery(
 
     @classmethod
     async def _check_validation_post(cls, params):
-        await cls.api_get_is_available(params.session, GalleryAdminAvailable(**params.create_model.model_dump(include=GalleryAdminAvailable.model_fields.keys(), exclude_unset=True)))
+        await cls.api_get_is_available(params.session, GalleryAdminGalleryAvailable(**params.create_model.model_dump(include=GalleryAdminGalleryAvailable.model_fields.keys(), exclude_unset=True)))
 
     async def _check_validation_patch(self, params):
         # take self, overwrite it with the update_model, and see if the combined model is available
-        await self.api_get_is_available(params.session, GalleryAdminAvailable(**{
-            **self.model_dump(include=list(GalleryAdminAvailable.model_fields.keys())), **params.update_model.model_dump(include=GalleryAdminAvailable.model_fields.keys(), exclude_unset=True)
+        await self.api_get_is_available(params.session, GalleryAdminGalleryAvailable(**{
+            **self.model_dump(include=list(GalleryAdminGalleryAvailable.model_fields.keys())), **params.update_model.model_dump(include=GalleryAdminGalleryAvailable.model_fields.keys(), exclude_unset=True)
         }))
 
     @classmethod

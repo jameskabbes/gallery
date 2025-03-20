@@ -9,20 +9,20 @@ from sqlalchemy.ext.declarative import declared_attr
 ID_COL = 'id'
 
 
-class Id(SQLModel):
+class ImageVersionId(SQLModel):
     id: types.ImageVersion.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
 
-# class ImageVersionExport(TableExport):
-#     id: types.ImageVersion.id
-#     base_name: types.ImageVersion.base_name | None
-#     parent_id: types.ImageVersion.parent_id | None
-#     version: types.ImageVersion.version | None
-#     datetime: types.ImageVersion.datetime | None
-#     description: types.ImageVersion.description | None
-#     aspect_ratio: types.ImageVersion.aspect_ratio | None
-#     average_color: types.ImageVersion.average_color | None
+class ImageVersionExport(BaseModel):
+    id: types.ImageVersion.id
+    base_name: types.ImageVersion.base_name | None
+    parent_id: types.ImageVersion.parent_id | None
+    version: types.ImageVersion.version | None
+    datetime: types.ImageVersion.datetime | None
+    description: types.ImageVersion.description | None
+    aspect_ratio: types.ImageVersion.aspect_ratio | None
+    average_color: types.ImageVersion.average_color | None
 
 
 class ImageVersionImport(BaseModel):
@@ -33,7 +33,7 @@ class ImageVersionImport(BaseModel):
     description: Optional[types.ImageVersion.description] = None
 
 
-class ImageVersionUpdate(ImageVersionImport, Id):
+class ImageVersionUpdate(ImageVersionImport, ImageVersionId):
     pass
 
 
@@ -57,8 +57,8 @@ class ImageVersionAdminCreate(ImageVersionCreate):
 
 
 class ImageVersion(
-        BaseTable['ImageVersion', Id],
-        Id,
+        BaseTable['ImageVersion', ImageVersionId],
+        ImageVersionId,
         table=True):
 
     base_name: types.ImageVersion.base_name = Field(
