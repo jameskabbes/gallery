@@ -23,9 +23,12 @@ class ApiKeyScopeAdminCreate(ApiKeyScopeId):
 
 
 class ApiKeyScope(
-        BaseTable['ApiKeyScope', ApiKeyScopeId],
+        BaseTable[ApiKeyScopeId, ApiKeyScopeAdminCreate,
+                  ApiKeyScopeAdminUpdate],
         ApiKeyScopeId,
         table=True):
+
+    __tablename__ = 'api_key_scope'  # type: ignore
 
     # __table_args__ = (
     #     PrimaryKeyConstraint('api_key_id', 'scope_id'),

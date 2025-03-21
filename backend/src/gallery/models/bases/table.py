@@ -1,196 +1,330 @@
-from sqlmodel import SQLModel
+from sqlmodel import SQLModel, select
 from sqlmodel.sql.expression import SelectOfScalar
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from gallery.models.pagination import Pagination
-from typing import Protocol, Unpack, TypeVar, TypedDict, Generic
+from gallery import client, types
+from typing import Protocol, Unpack, TypeVar, TypedDict, Generic, NotRequired, Literal, Self
+from pydantic import BaseModel
 
 
 class Id(TypedDict):
     pass
 
 
-class Table[T: 'Table', TId](SQLModel):
+# class OrderBy[T](BaseModel):
+#     field: T
+#     ascending: bool
+
+
+class CRUDParamsBase(TypedDict):
+    session: AsyncSession
+    c: client.Client
+    authorized_user_id: NotRequired[types.User.id]
+    admin: NotRequired[bool]
+
+
+class WithId[TId: BaseModel](TypedDict):
+    id: TId
+
+
+class WithTableInst[T](TypedDict):
+    table_inst: T
+
+
+class CreateParams[TCreateModel: BaseModel](CRUDParamsBase):
+    create_model: TCreateModel
+
+
+class AfterCreateParams[T, TCreateModel: BaseModel](CreateParams[TCreateModel], WithTableInst[T]):
+    pass
+
+
+class ReadParams[TId: BaseModel](CRUDParamsBase, WithId[TId]):
+    pass
+
+
+class AfterReadParams[T, TId: BaseModel](ReadParams[TId], WithTableInst[T]):
+    pass
+
+
+class UpdateParams[TId: BaseModel, TUpdateModel: BaseModel](CRUDParamsBase, WithId[TId]):
+    update_model: TUpdateModel
+
+
+class AfterUpdateParams[T, TId: BaseModel, TUpdateModel: BaseModel](UpdateParams[TId, TUpdateModel], WithTableInst[T]):
+    pass
+
+
+class DeleteParams[TId: BaseModel](CRUDParamsBase, WithId[TId]):
+    pass
+
+
+class AfterDeleteParams[T, TId: BaseModel](DeleteParams[TId], WithTableInst[T]):
+    pass
+
+
+class CheckAuthorizationExistingParams[T](CRUDParamsBase):
+    inst: T
+    method: Literal['get', 'patch', 'delete']
+
+
+class AfterCreateCustomParams(TypedDict):
+    pass
+
+
+class AfterReadCustomParams(TypedDict):
+    pass
+
+
+class AfterUpdateCustomParams(TypedDict):
+    pass
+
+
+class AfterDeleteCustomParams(TypedDict):
+    pass
+
+
+class Table[
+    TId: BaseModel,
+    TCreateModel: BaseModel,
+    TUpdateModel:BaseModel,
+    TAfterCreateCustomParams: AfterCreateCustomParams= AfterCreateCustomParams,
+    TAfterReadCustomParams: AfterReadCustomParams= AfterReadCustomParams,
+    TAfterUpdateCustomParams: AfterUpdateCustomParams= AfterUpdateCustomParams,
+    TAfterDeleteCustomParams: AfterDeleteCustomParams= AfterDeleteCustomParams
+](SQLModel):
 
     @classmethod
-    def _build_get_by_id_query(cls, id: TId) -> SelectOfScalar[T]:
+    def _build_select_by_id(cls, id: TId) -> SelectOfScalar[Self]:
         raise NotImplementedError
 
     @classmethod
-    async def _get_by_id(cls, session: AsyncSession, id: TId) -> T | None:
-        return (await session.exec(cls._build_get_by_id_query(id))).one_or_none()
+    async def _get_by_id(cls, session: AsyncSession, id: TId) -> Self | None:
+        return (await session.exec(cls._build_select_by_id(id))).one_or_none()
 
-    def build_pagination(self, query: SelectOfScalar[T], pagination: Pagination):
+    @classmethod
+    async def _get_by_id_with_exception(cls, session: AsyncSession, id: TId) -> Self:
+        inst = await cls._get_by_id(session, id)
+        if not inst:
+            raise ValueError(cls.__class__.__name__ +
+                             ' with id ' + str(id) + ' not found')
+        return inst
+
+    def build_pagination(self, query: SelectOfScalar[Self], pagination: Pagination):
         return query.offset(pagination.offset).limit(pagination.limit)
+
+    async def _delete(self, session: AsyncSession):
+        await session.delete(self)
+
+    @classmethod
+    async def _check_authorization_existing(cls, params: CheckAuthorizationExistingParams[Self]) -> None:
+        """Check if the user is authorized to access the instance"""
+        pass
+
+    @classmethod
+    async def _check_authorization_new(cls, params: CreateParams[TCreateModel]) -> None:
+        """Check if the user is authorized to create a new instance"""
+        pass
+
+    @classmethod
+    async def _check_validation_delete(cls, params: DeleteParams[TId]) -> None:
+        """Check if the user is authorized to delete the instance"""
+        pass
+
+    @classmethod
+    async def _check_validation_patch(cls, params: UpdateParams[TId, TUpdateModel]) -> None:
+        """Check if the user is authorized to update the instance"""
+        pass
+
+    @classmethod
+    async def _check_validation_post(cls, params: CreateParams[TCreateModel]) -> None:
+        """Check if the user is authorized to create a new instance"""
+        pass
+
+    @classmethod
+    async def read(cls, params: ReadParams[TId], custom_params: TAfterReadCustomParams = {}) -> Self:
+        """Used in conjunction with API endpoints, raises exceptions while trying to get an instance of the model by ID"""
+
+        inst = await cls._get_by_id_with_exception(params['session'], params['id'])
+
+        check_auth_params: CheckAuthorizationExistingParams[Self] = {
+            'session': params['session'],
+            'c': params['c'],
+            'inst': inst,
+            'method': 'get'
+        }
+
+        if 'authorized_user_id' in params:
+            check_auth_params['authorized_user_id'] = params['authorized_user_id']
+
+        if 'admin' in params:
+            check_auth_params['admin'] = params['admin']
+
+        await cls._check_authorization_existing(check_auth_params)
+
+        after_read_params: AfterReadParams[Self, TId] = {
+            'session': params['session'],
+            'c': params['c'],
+            'table_inst': inst,
+            'id': params['id']
+        }
+
+        if 'authorized_user_id' in params:
+            after_read_params['authorized_user_id'] = params['authorized_user_id']
+
+        if 'admin' in params:
+            after_read_params['admin'] = params['admin']
+
+        await cls._after_read(after_read_params, custom_params)
+        return inst
+
+    @classmethod
+    async def _after_read(cls, params: AfterReadParams[Self, TId], custom_params: TAfterReadCustomParams = {}) -> None:
+        """Functionality to run after getting an instance of the model by ID but before returning"""
+        pass
+
+    @classmethod
+    async def create(cls, params: CreateParams[TCreateModel], custom_params: TAfterCreateCustomParams = {}) -> Self:
+        """Used in conjunction with API endpoints, raises exceptions while trying to create a new instance of the model"""
+
+        await cls._check_authorization_new(params)
+        await cls._check_validation_post(params)
+
+        table_inst = await cls._table_inst_from_create_model(params['create_model'])
+        await cls._after_create({**params, 'table_inst': table_inst}, custom_params)
+
+        params['session'].add(table_inst)
+        await params['session'].commit()
+        await params['session'].refresh(table_inst)
+        return table_inst
+
+    @classmethod
+    async def _table_inst_from_create_model(cls, create_model: TCreateModel) -> Self:
+        """Create a new instance of the model from the create model (TCreateModel), don't overwrite this method"""
+        return cls(**create_model.model_dump())
+
+    @classmethod
+    async def _after_create(cls, params: AfterCreateParams[Self, TCreateModel], custom_params: TAfterCreateCustomParams = {}) -> None:
+        """Functionality to run after creating a new instance of the model but before returning"""
+        pass
+
+    @classmethod
+    async def update(cls, params: UpdateParams[TId, TUpdateModel], custom_params: TAfterUpdateCustomParams = {}) -> Self:
+        """Used in conjunction with API endpoints, raises exceptions while trying to update an instance of the model by ID"""
+
+        inst = await cls._get_by_id_with_exception(params['session'], params['id'])
+
+        check_auth_params: CheckAuthorizationExistingParams[Self] = {
+            'session': params['session'],
+            'c': params['c'],
+            'inst': inst,
+            'method': 'get'
+        }
+
+        if 'authorized_user_id' in params:
+            check_auth_params['authorized_user_id'] = params['authorized_user_id']
+
+        if 'admin' in params:
+            check_auth_params['admin'] = params['admin']
+
+        await cls._check_authorization_existing(check_auth_params)
+        await cls._check_validation_patch(params)
+
+        await inst._update_with_update_model(params['update_model'])
+
+        after_update_params: AfterUpdateParams[Self, TId, TUpdateModel] = {
+            'session': params['session'],
+            'c': params['c'],
+            'table_inst': inst,
+            'id': params['id'],
+            'update_model': params['update_model']
+        }
+
+        if 'authorized_user_id' in params:
+            after_update_params['authorized_user_id'] = params['authorized_user_id']
+        if 'admin' in params:
+            after_update_params['admin'] = params['admin']
+
+        await cls._after_update(after_update_params, custom_params)
+
+        await params['session'].commit()
+        await params['session'].refresh(inst)
+        return inst
+
+    async def _update_with_update_model(self, update_model: TUpdateModel) -> None:
+        """Update an instance of the model from the update model (TUpdateModel)"""
+
+        for key, value in update_model.model_dump(exclude_unset=True).items():
+            setattr(self, key, value)
+
+    @classmethod
+    async def _after_update(cls, params: AfterUpdateParams[Self, TId, TUpdateModel], custom_params: TAfterUpdateCustomParams = {}) -> None:
+        """Functionality to run after updating an instance of the model but before returning"""
+        pass
+
+    @classmethod
+    async def delete(cls, params: DeleteParams[TId], custom_params: TAfterDeleteCustomParams = {}) -> None:
+        """Used in conjunction with API endpoints, raises exceptions while trying to delete an instance of the model by ID"""
+
+        inst = await cls._get_by_id_with_exception(params['session'], params['id'])
+
+        check_auth_params = CheckAuthorizationExistingParams[Self](
+            session=params['session'],
+            c=params['c'],
+            inst=inst,
+            method='get'
+        )
+
+        if 'authorized_user_id' in params:
+            check_auth_params['authorized_user_id'] = params['authorized_user_id']
+
+        if 'admin' in params:
+            check_auth_params['admin'] = params['admin']
+
+        await cls._check_authorization_existing(check_auth_params)
+        await cls._check_validation_delete(params)
+
+        await inst._delete(params['session'])
+
+        after_delete_params: AfterDeleteParams[Self, TId] = {
+            'session': params['session'],
+            'c': params['c'],
+            'table_inst': inst,
+            'id': params['id']
+        }
+
+        if 'authorized_user_id' in params:
+            after_delete_params['authorized_user_id'] = params['authorized_user_id']
+        if 'admin' in params:
+            after_delete_params['admin'] = params['admin']
+
+        await cls._after_delete(after_delete_params, custom_params)
+
+        await params['session'].commit()
+
+    @classmethod
+    async def _after_delete(cls, params: AfterDeleteParams[Self, TId], custom_params: TAfterDeleteCustomParams = {}) -> None:
+        """Functionality to run after deleting an instance of the model but before returning"""
+        pass
 
 
 '''
-P = typing.ParamSpec('P')
-R = typing.TypeVar('R')
-TDB = typing.TypeVar('TDB', bound='BaseDB[typing.Any]')
-
-IdType = typing.TypeVar(
-    'IdType', bound=typing.Union[str | int, tuple[str | int, ...]])
 
 
-class Id(typing.Generic[IdType]):
-    def __init__(self, fields: list[str]):
-        self.fields = fields
-
-    def get(self, obj) -> IdType:
-        if len(self.fields) == 1:
-            return getattr(obj, self.fields[0])
-        return tuple(getattr(obj, field) for field in self.fields)
-
-    def generate(self) -> IdType:
-        if len(self.fields) == 1:
-            return str(uuid.uuid4())
-        return tuple(str(uuid.uuid4()) for _ in self.fields)
-
-
-class IdObject[IdType: typing.Any]:
-    ID_COLS: typing.ClassVar[list[str]] = ['id']
-
-    @property
-    def _id(self) -> IdType:
-        """Return the ID of the model"""
-
-        if len(self.ID_COLS) > 1:
-            return tuple(getattr(self, key) for key in self.ID_COLS)
-        else:
-            return getattr(self, self.ID_COLS[0])
-
-    @classmethod
-    def generate_id(cls) -> IdType:
-        """Generate a new ID for the model"""
-
-        if len(cls.ID_COLS) > 1:
-            return tuple(str(uuid.uuid4()) for _ in range(len(cls.ID_COLS)))
-        else:
-            return str(uuid.uuid4())
-
-    @classmethod
-    def export_plural_to_dict(cls, items: collections.abc.Iterable[typing.Self]) -> dict[IdType, typing.Self]:
-        return {item._id: item for item in items}
-
-
-class BaseDB[IdType](DeclarativeBase, IdObject[IdType]):
-    pass
-
-
-class OrderBy[T](BaseModel):
-    field: T
-    ascending: bool
-
-
-class ApiMethodParamsBase(typing.TypedDict):
-    session: AsyncSession
-    c: client.Client
-    authorized_user_id: typing.NotRequired[types.User.id]
-    admin: typing.NotRequired[bool]
-
-
-class ApiMethodParamsBaseWithId[IdType](ApiMethodParamsBase):
-    id: IdType
-
-
-class ApiMethodParamsCustom[T](typing.TypedDict):
-    db_inst: T
-
-
-class ApiPostParams[TPostModel: BaseModel](ApiMethodParamsBase):
-    create_model: TPostModel
-
-
-class ApiPostParamsCustom[T, TPostModel: BaseModel](ApiPostParams[TPostModel], ApiMethodParamsCustom[T]):
-    pass
-
-
-class ApiGetParams[IdType](ApiMethodParamsBaseWithId[IdType]):
-    pass
-
-
-class ApiGetParamsCustom[T, IdType](ApiGetParams[IdType], ApiMethodParamsCustom[T]):
-    pass
-
-
-class ApiPatchParams[IdType, TPatchModel: BaseModel](ApiMethodParamsBaseWithId[IdType]):
-    update_model: TPatchModel
-
-
-class ApiPatchParamsCustom[T, IdType, TPatchModel: BaseModel](ApiPatchParams[IdType, TPatchModel], ApiMethodParamsCustom[T]):
-    pass
-
-
-class ApiDeleteParams[IdType](ApiMethodParamsBaseWithId[IdType]):
-    pass
-
-
-class ApiDeleteParamsCustom[T, IdType](ApiDeleteParams[IdType], ApiMethodParamsCustom[T]):
-    pass
-
-
-class CheckAuthorizationExistingParams[IdType, T: BaseDB](ApiMethodParamsBase):
-    inst: T
-    method: typing.Literal['get', 'patch', 'delete']
+def generate(self) -> TId:
+    if len(self.fields) == 1:
+        return str(uuid.uuid4())
+    return tuple(str(uuid.uuid4()) for _ in self.fields)
 
 
 
+@classmethod
+def export_plural_to_dict(cls, items: collections.abc.Iterable[typing.Self]) -> dict[TId, typing.Self]:
+    return {item._id: item for item in items}
 
 
 
-
-class TableService[
-    T: BaseDB[typing.Any],
-    IdType: dict,
-    TAddModel: BaseModel,
-    TUpdateModel: BaseModel,
-    TApiGetParams,
-    TOrderBy
-]:
-
-    _ROUTER_TAG: typing.ClassVar[str] = 'asdf'
-    BASE_DB: T
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def not_found_message(cls) -> str:
-        return f'{cls.__name__} not found'
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def already_exists_message(cls) -> str:
-        return f'{cls.__name__} already exists'
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def not_found_exception(cls) -> HTTPException:
-        return HTTPException(status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def already_exists_exception(cls) -> HTTPException:
-        return HTTPException(status.HTTP_409_CONFLICT, detail=cls.already_exists_message())
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def get_responses(cls):
-        return {}
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def post_responses(cls):
-        return {}
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def patch_responses(cls):
-        return {}
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def delete_responses(cls):
-        return {}
 
     @classmethod
     def make_order_by_dependency(cls):
@@ -243,150 +377,5 @@ class TableService[
 
     #     return query
 
-    @classmethod
-    async def _check_authorization_existing(cls, **kwargs: typing.Unpack[CheckAuthorizationExistingParams[IdType, T]]) -> None:
-        """Check if the user is authorized to access the instance"""
-        pass
-
-    @classmethod
-    async def _check_authorization_new(cls, **kwargs: typing.Unpack[ApiPostParams[TAddModel]]) -> None:
-        """Check if the user is authorized to create a new instance"""
-        pass
-
-    @classmethod
-    async def _check_validation_delete(cls, **kwargs: typing.Unpack[ApiDeleteParams[IdType]]) -> None:
-        """Check if the user is authorized to delete the instance"""
-        pass
-
-    @classmethod
-    async def _check_validation_patch(cls, **kwargs: typing.Unpack[ApiPatchParams[IdType, TUpdateModel]]) -> None:
-        """Check if the user is authorized to update the instance"""
-        pass
-
-    @classmethod
-    async def _check_validation_post(cls, **kwargs: typing.Unpack[ApiPostParams[TAddModel]]) -> None:
-        """Check if the user is authorized to create a new instance"""
-        pass
-
-    @classmethod
-    async def _get(cls, session: AsyncSession, id: IdType) -> T | None:
-        """Get an instance of the model by ID, don't overwrite this method"""
-
-        query: Select[T] = select(cls)
-        if len(cls.BASE_DB.ID_COLS) == 1:
-            id = [id]
-        for i, col in enumerate(cls.BASE_DB.ID_COLS):
-            field: InstrumentedAttribute = getattr(cls.BASE_DB, col)
-            query = query.where(field == id[i])
-
-        result = await session.execute(query)
-        return result.scalar_one_or_none()
-
-    @classmethod
-    async def api_get(cls, params: ApiGetParams[IdType], **kwargs: Unpack[TApiGetParams]) -> T:
-        """Used in conjunction with API endpoints, raises exceptions while trying to get an instance of the model by ID"""
-
-        reveal_type(params)
-        reveal_type(kwargs)
-
-        inst = await cls._get(params['session'], params['id'])
-        if not inst:
-            raise cls.not_found_exception()
-        # await cls._check_authorization_existing(**kwargs, inst=inst, method='get')
-        # await cls.api_get_custom(**kwargs, db_inst=inst)
-        return inst
-
-    @classmethod
-    async def api_get_custom(cls, params, **kwargs: Unpack[TApiGetParams]) -> None:
-        """Functionality to run after getting an instance of the model by ID but before returning"""
-        pass
-
-    @classmethod
-    async def api_post(cls, **kwargs: Unpack[ApiPostParams[TAddModel]]) -> T:
-        """Used in conjunction with API endpoints, raises exceptions while trying to create a new instance of the model"""
-
-        await cls._check_authorization_new(**kwargs)
-        await cls._check_validation_post(**kwargs)
-
-        db_inst = await cls.db_inst_from_add_model(**kwargs)
-        await cls.api_post_custom(**kwargs)
-
-        kwargs['session'].add(db_inst)
-        await kwargs['session'].commit()
-        await kwargs['session'].refresh(db_inst)
-        return db_inst
-
-    @classmethod
-    async def db_inst_from_add_model(cls, **kwargs: Unpack[ApiPostParams[TAddModel]]) -> T:
-        """Create a new instance of the model from the create model (TAddModel), don't overwrite this method"""
-        return cls.BASE_DB(**kwargs['create_model'].model_dump())
-
-    @classmethod
-    async def api_post_custom(cls, **kwargs: Unpack[ApiPostParamsCustom[T, TAddModel]]) -> None:
-        """Functionality to run after creating a new instance of the model but before returning"""
-        pass
-
-    @classmethod
-    async def api_patch(cls, **kwargs: Unpack[ApiPatchParams[IdType, TUpdateModel]]) -> T:
-        """Used in conjunction with API endpoints, raises exceptions while trying to update an instance of the model by ID"""
-
-        db_inst = await cls._get(kwargs['session'], kwargs['id'])
-        if not db_inst:
-            raise cls.not_found_exception()
-
-        await cls._check_authorization_existing(**kwargs, inst=db_inst, method='patch')
-        await cls._check_validation_patch(**kwargs)
-
-        await cls.update_db_inst_from_update_model(db_inst, **kwargs)
-        await cls.api_patch_custom(**kwargs, db_inst=db_inst)
-
-        await kwargs['session'].commit()
-        await kwargs['session'].refresh(db_inst)
-        return db_inst
-
-    @classmethod
-    async def update_db_inst_from_update_model(cls, db_inst: T, **kwargs: typing.Unpack[ApiPatchParams[IdType, TUpdateModel]]) -> None:
-        """Update an instance of the model from the update model (TUpdateModel)"""
-        for key, value in kwargs['update_model'].model_dump(exclude_unset=True).items():
-            setattr(db_inst, key, value)
-
-    @classmethod
-    async def api_patch_custom(cls, **kwargs: typing.Unpack[ApiPatchParamsCustom[T, IdType, TUpdateModel]]) -> None:
-        """Functionality to run after updating an instance of the model but before returning"""
-        pass
-
-    @classmethod
-    async def api_delete(cls, **kwargs: typing.Unpack[ApiDeleteParams[IdType]]) -> None:
-        """Used in conjunction with API endpoints, raises exceptions while trying to delete an instance of the model by ID"""
-
-        inst = await cls._get(kwargs['session'], kwargs['id'])
-        if not inst:
-            raise cls.not_found_exception()
-
-        await cls._check_authorization_existing(**kwargs, inst=inst, method='delete')
-        await cls._check_validation_delete(**kwargs)
-
-        await cls.api_delete_custom(**kwargs, inst=inst)
-
-        await cls._delete(kwargs['session'], kwargs['id'])
-        await kwargs['session'].commit()
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-    @classmethod
-    async def api_delete_custom(cls, **kwargs: typing.Unpack[ApiDeleteParamsCustom[T, IdType]]) -> None:
-        """Functionality to run after deleting an instance of the model but before returning"""
-        pass
-
-    @classmethod
-    async def _delete(cls, session: AsyncSession, id: IdType):
-        """delete the instance by id, don't overwrite this method"""
-
-        stmt = delete(cls.BASE_DB)
-        if len(cls.BASE_DB.ID_COLS) == 1:
-            id = [id]
-        for i, col in enumerate(cls.BASE_DB.ID_COLS):
-            field: InstrumentedAttribute = getattr(cls.BASE_DB, col)
-            stmt = stmt.where(field == id[i])
-        return await session.execute(stmt)
 
 '''

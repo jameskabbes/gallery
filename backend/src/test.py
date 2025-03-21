@@ -4,7 +4,7 @@ import datetime as datetime_module
 
 from gallery import models  # type: ignore
 
-from gallery.models import sign_up
+from gallery.models import sign_up, user
 
 a = models.User(
     id='1', email='a@a.com', user_role_id=1, phone_number=None, username=None, hashed_password=None)
@@ -20,6 +20,9 @@ async def main():
 
     async with c.AsyncSession() as session:
         print(session)
+
+        await user.User.create({'session': session, 'c': c, 'create_model': user.UserAdminCreate(email='1@a.com', user_role_id=1)})
+
 
 if __name__ == '__main__':
     asyncio.run(main())

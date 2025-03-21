@@ -9,17 +9,20 @@ from pydantic import BaseModel
 
 ID_COL = 'id'
 
+if TYPE_CHECKING:
+    from gallery.models import image_file_metadata
+
 
 class FileId(SQLModel):
     id: types.File.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
 
-# class FileExport(TableExport):
-#     id: types.File.id
-#     stem: types.File.stem
-#     suffix: types.File.suffix | None
-#     size: types.File.size
+class FileExport(BaseModel):
+    id: types.File.id
+    stem: types.File.stem
+    suffix: types.File.suffix | None
+    size: types.File.size
 
 
 class FileImport(BaseModel):
@@ -47,9 +50,11 @@ class FileAdminCreate(FileCreate):
 
 
 class File(
-        BaseTable['File', FileId],
+        BaseTable[FileId, FileAdminCreate, FileAdminUpdate],
         FileId,
         table=True):
+
+    __tablename__ = 'file'  # type: ignore
 
     stem: types.File.stem = Field()
     suffix: types.File.suffix = Field(nullable=True)
@@ -58,8 +63,8 @@ class File(
     size: types.File.size = Field(nullable=True)
 
     gallery: gallery_module.Gallery = Relationship(back_populates='files')
-    # image_file_metadata: Optional['ImageFileMetadata'] = Relationship(
-    #     back_populates='file', cascadedelete=True)
+    image_file_metadata: Optional['image_file_metadata.ImageFileMetadata'] = Relationship(
+        back_populates='file', cascade_delete=True)
 
     @property
     def name(self) -> str:

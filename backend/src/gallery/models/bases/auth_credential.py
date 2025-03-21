@@ -6,7 +6,8 @@ from gallery.models.bases import jwtio
 from gallery.models.bases.table import Table as BaseTable
 from gallery.models import user
 from gallery.models.custom_field_types.timestamp import validate_and_normalize_datetime
-
+from sqlalchemy import Column
+from gallery.models.custom_field_types import timestamp
 from typing import Optional, TypedDict, ClassVar
 
 
@@ -65,7 +66,7 @@ class Model(SQLModel):
 class Table(SQLModel):
 
     user_id: types.User.id = Field(
-        index=True, foreign_key=str(user.User.__tablename__) + user.ID_COL, const=True, ondelete='CASCADE')
+        index=True, foreign_key=str(user.User.__tablename__) + '.' + user.ID_COL, const=True, ondelete='CASCADE')
 
     # @classmethod
     # async def create(cls, params: ApiPostParams['AuthCredential.Create', BaseModel]) -> typing.Self:

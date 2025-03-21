@@ -22,10 +22,6 @@ class SignUp(
 ):
     auth_type = 'sign_up'
     email: types.User.email = Field()
-    # issued: auth_credentialTypes.issued = Field(
-    #     const=True, sa_column=Column(DateTimeWithTimeZoneString))
-    # expiry: auth_credentialTypes.expiry = Field(
-    #     sa_column=Column(DateTimeWithTimeZoneString))
 
     _CLAIMS_MAPPING = {
         **auth_credential.CLAIMS_MAPPING_BASE, **{'sub': 'email'}

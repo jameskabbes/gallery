@@ -15,18 +15,18 @@ class GalleryPermissionId(SQLModel):
         primary_key=True, index=True, foreign_key=str(user.User.__tablename__) + '.' + user.ID_COL, ondelete='CASCADE')
 
 
-# class Export(TableExport):
-#     gallery_id: types.GalleryPermission.gallery_id
-#     user_id: types.GalleryPermission.user_id
-#     permission_level: types.GalleryPermission.permission_level
+class GalleryExport(BaseModel):
+    gallery_id: types.GalleryPermission.gallery_id
+    user_id: types.GalleryPermission.user_id
+    permission_level: types.GalleryPermission.permission_level
 
 
-# class Public(Export):
-#     pass
+class Public(GalleryExport):
+    pass
 
 
-# class Private(Export):
-#     pass
+class Private(GalleryExport):
+    pass
 
 
 class GalleryPermissionImport(BaseModel):
@@ -44,10 +44,12 @@ class GalleryPermissionAdminCreate(GalleryPermissionImport):
 
 
 class GalleryPermission(
-        BaseTable['GalleryPermission',
-                  GalleryPermissionId],
+        BaseTable[
+            GalleryPermissionId, GalleryPermissionAdminCreate, GalleryPermissionAdminUpdate],
         GalleryPermissionId,
         table=True):
+
+    __tablename__ = 'gallery_permission'  # type: ignore
 
     # __table_args__ = (
     #     PrimaryKeyConstraint('gallery_id', 'user_id'),
@@ -118,17 +120,17 @@ class GalleryPermissionGalleryPermissionIdBase(GalleryPermissionIdObject[Gallery
         primary_key=True, index=True, foreign_key=User.__tablename__ + '.' + User.ID_COLS[0], ondelete='CASCADE')
 
 
-class GalleryPermissionExport(TableExport):
+class GalleryPermissionGalleryExport(TableGalleryExport):
     gallery_id: GalleryPermissionTypes.gallery_id
     user_id: GalleryPermissionTypes.user_id
     permission_level: GalleryPermissionTypes.permission_level
 
 
-class GalleryPermissionPublic(GalleryPermissionExport):
+class GalleryPermissionPublic(GalleryPermissionGalleryExport):
     pass
 
 
-class GalleryPermissionPrivate(GalleryPermissionExport):
+class GalleryPermissionPrivate(GalleryPermissionGalleryExport):
     pass
 
 

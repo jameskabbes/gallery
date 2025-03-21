@@ -7,9 +7,11 @@ from gallery.config import settings
 from pydantic import BaseModel
 import string
 import secrets
+from sqlalchemy import Column
+from gallery.models.custom_field_types import timestamp
 
 if TYPE_CHECKING:
-    from gallery.models.user import User
+    from gallery.models import user
 
 ID_COL = 'id'
 
@@ -29,21 +31,23 @@ class OTPAdminCreate(auth_credential.Create):
 
 
 class OTP(
-        BaseTable['OTP', OTPId],
+        BaseTable[OTPId, OTPAdminCreate, OTPAdminUpdate],
         OTPId,
         auth_credential.Table,
         auth_credential.Model,
         table=True):
 
+    __tablename__ = 'otp'  # type: ignore
+
     auth_type = 'otp'
 
-    # issued: types.OTP.issued = Field(
-    #     const=True, sa_column=Column(DateTimeWithTimeZoneString))
-    # expiry: AuthCredentialTypes.expiry = Field(
-    #     sa_column=Column(DateTimeWithTimeZoneString))
+    issued: types.AuthCredential.issued = Field(
+        const=True, sa_column=Column(timestamp.Timestamp))
+    expiry: types.AuthCredential.expiry = Field(
+        sa_column=Column(timestamp.Timestamp))
 
     hashed_code: types.OTP.hashed_code = Field()
-    user: 'User' = Relationship(
+    user: 'user.User' = Relationship(
         back_populates='otps')
 
     _ROUTER_TAG = 'One Time Password'

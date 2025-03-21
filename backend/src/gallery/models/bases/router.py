@@ -1,16 +1,20 @@
 from abc import ABC
-from typing import TypeVar, Type, List, Callable, ClassVar
+from typing import TypeVar, Type, List, Callable, ClassVar, TYPE_CHECKING
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import SQLModel, Session, select
-from functools import wraps
+from functools import wraps, lru_cache
 from gallery.client import Client
 from enum import Enum
+
+if TYPE_CHECKING:
+    from gallery.models.bases.table import Table
 
 
 class Router:
 
     _PREFIX: ClassVar[str] = ""
     _TAGS: ClassVar[list[str | Enum] | None] = None
+    _TABLE: ClassVar[Type['Table']]
 
     def __init__(self, client: Client):
         self.router = APIRouter(prefix=self._PREFIX, tags=self._TAGS)
@@ -19,6 +23,46 @@ class Router:
 
     def _set_routes(self) -> None:
         pass
+
+    @classmethod
+    @lru_cache(maxsize=None)
+    def not_found_message(cls) -> str:
+        return f'{cls.__name__} not found'
+
+    @classmethod
+    @lru_cache(maxsize=None)
+    def already_exists_message(cls) -> str:
+        return f'{cls.__name__} already exists'
+
+    @classmethod
+    @lru_cache(maxsize=None)
+    def not_found_exception(cls) -> HTTPException:
+        return HTTPException(status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
+
+    @classmethod
+    @lru_cache(maxsize=None)
+    def already_exists_exception(cls) -> HTTPException:
+        return HTTPException(status.HTTP_409_CONFLICT, detail=cls.already_exists_message())
+
+    @classmethod
+    @lru_cache(maxsize=None)
+    def get_responses(cls):
+        return {}
+
+    @classmethod
+    @lru_cache(maxsize=None)
+    def post_responses(cls):
+        return {}
+
+    @classmethod
+    @lru_cache(maxsize=None)
+    def patch_responses(cls):
+        return {}
+
+    @classmethod
+    @lru_cache(maxsize=None)
+    def delete_responses(cls):
+        return {}
 
     # def get_item(self, func: Callable) -> Callable:
     #     @wraps(func)

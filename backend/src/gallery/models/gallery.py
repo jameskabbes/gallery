@@ -7,7 +7,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from gallery.models import user
 
 if TYPE_CHECKING:
-    pass
+    from gallery.models import file, image_version, gallery_permission
 
 ID_COL = 'id'
 
@@ -86,9 +86,11 @@ class GalleryAdminAvailable(GalleryAvailable):
 
 
 class Gallery(
-        BaseTable['Gallery', types.Gallery.id],
+        BaseTable[GalleryId, GalleryAdminCreate, GalleryAdminUpdate,],
         GalleryId,
         table=True):
+
+    __tablename__ = 'gallery'  # type: ignore
 
     name: types.Gallery.name = Field()
     user_id: types.Gallery.user_id = Field(
@@ -101,16 +103,16 @@ class Gallery(
     date: types.Gallery.date = Field(nullable=True)
 
     user: 'user.User' = Relationship(back_populates='galleries')
-    # parent: Optional['Gallery'] = Relationship(
-    #     back_populates='children', sa_relationship_kwargs={'remote_side': 'Gallery.id'})
-    # children: list['Gallery'] = Relationship(
-    #     back_populates='parent', cascadedelete=True)
-    # gallery_permissions: list['GalleryPermission'] = Relationship(
-    #     back_populates='gallery', cascadedelete=True)
-    # files: list['File'] = Relationship(
-    #     back_populates='gallery', cascadedelete=True)
-    # image_versions: list['ImageVersion'] = Relationship(
-    #     back_populates='gallery', cascadedelete=True)
+    parent: Optional['Gallery'] = Relationship(
+        back_populates='children', sa_relationship_kwargs={'remote_side': 'Gallery.id'})
+    children: list['Gallery'] = Relationship(
+        back_populates='parent', cascade_delete=True)
+    gallery_permissions: list['gallery_permission.GalleryPermission'] = Relationship(
+        back_populates='gallery', cascade_delete=True)
+    files: list['file.File'] = Relationship(
+        back_populates='gallery', cascade_delete=True)
+    image_versions: list['image_version.ImageVersion'] = Relationship(
+        back_populates='gallery', cascade_delete=True)
 
     _ROUTER_TAG: ClassVar[str] = 'Gallery'
 
@@ -483,13 +485,13 @@ class Gallery(
     parent: typing.Optional['Gallery'] = Relationship(
         back_populates='children', sa_relationship_kwargs={'remote_side': 'Gallery.id'})
     children: list['Gallery'] = Relationship(
-        back_populates='parent', cascadedelete=True)
+        back_populates='parent', cascade_delete=True)
     gallery_permissions: list['GalleryPermission'] = Relationship(
-        back_populates='gallery', cascadedelete=True)
+        back_populates='gallery', cascade_delete=True)
     files: list['File'] = Relationship(
-        back_populates='gallery', cascadedelete=True)
+        back_populates='gallery', cascade_delete=True)
     image_versions: list['ImageVersion'] = Relationship(
-        back_populates='gallery', cascadedelete=True)
+        back_populates='gallery', cascade_delete=True)
 
     _ROUTER_TAG: typing.ClassVar[str] = 'Gallery'
 

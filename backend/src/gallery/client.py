@@ -2,7 +2,8 @@ import typing
 import pathlib
 from gallery import utils, types
 from gallery.config import settings
-from sqlalchemy.ext.asyncio import AsyncSession as SQLAAsyncSession, create_async_engine, AsyncEngine, async_sessionmaker
+from sqlmodel.ext.asyncio.session import AsyncSession as SQLMAsyncSession
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, async_sessionmaker
 from sqlalchemy.engine.url import URL
 import datetime
 import json
@@ -92,7 +93,7 @@ DEFAULT_CONFIG: Config = {
 class Client:
 
     uvicorn_port: UvicornPortType
-    AsyncSession: async_sessionmaker[SQLAAsyncSession]
+    AsyncSession: async_sessionmaker[SQLMAsyncSession]
     db_async_engine: AsyncEngine
     media_dir: pathlib.Path
     galleries_dir: pathlib.Path
@@ -113,7 +114,7 @@ class Client:
         self.db_async_engine = create_async_engine(merged_config['db']['url'])
         self.AsyncSession = async_sessionmaker(
             bind=self.db_async_engine,
-            class_=SQLAAsyncSession,
+            class_=SQLMAsyncSession,
             expire_on_commit=False
         )
 

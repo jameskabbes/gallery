@@ -1,12 +1,16 @@
 from sqlmodel import Field, Relationship, select, SQLModel
 from sqlalchemy import Column
-from typing import TYPE_CHECKING, TypedDict, Optional
+from typing import TYPE_CHECKING, TypedDict, Optional, Self
 from gallery import types, utils
 from gallery.models.bases.table import Table as BaseTable
 from gallery.models.bases import auth_credential
 from pydantic import BaseModel
+from gallery.models.custom_field_types import timestamp
 
 ID_COL = 'id'
+
+if TYPE_CHECKING:
+    from gallery.models import user, api_key_scope
 
 
 class ApiKeyId(SQLModel):
@@ -30,15 +34,15 @@ class ApiKeyUpdate(ApiKeyImport, auth_credential.Update):
     name: Optional[types.ApiKey.name] = None
 
 
-class AdminUpdate(ApiKeyUpdate):
+class ApiKeyAdminUpdate(ApiKeyUpdate):
     pass
 
 
-class ApiKeyUpdateCreate(ApiKeyImport, auth_credential.Create):
+class ApiKeyCreate(ApiKeyImport, auth_credential.Create):
     name: types.ApiKey.name
 
 
-class ApiKeyUpdateAdminCreate(ApiKeyUpdateCreate):
+class ApiKeyAdminCreate(ApiKeyCreate):
     user_id: types.User.id
 
 
@@ -51,25 +55,27 @@ class JwtModel(auth_credential.JwtModelBase):
 
 
 class ApiKey(
-        BaseTable['ApiKey', ApiKeyId],
+        BaseTable[ApiKeyId, ApiKeyAdminCreate, ApiKeyAdminUpdate],
         ApiKeyId,
         auth_credential.Table,
         auth_credential.Model,
         auth_credential.JwtIO[JwtPayload, JwtModel],
         table=True):
 
+    __tablename__ = 'api_key'  # type: ignore
+
     auth_type = 'api_key'
     _ROUTER_TAG = 'Api Key'
 
-    # issued: types.AuthCredential.issued = Field(
-    #     const=True, sa_column=Column(DateTimeWithTimeZoneString))
-    # expiry: auth_credentialTypes.expiry = Field(
-    #     sa_column=Column(DateTimeWithTimeZoneString))
+    issued: types.AuthCredential.issued = Field(
+        const=True, sa_column=Column(timestamp.Timestamp))
+    expiry: types.AuthCredential.expiry = Field(
+        sa_column=Column(timestamp.Timestamp))
 
     name: types.ApiKey.name = Field()
-    # user: 'User' = Relationship(back_populates='api_keys')
-    # api_key_scopes: list['ApiKeyScope'] = Relationship(
-    #     back_populates='api_key', cascadedelete=True)
+    user: 'user.User' = Relationship(back_populates='api_keys')
+    api_key_scopes: list['api_key_scope.ApiKeyScope'] = Relationship(
+        back_populates='api_key', cascade_delete=True)
 
     _CLAIMS_MAPPING = {
         **auth_credential.CLAIMS_MAPPING_BASE, **{'sub': 'id'}
@@ -113,148 +119,12 @@ class ApiKey(
     #             name=params.update_model.name, user_id=params.authorized_user_id))
 
 
-# class Export(ApiExport):
-#     id: types.ApiKey.id
-#     user_id: types.User.id
-#     name: types.ApiKey.name
-#     issued: types.ApiKey.issued
-#     expiry: types.ApiKey.expiry
-
-
-# class ApiKeyPublic(ApiKeyExport):
-#     pass
-
-
-# class ApiKeyPrivate(ApiKeyExport):
-#     scope_ids: list[types.ScopeTypes.id]
-
-#     @classmethod
-#     def from_api_key(cls, api_key: ApiKey) -> typing.Self:
-#         return cls.model_construct(**api_key.model_dump(), scope_ids=[api_key_scope.scope_id for api_key_scope in api_key.api_key_scopes])
-
-
-'''
-# ApiKey
-
-
-class ApiKeyTypes(AuthCredentialTypes):
-    id = str
-    name = typing.Annotated[str, StringConstraints(
-        min_length=1, max_length=256)]
-    order_by = typing.Literal['issued', 'expiry', 'name']
-
-
-class ApiKeyApiKeyIdBase(ApiKeyIdObject[ApiKeyTypes.id]):
-    id: ApiKeyTypes.id = Field(
-        primary_key=True, index=True, unique=True, const=True)
-
-
-class ApiKeyApiKeyAvailable(BaseModel):
-    name: ApiKeyTypes.name
-
-
-class ApiKeyApiKeyAdminAvailable(ApiKeyApiKeyAvailable):
+class ApiKeyExport(BaseModel):
+    id: types.ApiKey.id
     user_id: types.User.id
-
-
-class ApiKeyApiKeyImport(AuthCredential.ApiKeyImport):
-    pass
-
-
-class ApiKeyUpdate(ApiKeyApiKeyImport, AuthCredential.Update):
-    name: typing.Optional[ApiKeyTypes.name] = None
-
-
-class ApiKeyAdminUpdate(ApiKeyUpdate):
-    pass
-
-
-class ApiKeyCreate(ApiKeyApiKeyImport, AuthCredential.Create):
-    name: ApiKeyTypes.name
-
-
-class ApiKeyAdminCreate(ApiKeyCreate):
-    user_id: types.User.id
-
-
-class ApiKeyJwt:
-    class Encode(AuthCredential.JwtEncodeBase):
-        sub: types.User.id
-
-    class Decode(AuthCredential.JwtDecodeBase):
-        id: types.User.id
-
-
-class ApiKey(
-        Table['ApiKey', ApiKeyTypes.id,
-              ApiKeyAdminCreate, BaseModel, BaseModel,  ApiKeyAdminUpdate, BaseModel, BaseModel, ApiKeyTypes.order_by],
-        AuthCredential.Table,
-        AuthCredential.JwtIO[ApiKeyJwt.Encode, ApiKeyJwt.Decode],
-        AuthCredential.Model,
-        ApiKeyApiKeyIdBase,
-        table=True):
-    auth_type = 'api_key'
-    __tablename__ = 'api_key'
-
-    issued: AuthCredentialTypes.issued = Field(
-        const=True, sa_column=Column(DateTimeWithTimeZoneString))
-    expiry: AuthCredentialTypes.expiry = Field(
-        sa_column=Column(DateTimeWithTimeZoneString))
-
-    name: ApiKeyTypes.name = Field()
-    user: 'User' = Relationship(back_populates='api_keys')
-    api_key_scopes: list['ApiKeyScope'] = Relationship(
-        back_populates='api_key', cascadedelete=True)
-
-    _JWT_CLAIMS_MAPPING = {
-        **AuthCredential.Model._JWT_CLAIMS_MAPPING_BASE, **{'sub': 'id'}}
-
-    _ROUTER_TAG = 'Api Key'
-
-    async def get_scope_ids(self, session: Session = None, c: client.Client = None) -> list[types.ScopeTypes.id]:
-        return [api_key_scope.scope_id for api_key_scope in self.api_key_scopes]
-
-    @classmethod
-    async def is_available(cls, session: Session, api_key_available_admin: ApiKeyApiKeyAdminAvailable) -> bool:
-        return not session.exec(select(cls).where(cls._build_conditions(api_key_available_admin.model_dump()))).one_or_none()
-
-    @classmethod
-    async def api_get_is_available(cls, session: Session, api_key_available_admin: ApiKeyApiKeyAdminAvailable) -> None:
-
-        if not await cls.is_available(session, api_key_available_admin):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail=cls.already_exists_message())
-
-    @classmethod
-    async def _check_authorization_new(cls, params):
-        if not params.admin:
-            if params.authorized_user_id != params.create_model.user_id:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to post api key for another user')
-
-    async def _check_authorization_existing(self, params):
-        if not params.admin:
-            if self.user_id != params.authorized_user_id:
-                raise self.not_found_exception()
-
-    @classmethod
-    async def _check_validation_post(cls, params):
-        await cls.api_get_is_available(params.session, ApiKeyApiKeyAdminAvailable(
-            name=params.create_model.name, user_id=params.create_model.user_id)
-        )
-
-    async def _check_validation_patch(self, params):
-        if 'name' in params.update_model.model_fields_set:
-            await self.api_get_is_available(params.session, ApiKeyApiKeyAdminAvailable(
-                name=params.update_model.name, user_id=params.authorized_user_id))
-
-
-class ApiKeyExport(TableExport):
-    id: ApiKeyTypes.id
-    user_id: types.User.id
-    name: ApiKeyTypes.name
-    issued: ApiKeyTypes.issued
-    expiry: ApiKeyTypes.expiry
+    name: types.ApiKey.name
+    issued: types.ApiKey.issued
+    expiry: types.ApiKey.expiry
 
 
 class ApiKeyPublic(ApiKeyExport):
@@ -262,10 +132,8 @@ class ApiKeyPublic(ApiKeyExport):
 
 
 class ApiKeyPrivate(ApiKeyExport):
-    scope_ids: list[types.ScopeTypes.id]
+    scope_ids: list[types.Scope.id]
 
     @classmethod
-    def from_api_key(cls, api_key: ApiKey) -> typing.Self:
+    def from_api_key(cls, api_key: ApiKey) -> Self:
         return cls.model_construct(**api_key.model_dump(), scope_ids=[api_key_scope.scope_id for api_key_scope in api_key.api_key_scopes])
-
-'''

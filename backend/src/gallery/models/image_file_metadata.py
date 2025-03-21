@@ -6,6 +6,8 @@ from gallery.models import file as file_module, image_version as image_version_m
 from pydantic import BaseModel
 from sqlalchemy.ext.declarative import declared_attr
 
+if TYPE_CHECKING:
+    from gallery.models import image_version
 
 # class ImageFileMetadataConfig:
 #     _SUFFIXES: typing.ClassVar[set[str]] = {
@@ -47,19 +49,22 @@ class ImageFileMetadataAdminCreate(ImageFileMetadataCreate):
 
 
 class ImageFileMetadata(
-        BaseTable['ImageFileMetadata', ImageFileMetadataId],
+        BaseTable[ImageFileMetadataId, ImageFileMetadataAdminCreate,
+                  ImageFileMetadataAdminUpdate],
         ImageFileMetadataId,
         table=True):
+
+    __tablename__ = 'image_file_metadata'  # type: ignore
 
     version_id: types.ImageFileMetadata.version_id = Field(
         index=True, foreign_key=str(image_version_module.ImageVersion.__tablename__) + '.' + image_version_module.ID_COL, ondelete='CASCADE')
     scale: Optional[types.ImageFileMetadata.scale] = Field(
         nullable=True, ge=1, le=99)
 
-    # version: 'ImageVersion' = Relationship(
-    #     back_populates='image_file_metadatas')
-    # file: 'File' = Relationship(
-    #     back_populates='image_file_metadata')
+    version: 'image_version.ImageVersion' = Relationship(
+        back_populates='image_file_metadatas')
+    file: 'file_module.File' = Relationship(
+        back_populates='image_file_metadata')
 
     # @classmethod
     # def parse_file_stem(cls, file_stem: str) -> tuple[types.ImageVersion.base_name, types.ImageVersion.version | None, types.ImageFileMetadata.scale | None]:

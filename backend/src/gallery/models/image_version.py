@@ -5,8 +5,12 @@ from gallery import types
 from gallery.models import file as file_module, gallery as gallery_module
 from pydantic import BaseModel
 from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.orm import declared_attr
 
 ID_COL = 'id'
+
+if TYPE_CHECKING:
+    from gallery.models import image_file_metadata, gallery
 
 
 class ImageVersionId(SQLModel):
@@ -57,9 +61,12 @@ class ImageVersionAdminCreate(ImageVersionCreate):
 
 
 class ImageVersion(
-        BaseTable['ImageVersion', ImageVersionId],
+        BaseTable[ImageVersionId, ImageVersionAdminCreate,
+                  ImageVersionAdminUpdate],
         ImageVersionId,
         table=True):
+
+    __tablename__ = 'image_version'  # type: ignore
 
     base_name: types.ImageVersion.base_name = Field(
         nullable=True, index=True)
@@ -81,10 +88,10 @@ class ImageVersion(
     children: list['ImageVersion'] = Relationship(
         back_populates='parent')
 
-    # image_file_metadatas: list['ImageFileMetadata'] = Relationship(
-    #     back_populates='version')
-    # gallery: 'Gallery' = Relationship(
-    #     back_populates='image_versions')
+    image_file_metadatas: list['image_file_metadata.ImageFileMetadata'] = Relationship(
+        back_populates='version')
+    gallery: 'gallery.Gallery' = Relationship(
+        back_populates='image_versions')
 
     # @model_validator(mode='after')
     # def validate_model(self, info: ValidationInfo) -> None:
