@@ -4,21 +4,18 @@ from typing import TYPE_CHECKING, TypedDict, Optional, Self, NotRequired
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, or_
 from fastapi import HTTPException, status
-
-from gallery.models.bases import table, router
-from gallery import types, client, utils
-from pydantic import BaseModel
 import pathlib
+from pydantic import BaseModel
+
+from ..routers import base
+
+from .bases import table
+from .. import types, client, utils
 
 if TYPE_CHECKING:
-    from gallery.models import user, gallery, api_key, user_access_token, gallery_permission, otp
+    from . import user, gallery, api_key, user_access_token, gallery_permission, otp
 
 ID_COL = 'id'
-
-
-class UserId(SQLModel):
-    id: types.ImageVersion.id = Field(
-        primary_key=True, index=True, unique=True, const=True)
 
 
 class UserImport(BaseModel):
@@ -43,7 +40,8 @@ class UserAdminCreate(UserCreate):
     user_role_id: types.User.user_role_id
 
 
-class UserExport(UserId):
+class UserExport(BaseModel):
+    id: types.User.id
     username: Optional[types.User.username]
 
 
@@ -56,11 +54,12 @@ class UserPrivate(UserExport):
     user_role_id: types.User.user_role_id
 
 
-class User(table.Table[UserId, UserAdminCreate, UserAdminUpdate], UserId, table=True):
+class User(table.Table[types.User.id, UserAdminCreate, UserAdminUpdate], table=True):
 
     __tablename__ = 'user'  # type: ignore
 
-    id: types.User.id = Field(primary_key=True, index=True, unique=True)
+    id: types.User.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
     email: types.User.email = Field(index=True, unique=True, nullable=False)
     phone_number: types.User.phone_number | None = Field(
         index=True, unique=True, nullable=True)
@@ -92,8 +91,8 @@ class User(table.Table[UserId, UserAdminCreate, UserAdminUpdate], UserId, table=
             return root / self.id
 
     @classmethod
-    def _build_select_by_id(cls, id: UserId):
-        return select(User).where(User.id == id)
+    def _build_select_by_id(cls, id):
+        return select(User).where(cls.id == id)
 
     @classmethod
     async def authenticate(cls, session: AsyncSession, username_or_email: types.User.email | types.User.username, password: types.User.password) -> Self | None:
@@ -169,19 +168,6 @@ class User(table.Table[UserId, UserAdminCreate, UserAdminUpdate], UserId, table=
     #     if 'email' in kwargs['update_model'].model_fields_set:
     #         if kwargs['update_model'].email is not None:
     #             await User.api_get_is_email_available(kwargs['session'], kwargs['update_model'].email)
-
-
-class UserRouter(router.Router):
-
-    _PREFIX = '/user'
-    _TAGS = ['User']
-
-    def _set_routes(self):
-
-        @self.router.get("/{user_id}", response_model=UserPublic)
-        async def get_user_by_id(user_id: types.User.id):
-            async with self.client.AsyncSession() as session:
-                return UserPublic(id=user_id, username='test')
 
 
 '''

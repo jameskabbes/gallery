@@ -1,15 +1,12 @@
 from sqlmodel import SQLModel, select
 from sqlmodel.sql.expression import SelectOfScalar
 from sqlmodel.ext.asyncio.session import AsyncSession
-
-from gallery.models.pagination import Pagination
-from gallery import client, types
 from typing import Protocol, Unpack, TypeVar, TypedDict, Generic, NotRequired, Literal, Self
 from pydantic import BaseModel
 
 
-class Id(TypedDict):
-    pass
+from ..pagination import Pagination
+from ... import client, types
 
 
 # class OrderBy[T](BaseModel):
@@ -24,7 +21,7 @@ class CRUDParamsBase(TypedDict):
     admin: NotRequired[bool]
 
 
-class WithId[TId: BaseModel](TypedDict):
+class WithId[TId: types._IdType](TypedDict):
     id: TId
 
 
@@ -40,27 +37,27 @@ class AfterCreateParams[T, TCreateModel: BaseModel](CreateParams[TCreateModel], 
     pass
 
 
-class ReadParams[TId: BaseModel](CRUDParamsBase, WithId[TId]):
+class ReadParams[TId: types._IdType](CRUDParamsBase, WithId[TId]):
     pass
 
 
-class AfterReadParams[T, TId: BaseModel](ReadParams[TId], WithTableInst[T]):
+class AfterReadParams[T, TId: types._IdType](ReadParams[TId], WithTableInst[T]):
     pass
 
 
-class UpdateParams[TId: BaseModel, TUpdateModel: BaseModel](CRUDParamsBase, WithId[TId]):
+class UpdateParams[TId: types._IdType, TUpdateModel: BaseModel](CRUDParamsBase, WithId[TId]):
     update_model: TUpdateModel
 
 
-class AfterUpdateParams[T, TId: BaseModel, TUpdateModel: BaseModel](UpdateParams[TId, TUpdateModel], WithTableInst[T]):
+class AfterUpdateParams[T, TId: types._IdType, TUpdateModel: BaseModel](UpdateParams[TId, TUpdateModel], WithTableInst[T]):
     pass
 
 
-class DeleteParams[TId: BaseModel](CRUDParamsBase, WithId[TId]):
+class DeleteParams[TId: types._IdType](CRUDParamsBase, WithId[TId]):
     pass
 
 
-class AfterDeleteParams[T, TId: BaseModel](DeleteParams[TId], WithTableInst[T]):
+class AfterDeleteParams[T, TId: types._IdType](DeleteParams[TId], WithTableInst[T]):
     pass
 
 
@@ -86,13 +83,13 @@ class AfterDeleteCustomParams(TypedDict):
 
 
 class Table[
-    TId: BaseModel,
+    TId: types._IdType,
     TCreateModel: BaseModel,
     TUpdateModel:BaseModel,
-    TAfterCreateCustomParams: AfterCreateCustomParams= AfterCreateCustomParams,
-    TAfterReadCustomParams: AfterReadCustomParams= AfterReadCustomParams,
-    TAfterUpdateCustomParams: AfterUpdateCustomParams= AfterUpdateCustomParams,
-    TAfterDeleteCustomParams: AfterDeleteCustomParams= AfterDeleteCustomParams
+    TAfterCreateCustomParams: AfterCreateCustomParams = AfterCreateCustomParams,
+    TAfterReadCustomParams: AfterReadCustomParams = AfterReadCustomParams,
+    TAfterUpdateCustomParams: AfterUpdateCustomParams = AfterUpdateCustomParams,
+    TAfterDeleteCustomParams: AfterDeleteCustomParams = AfterDeleteCustomParams
 ](SQLModel):
 
     @classmethod

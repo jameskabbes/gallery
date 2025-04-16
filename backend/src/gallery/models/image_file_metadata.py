@@ -1,22 +1,15 @@
 from sqlmodel import Field, Relationship, select, SQLModel
 from typing import TYPE_CHECKING, TypedDict, Optional, ClassVar
-from gallery.models.bases.table import Table as BaseTable
-from gallery import types
-from gallery.models import file as file_module, image_version as image_version_module
 from pydantic import BaseModel
 from sqlalchemy.ext.declarative import declared_attr
 
-if TYPE_CHECKING:
-    from gallery.models import image_version
+from .. import types
+from .bases.table import Table as BaseTable
+from . import file as file_module, image_version as image_version_module
 
 # class ImageFileMetadataConfig:
 #     _SUFFIXES: typing.ClassVar[set[str]] = {
 #         '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'}
-
-
-class ImageFileMetadataId(SQLModel):
-    file_id: types.ImageFileMetadata.file_id = Field(
-        primary_key=True, index=True, unique=True, const=True, foreign_key=str(file_module.File.__tablename__) + '.' + file_module.ID_COL, ondelete='CASCADE')
 
 
 # class ImageFileMetadataExport(TableExport):
@@ -29,8 +22,8 @@ class ImageFileMetadataImport(BaseModel):
     pass
 
 
-class ImageFileMetadataUpdate(ImageFileMetadataImport, ImageFileMetadataId):
-    pass
+class ImageFileMetadataUpdate(ImageFileMetadataImport):
+    file_id: types.ImageFileMetadata.file_id
 
 
 class ImageFileMetadataAdminUpdate(ImageFileMetadataUpdate):
@@ -49,19 +42,20 @@ class ImageFileMetadataAdminCreate(ImageFileMetadataCreate):
 
 
 class ImageFileMetadata(
-        BaseTable[ImageFileMetadataId, ImageFileMetadataAdminCreate,
+        BaseTable[types.ImageFileMetadata.file_id, ImageFileMetadataAdminCreate,
                   ImageFileMetadataAdminUpdate],
-        ImageFileMetadataId,
         table=True):
 
     __tablename__ = 'image_file_metadata'  # type: ignore
 
+    file_id: types.ImageFileMetadata.file_id = Field(
+        primary_key=True, index=True, unique=True, const=True, foreign_key=str(file_module.File.__tablename__) + '.' + file_module.ID_COL, ondelete='CASCADE')
     version_id: types.ImageFileMetadata.version_id = Field(
         index=True, foreign_key=str(image_version_module.ImageVersion.__tablename__) + '.' + image_version_module.ID_COL, ondelete='CASCADE')
     scale: Optional[types.ImageFileMetadata.scale] = Field(
         nullable=True, ge=1, le=99)
 
-    version: 'image_version.ImageVersion' = Relationship(
+    version: 'image_version_module.ImageVersion' = Relationship(
         back_populates='image_file_metadatas')
     file: 'file_module.File' = Relationship(
         back_populates='image_file_metadata')
@@ -86,3 +80,7 @@ class ImageFileMetadata(
     #     return cls(
     #         params.create_model.model_dump()
     #     )
+
+    @classmethod
+    def _build_select_by_id(cls, id):
+        return select(cls).where(cls.file_id == id)

@@ -1,22 +1,18 @@
 from sqlmodel import Field, Relationship, select, SQLModel
 from typing import TYPE_CHECKING, TypedDict, Optional
-from gallery import types, utils
-from gallery.models.bases.table import Table as BaseTable
-from gallery.models.bases import auth_credential
-from gallery.config import settings
 from pydantic import BaseModel
 from sqlalchemy import Column
-from gallery.models.custom_field_types import timestamp
+
+from .. import types, utils
+from .bases.table import Table as BaseTable
+from .bases import auth_credential
+from ..config import settings
+from .custom_field_types import timestamp
 
 ID_COL = 'id'
 
 if TYPE_CHECKING:
-    from gallery.models import user
-
-
-class UserAccessTokenId(SQLModel):
-    id: types.ImageVersion.id = Field(
-        primary_key=True, index=True, unique=True, const=True)
+    from . import user
 
 
 class UserAccessTokenAdminUpdate(BaseModel):
@@ -36,9 +32,8 @@ class JwtModel(auth_credential.JwtModelBase):
 
 
 class UserAccessToken(
-        BaseTable[UserAccessTokenId, UserAccessTokenAdminCreate,
+        BaseTable[types.UserAccessToken.id, UserAccessTokenAdminCreate,
                   UserAccessTokenAdminUpdate],
-        UserAccessTokenId,
         auth_credential.Table,
         auth_credential.Model,
         auth_credential.JwtIO[JwtPayload, JwtModel],
@@ -52,13 +47,13 @@ class UserAccessToken(
         **auth_credential.CLAIMS_MAPPING_BASE, **{'sub': 'id'}
     }
 
+    id: types.ImageVersion.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
     issued: types.AuthCredential.issued = Field(
         const=True, sa_column=Column(timestamp.Timestamp))
     expiry: types.AuthCredential.expiry = Field(
         sa_column=Column(timestamp.Timestamp))
-
-    user: 'user.User' = Relationship(
-        back_populates='user_access_tokens')
+    user: 'user.User' = Relationship(back_populates='user_access_tokens')
 
     # @classmethod
     # async def _check_authorization_new(cls, params):

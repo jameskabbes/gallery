@@ -1,32 +1,28 @@
-
 from sqlmodel import Field, Relationship, select, SQLModel
-from typing import TYPE_CHECKING, TypedDict, Optional, ClassVar
-from gallery import types, utils
-from gallery.models.bases.table import Table as BaseTable
-from gallery.models import api_key as api_key_module
+from typing import TYPE_CHECKING, TypedDict, Optional, ClassVar, Annotated
+
+from ..routers import base
+from .. import types
+from . import api_key as api_key_module
+from .bases import table
 from pydantic import BaseModel
-
-
-class ApiKeyScopeId(SQLModel):
-    api_key_id: types.ApiKeyScope.api_key_id = Field(
-        primary_key=True, index=True, const=True, foreign_key=str(api_key_module.ApiKey.__tablename__) + '.' + api_key_module.ID_COL, ondelete='CASCADE')
-    scope_id: types.ApiKeyScope.scope_id = Field(
-        primary_key=True, index=True, const=True)
 
 
 class ApiKeyScopeAdminUpdate(BaseModel):
     pass
 
 
-class ApiKeyScopeAdminCreate(ApiKeyScopeId):
-    pass
+class ApiKeyScopeAdminCreate(BaseModel):
+    api_key_id: types.ApiKeyScope.api_key_id
+    scope_id: types.ApiKeyScope.scope_id
 
 
-class ApiKeyScope(
-        BaseTable[ApiKeyScopeId, ApiKeyScopeAdminCreate,
-                  ApiKeyScopeAdminUpdate],
-        ApiKeyScopeId,
-        table=True):
+class ApiKeyScope(table.Table[types.ApiKeyScope.id, ApiKeyScopeAdminCreate, ApiKeyScopeAdminUpdate], table=True):
+
+    api_key_id: types.ApiKeyScope.api_key_id = Field(
+        primary_key=True, index=True, const=True, foreign_key=str(api_key_module.ApiKey.__tablename__) + '.' + api_key_module.ID_COL, ondelete='CASCADE')
+    scope_id: types.ApiKeyScope.scope_id = Field(
+        primary_key=True, index=True, const=True)
 
     __tablename__ = 'api_key_scope'  # type: ignore
 
@@ -67,5 +63,5 @@ class ApiKeyScope(
     #             raise self.not_found_exception()
 
     @classmethod
-    def _build_get_by_id_query(cls, id: ApiKeyScopeId):
+    def _build_select_by_id(cls, id):
         return select(cls).where(cls.api_key_id == id.api_key_id, cls.scope_id == id.scope_id)

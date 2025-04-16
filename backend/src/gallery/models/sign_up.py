@@ -1,7 +1,7 @@
 from sqlmodel import Field, Relationship, select
 from typing import TYPE_CHECKING, TypedDict, Optional
-from gallery import types, utils
-from gallery.models.bases import auth_credential
+from .. import types, utils
+from .bases import auth_credential
 
 
 class JwtPayload(auth_credential.JwtPayloadBase):

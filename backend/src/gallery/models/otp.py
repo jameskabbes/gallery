@@ -1,24 +1,20 @@
 from sqlmodel import Field, Relationship, select, SQLModel
 from typing import TYPE_CHECKING, TypedDict, Optional
-from gallery import types, utils
-from gallery.models.bases.table import Table as BaseTable
-from gallery.models.bases import auth_credential
-from gallery.config import settings
 from pydantic import BaseModel
 import string
 import secrets
 from sqlalchemy import Column
-from gallery.models.custom_field_types import timestamp
+from .custom_field_types import timestamp
+from .. import types, utils
+from .bases.table import Table as BaseTable
+from .bases import auth_credential
+from ..config import settings
+
 
 if TYPE_CHECKING:
-    from gallery.models import user
+    from . import user
 
 ID_COL = 'id'
-
-
-class OTPId(SQLModel):
-    id: types.OTP.id = Field(
-        primary_key=True, index=False, unique=True, const=True)
 
 
 class OTPAdminUpdate(BaseModel):
@@ -31,8 +27,7 @@ class OTPAdminCreate(auth_credential.Create):
 
 
 class OTP(
-        BaseTable[OTPId, OTPAdminCreate, OTPAdminUpdate],
-        OTPId,
+        BaseTable[types.OTP.id, OTPAdminCreate, OTPAdminUpdate],
         auth_credential.Table,
         auth_credential.Model,
         table=True):
@@ -41,6 +36,8 @@ class OTP(
 
     auth_type = 'otp'
 
+    id: types.OTP.id = Field(
+        primary_key=True, index=False, unique=True, const=True)
     issued: types.AuthCredential.issued = Field(
         const=True, sa_column=Column(timestamp.Timestamp))
     expiry: types.AuthCredential.expiry = Field(
@@ -72,8 +69,8 @@ class OTP(
         return a
 
     @classmethod
-    def _build_get_by_id_query(cls, id: OTPId):
-        return select(cls).where(cls.id == id.id)
+    def _build_select_by_id(cls, id):
+        return select(cls).where(cls.id == id)
 
 
 '''

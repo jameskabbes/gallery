@@ -1,18 +1,11 @@
 from sqlmodel import Field, Relationship, select, SQLModel
 from typing import TYPE_CHECKING, TypedDict, Optional, ClassVar
-from gallery.models.bases.table import Table as BaseTable
-from gallery import types
-from pydantic import BaseModel
 from sqlalchemy.ext.declarative import declared_attr
+from pydantic import BaseModel
 
-from gallery.models import user, gallery
-
-
-class GalleryPermissionId(SQLModel):
-    gallery_id: types.GalleryPermission.gallery_id = Field(
-        primary_key=True, index=True, foreign_key=str(gallery.Gallery.__tablename__) + '.' + gallery.ID_COL, ondelete='CASCADE')
-    user_id: types.GalleryPermission.user_id = Field(
-        primary_key=True, index=True, foreign_key=str(user.User.__tablename__) + '.' + user.ID_COL, ondelete='CASCADE')
+from .. import types
+from .bases.table import Table as BaseTable
+from . import user, gallery
 
 
 class GalleryExport(BaseModel):
@@ -45,8 +38,7 @@ class GalleryPermissionAdminCreate(GalleryPermissionImport):
 
 class GalleryPermission(
         BaseTable[
-            GalleryPermissionId, GalleryPermissionAdminCreate, GalleryPermissionAdminUpdate],
-        GalleryPermissionId,
+            types.GalleryPermission.id, GalleryPermissionAdminCreate, GalleryPermissionAdminUpdate],
         table=True):
 
     __tablename__ = 'gallery_permission'  # type: ignore
@@ -54,6 +46,11 @@ class GalleryPermission(
     # __table_args__ = (
     #     PrimaryKeyConstraint('gallery_id', 'user_id'),
     # )
+
+    gallery_id: types.GalleryPermission.gallery_id = Field(
+        primary_key=True, index=True, foreign_key=str(gallery.Gallery.__tablename__) + '.' + gallery.ID_COL, ondelete='CASCADE')
+    user_id: types.GalleryPermission.user_id = Field(
+        primary_key=True, index=True, foreign_key=str(user.User.__tablename__) + '.' + user.ID_COL, ondelete='CASCADE')
 
     permission_level: types.GalleryPermission.permission_level = Field()
 
@@ -96,6 +93,10 @@ class GalleryPermission(
     #             if params.method == 'delete' or params.method == 'patch':
     #                 raise HTTPException(
     #                     status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {} this gallery permission'.format(params.method))
+
+    @classmethod
+    def _build_select_by_id(cls, id):
+        return select(cls).where(cls.gallery_id == id.gallery_id, cls.user_id == id.user_id)
 
 
 '''

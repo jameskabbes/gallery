@@ -1,14 +1,20 @@
 from pydantic import BaseModel, model_validator, field_serializer, field_validator, ValidationInfo
 from sqlmodel import Field, SQLModel
 import datetime as datetime_module
-from gallery import types
-from gallery.models.bases import jwtio
-from gallery.models.bases.table import Table as BaseTable
-from gallery.models import user
-from gallery.models.custom_field_types.timestamp import validate_and_normalize_datetime
 from sqlalchemy import Column
-from gallery.models.custom_field_types import timestamp
-from typing import Optional, TypedDict, ClassVar
+from typing import Optional, TypedDict, ClassVar, cast
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+from ... import types
+from .. import user
+from ..custom_field_types.timestamp import validate_and_normalize_datetime
+from ..custom_field_types import timestamp
+from . import jwtio
+from .table import Table as BaseTable
+
+
+def lifespan_to_expiry(lifespan: datetime_module.timedelta) -> types.AuthCredential.expiry:
+    return datetime_module.datetime.now(datetime_module.timezone.utc) + lifespan
 
 
 class Import(BaseModel):
@@ -42,8 +48,14 @@ CLAIMS_MAPPING_BASE: dict[str, str] = {
 }
 
 
-class JwtIO[TPayload: JwtPayloadBase, TModel: JwtModelBase](jwtio.JwtIO[TPayload, TModel]):
+class JwtIO[TPayload: JwtPayloadBase, TModel: JwtModelBase](SQLModel, jwtio.JwtIO[TPayload, TModel]):
     _TYPE_CLAIM: ClassVar[str] = 'type'
+
+    def encode_model(self) -> TPayload:
+
+        model = cast(TModel, self.model_dump(
+            include=set(self._CLAIMS_MAPPING.keys())))
+        return self.encode(model)
 
 
 class Model(SQLModel):
@@ -79,9 +91,9 @@ class Table(SQLModel):
     #         **params.create_model.model_dump(exclude=['lifespan', 'expiry'])
     #     )
 
-    # @classmethod
-    # async def get_scope_ids(cls, session: Session = None) -> list[types.ScopeTypes.id]:
-    #     return []
+    @classmethod
+    async def get_scope_ids(cls, session: AsyncSession | None = None) -> list[types.Scope.id]:
+        return []
 
 
 '''

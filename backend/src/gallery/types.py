@@ -9,6 +9,12 @@ Email = typing.Annotated[EmailStr, StringConstraints(
 JwtEncodedStr = str
 
 
+_IdType = typing.Union[str, int, typing.NamedTuple]
+
+# typing.TypeVar(
+#     '_IdType', bound=typing.Union[str, int, typing.NamedTuple], covariant=True)
+
+
 class PermissionLevel:
     id = int
     name = typing.Literal['editor', 'viewer']
@@ -90,15 +96,33 @@ class Gallery:
     folder_name = str
 
 
-class GalleryPermission:
+class _GalleryPermissionBase:
     gallery_id = Gallery.id
     user_id = User.id
     permission_level = PermissionLevel.id
 
 
-class ApiKeyScope:
+class GalleryPermissionId(typing.NamedTuple):
+    gallery_id: Gallery.BaseTypes.id
+    user_id: User.id
+
+
+class GalleryPermission(_GalleryPermissionBase):
+    id = GalleryPermissionId
+
+
+class _ApiKeyScopeBase:
     api_key_id = ApiKey.id
     scope_id = Scope.id
+
+
+class ApiKeyScopeId(typing.NamedTuple):
+    api_key_id: ApiKey.id
+    scope_id: Scope.id
+
+
+class ApiKeyScope(_ApiKeyScopeBase):
+    id = ApiKeyScopeId
 
 
 class File:

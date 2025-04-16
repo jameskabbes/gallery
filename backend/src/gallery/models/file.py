@@ -1,21 +1,16 @@
-
 from sqlmodel import Field, Relationship, select, SQLModel
 from typing import TYPE_CHECKING, TypedDict, Optional, ClassVar
-from gallery import types, utils
-from gallery.models.bases.table import Table as BaseTable
-from gallery.models.bases import auth_credential
-from gallery.models import gallery as gallery_module
 from pydantic import BaseModel
+
+from .. import types, utils
+from .bases.table import Table as BaseTable
+from .bases import auth_credential
+from . import gallery as gallery_module
 
 ID_COL = 'id'
 
 if TYPE_CHECKING:
     from gallery.models import image_file_metadata
-
-
-class FileId(SQLModel):
-    id: types.File.id = Field(
-        primary_key=True, index=True, unique=True, const=True)
 
 
 class FileExport(BaseModel):
@@ -50,12 +45,13 @@ class FileAdminCreate(FileCreate):
 
 
 class File(
-        BaseTable[FileId, FileAdminCreate, FileAdminUpdate],
-        FileId,
+        BaseTable[types.File.id, FileAdminCreate, FileAdminUpdate],
         table=True):
 
     __tablename__ = 'file'  # type: ignore
 
+    id: types.File.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
     stem: types.File.stem = Field()
     suffix: types.File.suffix = Field(nullable=True)
     gallery_id: types.File.gallery_id = Field(
@@ -69,3 +65,7 @@ class File(
     @property
     def name(self) -> str:
         return self.stem + ('' if self.suffix is None else self.suffix)
+
+    @classmethod
+    def _build_select_by_id(cls, id):
+        return select(cls).where(cls.id == id)

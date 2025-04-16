@@ -2,8 +2,7 @@ from gallery.client import Client
 import asyncio
 import datetime as datetime_module
 
-from gallery import models  # type: ignore
-
+from gallery import models as models
 from gallery.models import sign_up, user
 
 a = models.User(
@@ -12,7 +11,7 @@ a = models.User(
 b = sign_up.SignUp(issued=datetime_module.datetime.now(), expiry=datetime_module.datetime.now(
 ) + datetime_module.timedelta(days=1), email='a@a.com')
 
-c = b.encode()
+c = b.encode_model()
 
 
 async def main():

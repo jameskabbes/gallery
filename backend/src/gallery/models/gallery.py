@@ -1,20 +1,16 @@
 from sqlmodel import Field, Relationship, select, SQLModel
 from typing import TYPE_CHECKING, TypedDict, Optional, ClassVar
-from gallery.models.bases.table import Table as BaseTable
-from gallery import types
 from pydantic import BaseModel
 from sqlalchemy.ext.declarative import declared_attr
-from gallery.models import user
+
+from . import user
+from .. import types
+from .bases.table import Table as BaseTable
 
 if TYPE_CHECKING:
-    from gallery.models import file, image_version, gallery_permission
+    from . import file, image_version, gallery_permission
 
 ID_COL = 'id'
-
-
-class GalleryId(SQLModel):
-    id: types.ApiKey.id = Field(
-        primary_key=True, index=True, unique=True, const=True)
 
 
 # class Export(TableExport):
@@ -86,12 +82,13 @@ class GalleryAdminAvailable(GalleryAvailable):
 
 
 class Gallery(
-        BaseTable[GalleryId, GalleryAdminCreate, GalleryAdminUpdate,],
-        GalleryId,
+        BaseTable[types.Gallery.id, GalleryAdminCreate, GalleryAdminUpdate,],
         table=True):
 
     __tablename__ = 'gallery'  # type: ignore
 
+    id: types.ApiKey.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
     name: types.Gallery.name = Field()
     user_id: types.Gallery.user_id = Field(
         index=True, foreign_key=str(user.User.__tablename__) + '.' + user.ID_COL, ondelete='CASCADE')
@@ -369,6 +366,10 @@ class Gallery(
     #     # recursively sync children
     #     for child in self.children:
     #         await child.sync_with_local(session, c, dir / child.folder_name)
+
+    @classmethod
+    def _build_select_by_id(cls, id):
+        return select(cls).where(cls.id == id)
 
 
 '''

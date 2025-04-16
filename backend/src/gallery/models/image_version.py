@@ -1,21 +1,16 @@
 from sqlmodel import Field, Relationship, select, SQLModel
 from typing import TYPE_CHECKING, TypedDict, Optional, ClassVar
-from gallery.models.bases.table import Table as BaseTable
-from gallery import types
-from gallery.models import file as file_module, gallery as gallery_module
 from pydantic import BaseModel
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import declared_attr
+from .bases.table import Table as BaseTable
+from .. import types
+from . import file as file_module, gallery as gallery_module
 
 ID_COL = 'id'
 
 if TYPE_CHECKING:
-    from gallery.models import image_file_metadata, gallery
-
-
-class ImageVersionId(SQLModel):
-    id: types.ImageVersion.id = Field(
-        primary_key=True, index=True, unique=True, const=True)
+    from . import image_file_metadata
 
 
 class ImageVersionExport(BaseModel):
@@ -37,7 +32,8 @@ class ImageVersionImport(BaseModel):
     description: Optional[types.ImageVersion.description] = None
 
 
-class ImageVersionUpdate(ImageVersionImport, ImageVersionId):
+class ImageVersionUpdate(ImageVersionImport):
+    id: types.ImageVersion.id
     pass
 
 
@@ -61,13 +57,14 @@ class ImageVersionAdminCreate(ImageVersionCreate):
 
 
 class ImageVersion(
-        BaseTable[ImageVersionId, ImageVersionAdminCreate,
+        BaseTable[types.ImageVersion.id, ImageVersionAdminCreate,
                   ImageVersionAdminUpdate],
-        ImageVersionId,
         table=True):
 
     __tablename__ = 'image_version'  # type: ignore
 
+    id: types.ImageVersion.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
     base_name: types.ImageVersion.base_name = Field(
         nullable=True, index=True)
     parent_id: types.ImageVersion.parent_id = Field(
@@ -90,7 +87,7 @@ class ImageVersion(
 
     image_file_metadatas: list['image_file_metadata.ImageFileMetadata'] = Relationship(
         back_populates='version')
-    gallery: 'gallery.Gallery' = Relationship(
+    gallery: 'gallery_module.Gallery' = Relationship(
         back_populates='image_versions')
 
     # @model_validator(mode='after')
@@ -115,3 +112,7 @@ class ImageVersion(
     #             return (await self.parent.get_root_base_name())
     #         else:
     #             raise ValueError('Unnamed versions must have a parent_id')
+
+    @classmethod
+    def _build_select_by_id(cls, id):
+        return select(cls).where(cls.id == id)

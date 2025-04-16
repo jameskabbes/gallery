@@ -1,21 +1,17 @@
 from sqlmodel import Field, Relationship, select, SQLModel
 from sqlalchemy import Column
 from typing import TYPE_CHECKING, TypedDict, Optional, Self
-from gallery import types, utils
-from gallery.models.bases.table import Table as BaseTable
-from gallery.models.bases import auth_credential
 from pydantic import BaseModel
-from gallery.models.custom_field_types import timestamp
+
+from .. import types, utils
+from .bases.table import Table as BaseTable
+from .bases import auth_credential
+from .custom_field_types import timestamp
 
 ID_COL = 'id'
 
 if TYPE_CHECKING:
     from gallery.models import user, api_key_scope
-
-
-class ApiKeyId(SQLModel):
-    id: types.ApiKey.id = Field(
-        primary_key=True, index=True, unique=True, const=True)
 
 
 class ApiKeyAvailable(BaseModel):
@@ -55,8 +51,7 @@ class JwtModel(auth_credential.JwtModelBase):
 
 
 class ApiKey(
-        BaseTable[ApiKeyId, ApiKeyAdminCreate, ApiKeyAdminUpdate],
-        ApiKeyId,
+        BaseTable[types.ApiKey.id, ApiKeyAdminCreate, ApiKeyAdminUpdate],
         auth_credential.Table,
         auth_credential.Model,
         auth_credential.JwtIO[JwtPayload, JwtModel],
@@ -67,6 +62,8 @@ class ApiKey(
     auth_type = 'api_key'
     _ROUTER_TAG = 'Api Key'
 
+    id: types.ApiKey.id = Field(
+        primary_key=True, index=True, unique=True, const=True)
     issued: types.AuthCredential.issued = Field(
         const=True, sa_column=Column(timestamp.Timestamp))
     expiry: types.AuthCredential.expiry = Field(
@@ -117,6 +114,10 @@ class ApiKey(
     #     if 'name' in params.update_model.model_fields_set:
     #         await self.api_get_is_available(params.session, ApiKeyAdminAvailable(
     #             name=params.update_model.name, user_id=params.authorized_user_id))
+
+    @classmethod
+    def _build_select_by_id(cls, id):
+        return select(cls).where(cls.id == id)
 
 
 class ApiKeyExport(BaseModel):

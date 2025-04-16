@@ -1,7 +1,7 @@
 import typing
 import pathlib
-from gallery import utils, types
-from gallery.config import settings
+from . import utils, types
+from .config import settings
 from sqlmodel.ext.asyncio.session import AsyncSession as SQLMAsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, async_sessionmaker
 from sqlalchemy.engine.url import URL
@@ -26,10 +26,10 @@ class MediaRootConfig(typing.TypedDict):
     path: Path
 
 
-class AuthenticationConfig(typing.TypedDict):
+class AuthConfig(typing.TypedDict):
     stay_signed_in_default: bool
-    expiry_timedeltas: dict[typing.Literal['access_token',
-                                           'magic_link', 'request_sign_up', 'otp'], datetime.timedelta]
+    credential_lifespans: dict[typing.Literal['access_token',
+                                              'magic_link', 'request_sign_up', 'otp'], datetime.timedelta]
 
 
 class JWTConfig(typing.TypedDict):
@@ -45,7 +45,7 @@ class Config(typing.TypedDict):
     uvicorn: UvicornConfig
     db: DbConfig
     media_root: MediaRootConfig
-    authentication: AuthenticationConfig
+    auth: AuthConfig
     jwt: JWTConfig
     google_client: GoogleClientConfig
 
@@ -54,7 +54,7 @@ class OverrideConfig(typing.TypedDict, total=False):
     uvicorn: UvicornConfig
     db: DbConfig
     media_root: MediaRootConfig
-    authentication: AuthenticationConfig
+    auth: AuthConfig
     jwt: JWTConfig
     google_client: GoogleClientConfig
 
@@ -70,9 +70,9 @@ DEFAULT_CONFIG: Config = {
         'path': settings.BACKEND_DATA_DIR / 'media_root'
     },
 
-    'authentication': {
+    'auth': {
         'stay_signed_in_default': False,
-        'expiry_timedeltas': {
+        'credential_lifespans': {
             'access_token': datetime.timedelta(days=7),
             'magic_link': datetime.timedelta(minutes=10),
             'request_sign_up': datetime.timedelta(hours=1),
@@ -97,7 +97,7 @@ class Client:
     db_async_engine: AsyncEngine
     media_dir: pathlib.Path
     galleries_dir: pathlib.Path
-    authentication: AuthenticationConfig
+    authentication: AuthConfig
     jwt_secret_key: str
     jwt_algorithm: str
     google_client: dict
@@ -130,7 +130,7 @@ class Client:
             self.galleries_dir.mkdir(parents=True)
 
         # authentication
-        self.authentication = merged_config['authentication']
+        self.auth = merged_config['auth']
 
         # jwt
         jwt_secret_key_path = merged_config['jwt']['secret_key_path']

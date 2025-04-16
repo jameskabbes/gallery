@@ -1,5 +1,4 @@
-from pydantic import BaseModel
-from typing import ClassVar, TypedDict, Any, cast
+from typing import ClassVar, TypedDict, cast, TypeVar, Generic, Type
 
 
 class Payload(TypedDict):
@@ -10,7 +9,11 @@ class Model(TypedDict):
     pass
 
 
-class JwtIO[TPayload: Payload, TModel: Model](BaseModel):
+TPayload = TypeVar('TPayload', bound=Payload)
+TModel = TypeVar('TModel', bound=Model)
+
+
+class JwtIO(Generic[TPayload, TModel]):
 
     _CLAIMS_MAPPING: ClassVar[dict[str, str]] = {}
 
@@ -22,7 +25,14 @@ class JwtIO[TPayload: Payload, TModel: Model](BaseModel):
     def decode(cls, payload: TPayload) -> TModel:
         return cast(TModel, {cls._CLAIMS_MAPPING[claim]: payload[claim] for claim in cls._CLAIMS_MAPPING})
 
-    def encode(self) -> TPayload:
-        a = cast(TModel, self.model_dump(
-            include=set(self._CLAIMS_MAPPING.keys())))
-        return cast(TPayload, {self._CLAIMS_MAPPING[key]: value for key, value in a.items()})
+    @classmethod
+    def encode(cls, model: TModel) -> TPayload:
+
+        encoded_payload = {}
+        for claim in model.keys():
+            if claim not in cls._CLAIMS_MAPPING:
+                raise ValueError(f"Invalid claim key: {claim}")
+
+            encoded_payload[cls._CLAIMS_MAPPING[claim]] = model[claim]
+
+        return cast(TPayload, encoded_payload)

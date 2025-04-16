@@ -3,8 +3,8 @@ from typing import TypeVar, Type, List, Callable, ClassVar, TYPE_CHECKING
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import SQLModel, Session, select
 from functools import wraps, lru_cache
-from gallery.client import Client
 from enum import Enum
+from .. import client
 
 if TYPE_CHECKING:
     from gallery.models.bases.table import Table
@@ -16,7 +16,7 @@ class Router:
     _TAGS: ClassVar[list[str | Enum] | None] = None
     _TABLE: ClassVar[Type['Table']]
 
-    def __init__(self, client: Client):
+    def __init__(self, client: client.Client):
         self.router = APIRouter(prefix=self._PREFIX, tags=self._TAGS)
         self.client = client
         self._set_routes()

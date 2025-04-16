@@ -1,4 +1,4 @@
-from gallery import client, models  # type: ignore
+from gallery import client, models
 import asyncio
 from sqlmodel import SQLModel
 

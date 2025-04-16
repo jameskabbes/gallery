@@ -2,7 +2,6 @@ import asyncio
 import typing
 from fastapi import Depends
 from sqlmodel import Session
-from gallery import models, client
 # Adjust the import as necessary
 # from main import c
 
@@ -10,6 +9,8 @@ from sqlmodel import select
 import datetime
 from google.oauth2 import id_token
 from google.auth.transport import requests
+
+from gallery import models, client
 
 
 async def main():
