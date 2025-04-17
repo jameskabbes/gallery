@@ -42,9 +42,10 @@ def improper_format() -> StatusCodeAndDetail:
     )
 
 
-def missing_required_claims() -> StatusCodeAndDetail:
+def missing_required_claims(claims: set[str]) -> StatusCodeAndDetail:
     return StatusCodeAndDetail(
-        status_code=status.HTTP_400_BAD_REQUEST, detail="Missing required claims in authorization token"
+        status_code=status.HTTP_400_BAD_REQUEST, detail="Missing required claims: {}".format(
+            ", ".join(claims))
     )
 
 

@@ -5,12 +5,9 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import declared_attr
 from .bases.table import Table as BaseTable
 from .. import types
-from . import file as file_module, gallery as gallery_module
+from . import file as file_module, gallery as gallery_module, image_file_metadata as image_file_metadata_module
 
 ID_COL = 'id'
-
-if TYPE_CHECKING:
-    from . import image_file_metadata
 
 
 class ImageVersionExport(BaseModel):
@@ -85,7 +82,7 @@ class ImageVersion(
     children: list['ImageVersion'] = Relationship(
         back_populates='parent')
 
-    image_file_metadatas: list['image_file_metadata.ImageFileMetadata'] = Relationship(
+    image_file_metadatas: list['image_file_metadata_module.ImageFileMetadata'] = Relationship(
         back_populates='version')
     gallery: 'gallery_module.Gallery' = Relationship(
         back_populates='image_versions')

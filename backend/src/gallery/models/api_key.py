@@ -7,11 +7,13 @@ from .. import types, utils
 from .bases.table import Table as BaseTable
 from .bases import auth_credential
 from .custom_field_types import timestamp
+from .user import User
+
 
 ID_COL = 'id'
 
 if TYPE_CHECKING:
-    from gallery.models import user, api_key_scope
+    from .api_key_scope import ApiKeyScope
 
 
 class ApiKeyAvailable(BaseModel):
@@ -42,18 +44,17 @@ class ApiKeyAdminCreate(ApiKeyCreate):
     user_id: types.User.id
 
 
-class JwtPayload(auth_credential.JwtPayloadBase):
+class JwtPayload(auth_credential.JwtPayload):
     sub: types.User.id
 
 
-class JwtModel(auth_credential.JwtModelBase):
+class JwtModel(auth_credential.JwtModel):
     id: types.User.id
 
 
 class ApiKey(
         BaseTable[types.ApiKey.id, ApiKeyAdminCreate, ApiKeyAdminUpdate],
         auth_credential.Table,
-        auth_credential.Model,
         auth_credential.JwtIO[JwtPayload, JwtModel],
         table=True):
 
@@ -70,8 +71,8 @@ class ApiKey(
         sa_column=Column(timestamp.Timestamp))
 
     name: types.ApiKey.name = Field()
-    user: 'user.User' = Relationship(back_populates='api_keys')
-    api_key_scopes: list['api_key_scope.ApiKeyScope'] = Relationship(
+    user: 'User' = Relationship(back_populates='api_keys')
+    api_key_scopes: list['ApiKeyScope'] = Relationship(
         back_populates='api_key', cascade_delete=True)
 
     _CLAIMS_MAPPING = {

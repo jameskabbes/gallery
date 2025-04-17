@@ -1,14 +1,16 @@
 from sqlmodel import Field, Relationship, select
-from typing import TYPE_CHECKING, TypedDict, Optional
+from typing import TYPE_CHECKING, TypedDict, Optional, Self
+import datetime as datetime_module
+
 from .. import types, utils
 from .bases import auth_credential
 
 
-class JwtPayload(auth_credential.JwtPayloadBase):
+class JwtPayload(auth_credential.JwtPayload):
     sub: types.User.email
 
 
-class JwtModel(auth_credential.JwtModelBase):
+class JwtModel(auth_credential.JwtModel):
     email: types.User.email
 
 
@@ -18,7 +20,6 @@ class SignUpAdminCreate(auth_credential.Create):
 
 class SignUp(
     auth_credential.JwtIO[JwtPayload, JwtModel],
-    auth_credential.Model,
 ):
     auth_type = 'sign_up'
     email: types.User.email = Field()
@@ -27,14 +28,12 @@ class SignUp(
         **auth_credential.CLAIMS_MAPPING_BASE, **{'sub': 'email'}
     }
 
-    # @classmethod
-    # def create(cls, create_model: SignUpAdminCreate) -> typing.Self:
-    #     return cls(
-    #         issued=datetime_module.datetime.now(
-    #             datetime_module.timezone.utc),
-    #         expiry=create_model.get_expiry(),
-    #         **create_model.model_dump(exclude=['lifespan', 'expiry'])
-    #     )
+    @classmethod
+    def create(cls, create_model: SignUpAdminCreate) -> Self:
+        return cls(
+            issued=datetime_module.datetime.now(datetime_module.timezone.utc),
+            **create_model.model_dump()
+        )
 
 
 '''

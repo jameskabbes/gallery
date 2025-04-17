@@ -97,7 +97,7 @@ class Client:
     db_async_engine: AsyncEngine
     media_dir: pathlib.Path
     galleries_dir: pathlib.Path
-    authentication: AuthConfig
+    auth: AuthConfig
     jwt_secret_key: str
     jwt_algorithm: str
     google_client: dict

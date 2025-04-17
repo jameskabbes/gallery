@@ -9,10 +9,7 @@ from .. import types, utils
 from .bases.table import Table as BaseTable
 from .bases import auth_credential
 from ..config import settings
-
-
-if TYPE_CHECKING:
-    from . import user
+from .user import User
 
 ID_COL = 'id'
 
@@ -29,7 +26,6 @@ class OTPAdminCreate(auth_credential.Create):
 class OTP(
         BaseTable[types.OTP.id, OTPAdminCreate, OTPAdminUpdate],
         auth_credential.Table,
-        auth_credential.Model,
         table=True):
 
     __tablename__ = 'otp'  # type: ignore
@@ -44,7 +40,7 @@ class OTP(
         sa_column=Column(timestamp.Timestamp))
 
     hashed_code: types.OTP.hashed_code = Field()
-    user: 'user.User' = Relationship(
+    user: 'User' = Relationship(
         back_populates='otps')
 
     _ROUTER_TAG = 'One Time Password'

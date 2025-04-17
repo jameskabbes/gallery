@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from gallery import client
-from gallery.routers import user
+from gallery.routers import user, auth
 from gallery.config import settings
 from gallery.auth import utils as auth_utils
 
@@ -34,3 +34,4 @@ c = client.Client(config={})
 
 
 app.include_router(user.UserRouter(c).router)
+app.include_router(auth.AuthRouter(c).router)

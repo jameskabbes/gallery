@@ -8,11 +8,9 @@ from .bases.table import Table as BaseTable
 from .bases import auth_credential
 from ..config import settings
 from .custom_field_types import timestamp
+from .user import User
 
 ID_COL = 'id'
-
-if TYPE_CHECKING:
-    from . import user
 
 
 class UserAccessTokenAdminUpdate(BaseModel):
@@ -23,19 +21,23 @@ class UserAccessTokenAdminCreate(auth_credential.Create):
     user_id: types.User.id
 
 
-class JwtPayload(auth_credential.JwtPayloadBase):
+class JwtPayload(auth_credential.JwtPayload):
     sub: types.User.id
 
 
-class JwtModel(auth_credential.JwtModelBase):
+class JwtModel(auth_credential.JwtModel):
     id: types.User.id
+
+
+class UserAccessTokenPublic(BaseModel):
+    id: types.User.id
+    expiry: types.AuthCredential.expiry
 
 
 class UserAccessToken(
         BaseTable[types.UserAccessToken.id, UserAccessTokenAdminCreate,
                   UserAccessTokenAdminUpdate],
         auth_credential.Table,
-        auth_credential.Model,
         auth_credential.JwtIO[JwtPayload, JwtModel],
         table=True):
 
@@ -53,7 +55,7 @@ class UserAccessToken(
         const=True, sa_column=Column(timestamp.Timestamp))
     expiry: types.AuthCredential.expiry = Field(
         sa_column=Column(timestamp.Timestamp))
-    user: 'user.User' = Relationship(back_populates='user_access_tokens')
+    user: 'User' = Relationship(back_populates='user_access_tokens')
 
     # @classmethod
     # async def _check_authorization_new(cls, params):

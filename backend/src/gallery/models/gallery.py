@@ -8,7 +8,9 @@ from .. import types
 from .bases.table import Table as BaseTable
 
 if TYPE_CHECKING:
-    from . import file, image_version, gallery_permission
+    from .file import File
+    from .image_version import ImageVersion
+    from .gallery_permission import GalleryPermission
 
 ID_COL = 'id'
 
@@ -104,11 +106,11 @@ class Gallery(
         back_populates='children', sa_relationship_kwargs={'remote_side': 'Gallery.id'})
     children: list['Gallery'] = Relationship(
         back_populates='parent', cascade_delete=True)
-    gallery_permissions: list['gallery_permission.GalleryPermission'] = Relationship(
+    gallery_permissions: list['GalleryPermission'] = Relationship(
         back_populates='gallery', cascade_delete=True)
-    files: list['file.File'] = Relationship(
+    files: list['File'] = Relationship(
         back_populates='gallery', cascade_delete=True)
-    image_versions: list['image_version.ImageVersion'] = Relationship(
+    image_versions: list['ImageVersion'] = Relationship(
         back_populates='gallery', cascade_delete=True)
 
     _ROUTER_TAG: ClassVar[str] = 'Gallery'

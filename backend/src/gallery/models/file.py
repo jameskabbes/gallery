@@ -7,10 +7,10 @@ from .bases.table import Table as BaseTable
 from .bases import auth_credential
 from . import gallery as gallery_module
 
-ID_COL = 'id'
-
 if TYPE_CHECKING:
-    from gallery.models import image_file_metadata
+    from . import image_file_metadata
+
+ID_COL = 'id'
 
 
 class FileExport(BaseModel):

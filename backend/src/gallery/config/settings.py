@@ -1,8 +1,8 @@
 # Backend congif, edit with caution
 
 import json
-from gallery import types
-from gallery.config import constants
+from .. import types
+from . import constants
 
 BACKEND_DATA_DIR = constants.BACKEND_DIR / 'data'
 REPO_DATA_DIR = constants.REPO_DIR / 'data'
