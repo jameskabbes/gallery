@@ -81,15 +81,15 @@ class User(
     hashed_password: types.User.hashed_password | None = Field(nullable=False)
     user_role_id: types.User.user_role_id = Field(nullable=False)
 
-    api_keys: list['ApiKey'] = Relationship(
-        back_populates='user', cascade_delete=True)
+    # api_keys: list['ApiKey'] = Relationship(
+    #     back_populates='user', cascade_delete=True)
     user_access_tokens: list['UserAccessToken'] = Relationship(
         back_populates='user', cascade_delete=True)
-    galleries: list['Gallery'] = Relationship(
-        back_populates='user', cascade_delete=True)
-    gallery_permissions: list['GalleryPermission'] = Relationship(
-        back_populates='user', cascade_delete=True)
-    otps: list['OTP'] = Relationship(
+    # galleries: list['Gallery'] = Relationship(
+    #     back_populates='user', cascade_delete=True)
+    # gallery_permissions: list['GalleryPermission'] = Relationship(
+    #     back_populates='user', cascade_delete=True)
+    otp: 'OTP' = Relationship(
         back_populates='user', cascade_delete=True)
 
     @property

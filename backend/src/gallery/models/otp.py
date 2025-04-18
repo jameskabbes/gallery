@@ -49,7 +49,7 @@ class OTP(
 
     hashed_code: types.OTP.hashed_code = Field()
     user: 'User' = Relationship(
-        back_populates='otps')
+        back_populates='otp')
 
     _ROUTER_TAG = 'One Time Password'
 
