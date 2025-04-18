@@ -86,10 +86,10 @@ class Table[
     TId: types._IdType,
     TCreateModel: BaseModel,
     TUpdateModel:BaseModel,
-    TAfterCreateCustomParams: AfterCreateCustomParams = AfterCreateCustomParams,
-    TAfterReadCustomParams: AfterReadCustomParams = AfterReadCustomParams,
-    TAfterUpdateCustomParams: AfterUpdateCustomParams = AfterUpdateCustomParams,
-    TAfterDeleteCustomParams: AfterDeleteCustomParams = AfterDeleteCustomParams
+    TAfterCreateCustomParams: AfterCreateCustomParams,
+    TAfterReadCustomParams: AfterReadCustomParams,
+    TAfterUpdateCustomParams: AfterUpdateCustomParams,
+    TAfterDeleteCustomParams: AfterDeleteCustomParams
 ](SQLModel):
 
     @classmethod

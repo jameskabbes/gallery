@@ -4,15 +4,14 @@ from typing import TYPE_CHECKING, TypedDict, Optional, Self
 from pydantic import BaseModel
 
 from .. import types, utils
-from .bases.table import Table as BaseTable
-from .bases import auth_credential
+from .bases import table, auth_credential
 from .custom_field_types import timestamp
-from .user import User
 
 
 ID_COL = 'id'
 
 if TYPE_CHECKING:
+    from .user import User
     from .api_key_scope import ApiKeyScope
 
 
@@ -53,10 +52,16 @@ class JwtModel(auth_credential.JwtModel):
 
 
 class ApiKey(
-        BaseTable[types.ApiKey.id, ApiKeyAdminCreate, ApiKeyAdminUpdate],
+        table.Table[
+            types.ApiKey.id,
+            ApiKeyAdminCreate,
+            ApiKeyAdminUpdate,
+            table.AfterCreateCustomParams,
+            table.AfterReadCustomParams,
+            table.AfterUpdateCustomParams,
+            table.AfterDeleteCustomParams],
         auth_credential.Table,
-        auth_credential.JwtIO[JwtPayload, JwtModel],
-        table=True):
+        auth_credential.JwtIO[JwtPayload, JwtModel], table=True):
 
     __tablename__ = 'api_key'  # type: ignore
 

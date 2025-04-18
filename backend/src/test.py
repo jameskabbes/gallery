@@ -12,7 +12,12 @@ async def main():
     async with c.AsyncSession() as session:
         print(session)
 
-        await user.User.authenticate(session, 'username', 'password')
+        # await user.User.authenticate(session, 'username', 'password')
+        await user.User.read({
+            'session': session,
+            'id': '123',
+            'c': c,
+        })
 
 
 if __name__ == '__main__':

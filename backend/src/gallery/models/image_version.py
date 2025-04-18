@@ -3,7 +3,8 @@ from typing import TYPE_CHECKING, TypedDict, Optional, ClassVar
 from pydantic import BaseModel
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import declared_attr
-from .bases.table import Table as BaseTable
+from .bases import table
+
 from .. import types
 from . import file as file_module, gallery as gallery_module, image_file_metadata as image_file_metadata_module
 
@@ -54,8 +55,14 @@ class ImageVersionAdminCreate(ImageVersionCreate):
 
 
 class ImageVersion(
-        BaseTable[types.ImageVersion.id, ImageVersionAdminCreate,
-                  ImageVersionAdminUpdate],
+        table.Table[
+            types.ImageVersion.id,
+            ImageVersionAdminCreate,
+            ImageVersionAdminUpdate,
+            table.AfterCreateCustomParams,
+            table.AfterReadCustomParams,
+            table.AfterUpdateCustomParams,
+            table.AfterDeleteCustomParams],
         table=True):
 
     __tablename__ = 'image_version'  # type: ignore

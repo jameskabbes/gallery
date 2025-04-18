@@ -4,7 +4,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from pydantic import BaseModel
 
 from .. import types
-from .bases.table import Table as BaseTable
+from .bases import table
 from . import user, gallery
 
 
@@ -37,8 +37,14 @@ class GalleryPermissionAdminCreate(GalleryPermissionImport):
 
 
 class GalleryPermission(
-        BaseTable[
-            types.GalleryPermission.id, GalleryPermissionAdminCreate, GalleryPermissionAdminUpdate],
+        table.Table[
+            types.GalleryPermission.id,
+            GalleryPermissionAdminCreate,
+            GalleryPermissionAdminUpdate,
+            table.AfterCreateCustomParams,
+            table.AfterReadCustomParams,
+            table.AfterUpdateCustomParams,
+            table.AfterDeleteCustomParams],
         table=True):
 
     __tablename__ = 'gallery_permission'  # type: ignore

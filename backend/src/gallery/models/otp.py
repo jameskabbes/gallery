@@ -6,12 +6,13 @@ import secrets
 from sqlalchemy import Column
 from .custom_field_types import timestamp
 from .. import types, utils
-from .bases.table import Table as BaseTable
-from .bases import auth_credential
+from .bases import table, auth_credential
 from ..config import settings
-from .user import User
 
 ID_COL = 'id'
+
+if TYPE_CHECKING:
+    from .user import User
 
 
 class OTPAdminUpdate(BaseModel):
@@ -24,7 +25,14 @@ class OTPAdminCreate(auth_credential.Create):
 
 
 class OTP(
-        BaseTable[types.OTP.id, OTPAdminCreate, OTPAdminUpdate],
+        table.Table[
+            types.OTP.id,
+            OTPAdminCreate,
+            OTPAdminUpdate,
+            table.AfterCreateCustomParams,
+            table.AfterReadCustomParams,
+            table.AfterUpdateCustomParams,
+            table.AfterDeleteCustomParams],
         auth_credential.Table,
         table=True):
 
@@ -69,75 +77,71 @@ class OTP(
         return select(cls).where(cls.id == id)
 
 
-'''
-
-# OTP
+# # OTP
 
 
-class OTPConfig:
-    CODE_LENGTH: typing.ClassVar[int] = 6
+# class OTPConfig:
+#     CODE_LENGTH: typing.ClassVar[int] = 6
 
 
-class OTPTypes(AuthCredentialTypes):
-    id = str
-    code = typing.Annotated[str, StringConstraints(
-        min_length=OTPConfig.CODE_LENGTH, max_length=OTPConfig.CODE_LENGTH, pattern=re.compile(r'^\d{6}$'))]
-    hashed_code = str
+# class OTPTypes(AuthCredentialTypes):
+#     id = str
+#     code = typing.Annotated[str, StringConstraints(
+#         min_length=OTPConfig.CODE_LENGTH, max_length=OTPConfig.CODE_LENGTH, pattern=re.compile(r'^\d{6}$'))]
+#     hashed_code = str
 
 
-class OTPOTPIdBase(OTPIdObject[OTPTypes.id]):
-    id: OTPTypes.id = Field(
-        primary_key=True, index=True, unique=True, const=True)
+# class OTPOTPIdBase(OTPIdObject[OTPTypes.id]):
+#     id: OTPTypes.id = Field(
+#         primary_key=True, index=True, unique=True, const=True)
 
 
-class OTPAdminUpdate(BaseModel):
-    pass
+# class OTPAdminUpdate(BaseModel):
+#     pass
 
 
-class OTPOTPAdminCreate(AuthCredential.Create):
-    user_id: types.User.id
-    hashed_code: OTPTypes.hashed_code
+# class OTPOTPAdminCreate(AuthCredential.Create):
+#     user_id: types.User.id
+#     hashed_code: OTPTypes.hashed_code
 
 
-class OTP(
-        Table['OTP', OTPTypes.id,
-              OTPOTPAdminCreate, BaseModel, BaseModel, OTPAdminUpdate, BaseModel, BaseModel, typing.Literal[()]],
-        AuthCredential.Table,
-        AuthCredential.Model,
-        OTPOTPIdBase,
-        table=True):
+# class OTP(
+#         Table['OTP', OTPTypes.id,
+#               OTPOTPAdminCreate, BaseModel, BaseModel, OTPAdminUpdate, BaseModel, BaseModel, typing.Literal[()]],
+#         AuthCredential.Table,
+#         AuthCredential.Model,
+#         OTPOTPIdBase,
+#         table=True):
 
-    auth_type = 'otp'
-    __tablename__ = 'otp'
+#     auth_type = 'otp'
+#     __tablename__ = 'otp'
 
-    issued: AuthCredentialTypes.issued = Field(
-        const=True, sa_column=Column(DateTimeWithTimeZoneString))
-    expiry: AuthCredentialTypes.expiry = Field(
-        sa_column=Column(DateTimeWithTimeZoneString))
+#     issued: AuthCredentialTypes.issued = Field(
+#         const=True, sa_column=Column(DateTimeWithTimeZoneString))
+#     expiry: AuthCredentialTypes.expiry = Field(
+#         sa_column=Column(DateTimeWithTimeZoneString))
 
-    hashed_code: OTPTypes.hashed_code = Field()
-    user: 'User' = Relationship(
-        back_populates='otps')
+#     hashed_code: OTPTypes.hashed_code = Field()
+#     user: 'User' = Relationship(
+#         back_populates='otps')
 
-    _ROUTER_TAG = 'One Time Password'
+#     _ROUTER_TAG = 'One Time Password'
 
-    @classmethod
-    def generate_code(cls) -> OTPTypes.code:
-        characters = string.digits
-        return ''.join(secrets.choice(characters) for _ in range(OTPConfig.CODE_LENGTH))
+#     @classmethod
+#     def generate_code(cls) -> OTPTypes.code:
+#         characters = string.digits
+#         return ''.join(secrets.choice(characters) for _ in range(OTPConfig.CODE_LENGTH))
 
-    @classmethod
-    def hash_code(cls, code: OTPTypes.code) -> OTPTypes.hashed_code:
-        return utils.hash_password(code)
+#     @classmethod
+#     def hash_code(cls, code: OTPTypes.code) -> OTPTypes.hashed_code:
+#         return utils.hash_password(code)
 
-    @classmethod
-    def verify_code(cls, code: OTPTypes.code, hashed_code: OTPTypes.hashed_code) -> bool:
+#     @classmethod
+#     def verify_code(cls, code: OTPTypes.code, hashed_code: OTPTypes.hashed_code) -> bool:
 
-        import time
-        start = time.time()
-        a = utils.verify_password(code, hashed_code)
-        end = time.time()
-        print(end - start)
-        return a
-
-'''
+#         import time
+#         start = time.time()
+#         a = utils.verify_password(code, hashed_code)
+#         end = time.time()
+#         print(end - start)
+#         return a

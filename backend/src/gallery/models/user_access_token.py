@@ -4,13 +4,14 @@ from pydantic import BaseModel
 from sqlalchemy import Column
 
 from .. import types, utils
-from .bases.table import Table as BaseTable
-from .bases import auth_credential
+from .bases import auth_credential, table
 from ..config import settings
 from .custom_field_types import timestamp
-from .user import User
 
 ID_COL = 'id'
+
+if TYPE_CHECKING:
+    from .user import User
 
 
 class UserAccessTokenAdminUpdate(BaseModel):
@@ -35,8 +36,14 @@ class UserAccessTokenPublic(BaseModel):
 
 
 class UserAccessToken(
-        BaseTable[types.UserAccessToken.id, UserAccessTokenAdminCreate,
-                  UserAccessTokenAdminUpdate],
+        table.Table[
+            types.UserAccessToken.id,
+            UserAccessTokenAdminCreate,
+            UserAccessTokenAdminUpdate,
+            table.AfterCreateCustomParams,
+            table.AfterReadCustomParams,
+            table.AfterUpdateCustomParams,
+            table.AfterDeleteCustomParams],
         auth_credential.Table,
         auth_credential.JwtIO[JwtPayload, JwtModel],
         table=True):

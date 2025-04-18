@@ -17,7 +17,16 @@ class ApiKeyScopeAdminCreate(BaseModel):
     scope_id: types.ApiKeyScope.scope_id
 
 
-class ApiKeyScope(table.Table[types.ApiKeyScope.id, ApiKeyScopeAdminCreate, ApiKeyScopeAdminUpdate], table=True):
+class ApiKeyScope(
+        table.Table[
+            types.ApiKeyScope.id,
+            ApiKeyScopeAdminCreate,
+            ApiKeyScopeAdminUpdate,
+            table.AfterCreateCustomParams,
+            table.AfterReadCustomParams,
+            table.AfterUpdateCustomParams,
+            table.AfterDeleteCustomParams
+        ], table=True):
 
     api_key_id: types.ApiKeyScope.api_key_id = Field(
         primary_key=True, index=True, const=True, foreign_key=str(api_key_module.ApiKey.__tablename__) + '.' + api_key_module.ID_COL, ondelete='CASCADE')
@@ -30,7 +39,7 @@ class ApiKeyScope(table.Table[types.ApiKeyScope.id, ApiKeyScopeAdminCreate, ApiK
     #     PrimaryKeyConstraint('api_key_id', 'scope_id'),
     # )
 
-    api_key: api_key_module.ApiKey = Relationship(
+    api_key: 'api_key_module.ApiKey' = Relationship(
         back_populates='api_key_scopes')
 
     _ROUTER_TAG: ClassVar[str] = 'Api Key Scope'

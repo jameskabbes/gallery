@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.declarative import declared_attr
 
 from .. import types
-from .bases.table import Table as BaseTable
+from .bases import table
 from . import file as file_module, image_version as image_version_module
 
 # class ImageFileMetadataConfig:
@@ -42,8 +42,14 @@ class ImageFileMetadataAdminCreate(ImageFileMetadataCreate):
 
 
 class ImageFileMetadata(
-        BaseTable[types.ImageFileMetadata.file_id, ImageFileMetadataAdminCreate,
-                  ImageFileMetadataAdminUpdate],
+        table.Table[
+            types.ImageFileMetadata.file_id,
+            ImageFileMetadataAdminCreate,
+            ImageFileMetadataAdminUpdate,
+            table.AfterCreateCustomParams,
+            table.AfterReadCustomParams,
+            table.AfterUpdateCustomParams,
+            table.AfterDeleteCustomParams],
         table=True):
 
     __tablename__ = 'image_file_metadata'  # type: ignore

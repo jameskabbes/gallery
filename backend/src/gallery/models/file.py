@@ -3,8 +3,7 @@ from typing import TYPE_CHECKING, TypedDict, Optional, ClassVar
 from pydantic import BaseModel
 
 from .. import types, utils
-from .bases.table import Table as BaseTable
-from .bases import auth_credential
+from .bases import table, auth_credential
 from . import gallery as gallery_module
 
 if TYPE_CHECKING:
@@ -45,7 +44,14 @@ class FileAdminCreate(FileCreate):
 
 
 class File(
-        BaseTable[types.File.id, FileAdminCreate, FileAdminUpdate],
+        table.Table[
+            types.File.id,
+            FileAdminCreate,
+            FileAdminUpdate,
+            table.AfterCreateCustomParams,
+            table.AfterReadCustomParams,
+            table.AfterUpdateCustomParams,
+            table.AfterDeleteCustomParams],
         table=True):
 
     __tablename__ = 'file'  # type: ignore

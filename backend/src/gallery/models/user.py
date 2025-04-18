@@ -58,7 +58,16 @@ class UserPrivate(UserExport):
     user_role_id: types.User.user_role_id
 
 
-class User(table.Table[types.User.id, UserAdminCreate, UserAdminUpdate], table=True):
+class User(
+        table.Table[
+            types.User.id,
+            UserAdminCreate,
+            UserAdminUpdate,
+            table.AfterCreateCustomParams,
+            table.AfterReadCustomParams,
+            table.AfterUpdateCustomParams,
+            table.AfterDeleteCustomParams],
+        table=True):
 
     __tablename__ = 'user'  # type: ignore
 
