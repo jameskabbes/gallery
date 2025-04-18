@@ -9,7 +9,6 @@ from ... import types
 from .. import user
 from ..custom_field_types.timestamp import validate_and_normalize_datetime
 from ..custom_field_types import timestamp
-from .table import Table as BaseTable
 
 
 from typing import ClassVar, TypedDict, cast, TypeVar, Generic, Type
