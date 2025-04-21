@@ -1,7 +1,6 @@
 from sqlmodel import Field, Relationship, SQLModel, PrimaryKeyConstraint, Column
 from pydantic import BaseModel, model_validator, field_serializer, field_validator, ValidationInfo
 from ... import types
-from typing import ClassVar, Optional
 from ..custom_field_types import timestamp
 import datetime as datetime_module
 
@@ -13,7 +12,6 @@ class Model(SQLModel):
         const=True, sa_column=Column(timestamp.Timestamp))
     expiry: types.AuthCredential.expiry = Field(
         sa_column=Column(timestamp.Timestamp))
-    auth_type: ClassVar[types.AuthCredential.type]
 
     @field_validator('issued', 'expiry')
     @classmethod

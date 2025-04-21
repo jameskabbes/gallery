@@ -34,6 +34,10 @@ class MissingRequiredClaimsError(Exception):
         self.claims = claims
 
 
+class Model:
+    auth_type: ClassVar[types.AuthCredential.type]
+
+
 class JwtIO(Generic[TPayload, TModel]):
 
     _TYPE_CLAIM: ClassVar[str] = 'type'
