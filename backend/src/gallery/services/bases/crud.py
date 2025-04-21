@@ -1,2 +1,0 @@
-class CRUD:
-    pass

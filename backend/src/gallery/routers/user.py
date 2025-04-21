@@ -1,4 +1,4 @@
-from ..models import user
+from ..models.tables import user
 from . import base
 from .. import types
 

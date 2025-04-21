@@ -1,8 +1,8 @@
-from pydantic import Field
-from .. import types
-from .auth import AuthCredential
+from sqlmodel import Field
+from ..bases import auth_credential
+from ... import types
 
 
-class SignUp(AuthCredential):
+class SignUp(auth_credential.Model):
     auth_type = 'sign_up'
     email: types.User.email = Field()

@@ -15,9 +15,9 @@ import datetime as datetime_module
 from .. import client, types, auth
 from ..auth import exceptions
 from ..config import settings
-from ..models import user as user_model_module, user_access_token as user_access_token_model_module, sign_up as sign_up_model_module, otp as otp_model_module
-from ..models.bases import auth_credential
-from .. import models
+from ..models.tables import user as user_model_module, user_access_token as user_access_token_model_module, sign_up as sign_up_model_module, otp as otp_model_module
+from ..models.tables.bases import auth_credential
+from ..models import tables
 
 
 def set_access_token_cookie(response: Response, access_token: types.JwtEncodedStr,  expiry: datetime_module.datetime | None = None):
@@ -83,7 +83,7 @@ class GetAuthReturn(BaseModel):
     exception: typing.Optional[exceptions.StatusCodeAndDetail] = None
     user: typing.Optional[user_model_module.UserPrivate] = None
     scope_ids: typing.Optional[set[types.Scope.id]] = None
-    auth_credential: typing.Optional[models.AuthCredentialClassInstance] = None
+    auth_credential: typing.Optional[tables.AuthCredentialClassInstance] = None
 
     @property
     def _user_id(self):
@@ -114,7 +114,7 @@ class MakeGetAuthDepedencyKwargs(_MakeGetAuthDepedencyAndGetAuthFromJwtKwargs):
 
 
 class GetAuthFromTableKwargs(_GetAuthFromJwtAndGetAuthFromTableKwargs):
-    auth_credential_table_instance: models.AuthCredentialTableClassInstance
+    auth_credential_table_instance: tables.AuthCredentialTableClassInstance
     dt_now: typing.NotRequired[datetime_module.datetime]
     read_from_db: typing.NotRequired[bool]
 
@@ -193,7 +193,7 @@ async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJ
     token = kwargs.get('token', None)
     required_scopes = kwargs.get('required_scopes', set())
     permitted_types = kwargs.get('permitted_types', set(
-        [c.auth_type for c in models.AUTH_CREDENTIAL_JWT_CLASSES]))
+        [c.auth_type for c in tables.AUTH_CREDENTIAL_JWT_CLASSES]))
     override_lifetime = kwargs.get('override_lifetime', None)
 
     if token is None:
@@ -210,11 +210,11 @@ async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJ
         return GetAuthReturn(exception=exceptions.missing_required_claims({'jwt'}))
 
     # make sure the "type" is a permitted auth_credential type
-    auth_type: models.AuthCredentialJwtType = payload['type']
+    auth_type: tables.AuthCredentialJwtType = payload['type']
     if auth_type not in permitted_types:
         return GetAuthReturn(exception=exceptions.authorization_type_not_permitted())
 
-    AuthCredentialClass = models.AUTH_CREDENTIAL_TYPE_TO_CLASS[auth_type]
+    AuthCredentialClass = tables.AUTH_CREDENTIAL_TYPE_TO_CLASS[auth_type]
 
     # turn the payload into an AuthCredential instance
     try:
@@ -242,7 +242,7 @@ async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJ
         get_auth_from_table_kwargs: GetAuthFromTableKwargs = {
             'c': c,
             'auth_credential_table_instance': typing.cast(
-                models.AuthCredentialTableClassInstance, auth_credential_inst_from_jwt),
+                tables.AuthCredentialTableClassInstance, auth_credential_inst_from_jwt),
             'dt_now': dt_now,
         }
 

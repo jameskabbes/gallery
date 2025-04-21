@@ -2,8 +2,8 @@ from gallery.client import Client
 import asyncio
 import datetime as datetime_module
 
-from gallery import models as models
-from gallery.models import sign_up, user
+from backend.src.gallery.models import tables as tables
+from backend.src.gallery.models.tables import sign_up, user
 
 
 async def main():

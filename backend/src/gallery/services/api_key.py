@@ -1,85 +1,21 @@
-from sqlmodel import Field, Relationship, select, SQLModel
-from sqlalchemy import Column
-from typing import TYPE_CHECKING, TypedDict, Optional, Self
+from sqlmodel import select
 from pydantic import BaseModel
 
-from .. import types, utils
-from .bases import table, auth_credential
-from .custom_field_types import timestamp
+from ..models import ApiKey as ApiKeyTable
+from . import base
+from .. import types
 
-
-ID_COL = 'id'
-
-if TYPE_CHECKING:
-    from .user import User
-    from .api_key_scope import ApiKeyScope
-
-
-class ApiKeyAvailable(BaseModel):
-    name: types.ApiKey.name
-
-
-class ApiKeyAdminAvailable(ApiKeyAvailable):
-    user_id: types.User.id
-
-
-class ApiKeyImport(auth_credential.Import):
-    pass
-
-
-class ApiKeyUpdate(ApiKeyImport, auth_credential.Update):
-    name: Optional[types.ApiKey.name] = None
-
-
-class ApiKeyAdminUpdate(ApiKeyUpdate):
-    pass
-
-
-class ApiKeyCreate(ApiKeyImport, auth_credential.Create):
-    name: types.ApiKey.name
-
-
-class ApiKeyAdminCreate(ApiKeyCreate):
-    user_id: types.User.id
-
-
-class JwtPayload(auth_credential.JwtPayload):
-    sub: types.User.id
-
-
-class JwtModel(auth_credential.JwtModel):
-    id: types.User.id
+from ..schemas import api_key as api_key_schema
+from ..services import auth_credential
 
 
 class ApiKey(
-    table.Table[
-        types.ApiKey.id,
-        ApiKeyAdminCreate,
-        ApiKeyAdminUpdate,
-        table.AfterCreateCustomParams,
-        table.AfterReadCustomParams,
-        table.AfterUpdateCustomParams,
-        table.AfterDeleteCustomParams],
-    auth_credential.Table,
-    auth_credential.JwtIO[JwtPayload, JwtModel],
+    base.Service[
+        ApiKeyTable,
+        types.ApiKeyScope.id],
+
+    auth_credential.JwtIO[api_key_schema.JwtPayload, api_key_schema.JwtModel],
         table=True):
-
-    __tablename__ = 'api_key'  # type: ignore
-
-    auth_type = 'api_key'
-    _ROUTER_TAG = 'Api Key'
-
-    id: types.ApiKey.id = Field(
-        primary_key=True, index=True, unique=True, const=True)
-    issued: types.AuthCredential.issued = Field(
-        const=True, sa_column=Column(timestamp.Timestamp))
-    expiry: types.AuthCredential.expiry = Field(
-        sa_column=Column(timestamp.Timestamp))
-
-    name: types.ApiKey.name = Field()
-    user: 'User' = Relationship(back_populates='api_keys')
-    api_key_scopes: list['ApiKeyScope'] = Relationship(
-        back_populates='api_key', cascade_delete=True)
 
     _CLAIMS_MAPPING = {
         **auth_credential.CLAIMS_MAPPING_BASE, **{'sub': 'id'}
@@ -124,7 +60,7 @@ class ApiKey(
 
     @classmethod
     def _build_select_by_id(cls, id):
-        return select(cls).where(cls.id == id)
+        return select(cls._TABLE).where(cls._TABLE.id == id)
 
 
 class ApiKeyExport(BaseModel):

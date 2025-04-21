@@ -94,32 +94,6 @@ class Gallery(
             table.AfterDeleteCustomParams],
         table=True):
 
-    __tablename__ = 'gallery'  # type: ignore
-
-    id: types.ApiKey.id = Field(
-        primary_key=True, index=True, unique=True, const=True)
-    name: types.Gallery.name = Field()
-    user_id: types.Gallery.user_id = Field(
-        index=True, foreign_key=str(user.User.__tablename__) + '.' + user.ID_COL, ondelete='CASCADE')
-
-    visibility_level: types.Gallery.visibility_level = Field()
-    parent_id: types.Gallery.parent_id = Field(nullable=True, index=True,
-                                               foreign_key='gallery.id', ondelete='CASCADE')
-    description: types.Gallery.description = Field(nullable=True)
-    date: types.Gallery.date = Field(nullable=True)
-
-    user: 'user.User' = Relationship(back_populates='galleries')
-    parent: Optional['Gallery'] = Relationship(
-        back_populates='children', sa_relationship_kwargs={'remote_side': 'Gallery.id'})
-    children: list['Gallery'] = Relationship(
-        back_populates='parent', cascade_delete=True)
-    gallery_permissions: list['GalleryPermission'] = Relationship(
-        back_populates='gallery', cascade_delete=True)
-    files: list['File'] = Relationship(
-        back_populates='gallery', cascade_delete=True)
-    image_versions: list['ImageVersion'] = Relationship(
-        back_populates='gallery', cascade_delete=True)
-
     _ROUTER_TAG: ClassVar[str] = 'Gallery'
 
     @property

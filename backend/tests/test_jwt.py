@@ -1,6 +1,6 @@
 import pytest
-from ..src.gallery.models.bases import auth_credential
-from ..src.gallery.models import sign_up
+from ..src.gallery.models.tables.bases import auth_credential
+from ..src.gallery.models.tables import sign_up
 import datetime as datetime_module
 
 

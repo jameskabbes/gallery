@@ -10,7 +10,8 @@ import datetime
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
-from gallery import models, client
+from backend.src.gallery.models import tables
+from gallery import client
 
 
 async def main():
@@ -19,12 +20,12 @@ async def main():
 
     with Session(c.db_engine) as session:
 
-        user_access_token_admin_create = models.UserAccessTokenAdminCreate(
+        user_access_token_admin_create = tables.UserAccessTokenAdminCreate(
             user_id='b0d8bf32-11d1-4212-ad5b-cbb17e2a9987',
             lifespan=datetime.timedelta(days=1),
         )
 
-        user_access_token = await models.UserAccessToken.api_post(
+        user_access_token = await tables.UserAccessToken.api_post(
             session=session, c=c, authorized_user_id=None, admin=True, create_model=user_access_token_admin_create)
 
         print(user_access_token)

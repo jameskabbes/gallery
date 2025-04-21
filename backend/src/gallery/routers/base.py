@@ -6,9 +6,6 @@ from functools import wraps, lru_cache
 from enum import Enum
 from .. import client
 
-if TYPE_CHECKING:
-    from gallery.models.bases.table import Table
-
 
 class Router:
 

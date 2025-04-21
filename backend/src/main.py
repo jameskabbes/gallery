@@ -6,9 +6,10 @@ from contextlib import asynccontextmanager
 from sqlalchemy import and_
 from sqlalchemy.orm import selectinload, Session
 from sqlalchemy.sql import func, select
-from gallery import models, utils, auth, client, types, config
+from backend.src.gallery.models import tables
+from gallery import utils, auth, client, types, config
 from gallery.config import constants, settings
-from gallery.models import api_key_scope, api_key, file, gallery_permission, gallery, image_file_metadata, image_version, otp, sign_up, user_access_token, user
+from backend.src.gallery.models.tables import api_key_scope, api_key, file, gallery_permission, gallery, image_file_metadata, image_version, otp, sign_up, user_access_token, user
 
 import datetime
 import typing
@@ -35,121 +36,121 @@ c = client.Client(config={})
 
 def get_pagination(max_limit: int = 100, default_limit: int = 10):
     def dependency(limit: int = Query(default_limit, ge=1, le=max_limit, description='Quantity of results'), offset: int = Query(0, ge=0, description='Index of the first result')):
-        return models.Pagination(limit=limit, offset=offset)
+        return tables.Pagination(limit=limit, offset=offset)
     return dependency
 
 
 # Users
 user_router = APIRouter(
-    prefix='/users', tags=[models.User._ROUTER_TAG])
+    prefix='/users', tags=[tables.User._ROUTER_TAG])
 user_admin_router = APIRouter(
-    prefix='/admin/users', tags=[models.User._ROUTER_TAG, 'Admin'])
+    prefix='/admin/users', tags=[tables.User._ROUTER_TAG, 'Admin'])
 
 
-@user_router.get('/me/', responses=models.User.get_responses())
+@user_router.get('/me/', responses=tables.User.get_responses())
 async def get_user_me(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())]
-) -> models.User.Private:
-    return models.UserPrivate.model_validate(authorization.user)
+) -> tables.User.Private:
+    return tables.UserPrivate.model_validate(authorization.user)
 
 
-@user_router.get('/{user_id}/', responses=models.User.get_responses())
+@user_router.get('/{user_id}/', responses=tables.User.get_responses())
 async def get_user_by_id(
-    user_id: models.UserTypes.id,
+    user_id: tables.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(raise_exceptions=False))]
-) -> models.UserPublic:
+) -> tables.UserPublic:
     async with c.AsyncSession() as session:
-        return models.UserPublic.model_validate(await models.User.api_get(models.User.GetParams.model_construct(
+        return tables.UserPublic.model_validate(await tables.User.api_get(tables.User.GetParams.model_construct(
             session=session, c=c, authorized_user_id=authorization._user_id, id=user_id)))
 
 
-@user_admin_router.get('/{user_id}/', responses=models.User.get_responses())
+@user_admin_router.get('/{user_id}/', responses=tables.User.get_responses())
 async def get_user_by_id_admin(
-    user_id: models.UserTypes.id,
+    user_id: tables.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))]
-) -> models.User:
+) -> tables.User:
     async with c.AsyncSession() as session:
-        a = await models.User.api_get(models.User.GetParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, id=user_id, admin=True))
+        a = await tables.User.api_get(tables.User.GetParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, id=user_id, admin=True))
 
 
-@user_admin_router.post('/', responses=models.User.post_responses())
+@user_admin_router.post('/', responses=tables.User.post_responses())
 async def post_user_admin(
-    user_create_admin: models.UserAdminCreate,
+    user_create_admin: tables.UserAdminCreate,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))]
-) -> models.User:
+) -> tables.User:
     async with c.AsyncSession() as session:
-        return await models.User.api_post(models.User.PostParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, admin=True, create_model=user_create_admin))
+        return await tables.User.api_post(tables.User.PostParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, admin=True, create_model=user_create_admin))
 
 
-@user_router.patch('/me/', responses=models.User.patch_responses())
+@user_router.patch('/me/', responses=tables.User.patch_responses())
 async def patch_self(
-    user_update: models.UserUpdate,
+    user_update: tables.UserUpdate,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())]
-) -> models.UserPrivate:
+) -> tables.UserPrivate:
     async with c.AsyncSession() as session:
-        return models.UserPrivate.model_validate(await models.User.api_patch(models.User.PatchParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, id=authorization._user_id, update_model=models.UserAdminUpdate(**user_update.model_dump(exclude_unset=True)))))
+        return tables.UserPrivate.model_validate(await tables.User.api_patch(tables.User.PatchParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, id=authorization._user_id, update_model=tables.UserAdminUpdate(**user_update.model_dump(exclude_unset=True)))))
 
 
-@user_admin_router.patch('/{user_id}/', responses=models.User.patch_responses())
+@user_admin_router.patch('/{user_id}/', responses=tables.User.patch_responses())
 async def patch_user_admin(
-    user_id: models.UserTypes.id,
-    user_update_admin: models.UserAdminUpdate,
+    user_id: tables.UserTypes.id,
+    user_update_admin: tables.UserAdminUpdate,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))]
-) -> models.User:
+) -> tables.User:
     async with c.AsyncSession() as session:
-        return await models.User.api_patch(models.User.PatchParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, id=user_id, admin=True, update_model=user_update_admin))
+        return await tables.User.api_patch(tables.User.PatchParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, id=user_id, admin=True, update_model=user_update_admin))
 
 
-@user_router.delete('/me/', responses=models.User.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
+@user_router.delete('/me/', responses=tables.User.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
 async def delete_self(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())]
 ):
     async with c.AsyncSession() as session:
-        return await models.User.api_delete(models.User.DeleteParams.model_construct(
+        return await tables.User.api_delete(tables.User.DeleteParams.model_construct(
             session=session, c=c, authorized_user_id=authorization._user_id, id=authorization._user_id))
 
 
-@user_admin_router.delete('/{user_id}/', responses=models.User.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
+@user_admin_router.delete('/{user_id}/', responses=tables.User.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user_admin(
-    user_id: models.UserTypes.id,
+    user_id: tables.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ):
     async with c.AsyncSession() as session:
-        return await models.User.api_delete(models.User.DeleteParams.model_construct(
+        return await tables.User.api_delete(tables.User.DeleteParams.model_construct(
             session=session, c=c, authorized_user_id=authorization._user_id, id=user_id, admin=True))
 
 
-@user_router.get('/', responses=models.User.post_responses())
+@user_router.get('/', responses=tables.User.post_responses())
 async def get_users(
-    pagination: typing.Annotated[models.Pagination, Depends(get_pagination())]
-) -> list[models.UserPublic]:
+    pagination: typing.Annotated[tables.Pagination, Depends(get_pagination())]
+) -> list[tables.UserPublic]:
 
     async with c.AsyncSession() as session:
-        query = select(models.User).where(
-            models.User.username != None)
-        query = models.build_pagination(query, pagination)
+        query = select(tables.User).where(
+            tables.User.username != None)
+        query = tables.build_pagination(query, pagination)
         users = session.exec(query).all()
-        return [models.UserPublic.model_validate(user) for user in users]
+        return [tables.UserPublic.model_validate(user) for user in users]
 
 
 @user_admin_router.get('/')
 async def get_users_admin(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))],
-    pagination: typing.Annotated[models.Pagination, Depends(get_pagination())]
-) -> list[models.User]:
+    pagination: typing.Annotated[tables.Pagination, Depends(get_pagination())]
+) -> list[tables.User]:
 
     async with c.AsyncSession() as session:
-        query = select(models.User)
-        query = models.build_pagination(query, pagination)
+        query = select(tables.User)
+        query = tables.build_pagination(query, pagination)
         users = session.exec(query).all()
         return users
 
@@ -157,9 +158,9 @@ async def get_users_admin(
 @user_router.get('/available/username/{username}/',
                  responses={status.HTTP_409_CONFLICT: {
                      "description": 'Username already exists', 'model': DetailOnlyResponse}})
-async def get_user_username_available(username: models.UserTypes.username):
+async def get_user_username_available(username: tables.UserTypes.username):
     async with c.AsyncSession() as session:
-        return await models.User.api_get_is_username_available(session, username)
+        return await tables.User.api_get_is_username_available(session, username)
 
 
 app.include_router(user_router)
@@ -169,63 +170,63 @@ app.include_router(user_admin_router)
 # User Access Tokens
 
 user_access_token_router = APIRouter(
-    prefix='/user-access-tokens', tags=[models.UserAccessToken._ROUTER_TAG])
+    prefix='/user-access-tokens', tags=[tables.UserAccessToken._ROUTER_TAG])
 user_access_token_admin_router = APIRouter(
-    prefix='/admin/user-access-tokens', tags=[models.UserAccessToken._ROUTER_TAG, 'Admin'])
+    prefix='/admin/user-access-tokens', tags=[tables.UserAccessToken._ROUTER_TAG, 'Admin'])
 
 
-@user_access_token_router.get('/{user_access_token_id}/', responses=models.UserAccessToken.get_responses())
+@user_access_token_router.get('/{user_access_token_id}/', responses=tables.UserAccessToken.get_responses())
 async def get_user_access_token_by_id(
-    user_access_token_id: models.UserAccessTokenTypes.id,
+    user_access_token_id: tables.UserAccessTokenTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())]
-) -> models.UserAccessToken:
+) -> tables.UserAccessToken:
     async with c.AsyncSession() as session:
-        return await models.UserAccessToken.api_get(models.UserAccessToken.GetParams.model_construct(
+        return await tables.UserAccessToken.api_get(tables.UserAccessToken.GetParams.model_construct(
             session=session, c=c, authorized_user_id=authorization._user_id, id=user_access_token_id))
 
 
-@user_access_token_admin_router.get('/{user_access_token_id}/', responses=models.UserAccessToken.get_responses())
+@user_access_token_admin_router.get('/{user_access_token_id}/', responses=tables.UserAccessToken.get_responses())
 async def get_user_access_token_by_id_admin(
-    user_access_token_id: models.UserAccessTokenTypes.id,
+    user_access_token_id: tables.UserAccessTokenTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))]
-) -> models.UserAccessToken:
+) -> tables.UserAccessToken:
     async with c.AsyncSession() as session:
-        return await models.UserAccessToken.api_get(models.UserAccessToken.GetParams.model_construct(
+        return await tables.UserAccessToken.api_get(tables.UserAccessToken.GetParams.model_construct(
             session=session, c=c, authorized_user_id=authorization._user_id, id=user_access_token_id, admin=True))
 
 
-@user_access_token_admin_router.post('/', responses=models.UserAccessToken.post_responses())
+@user_access_token_admin_router.post('/', responses=tables.UserAccessToken.post_responses())
 async def post_user_access_token_admin(
-    user_access_token_create_admin: models.UserAccessTokenAdminCreate,
+    user_access_token_create_admin: tables.UserAccessTokenAdminCreate,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))]
-) -> models.UserAccessToken:
+) -> tables.UserAccessToken:
     async with c.AsyncSession() as session:
-        return await models.UserAccessToken.api_post(models.UserAccessToken.PostParams.model_construct(
+        return await tables.UserAccessToken.api_post(tables.UserAccessToken.PostParams.model_construct(
             session=session, c=c, authorized_user_id=authorization._user_id, admin=True, create_model=user_access_token_create_admin))
 
 
-@user_access_token_router.delete('/{user_access_token_id}/', responses=models.UserAccessToken.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
+@user_access_token_router.delete('/{user_access_token_id}/', responses=tables.UserAccessToken.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user_access_token(
-    user_access_token_id: models.UserAccessTokenTypes.id,
+    user_access_token_id: tables.UserAccessTokenTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())]
 ):
     async with c.AsyncSession() as session:
-        return await models.UserAccessToken.api_delete(models.UserAccessToken.DeleteParams.model_construct(
+        return await tables.UserAccessToken.api_delete(tables.UserAccessToken.DeleteParams.model_construct(
             session=session, c=c, authorized_user_id=authorization._user_id, id=user_access_token_id))
 
 
-@user_access_token_admin_router.delete('/{user_access_token_id}/', responses=models.UserAccessToken.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
+@user_access_token_admin_router.delete('/{user_access_token_id}/', responses=tables.UserAccessToken.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user_access_token_admin(
-    user_access_token_id: models.UserAccessTokenTypes.id,
+    user_access_token_id: tables.UserAccessTokenTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ):
     async with c.AsyncSession() as session:
-        return await models.UserAccessToken.api_delete(models.UserAccessToken.DeleteParams.model_construct(
+        return await tables.UserAccessToken.api_delete(tables.UserAccessToken.DeleteParams.model_construct(
             session=session, c=c, authorized_user_id=authorization._user_id, id=user_access_token_id, admin=True))
 
 
@@ -234,39 +235,39 @@ WrongUserPermissionUserAccessToken = HTTPException(
 
 
 def user_access_token_pagination(
-    pagination: typing.Annotated[models.Pagination, Depends(
+    pagination: typing.Annotated[tables.Pagination, Depends(
         get_pagination(default_limit=50, max_limit=500))]
 ):
     return pagination
 
 
-@user_access_token_router.get('/', tags=[models.User._ROUTER_TAG], responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}, WrongUserPermissionUserAccessToken.status_code: {'description': WrongUserPermissionUserAccessToken.detail, 'model': DetailOnlyResponse}})
+@user_access_token_router.get('/', tags=[tables.User._ROUTER_TAG], responses={status.HTTP_404_NOT_FOUND: {"description": tables.User.not_found_message(), 'model': NotFoundResponse}, WrongUserPermissionUserAccessToken.status_code: {'description': WrongUserPermissionUserAccessToken.detail, 'model': DetailOnlyResponse}})
 async def get_user_access_tokens(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())],
-    pagination: models.Pagination = Depends(user_access_token_pagination)
+    pagination: tables.Pagination = Depends(user_access_token_pagination)
 
-) -> list[models.UserAccessToken]:
+) -> list[tables.UserAccessToken]:
     async with c.AsyncSession() as session:
-        query = select(models.UserAccessToken).where(
-            models.UserAccessToken.user_id == authorization._user_id)
-        query = models.build_pagination(query, pagination)
+        query = select(tables.UserAccessToken).where(
+            tables.UserAccessToken.user_id == authorization._user_id)
+        query = tables.build_pagination(query, pagination)
         user_access_tokens = session.exec(query).all()
         return user_access_tokens
 
 
-@user_access_token_admin_router.get('/users/{user_id}/', tags=[models.User._ROUTER_TAG], responses={status.HTTP_404_NOT_FOUND: {"description": models.User.not_found_message(), 'model': NotFoundResponse}})
+@user_access_token_admin_router.get('/users/{user_id}/', tags=[tables.User._ROUTER_TAG], responses={status.HTTP_404_NOT_FOUND: {"description": tables.User.not_found_message(), 'model': NotFoundResponse}})
 async def get_user_access_tokens_admin(
-    user_id: models.UserTypes.id,
+    user_id: tables.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))],
-    pagination: models.Pagination = Depends(user_access_token_pagination)
-) -> list[models.UserAccessToken]:
+    pagination: tables.Pagination = Depends(user_access_token_pagination)
+) -> list[tables.UserAccessToken]:
     async with c.AsyncSession() as session:
 
-        query = select(models.UserAccessToken).where(
-            models.UserAccessToken.user_id == user_id)
-        query = models.build_pagination(query, pagination)
+        query = select(tables.UserAccessToken).where(
+            tables.UserAccessToken.user_id == user_id)
+        query = tables.build_pagination(query, pagination)
         user_access_tokens = session.exec(query).all()
         return user_access_tokens
 
@@ -277,8 +278,8 @@ async def get_user_access_tokens_count(
         make_get_auth_dependency())],
 ) -> int:
     async with c.AsyncSession() as session:
-        query = select(func.count()).select_from(models.UserAccessToken).where(
-            models.UserAccessToken.user_id == authorization._user_id)
+        query = select(func.count()).select_from(tables.UserAccessToken).where(
+            tables.UserAccessToken.user_id == authorization._user_id)
         return session.exec(query).one()
 
 
@@ -290,99 +291,99 @@ app.include_router(user_access_token_admin_router)
 
 
 api_key_router = APIRouter(
-    prefix='/api-keys', tags=[models.ApiKey._ROUTER_TAG])
+    prefix='/api-keys', tags=[tables.ApiKey._ROUTER_TAG])
 api_key_admin_router = APIRouter(
-    prefix='/admin/api-keys', tags=[models.ApiKey._ROUTER_TAG, 'Admin'])
+    prefix='/admin/api-keys', tags=[tables.ApiKey._ROUTER_TAG, 'Admin'])
 
 
-@api_key_router.get('/{api_key_id}/', responses=models.ApiKey.get_responses())
+@api_key_router.get('/{api_key_id}/', responses=tables.ApiKey.get_responses())
 async def get_api_key_by_id(
-    api_key_id: models.ApiKeyTypes.id,
+    api_key_id: tables.ApiKeyTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())]
-) -> models.ApiKeyPrivate:
+) -> tables.ApiKeyPrivate:
     async with c.AsyncSession() as session:
-        return models.ApiKeyPrivate.model_validate(await models.ApiKey.api_get(models.ApiKey.GetParams.model_construct(
+        return tables.ApiKeyPrivate.model_validate(await tables.ApiKey.api_get(tables.ApiKey.GetParams.model_construct(
             session=session, c=c, authorized_user_id=authorization._user_id, id=api_key_id)))
 
 
-@api_key_admin_router.get('/{api_key_id}/', responses=models.ApiKey.get_responses())
+@api_key_admin_router.get('/{api_key_id}/', responses=tables.ApiKey.get_responses())
 async def get_api_key_by_id_admin(
-    api_key_id: models.ApiKeyTypes.id,
+    api_key_id: tables.ApiKeyTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))]
-) -> models.ApiKey:
+) -> tables.ApiKey:
     async with c.AsyncSession() as session:
-        return await models.ApiKey.api_get(models.ApiKey.GetParams.model_construct(
+        return await tables.ApiKey.api_get(tables.ApiKey.GetParams.model_construct(
             session=session, c=c, authorized_user_id=authorization._user_id, id=api_key_id, admin=True))
 
 
-@api_key_router.post('/', responses=models.ApiKey.post_responses())
+@api_key_router.post('/', responses=tables.ApiKey.post_responses())
 async def post_api_key_to_user(
-    api_key_create: models.ApiKeyCreate,
+    api_key_create: tables.ApiKeyCreate,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())]
-) -> models.ApiKeyPrivate:
+) -> tables.ApiKeyPrivate:
 
     async with c.AsyncSession() as session:
-        return models.ApiKeyPrivate.from_api_key(await models.ApiKey.api_post(models.ApiKey.PostParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, create_model=models.ApiKeyAdminCreate(
+        return tables.ApiKeyPrivate.from_api_key(await tables.ApiKey.api_post(tables.ApiKey.PostParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, create_model=tables.ApiKeyAdminCreate(
             **api_key_create.model_dump(exclude_unset=True), user_id=authorization._user_id)))
         )
 
 
-@api_key_admin_router.post('/', responses=models.ApiKey.post_responses())
+@api_key_admin_router.post('/', responses=tables.ApiKey.post_responses())
 async def post_api_key_to_user_admin(
-    api_key_create_admin: models.ApiKeyAdminCreate,
+    api_key_create_admin: tables.ApiKeyAdminCreate,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))]
-) -> models.ApiKey:
+) -> tables.ApiKey:
     async with c.AsyncSession() as session:
-        return await models.ApiKey.api_post(models.ApiKey.PostParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, admin=True, create_model=models.ApiKeyAdminCreate(**api_key_create_admin.model_dump(exclude_unset=True))))
+        return await tables.ApiKey.api_post(tables.ApiKey.PostParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, admin=True, create_model=tables.ApiKeyAdminCreate(**api_key_create_admin.model_dump(exclude_unset=True))))
 
 
-@api_key_router.patch('/{api_key_id}/', responses=models.ApiKey.patch_responses())
+@api_key_router.patch('/{api_key_id}/', responses=tables.ApiKey.patch_responses())
 async def patch_api_key(
-    api_key_id: models.ApiKeyTypes.id,
-    api_key_update: models.ApiKeyUpdate,
+    api_key_id: tables.ApiKeyTypes.id,
+    api_key_update: tables.ApiKeyUpdate,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())]
-) -> models.ApiKeyPrivate:
+) -> tables.ApiKeyPrivate:
     async with c.AsyncSession() as session:
-        return models.ApiKeyPrivate.from_api_key(await models.ApiKey.api_patch(models.ApiKey.PatchParams.model_construct(
-            session=session, c=c, authorized_user_id=authorization._user_id, id=api_key_id, update_model=models.ApiKeyAdminUpdate(**api_key_update.model_dump(exclude_unset=True)))))
+        return tables.ApiKeyPrivate.from_api_key(await tables.ApiKey.api_patch(tables.ApiKey.PatchParams.model_construct(
+            session=session, c=c, authorized_user_id=authorization._user_id, id=api_key_id, update_model=tables.ApiKeyAdminUpdate(**api_key_update.model_dump(exclude_unset=True)))))
 
 
-@api_key_admin_router.patch('/{api_key_id}/', responses=models.ApiKey.patch_responses())
+@api_key_admin_router.patch('/{api_key_id}/', responses=tables.ApiKey.patch_responses())
 async def patch_api_key_admin(
-    api_key_id: models.ApiKeyTypes.id,
-    api_key_update_admin: models.ApiKeyAdminUpdate,
+    api_key_id: tables.ApiKeyTypes.id,
+    api_key_update_admin: tables.ApiKeyAdminUpdate,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))]
-) -> models.ApiKey:
+) -> tables.ApiKey:
     async with c.AsyncSession() as session:
-        return await models.ApiKey.api_patch(models.ApiKey.PatchParams.model_construct(
-            session=session, c=c, authorized_user_id=authorization._user_id, id=api_key_id, admin=True, update_model=models.ApiKeyAdminUpdate(**api_key_update_admin.model_dump(exclude_unset=True))))
+        return await tables.ApiKey.api_patch(tables.ApiKey.PatchParams.model_construct(
+            session=session, c=c, authorized_user_id=authorization._user_id, id=api_key_id, admin=True, update_model=tables.ApiKeyAdminUpdate(**api_key_update_admin.model_dump(exclude_unset=True))))
 
 
-@api_key_router.delete('/{api_key_id}/', responses=models.ApiKey.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
+@api_key_router.delete('/{api_key_id}/', responses=tables.ApiKey.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
 async def delete_api_key(
-    api_key_id: models.ApiKeyTypes.id,
+    api_key_id: tables.ApiKeyTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())]
 ):
     async with c.AsyncSession() as session:
-        return await models.ApiKey.api_delete(models.ApiKey.DeleteParams.model_construct(
+        return await tables.ApiKey.api_delete(tables.ApiKey.DeleteParams.model_construct(
             session=session, c=c, authorized_user_id=authorization._user_id, id=api_key_id))
 
 
-@api_key_admin_router.delete('/{api_key_id}/', responses=models.ApiKey.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
+@api_key_admin_router.delete('/{api_key_id}/', responses=tables.ApiKey.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
 async def delete_api_key_admin(
-    api_key_id: models.ApiKeyTypes.id,
+    api_key_id: tables.ApiKeyTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ):
     async with c.AsyncSession() as session:
-        return await models.ApiKey.api_delete(models.ApiKey.DeleteParams.model_construct(
+        return await tables.ApiKey.api_delete(tables.ApiKey.DeleteParams.model_construct(
             session=session, c=c, authorized_user_id=authorization._user_id, id=api_key_id, admin=True))
 
 
@@ -390,14 +391,14 @@ class ApiKeyJWTResponse(BaseModel):
     jwt: str
 
 
-@api_key_router.get('/{api_key_id}/generate-jwt/', responses={status.HTTP_404_NOT_FOUND: {"description": models.ApiKey.not_found_message(), 'model': NotFoundResponse}})
+@api_key_router.get('/{api_key_id}/generate-jwt/', responses={status.HTTP_404_NOT_FOUND: {"description": tables.ApiKey.not_found_message(), 'model': NotFoundResponse}})
 async def get_api_key_jwt(
-    api_key_id: models.ApiKeyTypes.id,
+    api_key_id: tables.ApiKeyTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())]
 ) -> ApiKeyJWTResponse:
     async with c.AsyncSession() as session:
-        api_key = await models.ApiKey.api_get(models.ApiKey.GetParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, id=api_key_id))
+        api_key = await tables.ApiKey.api_get(tables.ApiKey.GetParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, id=api_key_id))
         return ApiKeyJWTResponse(
             jwt=c.jwt_encode(api_key.encode())
         )
@@ -407,13 +408,13 @@ UserNotPermittedToViewAnotherUserApiKeys = HTTPException(
 
 
 class GetApiKeysQueryParamsReturn(BaseModel):
-    pagination: models.Pagination
-    order_bys: list[models.OrderBy[models.ApiKeyTypes.order_by]]
+    pagination: tables.Pagination
+    order_bys: list[tables.OrderBy[tables.ApiKeyTypes.order_by]]
 
 
 def get_api_keys_query_params(
-        pagination: typing.Annotated[models.Pagination, Depends(get_pagination())],
-        order_bys: typing.Annotated[list[models.OrderBy[models.ApiKeyTypes.order_by]], Depends(models.ApiKey.make_order_by_dependency())]):
+        pagination: typing.Annotated[tables.Pagination, Depends(get_pagination())],
+        order_bys: typing.Annotated[list[tables.OrderBy[tables.ApiKeyTypes.order_by]], Depends(tables.ApiKey.make_order_by_dependency())]):
     return GetApiKeysQueryParamsReturn(pagination=pagination, order_bys=order_bys)
 
 
@@ -423,18 +424,18 @@ async def get_user_api_keys(
         make_get_auth_dependency())],
     get_api_keys_query_params: GetApiKeysQueryParamsReturn = Depends(
         get_api_keys_query_params)
-) -> list[models.ApiKeyPrivate]:
+) -> list[tables.ApiKeyPrivate]:
     async with c.AsyncSession() as session:
 
-        query = select(models.ApiKey).options(selectinload(models.ApiKey.api_key_scopes)).where(
-            models.ApiKey.user_id == authorization._user_id)
-        query = models.build_pagination(
+        query = select(tables.ApiKey).options(selectinload(tables.ApiKey.api_key_scopes)).where(
+            tables.ApiKey.user_id == authorization._user_id)
+        query = tables.build_pagination(
             query, get_api_keys_query_params.pagination)
-        query = models.ApiKey._build_order_by(
+        query = tables.ApiKey._build_order_by(
             query, get_api_keys_query_params.order_bys)
 
         user_api_keys = session.exec(query).all()
-        return [models.ApiKeyPrivate.from_api_key(api_key) for api_key in user_api_keys]
+        return [tables.ApiKeyPrivate.from_api_key(api_key) for api_key in user_api_keys]
 
 
 @api_key_router.get('/details/count/')
@@ -443,52 +444,52 @@ async def get_user_api_keys_count(
         make_get_auth_dependency())],
 ) -> int:
     async with c.AsyncSession() as session:
-        query = select(func.count()).select_from(models.ApiKey).where(
-            models.ApiKey.user_id == authorization._user_id)
+        query = select(func.count()).select_from(tables.ApiKey).where(
+            tables.ApiKey.user_id == authorization._user_id)
         return session.exec(query).one()
 
 
-@api_key_admin_router.get('/users/{user_id}/', tags=[models.User._ROUTER_TAG])
+@api_key_admin_router.get('/users/{user_id}/', tags=[tables.User._ROUTER_TAG])
 async def get_user_api_keys_admin(
-    user_id: models.UserTypes.id,
+    user_id: tables.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))],
     get_api_keys_query_params: GetApiKeysQueryParamsReturn = Depends(
         get_api_keys_query_params)
-) -> list[models.ApiKey]:
+) -> list[tables.ApiKey]:
     async with c.AsyncSession() as session:
 
-        query = select(models.ApiKey).where(
-            models.ApiKey.user_id == user_id)
-        query = models.build_pagination(
+        query = select(tables.ApiKey).where(
+            tables.ApiKey.user_id == user_id)
+        query = tables.build_pagination(
             query, get_api_keys_query_params.pagination)
-        query = models.ApiKey._build_order_by(
+        query = tables.ApiKey._build_order_by(
             query, get_api_keys_query_params.order_bys)
 
         user_api_keys = session.exec(query).all()
         return user_api_keys
 
 
-@api_key_router.get('/details/available/', responses={status.HTTP_409_CONFLICT: {"description": models.ApiKey.already_exists_message(), 'model': DetailOnlyResponse}})
+@api_key_router.get('/details/available/', responses={status.HTTP_409_CONFLICT: {"description": tables.ApiKey.already_exists_message(), 'model': DetailOnlyResponse}})
 async def get_api_key_available(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())],
-    api_key_available: models.ApiKeyAvailable = Depends(),
+    api_key_available: tables.ApiKeyAvailable = Depends(),
 ):
     async with c.AsyncSession() as session:
-        await models.ApiKey.api_get_is_available(session, models.ApiKeyAdminAvailable(
+        await tables.ApiKey.api_get_is_available(session, tables.ApiKeyAdminAvailable(
             **api_key_available.model_dump(exclude_unset=True), user_id=authorization._user_id
         ))
 
 
-@api_key_admin_router.get('/details/available/', responses={status.HTTP_409_CONFLICT: {"description": models.ApiKey.already_exists_message(), 'model': DetailOnlyResponse}})
+@api_key_admin_router.get('/details/available/', responses={status.HTTP_409_CONFLICT: {"description": tables.ApiKey.already_exists_message(), 'model': DetailOnlyResponse}})
 async def get_api_key_available_admin(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))],
-    api_key_available_admin: models.ApiKeyAdminAvailable = Depends(),
+    api_key_available_admin: tables.ApiKeyAdminAvailable = Depends(),
 ):
     async with c.AsyncSession() as session:
-        await models.ApiKey.api_get_is_available(session, api_key_available_admin)
+        await tables.ApiKey.api_get_is_available(session, api_key_available_admin)
 
 
 app.include_router(api_key_router)
@@ -499,59 +500,59 @@ app.include_router(api_key_admin_router)
 
 
 api_key_scope_router = APIRouter(
-    prefix='/api-key-scopes', tags=[models.ApiKeyScope._ROUTER_TAG])
+    prefix='/api-key-scopes', tags=[tables.ApiKeyScope._ROUTER_TAG])
 api_key_scope_admin_router = APIRouter(
-    prefix='/admin/api-key-scopes', tags=[models.ApiKeyScope._ROUTER_TAG, 'Admin'])
+    prefix='/admin/api-key-scopes', tags=[tables.ApiKeyScope._ROUTER_TAG, 'Admin'])
 
 
 @api_key_scope_router.post('/api-keys/{api_key_id}/scopes/{scope_id}/',
                            responses={status.HTTP_404_NOT_FOUND: {
-                               "description": models.ApiKey.not_found_message(), 'model': NotFoundResponse}},
+                               "description": tables.ApiKey.not_found_message(), 'model': NotFoundResponse}},
                            )
 @api_key_scope_admin_router.post('/api-keys/{api_key_id}/scopes/{scope_id}/',
                                  responses={status.HTTP_404_NOT_FOUND: {
-                                     "description": models.ApiKey.not_found_message(), 'model': NotFoundResponse}},
+                                     "description": tables.ApiKey.not_found_message(), 'model': NotFoundResponse}},
                                  )
 async def add_scope_to_api_key_admin(
-    api_key_id: models.ApiKeyTypes.id,
+    api_key_id: tables.ApiKeyTypes.id,
     scope_id: types.ScopeTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ):
     async with c.AsyncSession() as session:
-        return await models.ApiKeyScope.api_post(models.ApiKeyScope.PostParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, create_model=models.ApiKeyScopeAdminCreate(api_key_id=api_key_id, scope_id=scope_id), admin=True))
+        return await tables.ApiKeyScope.api_post(tables.ApiKeyScope.PostParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, create_model=tables.ApiKeyScopeAdminCreate(api_key_id=api_key_id, scope_id=scope_id), admin=True))
 
 
 @api_key_scope_router.delete('/api-keys/{api_key_id}/scopes/{scope_id}/',
                              responses={status.HTTP_404_NOT_FOUND: {
-                                 "description": models.ApiKey.not_found_message(), 'model': NotFoundResponse}},
+                                 "description": tables.ApiKey.not_found_message(), 'model': NotFoundResponse}},
                              status_code=status.HTTP_204_NO_CONTENT,
                              )
 async def remove_scope_from_api_key(
-    api_key_id: models.ApiKeyTypes.id,
+    api_key_id: tables.ApiKeyTypes.id,
     scope_id: types.ScopeTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())]
 ):
     async with c.AsyncSession() as session:
-        return await models.ApiKeyScope.api_delete(models.ApiKeyScope.DeleteParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, id=models.ApiKeyScopeIdBase(api_key_id=api_key_id, scope_id=scope_id)._id))
+        return await tables.ApiKeyScope.api_delete(tables.ApiKeyScope.DeleteParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, id=tables.ApiKeyScopeIdBase(api_key_id=api_key_id, scope_id=scope_id)._id))
 
 
 @api_key_scope_admin_router.delete('/api-keys/{api_key_id}/scopes/{scope_id}/',
                                    responses={status.HTTP_404_NOT_FOUND: {
-                                       "description": models.ApiKey.not_found_message(), 'model': NotFoundResponse}},
+                                       "description": tables.ApiKey.not_found_message(), 'model': NotFoundResponse}},
                                    status_code=status.HTTP_204_NO_CONTENT,
                                    )
 async def remove_scope_from_api_key_admin(
-    api_key_id: models.ApiKeyTypes.id,
+    api_key_id: tables.ApiKeyTypes.id,
     scope_id: types.ScopeTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ):
     async with c.AsyncSession() as session:
-        return await models.ApiKeyScope.api_delete(models.ApiKeyScope.DeleteParams.model_construct(
+        return await tables.ApiKeyScope.api_delete(tables.ApiKeyScope.DeleteParams.model_construct(
             session=session, c=c, authorized_user_id=authorization._user_id,
-            id=models.ApiKeyScopeIdBase(api_key_id=api_key_id, scope_id=scope_id)._id, admin=True))
+            id=tables.ApiKeyScopeIdBase(api_key_id=api_key_id, scope_id=scope_id)._id, admin=True))
 
 app.include_router(api_key_scope_router)
 app.include_router(api_key_scope_admin_router)
@@ -561,97 +562,97 @@ app.include_router(api_key_scope_admin_router)
 
 
 gallery_router = APIRouter(
-    prefix='/galleries', tags=[models.Gallery._ROUTER_TAG])
+    prefix='/galleries', tags=[tables.Gallery._ROUTER_TAG])
 gallery_admin_router = APIRouter(prefix='/admin/galleries', tags=[
-    models.Gallery._ROUTER_TAG, 'Admin'])
+    tables.Gallery._ROUTER_TAG, 'Admin'])
 
 
-@gallery_router.get('/{gallery_id}/', responses=models.Gallery.get_responses())
+@gallery_router.get('/{gallery_id}/', responses=tables.Gallery.get_responses())
 async def get_gallery_by_id(
-    gallery_id: models.GalleryTypes.id,
+    gallery_id: tables.GalleryTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(raise_exceptions=False))]
-) -> models.GalleryPublic:
+) -> tables.GalleryPublic:
     async with c.AsyncSession() as session:
-        return models.GalleryPublic.model_validate(await models.Gallery.api_get(models.Gallery.GetParams.model_construct(
+        return tables.GalleryPublic.model_validate(await tables.Gallery.api_get(tables.Gallery.GetParams.model_construct(
             session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id)))
 
 
-@gallery_admin_router.get('/{gallery_id}/', responses=models.Gallery.get_responses())
+@gallery_admin_router.get('/{gallery_id}/', responses=tables.Gallery.get_responses())
 async def get_gallery_by_id_admin(
-    gallery_id: models.GalleryTypes.id,
+    gallery_id: tables.GalleryTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))]
-) -> models.Gallery:
+) -> tables.Gallery:
     async with c.AsyncSession() as session:
-        return await models.Gallery.api_get(models.Gallery.GetParams.model_construct(
+        return await tables.Gallery.api_get(tables.Gallery.GetParams.model_construct(
             session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id, admin=True))
 
 
-@gallery_router.post('/', responses=models.Gallery.post_responses())
+@gallery_router.post('/', responses=tables.Gallery.post_responses())
 async def post_gallery(
-    gallery_create: models.GalleryCreate,
+    gallery_create: tables.GalleryCreate,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())]
-) -> models.GalleryPrivate:
+) -> tables.GalleryPrivate:
     async with c.AsyncSession() as session:
-        return models.GalleryPrivate.model_validate(await models.Gallery.api_post(models.Gallery.PostParams.model_construct(
-            session=session, c=c, authorized_user_id=authorization._user_id, create_model=models.GalleryAdminCreate(**gallery_create.model_dump(exclude_unset=True), user_id=authorization._user_id))))
+        return tables.GalleryPrivate.model_validate(await tables.Gallery.api_post(tables.Gallery.PostParams.model_construct(
+            session=session, c=c, authorized_user_id=authorization._user_id, create_model=tables.GalleryAdminCreate(**gallery_create.model_dump(exclude_unset=True), user_id=authorization._user_id))))
 
 
-@gallery_admin_router.post('/', responses=models.Gallery.post_responses())
+@gallery_admin_router.post('/', responses=tables.Gallery.post_responses())
 async def post_gallery_admin(
-    gallery_create_admin: models.GalleryAdminCreate,
+    gallery_create_admin: tables.GalleryAdminCreate,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))]
-) -> models.Gallery:
+) -> tables.Gallery:
     async with c.AsyncSession() as session:
-        return await models.Gallery.api_post(models.Gallery.PostParams.model_construct(
-            session=session, c=c, authorized_user_id=authorization._user_id, admin=True, create_model=models.GalleryAdminCreate(**gallery_create_admin.model_dump(exclude_unset=True))))
+        return await tables.Gallery.api_post(tables.Gallery.PostParams.model_construct(
+            session=session, c=c, authorized_user_id=authorization._user_id, admin=True, create_model=tables.GalleryAdminCreate(**gallery_create_admin.model_dump(exclude_unset=True))))
 
 
-@gallery_router.patch('/{gallery_id}/', responses=models.Gallery.patch_responses())
+@gallery_router.patch('/{gallery_id}/', responses=tables.Gallery.patch_responses())
 async def patch_gallery(
-    gallery_id: models.GalleryTypes.id,
-    gallery_update: models.GalleryUpdate,
+    gallery_id: tables.GalleryTypes.id,
+    gallery_update: tables.GalleryUpdate,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())]
-) -> models.GalleryPrivate:
+) -> tables.GalleryPrivate:
     async with c.AsyncSession() as session:
-        return models.GalleryPrivate.model_validate(await models.Gallery.api_patch(models.Gallery.PatchParams.model_construct(
-            session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id, update_model=models.GalleryAdminUpdate(**gallery_update.model_dump(exclude_unset=True)))))
+        return tables.GalleryPrivate.model_validate(await tables.Gallery.api_patch(tables.Gallery.PatchParams.model_construct(
+            session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id, update_model=tables.GalleryAdminUpdate(**gallery_update.model_dump(exclude_unset=True)))))
 
 
-@gallery_admin_router.patch('/{gallery_id}/', responses=models.Gallery.patch_responses())
+@gallery_admin_router.patch('/{gallery_id}/', responses=tables.Gallery.patch_responses())
 async def patch_gallery_admin(
-    gallery_id: models.GalleryTypes.id,
-    gallery_update_admin: models.GalleryAdminUpdate,
+    gallery_id: tables.GalleryTypes.id,
+    gallery_update_admin: tables.GalleryAdminUpdate,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))]
-) -> models.Gallery:
+) -> tables.Gallery:
     async with c.AsyncSession() as session:
-        return await models.Gallery.api_patch(models.Gallery.PatchParams.model_construct(
-            session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id, admin=True, update_model=models.GalleryAdminUpdate(**gallery_update_admin.model_dump(exclude_unset=True))))
+        return await tables.Gallery.api_patch(tables.Gallery.PatchParams.model_construct(
+            session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id, admin=True, update_model=tables.GalleryAdminUpdate(**gallery_update_admin.model_dump(exclude_unset=True))))
 
 
-@gallery_router.delete('/{gallery_id}/', responses=models.Gallery.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
+@gallery_router.delete('/{gallery_id}/', responses=tables.Gallery.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
 async def delete_gallery(
-    gallery_id: models.GalleryTypes.id,
+    gallery_id: tables.GalleryTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())]
 ):
     async with c.AsyncSession() as session:
-        return await models.Gallery.api_delete(models.Gallery.DeleteParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id))
+        return await tables.Gallery.api_delete(tables.Gallery.DeleteParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id))
 
 
-@gallery_admin_router.delete('/{gallery_id}/', responses=models.Gallery.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
+@gallery_admin_router.delete('/{gallery_id}/', responses=tables.Gallery.delete_responses(), status_code=status.HTTP_204_NO_CONTENT)
 async def delete_gallery_admin(
-    gallery_id: models.GalleryTypes.id,
+    gallery_id: tables.GalleryTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))]
 ):
     async with c.AsyncSession() as session:
-        return await models.Gallery.api_delete(models.Gallery.DeleteParams.model_construct(
+        return await tables.Gallery.api_delete(tables.Gallery.DeleteParams.model_construct(
             session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id, admin=True))
 
 
@@ -659,10 +660,10 @@ async def delete_gallery_admin(
 async def get_gallery_available(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())],
-    gallery_available: models.GalleryAvailable = Depends(),
+    gallery_available: tables.GalleryAvailable = Depends(),
 ):
     async with c.AsyncSession() as session:
-        await models.Gallery.api_get_is_available(session, models.GalleryAdminAvailable(
+        await tables.Gallery.api_get_is_available(session, tables.GalleryAdminAvailable(
             **gallery_available.model_dump(exclude_unset=True), user_id=authorization._user_id
         ))
 
@@ -671,10 +672,10 @@ async def get_gallery_available(
 async def get_gallery_available_admin(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))],
-    gallery_available_admin: models.GalleryAdminAvailable = Depends(),
+    gallery_available_admin: tables.GalleryAdminAvailable = Depends(),
 ):
     async with c.AsyncSession() as session:
-        await models.Gallery.api_get_is_available(session, gallery_available_admin)
+        await tables.Gallery.api_get_is_available(session, gallery_available_admin)
 
 get_galleries_pagination = get_pagination()
 
@@ -683,14 +684,14 @@ get_galleries_pagination = get_pagination()
 async def get_galleries(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())],
-    pagination: models.Pagination = Depends(get_galleries_pagination)
+    pagination: tables.Pagination = Depends(get_galleries_pagination)
 
-) -> list[models.GalleryPrivate]:
+) -> list[tables.GalleryPrivate]:
 
     async with c.AsyncSession() as session:
-        galleries = session.exec(select(models.Gallery).where(
-            models.Gallery.user_id == authorization._user_id).offset(pagination.offset).limit(pagination.limit)).all()
-        return [models.GalleryPrivate.model_validate(gallery) for gallery in galleries]
+        galleries = session.exec(select(tables.Gallery).where(
+            tables.Gallery.user_id == authorization._user_id).offset(pagination.offset).limit(pagination.limit)).all()
+        return [tables.GalleryPrivate.model_validate(gallery) for gallery in galleries]
 
 
 # need to decide how to deal with gallery permissions and how to return
@@ -709,17 +710,17 @@ async def get_galleries(
 #         return [models.GalleryPublic.model_validate(gallery) for gallery in galleries]
 
 
-@gallery_admin_router.get('/users/{user_id}', tags=[models.User._ROUTER_TAG])
+@gallery_admin_router.get('/users/{user_id}', tags=[tables.User._ROUTER_TAG])
 async def get_galleries_by_user_admin(
-    user_id: models.UserTypes.id,
+    user_id: tables.UserTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(required_scopes={'admin'}))],
-    pagination: models.Pagination = Depends(get_galleries_pagination)
-) -> list[models.Gallery]:
+    pagination: tables.Pagination = Depends(get_galleries_pagination)
+) -> list[tables.Gallery]:
 
     async with c.AsyncSession() as session:
-        galleries = session.exec(select(models.Gallery).where(
-            models.Gallery.user_id == user_id).offset(pagination.offset).limit(pagination.limit)).all()
+        galleries = session.exec(select(tables.Gallery).where(
+            tables.Gallery.user_id == user_id).offset(pagination.offset).limit(pagination.limit)).all()
         return galleries
 
 
@@ -729,7 +730,7 @@ class UploadFileToGalleryResponse(BaseModel):
 
 @gallery_router.post("/{gallery_id}/upload/", status_code=status.HTTP_201_CREATED)
 async def upload_file_to_gallery(
-    gallery_id: models.GalleryTypes.id,
+    gallery_id: tables.GalleryTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())],
     file: UploadFile
@@ -737,16 +738,16 @@ async def upload_file_to_gallery(
 
     async with c.AsyncSession() as session:
 
-        gallery = await models.Gallery.read(session, gallery_id)
+        gallery = await tables.Gallery.read(session, gallery_id)
         if not gallery:
-            raise models.Gallery.not_found_exception()
+            raise tables.Gallery.not_found_exception()
 
         if gallery.user.id != authorization._user_id:
-            gallery_permission = await models.GalleryPermission.api_get(models.GalleryPermission.GetParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, id=models.GalleryPermissionIdBase(gallery_id=gallery_id, user_id=authorization._user_id)._id))
+            gallery_permission = await tables.GalleryPermission.api_get(tables.GalleryPermission.GetParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, id=tables.GalleryPermissionIdBase(gallery_id=gallery_id, user_id=authorization._user_id)._id))
 
             if not gallery_permission:
                 if gallery.visibility_level == settings.VISIBILITY_LEVEL_NAME_MAPPING['private']:
-                    raise models.Gallery.not_found_exception()
+                    raise tables.Gallery.not_found_exception()
 
                 if gallery.visibility_level == settings.VISIBILITY_LEVEL_NAME_MAPPING['public']:
                     raise HTTPException(status.HTTP_403_FORBIDDEN,
@@ -765,13 +766,13 @@ async def upload_file_to_gallery(
 
 @gallery_router.post('/{gallery_id}/sync/')
 async def sync_gallery(
-    gallery_id: models.GalleryTypes.id,
+    gallery_id: tables.GalleryTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())]
 ) -> DetailOnlyResponse:
 
     async with c.AsyncSession() as session:
-        gallery = await models.Gallery.api_get(models.Gallery.GetParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id))
+        gallery = await tables.Gallery.api_get(tables.Gallery.GetParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id))
         dir = await gallery.get_dir(session, c.galleries_dir)
         await gallery.sync_with_local(session, c, dir)
         return DetailOnlyResponse(detail='Synced gallery')
@@ -787,16 +788,16 @@ pages_router = APIRouter(prefix='/pages', tags=['Page'])
 
 
 class GetProfilePageResponse(GetAuthReturn):
-    user: models.UserPrivate | None = None
+    user: tables.UserPrivate | None = None
 
 
-@pages_router.get('/profile/', tags=[models.User._ROUTER_TAG])
+@pages_router.get('/profile/', tags=[tables.User._ROUTER_TAG])
 async def get_pages_profile(authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency())]) -> GetProfilePageResponse:
 
     return GetProfilePageResponse(
         **get_auth(authorization).model_dump(),
-        user=models.UserPrivate.model_validate(authorization.user)
+        user=tables.UserPrivate.model_validate(authorization.user)
     )
 
 
@@ -827,10 +828,10 @@ async def get_settings_page(
 
 class GetSettingsApiKeysPageResponse(GetAuthReturn):
     api_key_count: int
-    api_keys: list[models.ApiKeyPrivate]
+    api_keys: list[tables.ApiKeyPrivate]
 
 
-@pages_router.get('/settings/api-keys/', tags=[models.ApiKey._ROUTER_TAG])
+@pages_router.get('/settings/api-keys/', tags=[tables.ApiKey._ROUTER_TAG])
 async def get_settings_api_keys_page(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(make_get_auth_dependency())],
     get_api_keys_query_params: GetApiKeysQueryParamsReturn = Depends(
@@ -845,13 +846,13 @@ async def get_settings_api_keys_page(
 
 class GetSettingsUserAccessTokensPageResponse(GetAuthReturn):
     user_access_token_count: int
-    user_access_tokens: list[models.UserAccessToken]
+    user_access_tokens: list[tables.UserAccessToken]
 
 
-@pages_router.get('/settings/user-access-tokens/', tags=[models.UserAccessToken._ROUTER_TAG])
+@pages_router.get('/settings/user-access-tokens/', tags=[tables.UserAccessToken._ROUTER_TAG])
 async def get_settings_user_access_tokens_page(
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(make_get_auth_dependency())],
-    pagination: models.Pagination = Depends(user_access_token_pagination)
+    pagination: tables.Pagination = Depends(user_access_token_pagination)
 ) -> GetSettingsUserAccessTokensPageResponse:
     return GetSettingsUserAccessTokensPageResponse(
         **get_auth(authorization).model_dump(),
@@ -872,14 +873,14 @@ async def get_styles_page(authorization: typing.Annotated[GetAuthorizationReturn
 
 
 class GetGalleryPageResponse(GetAuthReturn):
-    gallery: models.GalleryPublic
-    parents: list[models.GalleryPublic]
-    children: list[models.GalleryPublic]
+    gallery: tables.GalleryPublic
+    parents: list[tables.GalleryPublic]
+    children: list[tables.GalleryPublic]
 
 
-@pages_router.get('/galleries/{gallery_id}/', responses={status.HTTP_404_NOT_FOUND: {"description": models.Gallery.not_found_message(), 'model': NotFoundResponse}}, tags=[models.Gallery._ROUTER_TAG])
+@pages_router.get('/galleries/{gallery_id}/', responses={status.HTTP_404_NOT_FOUND: {"description": tables.Gallery.not_found_message(), 'model': NotFoundResponse}}, tags=[tables.Gallery._ROUTER_TAG])
 async def get_gallery_page(
-    gallery_id: models.GalleryTypes.id,
+    gallery_id: tables.GalleryTypes.id,
     authorization: typing.Annotated[GetAuthorizationReturn, Depends(
         make_get_auth_dependency(raise_exceptions=False))],
     root: bool = Query(False),
@@ -888,22 +889,22 @@ async def get_gallery_page(
     async with c.AsyncSession() as session:
         if root:
             if not authorization.isAuthorized:
-                raise models.Gallery.not_found_exception()
+                raise tables.Gallery.not_found_exception()
 
-            gallery = await models.Gallery.get_root_gallery(session, authorization._user_id)
+            gallery = await tables.Gallery.get_root_gallery(session, authorization._user_id)
             gallery_id = gallery._id
 
         else:
-            gallery = await models.Gallery.api_get(models.Gallery.GetParams.model_construct(
+            gallery = await tables.Gallery.api_get(tables.Gallery.GetParams.model_construct(
                 session=session, c=c,  authorized_user_id=authorization._user_id, id=gallery_id
             ))
 
         return GetGalleryPageResponse(
             **get_auth(authorization).model_dump(),
-            gallery=models.GalleryPublic.model_validate(gallery),
-            parents=[models.GalleryPublic.model_validate(
+            gallery=tables.GalleryPublic.model_validate(gallery),
+            parents=[tables.GalleryPublic.model_validate(
                 parent) for parent in await gallery.get_parents(session)],
-            children=[models.GalleryPublic.model_validate(
+            children=[tables.GalleryPublic.model_validate(
                 child) for child in gallery.children]
         )
 

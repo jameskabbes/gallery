@@ -6,8 +6,8 @@ from typing import Annotated, cast
 from . import base
 from .. import types
 from ..auth import utils as auth_utils, exceptions as auth_exceptions
-from ..models import user as user_model_module, user_access_token as user_access_token_model_module
-from ..models.bases import auth_credential
+from ..models.tables import user as user_model_module, user_access_token as user_access_token_model_module
+from ..models.tables.bases import auth_credential
 from ..config import settings
 
 
