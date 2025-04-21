@@ -24,32 +24,32 @@ class OTPAdminCreate(auth_credential.Create):
     hashed_code: types.OTP.hashed_code
 
 
-class OTP(
-        table.Table[
-            types.OTP.id,
-            OTPAdminCreate,
-            OTPAdminUpdate,
-            table.AfterCreateCustomParams,
-            table.AfterReadCustomParams,
-            table.AfterUpdateCustomParams,
-            table.AfterDeleteCustomParams],
-        auth_credential.Table,
-        table=True):
+# class OTP(
+#         table.Table[
+#             types.OTP.id,
+#             OTPAdminCreate,
+#             OTPAdminUpdate,
+#             table.AfterCreateCustomParams,
+#             table.AfterReadCustomParams,
+#             table.AfterUpdateCustomParams,
+#             table.AfterDeleteCustomParams],
+#         auth_credential.Table,
+#         table=True):
 
-    __tablename__ = 'otp'  # type: ignore
+#     __tablename__ = 'otp'  # type: ignore
 
-    auth_type = 'otp'
+#     auth_type = 'otp'
 
-    id: types.OTP.id = Field(
-        primary_key=True, index=False, unique=True, const=True)
-    issued: types.AuthCredential.issued = Field(
-        const=True, sa_column=Column(timestamp.Timestamp))
-    expiry: types.AuthCredential.expiry = Field(
-        sa_column=Column(timestamp.Timestamp))
+#     id: types.OTP.id = Field(
+#         primary_key=True, index=False, unique=True, const=True)
+#     issued: types.AuthCredential.issued = Field(
+#         const=True, sa_column=Column(timestamp.Timestamp))
+#     expiry: types.AuthCredential.expiry = Field(
+#         sa_column=Column(timestamp.Timestamp))
 
-    hashed_code: types.OTP.hashed_code = Field()
-    user: 'User' = Relationship(
-        back_populates='otp')
+#     hashed_code: types.OTP.hashed_code = Field()
+#     user: 'User' = Relationship(
+#         back_populates='otp')
 
     _ROUTER_TAG = 'One Time Password'
 

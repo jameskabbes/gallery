@@ -52,16 +52,17 @@ class JwtModel(auth_credential.JwtModel):
 
 
 class ApiKey(
-        table.Table[
-            types.ApiKey.id,
-            ApiKeyAdminCreate,
-            ApiKeyAdminUpdate,
-            table.AfterCreateCustomParams,
-            table.AfterReadCustomParams,
-            table.AfterUpdateCustomParams,
-            table.AfterDeleteCustomParams],
-        auth_credential.Table,
-        auth_credential.JwtIO[JwtPayload, JwtModel], table=True):
+    table.Table[
+        types.ApiKey.id,
+        ApiKeyAdminCreate,
+        ApiKeyAdminUpdate,
+        table.AfterCreateCustomParams,
+        table.AfterReadCustomParams,
+        table.AfterUpdateCustomParams,
+        table.AfterDeleteCustomParams],
+    auth_credential.Table,
+    auth_credential.JwtIO[JwtPayload, JwtModel],
+        table=True):
 
     __tablename__ = 'api_key'  # type: ignore
 

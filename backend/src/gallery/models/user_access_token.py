@@ -1,12 +1,10 @@
 from sqlmodel import Field, Relationship, select, SQLModel
 from typing import TYPE_CHECKING, TypedDict, Optional
 from pydantic import BaseModel
-from sqlalchemy import Column
 
 from .. import types, utils
 from .bases import auth_credential, table
 from ..config import settings
-from .custom_field_types import timestamp
 
 ID_COL = 'id'
 
@@ -34,35 +32,11 @@ class UserAccessTokenPublic(BaseModel):
     id: types.User.id
     expiry: types.AuthCredential.expiry
 
-
-class UserAccessToken(
-        table.Table[
-            types.UserAccessToken.id,
-            UserAccessTokenAdminCreate,
-            UserAccessTokenAdminUpdate,
-            table.AfterCreateCustomParams,
-            table.AfterReadCustomParams,
-            table.AfterUpdateCustomParams,
-            table.AfterDeleteCustomParams],
-        auth_credential.Table,
-        auth_credential.JwtIO[JwtPayload, JwtModel],
-        table=True):
-
-    __tablename__ = 'user_access_token'  # type: ignore
-
-    auth_type = 'access_token'
-    _ROUTER_TAG = 'User Access Token'
-    _CLAIMS_MAPPING = {
-        **auth_credential.CLAIMS_MAPPING_BASE, **{'sub': 'id'}
-    }
-
-    id: types.ImageVersion.id = Field(
-        primary_key=True, index=True, unique=True, const=True)
-    issued: types.AuthCredential.issued = Field(
-        const=True, sa_column=Column(timestamp.Timestamp))
-    expiry: types.AuthCredential.expiry = Field(
-        sa_column=Column(timestamp.Timestamp))
-    user: 'User' = Relationship(back_populates='user_access_tokens')
+    # auth_type = 'access_token'
+    # _ROUTER_TAG = 'User Access Token'
+    # _CLAIMS_MAPPING = {
+    #     **auth_credential.CLAIMS_MAPPING_BASE, **{'sub': 'id'}
+    # }
 
     # @classmethod
     # async def _check_authorization_new(cls, params):

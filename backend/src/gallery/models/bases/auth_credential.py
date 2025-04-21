@@ -60,23 +60,6 @@ class MissingRequiredClaimsError(Exception):
         self.claims = claims
 
 
-class Model(SQLModel):
-
-    # repeated in child classes due to behavior of sqlalchemy with custom type
-    issued: types.AuthCredential.issued = Field(const=True)
-    expiry: types.AuthCredential.expiry = Field()
-    auth_type: ClassVar[types.AuthCredential.type]
-
-    @field_validator('issued', 'expiry')
-    @classmethod
-    def validate_datetime(cls, value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime:
-        return validate_and_normalize_datetime(value, info)
-
-    @field_serializer('issued', 'expiry')
-    def serialize_datetime(self, value: types.AuthCredential.issued | types.AuthCredential.expiry) -> datetime_module.datetime:
-        return value.replace(tzinfo=datetime_module.timezone.utc)
-
-
 class JwtIO(Model, Generic[TPayload, TModel]):
 
     _TYPE_CLAIM: ClassVar[str] = 'type'
@@ -121,26 +104,20 @@ class JwtIO(Model, Generic[TPayload, TModel]):
 
         return cast(TPayload, {claim: payload[self._CLAIMS_MAPPING[claim]] for claim in self._CLAIMS_MAPPING.keys()})
 
+    # # @classmethod
+    # # async def create(cls, params: ApiPostParams['AuthCredential.Create', BaseModel]) -> typing.Self:
 
-class Table(Model):
-
-    user_id: types.User.id = Field(
-        index=True, foreign_key=str(user.User.__tablename__) + '.' + user.ID_COL, const=True, ondelete='CASCADE')
+    # #     return cls(
+    # #         id=cls.generate_id(),
+    # #         issued=datetime_module.datetime.now(
+    # #             datetime_module.timezone.utc),
+    # #         expiry=params.create_model.get_expiry(),
+    # #         **params.create_model.model_dump(exclude=['lifespan', 'expiry'])
+    # #     )
 
     # @classmethod
-    # async def create(cls, params: ApiPostParams['AuthCredential.Create', BaseModel]) -> typing.Self:
-
-    #     return cls(
-    #         id=cls.generate_id(),
-    #         issued=datetime_module.datetime.now(
-    #             datetime_module.timezone.utc),
-    #         expiry=params.create_model.get_expiry(),
-    #         **params.create_model.model_dump(exclude=['lifespan', 'expiry'])
-    #     )
-
-    @classmethod
-    async def get_scope_ids(cls, session: AsyncSession | None = None) -> list[types.Scope.id]:
-        return []
+    # async def get_scope_ids(cls, session: AsyncSession | None = None) -> list[types.Scope.id]:
+    #     return []
 
 
 '''

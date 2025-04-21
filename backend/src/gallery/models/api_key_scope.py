@@ -18,15 +18,16 @@ class ApiKeyScopeAdminCreate(BaseModel):
 
 
 class ApiKeyScope(
-        table.Table[
-            types.ApiKeyScope.id,
-            ApiKeyScopeAdminCreate,
-            ApiKeyScopeAdminUpdate,
-            table.AfterCreateCustomParams,
-            table.AfterReadCustomParams,
-            table.AfterUpdateCustomParams,
-            table.AfterDeleteCustomParams
-        ], table=True):
+    table.Table[
+        types.ApiKeyScope.id,
+        ApiKeyScopeAdminCreate,
+        ApiKeyScopeAdminUpdate,
+        table.AfterCreateCustomParams,
+        table.AfterReadCustomParams,
+        table.AfterUpdateCustomParams,
+        table.AfterDeleteCustomParams
+    ],
+        table=True):
 
     api_key_id: types.ApiKeyScope.api_key_id = Field(
         primary_key=True, index=True, const=True, foreign_key=str(api_key_module.ApiKey.__tablename__) + '.' + api_key_module.ID_COL, ondelete='CASCADE')

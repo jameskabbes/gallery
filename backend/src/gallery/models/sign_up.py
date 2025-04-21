@@ -18,19 +18,19 @@ class SignUpAdminCreate(auth_credential.Create):
     email: types.User.email
 
 
-class SignUp(
-    auth_credential.JwtIO[JwtPayload, JwtModel],
-):
-    auth_type = 'sign_up'
-    email: types.User.email = Field()
+# class SignUp(
+#     auth_credential.JwtIO[JwtPayload, JwtModel],
+# ):
+#     auth_type = 'sign_up'
+#     email: types.User.email = Field()
 
-    _CLAIMS_MAPPING = {
-        **auth_credential.CLAIMS_MAPPING_BASE, **{'sub': 'email'}
-    }
+#     _CLAIMS_MAPPING = {
+#         **auth_credential.CLAIMS_MAPPING_BASE, **{'sub': 'email'}
+#     }
 
-    @classmethod
-    def create(cls, create_model: SignUpAdminCreate) -> Self:
-        return cls(
-            issued=datetime_module.datetime.now(datetime_module.timezone.utc),
-            **create_model.model_dump()
-        )
+#     @classmethod
+#     def create(cls, create_model: SignUpAdminCreate) -> Self:
+#         return cls(
+#             issued=datetime_module.datetime.now(datetime_module.timezone.utc),
+#             **create_model.model_dump()
+#         )
