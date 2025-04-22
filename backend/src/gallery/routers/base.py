@@ -5,13 +5,13 @@ from sqlmodel import SQLModel, Session, select
 from functools import wraps, lru_cache
 from enum import Enum
 from .. import client
+from ..models import HasTable
 
 
-class Router:
+class Router(HasTable):
 
     _PREFIX: ClassVar[str] = ""
     _TAGS: ClassVar[list[str | Enum] | None] = None
-    _TABLE: ClassVar[Type['Table']]
 
     def __init__(self, client: client.Client):
         self.router = APIRouter(prefix=self._PREFIX, tags=self._TAGS)

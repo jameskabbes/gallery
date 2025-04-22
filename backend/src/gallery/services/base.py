@@ -5,7 +5,7 @@ from typing import Protocol, Unpack, TypeVar, TypedDict, Generic, NotRequired, L
 from pydantic import BaseModel
 from .. import client, types
 from ..schemas.pagination import Pagination
-
+from .. import models
 
 T = TypeVar('T', bound=SQLModel, covariant=False)
 TId = TypeVar('TId', bound=types._IdType, covariant=False)
@@ -92,11 +92,7 @@ TAfterDeleteCustomParams = TypeVar(
     'TAfterDeleteCustomParams', bound=AfterDeleteCustomParams, default=AfterDeleteCustomParams)
 
 
-class HasTable[T](Protocol):
-    _TABLE: Type[T] = NotImplemented
-
-
-class HasTableInstFromCreateModel(Generic[T, TCreateModel], HasTable[T]):
+class HasTableInstFromCreateModel(Generic[T, TCreateModel], models.HasTable[T]):
     @classmethod
     async def table_inst_from_create_model(cls, create_model: TCreateModel) -> T:
         """Create a new instance of the model from the create model (TCreateModel), don't overwrite this method"""
@@ -114,7 +110,6 @@ class Service(
         TAfterUpdateCustomParams,
         TAfterDeleteCustomParams
     ],
-    SQLModel,
     HasTableInstFromCreateModel[T, TCreateModel],
 ):
 

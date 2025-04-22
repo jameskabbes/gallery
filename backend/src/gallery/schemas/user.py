@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 from .. import types
+from ..schemas import FromAttributes
 
 
 class UserImport(BaseModel):
@@ -25,9 +26,9 @@ class UserAdminCreate(UserCreate):
     user_role_id: types.User.user_role_id
 
 
-class UserExport(BaseModel):
+class UserExport(FromAttributes):
     id: types.User.id
-    username: Optional[types.User.username]
+    username: Optional[types.User.username] = None
 
 
 class UserPublic(UserExport):

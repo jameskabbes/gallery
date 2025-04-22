@@ -1,5 +1,7 @@
+from typing import Any
 from sqlmodel import select
 from pydantic import BaseModel
+import datetime as datetime_module
 
 from ..models.tables import UserAccessToken as UserAccessTokenTable
 from . import base
@@ -7,6 +9,7 @@ from .. import types
 
 from ..schemas import user_access_token as user_access_token_schema
 from ..services import auth_credential as auth_credential_service
+from .. import utils
 
 
 class UserAccessToken(
@@ -34,6 +37,23 @@ class UserAccessToken(
 
     auth_type = 'access_token'
     _TABLE = UserAccessTokenTable
+
+    @classmethod
+    def table_id(cls, inst):
+        return inst.id
+
+    @classmethod
+    def _build_select_by_id(cls, id):
+        return select(cls._TABLE).where(cls._TABLE.id == id)
+
+    @classmethod
+    async def table_inst_from_create_model(cls, create_model: user_access_token_schema.UserAccessTokenAdminCreate) -> UserAccessTokenTable:
+
+        return cls._TABLE(
+            id=utils.generate_uuid(),
+            issued=datetime_module.datetime.now(datetime_module.timezone.utc),
+            **create_model.model_dump(exclude_unset=True, exclude_defaults=True, exclude_none=True)
+        )
 
     # @classmethod
     # async def _check_authorization_new(cls, params):

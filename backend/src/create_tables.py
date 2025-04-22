@@ -1,5 +1,4 @@
-from backend.src.gallery.models import tables
-from gallery import client
+from gallery import client, models
 import asyncio
 from sqlmodel import SQLModel
 

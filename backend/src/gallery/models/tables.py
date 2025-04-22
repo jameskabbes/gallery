@@ -2,7 +2,8 @@ from sqlmodel import Field, Relationship, SQLModel, PrimaryKeyConstraint, Column
 from pydantic import BaseModel, model_validator, field_serializer, field_validator, ValidationInfo
 from .. import types
 from typing import Optional
-from .bases import auth_credential
+from .custom_field_types import timestamp
+from .bases import auth_credential as auth_credential_model
 
 
 class User(SQLModel, table=True):
@@ -12,11 +13,12 @@ class User(SQLModel, table=True):
     id: types.User.id = Field(
         primary_key=True, index=True, unique=True, const=True)
     email: types.User.email = Field(index=True, unique=True, nullable=False)
-    phone_number: types.User.phone_number | None = Field(
-        index=True, unique=True, nullable=True)
-    username: types.User.username | None = Field(
-        index=True, unique=True, nullable=True)
-    hashed_password: types.User.hashed_password | None = Field(nullable=False)
+    phone_number: Optional[types.User.phone_number] = Field(
+        index=True, unique=True, nullable=True, default=None)
+    username: Optional[types.User.username] = Field(
+        index=True, unique=True, nullable=True, default=None)
+    hashed_password: Optional[types.User.hashed_password] = Field(
+        nullable=True, default=None)
     user_role_id: types.User.user_role_id = Field(nullable=False)
 
     api_keys: list['ApiKey'] = Relationship(
@@ -31,7 +33,7 @@ class User(SQLModel, table=True):
         back_populates='user', cascade_delete=True)
 
 
-class _AuthCredentialTableBase(auth_credential.Model):
+class _AuthCredentialTableBase(auth_credential_model.AuthCredentialBase):
 
     user_id: types.User.id = Field(
         index=True, foreign_key=str(User.__tablename__) + '.id', const=True, ondelete='CASCADE')
@@ -43,6 +45,12 @@ class UserAccessToken(_AuthCredentialTableBase, table=True):
 
     id: types.ImageVersion.id = Field(
         primary_key=True, index=True, unique=True, const=True)
+
+    issued: types.AuthCredential.issued = Field(
+        const=True, sa_column=Column(timestamp.Timestamp))
+    expiry: types.AuthCredential.expiry = Field(
+        sa_column=Column(timestamp.Timestamp))
+
     user: 'User' = Relationship(back_populates='user_access_tokens')
 
 
@@ -52,6 +60,12 @@ class OTP(_AuthCredentialTableBase, table=True):
 
     id: types.OTP.id = Field(
         primary_key=True, index=False, unique=True, const=True)
+
+    issued: types.AuthCredential.issued = Field(
+        const=True, sa_column=Column(timestamp.Timestamp))
+    expiry: types.AuthCredential.expiry = Field(
+        sa_column=Column(timestamp.Timestamp))
+
     hashed_code: types.OTP.hashed_code = Field()
     user: 'User' = Relationship(
         back_populates='otp')
@@ -63,6 +77,12 @@ class ApiKey(_AuthCredentialTableBase, table=True):
 
     id: types.ApiKey.id = Field(
         primary_key=True, index=True, unique=True, const=True)
+
+    issued: types.AuthCredential.issued = Field(
+        const=True, sa_column=Column(timestamp.Timestamp))
+    expiry: types.AuthCredential.expiry = Field(
+        sa_column=Column(timestamp.Timestamp))
+
     name: types.ApiKey.name = Field()
     user: 'User' = Relationship(back_populates='api_keys')
     api_key_scopes: list['ApiKeyScope'] = Relationship(

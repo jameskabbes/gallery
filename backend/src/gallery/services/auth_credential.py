@@ -2,16 +2,18 @@ from pydantic import BaseModel, model_validator, field_serializer, field_validat
 from sqlmodel import Field, SQLModel
 import datetime as datetime_module
 from sqlalchemy import Column
-from typing import Optional, TypedDict, ClassVar, cast, Self, Literal
+from typing import Optional, TypedDict, ClassVar, cast, Self, Literal, Protocol
 from sqlmodel.ext.asyncio.session import AsyncSession
-from .. import types
+from .. import types, client
 
 from typing import ClassVar, TypedDict, cast, TypeVar, Generic, Type
 from collections.abc import Collection
 
 from ..schemas import auth_credential as auth_credential_schemas
 from ..models.bases import auth_credential as auth_credential_model
+from ..models.tables import User
 from . import base
+from .. import utils
 
 
 def lifespan_to_expiry(lifespan: datetime_module.timedelta) -> types.AuthCredential.expiry:
@@ -25,7 +27,8 @@ CLAIMS_MAPPING_BASE = {
 }
 
 
-TAuthCredential = TypeVar('TAuthCredential', bound=auth_credential_model.Model)
+TAuthCredential = TypeVar(
+    'TAuthCredential', bound=auth_credential_model.AuthCredentialBase)
 TCreate = TypeVar('TCreate', bound=auth_credential_schemas.Create)
 TPayload = TypeVar('TPayload', bound=auth_credential_schemas.JwtPayload)
 TModel = TypeVar('TModel', bound=auth_credential_schemas.JwtModel)
@@ -37,7 +40,7 @@ class MissingRequiredClaimsError(Exception):
         self.claims = claims
 
 
-class HasAuthType:
+class HasAuthType(Protocol):
     auth_type: ClassVar[types.AuthCredential.type]
 
 
@@ -45,14 +48,17 @@ class Model(Generic[TAuthCredential, TCreate], HasAuthType, base.HasTableInstFro
     pass
 
 
-class Table(Generic[TAuthCredential, TCreate], Model[TAuthCredential, TCreate]):
+class HasUser(Protocol):
+    user: User
+
+
+class Table(Generic[TAuthCredential, TCreate], Model[TAuthCredential, TCreate], HasUser):
     @classmethod
-    async def get_scope_ids(cls, session: AsyncSession | None = None) -> list[types.Scope.id]:
+    async def get_scope_ids(cls, inst: TAuthCredential | None = None, session: AsyncSession | None = None, c: client.Client | None = None) -> list[types.Scope.id]:
         return []
 
 
 class JwtIO(Generic[TAuthCredential, TCreate, TPayload, TModel], Model[TAuthCredential, TCreate]):
-
     _TYPE_CLAIM: ClassVar[str] = 'type'
     _CLAIMS_MAPPING: ClassVar[dict[str, str]] = CLAIMS_MAPPING_BASE
 

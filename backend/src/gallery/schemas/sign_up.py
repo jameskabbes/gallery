@@ -16,5 +16,5 @@ class SignUpAdminCreate(auth_credential_schema.Create):
     email: types.User.email
 
 
-class SignUp(auth_credential_model_base.Model):
+class SignUp(auth_credential_model_base.AuthCredentialBase):
     email: types.User.email = Field()

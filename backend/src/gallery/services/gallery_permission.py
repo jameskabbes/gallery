@@ -7,13 +7,12 @@ from ..schemas import gallery_permission as gallery_permission_schema
 
 
 class GalleryPermission(
-    base.Service[
-        GalleryPermissionTable,
-        types.GalleryPermission.id,
-        gallery_permission_schema.GalleryPermissionAdminCreate,
-        gallery_permission_schema.GalleryPermissionAdminUpdate,
-    ],
-        table=True):
+        base.Service[
+            GalleryPermissionTable,
+            types.GalleryPermission.id,
+            gallery_permission_schema.GalleryPermissionAdminCreate,
+            gallery_permission_schema.GalleryPermissionAdminUpdate,
+        ]):
 
     _TABLE = GalleryPermissionTable
 

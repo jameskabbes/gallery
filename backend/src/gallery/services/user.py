@@ -1,20 +1,21 @@
-from sqlmodel import select
+from sqlmodel import select, or_
+from sqlmodel.ext.asyncio.session import AsyncSession
 from ..models.tables import User as UserTable
 from . import base
-from .. import types
-
+from .. import types, utils
 from ..schemas import user as user_schema
 import pathlib
 
 
 class User(
-    base.Service[
-        UserTable,
-        types.User.id,
-        user_schema.UserAdminCreate,
-        user_schema.UserAdminUpdate,
-    ],
-        table=True):
+        base.Service[
+            UserTable,
+            types.User.id,
+            user_schema.UserAdminCreate,
+            user_schema.UserAdminUpdate,
+        ]):
+
+    _TABLE = UserTable
 
     @classmethod
     def table_id(cls, inst):
@@ -36,23 +37,21 @@ class User(
         else:
             return root / str(inst.id)
 
-    # @classmethod
-    # async def authenticate(cls, session: AsyncSession, username_or_email: types.User.email | types.User.username, password: types.User.password) -> Self | None:
+    @classmethod
+    async def authenticate(cls, session: AsyncSession, username_or_email: types.User.email | types.User.username, password: types.User.password) -> UserTable | None:
 
-    #     query = select(cls).where(
-    #         or_(cls.username == username_or_email, cls.email == username_or_email))
+        query = select(cls._TABLE).where(
+            or_(cls._TABLE.username == username_or_email, cls._TABLE.email == username_or_email))
 
-    #     print(query)
+        user = (await session.exec(query)).one_or_none()
 
-    #     user = (await session.exec(query)).one_or_none()
-
-    #     if not user:
-    #         return None
-    #     if user.hashed_password is None:
-    #         return None
-    #     if not utils.verify_password(password, user.hashed_password):
-    #         return None
-    #     return user
+        if not user:
+            return None
+        if user.hashed_password is None:
+            return None
+        if not utils.verify_password(password, user.hashed_password):
+            return None
+        return user
 
     # @classmethod
     # async def is_username_available(cls, session: AsyncSession, username: types.User.username) -> bool:

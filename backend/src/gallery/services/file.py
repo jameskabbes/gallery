@@ -12,8 +12,7 @@ class File(
             types.File.id,
             file_schema.FileAdminCreate,
             file_schema.FileAdminUpdate,
-        ],
-        table=True):
+        ]):
 
     _TABLE = FileTable
 

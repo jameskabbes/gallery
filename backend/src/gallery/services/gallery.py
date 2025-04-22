@@ -7,17 +7,16 @@ from ..schemas import gallery as gallery_schema
 
 
 class Gallery(
-    base.Service[
-        GalleryTable,
-        types.Gallery.id,
-        gallery_schema.GalleryAdminCreate,
-        gallery_schema.GalleryAdminUpdate,
-        gallery_schema.GalleryAfterCreateCustomParams,
-        base.AfterReadCustomParams,
-        base.AfterUpdateCustomParams,
-        gallery_schema.GalleryAfterDeleteCustomParams
-    ],
-        table=True):
+        base.Service[
+            GalleryTable,
+            types.Gallery.id,
+            gallery_schema.GalleryAdminCreate,
+            gallery_schema.GalleryAdminUpdate,
+            gallery_schema.GalleryAfterCreateCustomParams,
+            base.AfterReadCustomParams,
+            base.AfterUpdateCustomParams,
+            gallery_schema.GalleryAfterDeleteCustomParams
+        ]):
 
     _TABLE = GalleryTable
 

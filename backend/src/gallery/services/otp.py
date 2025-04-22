@@ -2,6 +2,7 @@ from sqlmodel import select
 from pydantic import BaseModel
 import string
 import secrets
+import datetime as datetime_module
 
 from ..models import OTP as OTPTable
 from ..config import settings
@@ -13,14 +14,13 @@ from ..services import auth_credential as auth_credential_service
 
 
 class OTP(
-    base.Service[
-        OTPTable,
-        types.OTP.id,
-        otp_schema.OTPAdminCreate,
-        otp_schema.OTPAdminUpdate,
-    ],
-    auth_credential_service.Table[OTPTable, otp_schema.OTPAdminCreate],
-        table=True):
+        base.Service[
+            OTPTable,
+            types.OTP.id,
+            otp_schema.OTPAdminCreate,
+            otp_schema.OTPAdminUpdate,
+        ],
+        auth_credential_service.Table[OTPTable, otp_schema.OTPAdminCreate]):
 
     _CLAIMS_MAPPING = {
         **auth_credential_service.CLAIMS_MAPPING_BASE, **{'sub': 'id'}
@@ -29,6 +29,15 @@ class OTP(
     auth_type = 'otp'
 
     _TABLE = OTPTable
+
+    @classmethod
+    async def table_inst_from_create_model(cls, create_model: otp_schema.OTPAdminCreate) -> OTPTable:
+
+        return cls._TABLE(
+            id=utils.generate_uuid(),
+            issued=datetime_module.datetime.now(datetime_module.timezone.utc),
+            **create_model.model_dump(exclude_unset=True, exclude_defaults=True, exclude_none=True)
+        )
 
     @classmethod
     def generate_code(cls) -> types.OTP.code:

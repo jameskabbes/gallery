@@ -9,13 +9,12 @@ import re
 
 
 class ImageFileMetadata(
-    base.Service[
-        ImageFileMetadataTable,
-        types.ImageFileMetadata.file_id,
-        image_file_metadata_schema.ImageFileMetadataAdminCreate,
-        image_file_metadata_schema.ImageFileMetadataAdminUpdate
-    ],
-        table=True):
+        base.Service[
+            ImageFileMetadataTable,
+            types.ImageFileMetadata.file_id,
+            image_file_metadata_schema.ImageFileMetadataAdminCreate,
+            image_file_metadata_schema.ImageFileMetadataAdminUpdate
+        ]):
 
     _TABLE = ImageFileMetadataTable
 

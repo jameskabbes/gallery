@@ -12,8 +12,7 @@ class ImageVersion(
             types.ImageVersion.id,
             file_schema.FileAdminCreate,
             file_schema.FileAdminUpdate,
-        ],
-        table=True):
+        ]):
 
     _TABLE = ImageVersionTable
 

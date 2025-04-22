@@ -1,22 +1,20 @@
-from sqlmodel import Field, Relationship, SQLModel, PrimaryKeyConstraint, Column
-from pydantic import BaseModel, model_validator, field_serializer, field_validator, ValidationInfo
+from sqlmodel import SQLModel
+from pydantic import BaseModel, field_serializer, field_validator, ValidationInfo
+from typing import TypedDict, Protocol
 from ... import types
-from ..custom_field_types import timestamp
 import datetime as datetime_module
+from ..custom_field_types import timestamp
 
 
-class Model(SQLModel):
+class AuthCredentialBase(SQLModel):
+    issued: types.AuthCredential.issued
+    expiry: types.AuthCredential.expiry
 
-    issued: types.AuthCredential.issued = Field(
-        const=True, sa_column=Column(timestamp.Timestamp))
-    expiry: types.AuthCredential.expiry = Field(
-        sa_column=Column(timestamp.Timestamp))
+    @field_serializer('issued', 'expiry')
+    def serialize_datetime(self, value: types.AuthCredential.issued | types.AuthCredential.expiry) -> datetime_module.datetime:
+        return value.replace(tzinfo=datetime_module.timezone.utc)
 
     @field_validator('issued', 'expiry')
     @classmethod
     def validate_datetime(cls, value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime:
         return timestamp.validate_and_normalize_datetime(value, info)
-
-    @field_serializer('issued', 'expiry')
-    def serialize_datetime(self, value: types.AuthCredential.issued | types.AuthCredential.expiry) -> datetime_module.datetime:
-        return value.replace(tzinfo=datetime_module.timezone.utc)

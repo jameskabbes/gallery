@@ -16,10 +16,10 @@ class SignUp(
     _TABLE = sign_up_schema.SignUp
     auth_type = 'sign_up'
 
+    @classmethod
+    async def table_inst_from_create_model(cls, create_model):
+        """Create a new instance of the model from the create model (TCreateModel), don't overwrite this method"""
 
-#     @classmethod
-#     def create(cls, create_model: SignUpAdminCreate) -> Self:
-#         return cls(
-#             issued=datetime_module.datetime.now(datetime_module.timezone.utc),
-#             **create_model.model_dump()
-#         )
+        return cls._TABLE(
+            **create_model.model_dump()
+        )

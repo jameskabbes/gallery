@@ -6,9 +6,13 @@ from typing import Annotated, cast
 from . import base
 from .. import types
 from ..auth import utils as auth_utils, exceptions as auth_exceptions
-from ..models.tables import user as user_model_module, user_access_token as user_access_token_model_module
-from ..models.tables.bases import auth_credential
 from ..config import settings
+
+from ..schemas import user_access_token as user_access_token_schema, user as user_schema
+from ..models.tables import User, UserAccessToken
+from ..services.user import User as UserService
+from ..services.user_access_token import UserAccessToken as UserAccessTokenService
+from ..services import auth_credential as auth_credential_service
 
 
 class PostTokenResponse(BaseModel):
@@ -90,34 +94,34 @@ class AuthRouter(base.Router):
 
         @self.router.post('/token/')
         async def post_token(
-            user: Annotated[user_model_module.User, Depends(auth_utils.make_authenticate_user_with_username_and_password_dependency(c=self.client))],
+            user: Annotated[User, Depends(auth_utils.make_authenticate_user_with_username_and_password_dependency(c=self.client))],
             response: Response,
             stay_signed_in: bool = Form(
                 self.client.auth['stay_signed_in_default'])
         ) -> PostTokenResponse:
             async with self.client.AsyncSession() as session:
 
-                user_access_token = await user_access_token_model_module.UserAccessToken.create({
+                user_access_token = await UserAccessTokenService.create({
                     'authorized_user_id': user.id,
                     'c': self.client,
-                    'create_model': user_access_token_model_module.UserAccessTokenAdminCreate(
+                    'create_model': user_access_token_schema.UserAccessTokenAdminCreate(
                         user_id=user.id,
-                        expiry=auth_credential.lifespan_to_expiry(self.client.auth[
+                        expiry=auth_credential_service.lifespan_to_expiry(self.client.auth[
                             'credential_lifespans']['access_token']),
                     ),
                     'session': session
                 })
 
                 encoded_jwt = self.client.jwt_encode(
-                    cast(dict, user_access_token.to_payload()))
+                    cast(dict, UserAccessTokenService.to_payload(user_access_token)))
 
-                auth_utils.set_access_token_cookie(response, encoded_jwt, None if not stay_signed_in else auth_credential.lifespan_to_expiry(
+                auth_utils.set_access_token_cookie(response, encoded_jwt, None if not stay_signed_in else auth_credential_service.lifespan_to_expiry(
                     self.client.auth['credential_lifespans']['access_token']))
                 return PostTokenResponse(access_token=encoded_jwt, token_type='bearer')
 
         @self.router.post('/login/password/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Could not validate credentials', 'model': auth_utils.DetailOnlyResponse}})
         async def post_login_password(
-            user: Annotated[user_model_module.User, Depends(auth_utils.make_authenticate_user_with_username_and_password_dependency(c=self.client))],
+            user: Annotated[User, Depends(auth_utils.make_authenticate_user_with_username_and_password_dependency(c=self.client))],
             response: Response,
             request: Request,
             stay_signed_in: bool = Form(
@@ -128,30 +132,32 @@ class AuthRouter(base.Router):
 
                 tokken_lifespan = self.client.auth['credential_lifespans']['access_token']
 
-                user_access_token = await user_access_token_model_module.UserAccessToken.create({
+                user_access_token = await UserAccessTokenService.create({
                     'authorized_user_id': user.id,
                     'c': self.client,
-                    'create_model': user_access_token_model_module.UserAccessTokenAdminCreate(
+                    'create_model': user_access_token_schema.UserAccessTokenAdminCreate(
                         user_id=user.id,
-                        expiry=auth_credential.lifespan_to_expiry(self.client.auth[
+                        expiry=auth_credential_service.lifespan_to_expiry(self.client.auth[
                             'credential_lifespans']['access_token']),
                     ),
                     'session': session
                 })
 
                 encoded_jwt = self.client.jwt_encode(
-                    cast(dict, user_access_token.to_payload()))
+                    cast(dict, UserAccessTokenService.to_payload(user_access_token)))
 
-                auth_utils.set_access_token_cookie(response, encoded_jwt, None if not stay_signed_in else auth_credential.lifespan_to_expiry(
+                auth_utils.set_access_token_cookie(response, encoded_jwt, None if not stay_signed_in else auth_credential_service.lifespan_to_expiry(
                     self.client.auth['credential_lifespans']['access_token']))
+
+                user_private = user_schema.UserPrivate.model_validate(user)
 
                 return PostLoginWithPasswordResponse(
                     auth=auth_utils.GetUserSessionInfoReturn(
-                        user=user_model_module.UserPrivate.model_validate(
+                        user=user_schema.UserPrivate.model_validate(
                             user),
                         scope_ids=set(
                             settings.USER_ROLE_ID_SCOPE_IDS[user.user_role_id]),
-                        access_token=user_access_token_model_module.UserAccessTokenPublic.model_validate(
+                        access_token=user_access_token_schema.UserAccessTokenPublic.model_validate(
                             user_access_token),
                     ))
 
