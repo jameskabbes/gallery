@@ -1,25 +1,31 @@
 from sqlmodel import select
-from pydantic import BaseModel
-
-from ..models import ApiKey as ApiKeyTable
+from ..models.tables import ApiKey as ApiKeyTable
 from . import base
 from .. import types
 
 from ..schemas import api_key as api_key_schema
-from ..services import auth_credential
+from ..services import auth_credential as auth_credential_service
 
 
 class ApiKey(
     base.Service[
         ApiKeyTable,
-        types.ApiKeyScope.id],
-
-    auth_credential.JwtIO[api_key_schema.JwtPayload, api_key_schema.JwtModel],
+        types.ApiKey.id,
+        api_key_schema.ApiKeyAdminCreate,
+        api_key_schema.ApiKeyAdminUpdate,
+    ],
+    auth_credential_service.JwtIO[ApiKeyTable, api_key_schema.ApiKeyAdminCreate,
+                                  api_key_schema.JwtPayload, api_key_schema.JwtModel],
+    auth_credential_service.Table,
         table=True):
 
     _CLAIMS_MAPPING = {
-        **auth_credential.CLAIMS_MAPPING_BASE, **{'sub': 'id'}
+        **auth_credential_service.CLAIMS_MAPPING_BASE, **{'sub': 'id'}
     }
+
+    auth_type = 'api_key'
+
+    _TABLE = ApiKeyTable
 
     # async def get_scope_ids(self, session: Session = None, c: client.Client = None) -> list[types.ScopeTypes.id]:
     #     return [api_key_scope.scope_id for api_key_scope in self.api_key_scopes]
@@ -59,25 +65,13 @@ class ApiKey(
     #             name=params.update_model.name, user_id=params.authorized_user_id))
 
     @classmethod
+    def table_id(cls, inst: ApiKeyTable):
+        return inst.id
+
+    @classmethod
     def _build_select_by_id(cls, id):
         return select(cls._TABLE).where(cls._TABLE.id == id)
 
-
-class ApiKeyExport(BaseModel):
-    id: types.ApiKey.id
-    user_id: types.User.id
-    name: types.ApiKey.name
-    issued: types.ApiKey.issued
-    expiry: types.ApiKey.expiry
-
-
-class ApiKeyPublic(ApiKeyExport):
-    pass
-
-
-class ApiKeyPrivate(ApiKeyExport):
-    scope_ids: list[types.Scope.id]
-
     @classmethod
-    def from_api_key(cls, api_key: ApiKey) -> Self:
-        return cls.model_construct(**api_key.model_dump(), scope_ids=[api_key_scope.scope_id for api_key_scope in api_key.api_key_scopes])
+    def to_api_key_private(cls, api_key: ApiKeyTable) -> api_key_schema.ApiKeyPrivate:
+        return api_key_schema.ApiKeyPrivate.model_construct(**api_key.model_dump(), scope_ids=[api_key_scope.scope_id for api_key_scope in api_key.api_key_scopes])

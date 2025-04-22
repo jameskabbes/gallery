@@ -38,5 +38,12 @@ class ApiKeyScope(base.Service[
     #             raise self.not_found_exception()
 
     @classmethod
+    def table_id(cls, inst: ApiKeyScopeTable):
+        return types.ApiKeyScopeId(
+            api_key_id=inst.api_key_id,
+            scope_id=inst.scope_id,
+        )
+
+    @classmethod
     def _build_select_by_id(cls, id):
         return select(cls._TABLE).where(cls._TABLE.api_key_id == id.api_key_id, cls._TABLE.scope_id == id.scope_id)

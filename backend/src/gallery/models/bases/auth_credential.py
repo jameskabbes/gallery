@@ -7,7 +7,6 @@ import datetime as datetime_module
 
 class Model(SQLModel):
 
-    # repeated in child classes due to behavior of sqlalchemy with custom type
     issued: types.AuthCredential.issued = Field(
         const=True, sa_column=Column(timestamp.Timestamp))
     expiry: types.AuthCredential.expiry = Field(

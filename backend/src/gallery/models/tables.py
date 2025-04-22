@@ -40,7 +40,6 @@ class _AuthCredentialTableBase(auth_credential.Model):
 class UserAccessToken(_AuthCredentialTableBase, table=True):
 
     __tablename__ = 'user_access_token'  # type: ignore
-    auth_type = 'access_token'
 
     id: types.ImageVersion.id = Field(
         primary_key=True, index=True, unique=True, const=True)
@@ -50,7 +49,6 @@ class UserAccessToken(_AuthCredentialTableBase, table=True):
 class OTP(_AuthCredentialTableBase, table=True):
 
     __tablename__ = 'otp'  # type: ignore
-    auth_type = 'otp'
 
     id: types.OTP.id = Field(
         primary_key=True, index=False, unique=True, const=True)
@@ -62,7 +60,6 @@ class OTP(_AuthCredentialTableBase, table=True):
 class ApiKey(_AuthCredentialTableBase, table=True):
 
     __tablename__ = 'api_key'  # type: ignore
-    auth_type = 'api_key'
 
     id: types.ApiKey.id = Field(
         primary_key=True, index=True, unique=True, const=True)
@@ -95,6 +92,7 @@ class Gallery(SQLModel, table=True):
     id: types.ApiKey.id = Field(
         primary_key=True, index=True, unique=True, const=True)
     name: types.Gallery.name = Field()
+    test: str = Field()
     user_id: types.Gallery.user_id = Field(
         index=True, foreign_key=str(User.__tablename__) + '.id', ondelete='CASCADE')
 

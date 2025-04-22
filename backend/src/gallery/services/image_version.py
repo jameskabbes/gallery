@@ -1,98 +1,29 @@
-from sqlmodel import Field, Relationship, select, SQLModel
-from typing import TYPE_CHECKING, TypedDict, Optional, ClassVar
-from pydantic import BaseModel
-from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.orm import declared_attr
-from .bases import table
-
+from sqlmodel import select
+from ..models.tables import ImageVersion as ImageVersionTable
+from . import base
 from .. import types
-from . import file as file_module, gallery as gallery_module, image_file_metadata as image_file_metadata_module
 
-ID_COL = 'id'
-
-
-class ImageVersionExport(BaseModel):
-    id: types.ImageVersion.id
-    base_name: types.ImageVersion.base_name | None
-    parent_id: types.ImageVersion.parent_id | None
-    version: types.ImageVersion.version | None
-    datetime: types.ImageVersion.datetime | None
-    description: types.ImageVersion.description | None
-    aspect_ratio: types.ImageVersion.aspect_ratio | None
-    average_color: types.ImageVersion.average_color | None
-
-
-class ImageVersionImport(BaseModel):
-    base_name: Optional[types.ImageVersion.base_name] = None
-    parent_id: Optional[types.ImageVersion.parent_id] = None
-    version: Optional[types.ImageVersion.version] = None
-    datetime: Optional[types.ImageVersion.datetime] = None
-    description: Optional[types.ImageVersion.description] = None
-
-
-class ImageVersionUpdate(ImageVersionImport):
-    id: types.ImageVersion.id
-    pass
-
-
-class ImageVersionAdminUpdate(ImageVersionUpdate):
-    pass
-
-
-class ImageVersionCreate (ImageVersionImport):
-    pass
-
-
-class ImageVersionAdminCreate(ImageVersionCreate):
-    gallery_id: types.ImageVersion.gallery_id
-    base_name: Optional[types.ImageVersion.base_name] = None
-    version: Optional[types.ImageVersion.version] = None
-    parent_id: Optional[types.ImageVersion.parent_id] = None
-    datetime: Optional[types.ImageVersion.datetime] = None
-    description: Optional[types.ImageVersion.description] = None
-    aspect_ratio: Optional[types.ImageVersion.aspect_ratio] = None
-    average_color: Optional[types.ImageVersion.average_color] = None
+from ..schemas import file as file_schema
 
 
 class ImageVersion(
-        table.Table[
+        base.Service[
+            ImageVersionTable,
             types.ImageVersion.id,
-            ImageVersionAdminCreate,
-            ImageVersionAdminUpdate,
-            table.AfterCreateCustomParams,
-            table.AfterReadCustomParams,
-            table.AfterUpdateCustomParams,
-            table.AfterDeleteCustomParams],
+            file_schema.FileAdminCreate,
+            file_schema.FileAdminUpdate,
+        ],
         table=True):
 
-    __tablename__ = 'image_version'  # type: ignore
+    _TABLE = ImageVersionTable
 
-    id: types.ImageVersion.id = Field(
-        primary_key=True, index=True, unique=True, const=True)
-    base_name: types.ImageVersion.base_name = Field(
-        nullable=True, index=True)
-    parent_id: types.ImageVersion.parent_id = Field(
-        nullable=True, index=True, foreign_key='image_version.' + ID_COL, ondelete='SET NULL')
+    @classmethod
+    def table_id(cls, inst):
+        return inst.id
 
-    # BW, Edit1, etc. Original version is null
-    version: types.ImageVersion.version = Field(nullable=True)
-    gallery_id: types.ImageVersion.gallery_id = Field(
-        index=True, foreign_key=str(gallery_module.Gallery.__tablename__) + '.' + gallery_module.ID_COL, ondelete='CASCADE')
-    datetime: types.ImageVersion.datetime = Field(nullable=True)
-    description: types.ImageVersion.description = Field(nullable=True)
-    aspect_ratio: types.ImageVersion.aspect_ratio = Field(nullable=True)
-    average_color: types.ImageVersion.average_color = Field(
-        nullable=True)
-
-    parent: Optional['ImageVersion'] = Relationship(
-        back_populates='children', sa_relationship_kwargs={'remote_side': 'ImageVersion.id'})
-    children: list['ImageVersion'] = Relationship(
-        back_populates='parent')
-
-    image_file_metadatas: list['image_file_metadata_module.ImageFileMetadata'] = Relationship(
-        back_populates='version')
-    gallery: 'gallery_module.Gallery' = Relationship(
-        back_populates='image_versions')
+    @classmethod
+    def _build_select_by_id(cls, id):
+        return select(cls._TABLE).where(cls._TABLE.id == id)
 
     # @model_validator(mode='after')
     # def validate_model(self, info: ValidationInfo) -> None:
@@ -116,7 +47,3 @@ class ImageVersion(
     #             return (await self.parent.get_root_base_name())
     #         else:
     #             raise ValueError('Unnamed versions must have a parent_id')
-
-    @classmethod
-    def _build_select_by_id(cls, id):
-        return select(cls).where(cls.id == id)

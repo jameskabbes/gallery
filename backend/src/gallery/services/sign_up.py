@@ -1,32 +1,21 @@
-from sqlmodel import Field, Relationship, select
-from typing import TYPE_CHECKING, TypedDict, Optional, Self
-import datetime as datetime_module
-
-from .. import types, utils
-from .bases import auth_credential
 
 
-class JwtPayload(auth_credential.JwtPayload):
-    sub: types.User.email
+from ..schemas import sign_up as sign_up_schema
+from ..services import auth_credential as auth_credential_service
 
 
-class JwtModel(auth_credential.JwtModel):
-    email: types.User.email
+class SignUp(
+    auth_credential_service.JwtIO[
+        sign_up_schema.SignUp, sign_up_schema.SignUpAdminCreate, sign_up_schema.JwtPayload, sign_up_schema.JwtModel],
 
+):
+    _CLAIMS_MAPPING = {
+        **auth_credential_service.CLAIMS_MAPPING_BASE, **{'sub': 'email'}
+    }
 
-class SignUpAdminCreate(auth_credential.Create):
-    email: types.User.email
+    _TABLE = sign_up_schema.SignUp
+    auth_type = 'sign_up'
 
-
-# class SignUp(
-#     auth_credential.JwtIO[JwtPayload, JwtModel],
-# ):
-#     auth_type = 'sign_up'
-#     email: types.User.email = Field()
-
-#     _CLAIMS_MAPPING = {
-#         **auth_credential.CLAIMS_MAPPING_BASE, **{'sub': 'email'}
-#     }
 
 #     @classmethod
 #     def create(cls, create_model: SignUpAdminCreate) -> Self:

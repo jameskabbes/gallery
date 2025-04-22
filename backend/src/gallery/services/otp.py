@@ -1,57 +1,34 @@
-from sqlmodel import Field, Relationship, select, SQLModel
-from typing import TYPE_CHECKING, TypedDict, Optional
+from sqlmodel import select
 from pydantic import BaseModel
 import string
 import secrets
-from sqlalchemy import Column
-from .custom_field_types import timestamp
-from .. import types, utils
-from .bases import table, auth_credential
+
+from ..models import OTP as OTPTable
 from ..config import settings
+from .. import utils, types
+from . import base
 
-ID_COL = 'id'
-
-if TYPE_CHECKING:
-    from .user import User
-
-
-class OTPAdminUpdate(BaseModel):
-    pass
+from ..schemas import otp as otp_schema
+from ..services import auth_credential as auth_credential_service
 
 
-class OTPAdminCreate(auth_credential.Create):
-    user_id: types.User.id
-    hashed_code: types.OTP.hashed_code
+class OTP(
+    base.Service[
+        OTPTable,
+        types.OTP.id,
+        otp_schema.OTPAdminCreate,
+        otp_schema.OTPAdminUpdate,
+    ],
+    auth_credential_service.Table[OTPTable, otp_schema.OTPAdminCreate],
+        table=True):
 
+    _CLAIMS_MAPPING = {
+        **auth_credential_service.CLAIMS_MAPPING_BASE, **{'sub': 'id'}
+    }
 
-# class OTP(
-#         table.Table[
-#             types.OTP.id,
-#             OTPAdminCreate,
-#             OTPAdminUpdate,
-#             table.AfterCreateCustomParams,
-#             table.AfterReadCustomParams,
-#             table.AfterUpdateCustomParams,
-#             table.AfterDeleteCustomParams],
-#         auth_credential.Table,
-#         table=True):
+    auth_type = 'otp'
 
-#     __tablename__ = 'otp'  # type: ignore
-
-#     auth_type = 'otp'
-
-#     id: types.OTP.id = Field(
-#         primary_key=True, index=False, unique=True, const=True)
-#     issued: types.AuthCredential.issued = Field(
-#         const=True, sa_column=Column(timestamp.Timestamp))
-#     expiry: types.AuthCredential.expiry = Field(
-#         sa_column=Column(timestamp.Timestamp))
-
-#     hashed_code: types.OTP.hashed_code = Field()
-#     user: 'User' = Relationship(
-#         back_populates='otp')
-
-    _ROUTER_TAG = 'One Time Password'
+    _TABLE = OTPTable
 
     @classmethod
     def generate_code(cls) -> types.OTP.code:
@@ -74,7 +51,7 @@ class OTPAdminCreate(auth_credential.Create):
 
     @classmethod
     def _build_select_by_id(cls, id):
-        return select(cls).where(cls.id == id)
+        return select(cls._TABLE).where(cls._TABLE.id == id)
 
 
 # # OTP

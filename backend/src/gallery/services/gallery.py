@@ -1,109 +1,43 @@
-from sqlmodel import Field, Relationship, select, SQLModel
-from typing import TYPE_CHECKING, TypedDict, Optional, ClassVar
-from pydantic import BaseModel
-from sqlalchemy.ext.declarative import declared_attr
-
-from . import user
+from sqlmodel import select
+from ..models.tables import Gallery as GalleryTable
+from . import base
 from .. import types
-from .bases import table
 
-if TYPE_CHECKING:
-    from .file import File
-    from .image_version import ImageVersion
-    from .gallery_permission import GalleryPermission
-
-ID_COL = 'id'
-
-
-# class Export(TableExport):
-#     id: types.Gallery.id
-#     user_id: types.Gallery.user_id
-#     name: types.Gallery.name
-#     parent_id: types.Gallery.parent_id | None
-#     description: types.Gallery.description | None
-#     date: types.Gallery.date | None
-
-
-# class Public(Export):
-#     pass
-
-
-# class Private(Export):
-#     visibility_level: types.Gallery.visibility_level
-
-
-class GalleryImport(BaseModel):
-    pass
-
-
-class GalleryUpdate(GalleryImport):
-    name: Optional[types.Gallery.name] = None
-    user_id: Optional[types.Gallery.user_id] = None
-    visibility_level: Optional[types.Gallery.visibility_level] = None
-    parent_id: Optional[types.Gallery.parent_id] = None
-    description: Optional[types.Gallery.description] = None
-    date: Optional[types.Gallery.date] = None
-
-
-class GalleryAdminUpdate(GalleryUpdate):
-    pass
-
-
-class _CreateBase(GalleryImport):
-    name: types.Gallery.name
-    visibility_level: types.Gallery.visibility_level
-    description: Optional[types.Gallery.description] = None
-    date: Optional[types.Gallery.date] = None
-
-
-class GalleryCreate(_CreateBase):
-    parent_id: types.Gallery.parent_id
-
-
-class GalleryAdminCreate(_CreateBase):
-    user_id: types.Gallery.user_id
-    parent_id: Optional[types.Gallery.parent_id] = None
-
-
-# class GalleryAdminCreateParams(BaseModel):
-#     mkdir: bool = True
-
-
-class GalleryAvailable(BaseModel):
-    name: types.Gallery.name
-    parent_id: Optional[types.Gallery.parent_id] = None
-    date: Optional[types.Gallery.date] = None
-
-
-class GalleryAdminAvailable(GalleryAvailable):
-    user_id: types.User.id
-
-
-# class GalleryAdminApiDeleteParams(BaseModel):
-#     rmtree: bool = True
+from ..schemas import gallery as gallery_schema
 
 
 class Gallery(
-        table.Table[
-            types.Gallery.id,
-            GalleryAdminCreate,
-            GalleryAdminUpdate,
-            table.AfterCreateCustomParams,
-            table.AfterReadCustomParams,
-            table.AfterUpdateCustomParams,
-            table.AfterDeleteCustomParams],
+    base.Service[
+        GalleryTable,
+        types.Gallery.id,
+        gallery_schema.GalleryAdminCreate,
+        gallery_schema.GalleryAdminUpdate,
+        gallery_schema.GalleryAfterCreateCustomParams,
+        base.AfterReadCustomParams,
+        base.AfterUpdateCustomParams,
+        gallery_schema.GalleryAfterDeleteCustomParams
+    ],
         table=True):
 
-    _ROUTER_TAG: ClassVar[str] = 'Gallery'
+    _TABLE = GalleryTable
 
-    @property
-    def folder_name(self) -> types.Gallery.folder_name:
-        if self.parent_id is None and self.name == 'root':
-            return self.user_id
-        if self.date is None:
-            return self.name
+    @classmethod
+    def table_id(cls, inst):
+        return inst.id
+
+    @classmethod
+    def _build_select_by_id(cls, id):
+        return select(cls._TABLE).where(cls._TABLE.id == id)
+
+    @classmethod
+    def table_folder_name(cls, inst: GalleryTable) -> types.Gallery.folder_name:
+
+        if inst.parent_id == None and inst.name == 'root':
+            return inst.user_id
+        elif inst.date == None:
+            return inst.name
         else:
-            return self.date.isoformat() + ' ' + self.name
+            return inst.date.isoformat() + ' ' + inst.name
 
     # @classmethod
     # def get_date_and_name_from_folder_name(cls, folder_name: types.Gallery.folder_name) -> tuple[types.Gallery.date | None, types.Gallery.name]:
@@ -349,102 +283,6 @@ class Gallery(
     #     # recursively sync children
     #     for child in self.children:
     #         await child.sync_with_local(session, c, dir / child.folder_name)
-
-    @classmethod
-    def _build_select_by_id(cls, id):
-        return select(cls).where(cls.id == id)
-
-
-# class GalleryTypes:
-#     class BaseTypes:
-#         id = str
-
-#     id = BaseTypes.id
-#     user_id = types.User.id
-
-#     # name can't start with the `YYYY-MM-DD ` pattern
-#     name = typing.Annotated[str, StringConstraints(
-#         min_length=1, max_length=256, pattern=re.compile(r'^(?!\d{4}-\d{2}-\d{2} ).*'))]
-#     visibility_level = types.VisibilityLevelTypes.id
-#     parent_id = BaseTypes.id
-#     description = typing.Annotated[str, StringConstraints(
-#         min_length=0, max_length=20000)]
-#     date = datetime_module.date
-#     folder_name = str
-
-
-# class GalleryGalleryIdBase(GalleryIdObject[GalleryTypes.id]):
-#     id: GalleryTypes.id = Field(
-#         primary_key=True, index=True, unique=True, const=True)
-
-
-# class GalleryExport(TableExport):
-#     id: GalleryTypes.id
-#     user_id: GalleryTypes.user_id
-#     name: GalleryTypes.name
-#     parent_id: GalleryTypes.parent_id | None
-#     description: GalleryTypes.description | None
-#     date: GalleryTypes.date | None
-
-
-# class GalleryPublic(GalleryExport):
-#     pass
-
-
-# class GalleryPrivate(GalleryExport):
-#     visibility_level: GalleryTypes.visibility_level
-
-
-# class GalleryGalleryImport(BaseModel):
-#     pass
-
-
-# class GalleryGalleryUpdate(GalleryGalleryImport):
-#     name: typing.Optional[GalleryTypes.name] = None
-#     user_id: typing.Optional[GalleryTypes.user_id] = None
-#     visibility_level: typing.Optional[GalleryTypes.visibility_level] = None
-#     parent_id: typing.Optional[GalleryTypes.parent_id] = None
-#     description: typing.Optional[GalleryTypes.description] = None
-#     date: typing.Optional[GalleryTypes.date] = None
-
-
-# class GalleryGalleryAdminUpdate(GalleryGalleryUpdate):
-#     pass
-
-
-# class GalleryGalleryAdminUpdateParams(BaseModel):
-#     pass
-
-
-# class GalleryCreate(GalleryGalleryImport):
-#     name: GalleryTypes.name
-#     visibility_level: GalleryTypes.visibility_level
-#     parent_id: GalleryTypes.parent_id
-#     description: typing.Optional[GalleryTypes.description] = None
-#     date: typing.Optional[GalleryTypes.date] = None
-
-
-# class GalleryAdminCreate(GalleryCreate):
-#     user_id: GalleryTypes.user_id
-#     parent_id: typing.Optional[GalleryTypes.parent_id] = None
-
-
-# class GalleryAdminCreateParams(BaseModel):
-#     mkdir: bool = True
-
-
-# class GalleryGalleryAvailable(BaseModel):
-#     name: GalleryTypes.name
-#     parent_id: typing.Optional[GalleryTypes.parent_id] = None
-#     date: typing.Optional[GalleryTypes.date] = None
-
-
-# class GalleryAdminGalleryAvailable(GalleryGalleryAvailable):
-#     user_id: types.User.id
-
-
-# class GalleryAdminApiDeleteParams(BaseModel):
-#     rmtree: bool = True
 
 
 # class Gallery(

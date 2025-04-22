@@ -11,6 +11,7 @@ from collections.abc import Collection
 
 from ..schemas import auth_credential as auth_credential_schemas
 from ..models.bases import auth_credential as auth_credential_model
+from . import base
 
 
 def lifespan_to_expiry(lifespan: datetime_module.timedelta) -> types.AuthCredential.expiry:
@@ -24,6 +25,8 @@ CLAIMS_MAPPING_BASE = {
 }
 
 
+TAuthCredential = TypeVar('TAuthCredential', bound=auth_credential_model.Model)
+TCreate = TypeVar('TCreate', bound=auth_credential_schemas.Create)
 TPayload = TypeVar('TPayload', bound=auth_credential_schemas.JwtPayload)
 TModel = TypeVar('TModel', bound=auth_credential_schemas.JwtModel)
 
@@ -34,11 +37,21 @@ class MissingRequiredClaimsError(Exception):
         self.claims = claims
 
 
-class Model:
+class HasAuthType:
     auth_type: ClassVar[types.AuthCredential.type]
 
 
-class JwtIO(Generic[TPayload, TModel]):
+class Model(Generic[TAuthCredential, TCreate], HasAuthType, base.HasTableInstFromCreateModel[TAuthCredential, TCreate]):
+    pass
+
+
+class Table(Generic[TAuthCredential, TCreate], Model[TAuthCredential, TCreate]):
+    @classmethod
+    async def get_scope_ids(cls, session: AsyncSession | None = None) -> list[types.Scope.id]:
+        return []
+
+
+class JwtIO(Generic[TAuthCredential, TCreate, TPayload, TModel], Model[TAuthCredential, TCreate]):
 
     _TYPE_CLAIM: ClassVar[str] = 'type'
     _CLAIMS_MAPPING: ClassVar[dict[str, str]] = CLAIMS_MAPPING_BASE
@@ -55,7 +68,7 @@ class JwtIO(Generic[TPayload, TModel]):
             raise MissingRequiredClaimsError(missing_claims)
 
     @classmethod
-    def from_payload(cls, payload: TPayload) -> Self:
+    def from_payload(cls, payload: TPayload) -> TAuthCredential:
 
         cls.validate_jwt_claims(payload)
 
@@ -66,7 +79,7 @@ class JwtIO(Generic[TPayload, TModel]):
         new_dict = {k: v for k, v in converted_claims_payload.items() if k not in {
             'issued', 'expiry', 'auth_type'}}
 
-        return cls(
+        return cls._TABLE(
             **new_dict,
             issued=datetime_module.datetime.fromtimestamp(
                 converted_claims_payload['issued'], datetime_module.timezone.utc),
@@ -74,25 +87,11 @@ class JwtIO(Generic[TPayload, TModel]):
                 converted_claims_payload['expiry'], datetime_module.timezone.utc)
         )
 
-    def to_payload(self) -> TPayload:
-
-        payload = self.model_dump(
-            include=set(self._CLAIMS_MAPPING.values()))
-        payload[self._CLAIMS_MAPPING[self._TYPE_CLAIM]] = self.auth_type
-
-        return cast(TPayload, {claim: payload[self._CLAIMS_MAPPING[claim]] for claim in self._CLAIMS_MAPPING.keys()})
-
-    # @classmethod
-    # async def create(cls, params: ApiPostParams['AuthCredential.Create', BaseModel]) -> typing.Self:
-
-    #     return cls(
-    #         id=cls.generate_id(),
-    #         issued=datetime_module.datetime.now(
-    #             datetime_module.timezone.utc),
-    #         expiry=params.create_model.get_expiry(),
-    #         **params.create_model.model_dump(exclude=['lifespan', 'expiry'])
-    #     )
-
     @classmethod
-    async def get_scope_ids(cls, session: AsyncSession | None = None) -> list[types.Scope.id]:
-        return []
+    def to_payload(cls, inst: TAuthCredential) -> TPayload:
+
+        payload = inst.model_dump(
+            include=set(cls._CLAIMS_MAPPING.values()))
+        payload[cls._CLAIMS_MAPPING[cls._TYPE_CLAIM]] = cls.auth_type
+
+        return cast(TPayload, {claim: payload[cls._CLAIMS_MAPPING[claim]] for claim in cls._CLAIMS_MAPPING.keys()})

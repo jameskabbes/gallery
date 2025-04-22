@@ -7,6 +7,12 @@ from .. import client, types
 from ..schemas.pagination import Pagination
 
 
+T = TypeVar('T', bound=SQLModel, covariant=False)
+TId = TypeVar('TId', bound=types._IdType, covariant=False)
+TCreateModel = TypeVar('TCreateModel', bound=BaseModel, default=BaseModel)
+TUpdateModel = TypeVar('TUpdateModel', bound=BaseModel, default=BaseModel)
+
+
 class CRUDParamsBase(TypedDict):
     session: AsyncSession
     c: client.Client
@@ -22,39 +28,40 @@ class WithTableInst[T:SQLModel](TypedDict):
     table_inst: T
 
 
-class CreateParams[TCreateModel: BaseModel](CRUDParamsBase):
+class CreateParams(Generic[TCreateModel], CRUDParamsBase):
     create_model: TCreateModel
 
 
-class AfterCreateParams[T:SQLModel, TCreateModel: BaseModel](CreateParams[TCreateModel], WithTableInst[T]):
+class AfterCreateParams(
+        Generic[T, TCreateModel], CreateParams[TCreateModel], WithId[types._IdType], WithTableInst[T]):
     pass
 
 
-class ReadParams[TId: types._IdType](CRUDParamsBase, WithId[TId]):
+class ReadParams(Generic[TId], CRUDParamsBase, WithId[TId]):
     pass
 
 
-class AfterReadParams[T: SQLModel, TId: types._IdType](ReadParams[TId], WithTableInst[T]):
+class AfterReadParams(Generic[T, TId], ReadParams[TId], WithTableInst[T]):
     pass
 
 
-class UpdateParams[TId: types._IdType, TUpdateModel: BaseModel](CRUDParamsBase, WithId[TId]):
+class UpdateParams(Generic[TId, TUpdateModel], CRUDParamsBase, WithId[TId]):
     update_model: TUpdateModel
 
 
-class AfterUpdateParams[T: SQLModel, TId: types._IdType, TUpdateModel: BaseModel](UpdateParams[TId, TUpdateModel], WithTableInst[T]):
+class AfterUpdateParams(Generic[T, TId, TUpdateModel], UpdateParams[TId, TUpdateModel], WithTableInst[T]):
     pass
 
 
-class DeleteParams[TId: types._IdType](CRUDParamsBase, WithId[TId]):
+class DeleteParams(Generic[TId], CRUDParamsBase, WithId[TId]):
     pass
 
 
-class AfterDeleteParams[T: SQLModel, TId: types._IdType](DeleteParams[TId], WithTableInst[T]):
+class AfterDeleteParams(Generic[T, TId], DeleteParams[TId], WithTableInst[T]):
     pass
 
 
-class CheckAuthorizationExistingParams[T: SQLModel](CRUDParamsBase):
+class CheckAuthorizationExistingParams(Generic[T], CRUDParamsBase):
     inst: T
     method: Literal['get', 'patch', 'delete']
 
@@ -75,27 +82,50 @@ class AfterDeleteCustomParams(TypedDict):
     pass
 
 
-T = TypeVar('T', bound=SQLModel)
-TId = TypeVar('TId', bound=types._IdType)
-TCreateModel = TypeVar('TCreateModel', bound=BaseModel, default=BaseModel)
-TUpdateModel = TypeVar('TUpdateModel', bound=BaseModel, default=BaseModel)
 TAfterCreateCustomParams = TypeVar(
-    'TAfterCreateCustomParams', default=AfterCreateCustomParams)
+    'TAfterCreateCustomParams', bound=AfterCreateCustomParams, default=AfterCreateCustomParams)
 TAfterReadCustomParams = TypeVar(
-    'TAfterReadCustomParams', default=AfterReadCustomParams)
+    'TAfterReadCustomParams', bound=AfterReadCustomParams, default=AfterReadCustomParams)
 TAfterUpdateCustomParams = TypeVar(
-    'TAfterUpdateCustomParams', default=AfterUpdateCustomParams)
+    'TAfterUpdateCustomParams', bound=AfterUpdateCustomParams, default=AfterUpdateCustomParams)
 TAfterDeleteCustomParams = TypeVar(
-    'TAfterDeleteCustomParams', default=AfterDeleteCustomParams)
+    'TAfterDeleteCustomParams', bound=AfterDeleteCustomParams, default=AfterDeleteCustomParams)
 
 
-class Service(Generic[T, TId, TCreateModel, TUpdateModel, TAfterCreateCustomParams, TAfterReadCustomParams, TAfterUpdateCustomParams, TAfterDeleteCustomParams], SQLModel):
-
+class HasTable[T](Protocol):
     _TABLE: Type[T] = NotImplemented
+
+
+class HasTableInstFromCreateModel(Generic[T, TCreateModel], HasTable[T]):
+    @classmethod
+    async def table_inst_from_create_model(cls, create_model: TCreateModel) -> T:
+        """Create a new instance of the model from the create model (TCreateModel), don't overwrite this method"""
+        ...
+
+
+class Service(
+    Generic[
+        T,
+        TId,
+        TCreateModel,
+        TUpdateModel,
+        TAfterCreateCustomParams,
+        TAfterReadCustomParams,
+        TAfterUpdateCustomParams,
+        TAfterDeleteCustomParams
+    ],
+    SQLModel,
+    HasTableInstFromCreateModel[T, TCreateModel],
+):
+
+    @classmethod
+    def table_id(cls, inst: T) -> TId:
+        raise NotImplementedError("Subclasses must implement this method")
 
     @classmethod
     def _build_select_by_id(cls, id: TId) -> SelectOfScalar[T]:
-        raise NotImplementedError
+        """Build a select statement to get an instance of the model by ID"""
+        raise NotImplementedError("Subclasses must implement this method")
 
     @classmethod
     async def _get_by_id(cls, session: AsyncSession, id: TId) -> T | None:
@@ -189,8 +219,9 @@ class Service(Generic[T, TId, TCreateModel, TUpdateModel, TAfterCreateCustomPara
         await cls._check_authorization_new(params)
         await cls._check_validation_post(params)
 
-        table_inst = await cls._table_inst_from_create_model(params['create_model'])
-        await cls._after_create({**params, 'table_inst': table_inst}, custom_params)
+        table_inst = await cls.table_inst_from_create_model(params['create_model'])
+
+        await cls._after_create({**params, 'table_inst': table_inst, 'id': cls.table_id(table_inst)}, custom_params)
 
         params['session'].add(table_inst)
         await params['session'].commit()
@@ -198,8 +229,7 @@ class Service(Generic[T, TId, TCreateModel, TUpdateModel, TAfterCreateCustomPara
         return table_inst
 
     @classmethod
-    async def _table_inst_from_create_model(cls, create_model: TCreateModel) -> T:
-        """Create a new instance of the model from the create model (TCreateModel), don't overwrite this method"""
+    async def table_inst_from_create_model(cls, create_model: TCreateModel) -> T:
         return cls._TABLE(**create_model.model_dump())
 
     @classmethod
