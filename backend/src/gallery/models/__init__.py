@@ -7,14 +7,14 @@ class HasTable[T](Protocol):
     _TABLE: Type[T] = NotImplemented
 
 
-AuthCredentialModel = Type[UserAccessToken] | Type[ApiKey] | Type[OTP] | Type[SignUp]
-AuthCredentialModelInstance = UserAccessToken | ApiKey | OTP | SignUp
+AuthCredential = Type[UserAccessToken] | Type[ApiKey] | Type[OTP] | Type[SignUp]
+AuthCredentialInstance = UserAccessToken | ApiKey | OTP | SignUp
 
-AuthCredentialJwtModel = Type[UserAccessToken] | Type[ApiKey] | Type[SignUp]
-AuthCredentialJwtModelInstance = UserAccessToken | ApiKey | SignUp
+AuthCredentialJwt = Type[UserAccessToken] | Type[ApiKey] | Type[SignUp]
+AuthCredentialJwtInstance = UserAccessToken | ApiKey | SignUp
 
-AuthCredentialTableModel = Type[UserAccessToken] | Type[ApiKey] | Type[OTP]
-AuthCredentialTableModelInstance = UserAccessToken | ApiKey | OTP
+AuthCredentialTable = Type[UserAccessToken] | Type[ApiKey] | Type[OTP]
+AuthCredentialTableInstance = UserAccessToken | ApiKey | OTP
 
-AuthCredentialJwtAndTableModel = Type[UserAccessToken] | Type[ApiKey]
-AuthCredentialJwtAndTableModelInstance = UserAccessToken | ApiKey
+AuthCredentialJwtAndTable = Type[UserAccessToken] | Type[ApiKey]
+AuthCredentialJwtAndTableInstance = UserAccessToken | ApiKey

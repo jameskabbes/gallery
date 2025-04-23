@@ -1,4 +1,5 @@
-from fastapi import Depends, Request, Response, Form, status
+from fastapi import Depends, Request, Response, Form, status, BackgroundTasks
+from sqlmodel import select
 from pydantic import BaseModel
 from typing import Annotated, cast
 
@@ -8,7 +9,7 @@ from .. import types
 from ..auth import utils as auth_utils, exceptions as auth_exceptions
 from ..config import settings
 
-from ..schemas import user_access_token as user_access_token_schema, user as user_schema
+from ..schemas import user_access_token as user_access_token_schema, user as user_schema, api as api_schema
 from ..models.tables import User, UserAccessToken
 from ..services.user import User as UserService
 from ..services.user_access_token import UserAccessToken as UserAccessTokenService
@@ -119,7 +120,7 @@ class AuthRouter(base.Router):
                     self.client.auth['credential_lifespans']['access_token']))
                 return PostTokenResponse(access_token=encoded_jwt, token_type='bearer')
 
-        @self.router.post('/login/password/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Could not validate credentials', 'model': auth_utils.DetailOnlyResponse}})
+        @self.router.post('/login/password/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Could not validate credentials', 'model': api_schema.DetailOnlyResponse}})
         async def post_login_password(
             user: Annotated[User, Depends(auth_utils.make_authenticate_user_with_username_and_password_dependency(c=self.client))],
             response: Response,
@@ -161,43 +162,58 @@ class AuthRouter(base.Router):
                             user_access_token),
                     ))
 
-        # @self.router.post('/login/magic-link/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
-        # async def post_login_magic_link(
-        #         response: Response,
-        #         model: PostLoginWithMagicLinkRequest
-        # ) -> PostLoginWithMagicLinkResponse:
+        @self.router.post('/login/magic-link/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': api_schema.DetailOnlyResponse}})
+        async def post_login_magic_link(
+                response: Response,
+                model: PostLoginWithMagicLinkRequest
+        ) -> PostLoginWithMagicLinkResponse:
 
-        #     authorization = await get_auth_from_token(token=model.token, permitted_auth_credential_types={
-        #     ccess_token'}, override_lifetime=self.client.auth['credential_lifespans']['magic_link'])
+            authorization = await auth_utils.get_auth_from_auth_credential_jwt(
+                c=self.client,
+                token=model.token,
+                permitted_auth_credential_services={UserAccessTokenService},
+                override_lifetime=self.client.auth['credential_lifespans']['magic_link']
+            )
 
-        #     if authorization.exception:
-        #         raise authorization.exception()
+            if authorization.exception:
+                raise auth_exceptions.Base(authorization.exception)
 
-        #     async with self.client.AsyncSession() as session:
+            auth_credential = cast(
+                UserAccessToken, authorization.auth_credential)
 
-        #     ken_lifespan = self.client.auth['credential_lifespans']['access_token']
-        #         user_access_token = await models.UserAccessToken.api_post(models.UserAccessToken.PostParams.model_construct(
-        #             session=session, c=c,  authorized_user_id=authorization._user_id, create_model=models.UserAccessTokenAdminCreate(
-        #                 user_id=authorization._user_id, lifespan=token_lifespan
-        #             )))
+            async with self.client.AsyncSession() as session:
+                token_lifespan = self.client.auth['credential_lifespans']['access_token']
+                user_access_token = await UserAccessTokenService.create(
+                    {
+                        'session': session,
+                        'c': self.client,
+                        'create_model': user_access_token_schema.UserAccessTokenAdminCreate(
+                            user_id=auth_credential.user_id,
+                            expiry=auth_credential_service.lifespan_to_expiry(
+                                token_lifespan),
+                        )
 
-        #         auth.set_access_token_cookie(response, c.jwt_encode(
-        #             user_access_token.to_payload()), token_lifespan)
+                    }
+                )
 
-        #         # one time link, delete the auth_credential
-        #         session.delete(authorization.auth_credential)
-        #         session.commit()
+                auth_utils.set_access_token_cookie(response, self.client.jwt_encode(
+                    dict(UserAccessTokenService.to_payload(user_access_token))), expiry=auth_credential_service.lifespan_to_expiry(token_lifespan))
 
-        #         return PostLoginWithMagicLinkResponse(
-        #             auth=GetAuthBaseReturn(
-        #                 user=models.UserPrivate.model_validate(
-        #                     authorization.user),
-        #                 scope_ids=set(
-        #                     settings.USER_ROLE_ID_SCOPE_IDS[authorization.user.user_role_id]),
-        #                 auth_credential=AuthCredentialIdTypeAndExpiry(
-        #                     id=user_access_token.id, type='access_token', expiry=user_access_token.expiry)
-        #             )
-        #         )
+                # one time link, delete the auth_credential
+                await session.delete(auth_credential)
+                await session.commit()
+
+            return PostLoginWithMagicLinkResponse(
+                auth=auth_utils.GetUserSessionInfoReturn(
+                    user=user_schema.UserPrivate.model_validate(
+                        authorization.user),
+                    scope_ids=set(
+                        settings.USER_ROLE_ID_SCOPE_IDS[cast(user_schema.UserPrivate, authorization.user).user_role_id]),
+                    access_token=user_access_token_schema.UserAccessTokenPublic.model_validate(
+                        user_access_token
+                    )
+                )
+            )
 
         # @self.router.post('/login/otp/email/')
         # async def post_login_otp_email(
@@ -323,26 +339,26 @@ class AuthRouter(base.Router):
         #             send_signup_link, session, user, phone_number=model.phone_number)
         #         return Response()
 
-        # @self.router.post('/request/magic-link/email/')
-        # async def post_request_magic_link_email(model: PostRequestMagicLinkEmailRequest, background_tasks: BackgroundTasks):
+        @self.router.post('/request/magic-link/email/')
+        async def post_request_magic_link_email(model: PostRequestMagicLinkEmailRequest, background_tasks: BackgroundTasks):
 
-        #     async with self.client.AsyncSession() as session:
-        #         user = session.exec(select(models.User).where(
-        #             models.User.email == model.email)).one_or_none()
-        #         if user:
-        #             background_tasks.add_task(
-        #                 send_magic_link, session, user, email=model.email)
-        #     return Response()
+            async with self.client.AsyncSession() as session:
+                user = (await session.exec(select(User).where(
+                    User.email == model.email))).one_or_none()
+                if user:
+                    background_tasks.add_task(
+                        auth_utils.send_magic_link, session, self.client, user, email=model.email)
+            return Response()
 
-        # @self.router.post('/request/magic-link/sms/')
-        # async def post_request_magic_link_sms(model: PostRequestMagicLinkSMSRequest, background_tasks: BackgroundTasks):
-        #     async with self.client.AsyncSession() as session:
-        #         user = session.exec(select(models.User).where(
-        #             models.User.email == model.phone_number)).one_or_none()
-        #         if user:
-        #             background_tasks.add_task(
-        #                 send_magic_link, session, user, phone_number=model.phone_number)
-        #     return Response()
+        @self.router.post('/request/magic-link/sms/')
+        async def post_request_magic_link_sms(model: PostRequestMagicLinkSMSRequest, background_tasks: BackgroundTasks):
+            async with self.client.AsyncSession() as session:
+                user = (await session.exec(select(User).where(
+                    User.phone_number == model.phone_number))).one_or_none()
+                if user:
+                    background_tasks.add_task(
+                        auth_utils.send_magic_link, session, self.client, user, phone_number=model.phone_number)
+            return Response()
 
         # @self.router.post('/request/otp/email/')
         # async def post_request_otp_email(model: PostRequestOTPEmailRequest, background_tasks: BackgroundTasks):

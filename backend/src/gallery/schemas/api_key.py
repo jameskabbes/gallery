@@ -13,20 +13,22 @@ class ApiKeyAdminAvailable(ApiKeyAvailable):
     user_id: types.User.id
 
 
-class ApiKeyImport(auth_credential_schema.Import):
+class ApiKeyImport(BaseModel):
     pass
 
 
-class ApiKeyUpdate(ApiKeyImport, auth_credential_schema.Update):
+class ApiKeyUpdate(ApiKeyImport):
     name: Optional[types.ApiKey.name] = None
+    expiry: types.AuthCredential.expiry | None = None
 
 
 class ApiKeyAdminUpdate(ApiKeyUpdate):
     pass
 
 
-class ApiKeyCreate(ApiKeyImport, auth_credential_schema.Create):
+class ApiKeyCreate(ApiKeyImport):
     name: types.ApiKey.name
+    expiry: types.AuthCredential.expiry
 
 
 class ApiKeyAdminCreate(ApiKeyCreate):

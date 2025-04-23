@@ -5,6 +5,8 @@ from .. import types
 
 from ..schemas import api_key as api_key_schema
 from ..services import auth_credential as auth_credential_service
+from .. import utils
+import datetime as datetime_module
 
 
 class ApiKey(
@@ -37,6 +39,15 @@ class ApiKey(
     @classmethod
     def to_api_key_private(cls, api_key: ApiKeyTable) -> api_key_schema.ApiKeyPrivate:
         return api_key_schema.ApiKeyPrivate.model_construct(**api_key.model_dump(), scope_ids=[api_key_scope.scope_id for api_key_scope in api_key.api_key_scopes])
+
+    @classmethod
+    async def table_inst_from_create_model(cls, create_model):
+
+        return cls._TABLE(
+            id=utils.generate_uuid(),
+            issued=datetime_module.datetime.now().astimezone(datetime_module.UTC),
+            **create_model.model_dump()
+        )
 
     # async def get_scope_ids(self, session: Session = None, c: client.Client = None) -> list[types.ScopeTypes.id]:
     #     return [api_key_scope.scope_id for api_key_scope in self.api_key_scopes]

@@ -9,7 +9,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from pydantic import BaseModel
 import typing
-from typing import Annotated
+from typing import Annotated, Generic
 from fastapi import Request, HTTPException, status, Response
 import datetime as datetime_module
 from .. import client, types, auth
@@ -85,13 +85,16 @@ class OAuth2PasswordBearerMultiSource(OAuth2):
 oauth2_scheme = OAuth2PasswordBearerMultiSource(
     flows=OAuthFlowsModel(password=OAuthFlowPassword(tokenUrl="auth/token/")))
 
+TAuthCredentialModelInstance = typing.TypeVar(
+    'TAuthCredentialModelInstance', bound=models.AuthCredentialModelInstance)
 
-class GetAuthReturn(BaseModel):
+
+class GetAuthReturn(BaseModel, Generic[TAuthCredentialModelInstance]):
     isAuthorized: bool = False
     exception: typing.Optional[exceptions.StatusCodeAndDetail] = None
     user: typing.Optional[user_schema.UserPrivate] = None
     scope_ids: typing.Optional[set[types.Scope.id]] = None
-    auth_credential: typing.Optional[models.AuthCredentialModelInstance] = None
+    auth_credential: typing.Optional[TAuthCredentialModelInstance] = None
 
     @property
     def _user_id(self):
@@ -103,13 +106,13 @@ class GetAuthReturn(BaseModel):
 
 
 class _BaseKwargs(typing.TypedDict):
-    c: client.Client
     required_scopes: typing.NotRequired[set[types.Scope.name]]
     override_lifetime: typing.NotRequired[datetime_module.timedelta]
 
 
 class _MakeGetAuthDepedencyAndGetAuthFromJwtKwargs(_BaseKwargs):
-    permitted_types: typing.NotRequired[set[types.AuthCredential.type]]
+    c: client.Client
+    permitted_auth_credential_services: typing.NotRequired[set[services.AuthCredentialJwtService]]
 
 
 class _GetAuthFromJwtAndGetAuthFromTableKwargs(_BaseKwargs):
@@ -122,79 +125,64 @@ class MakeGetAuthDepedencyKwargs(_MakeGetAuthDepedencyAndGetAuthFromJwtKwargs):
 
 
 class GetAuthFromTableKwargs(_GetAuthFromJwtAndGetAuthFromTableKwargs):
-    auth_credential_table_instance: models.AuthCredentialTableModelInstance
+    session: AsyncSession
     auth_credential_service: services.AuthCredentialTableService
     dt_now: typing.NotRequired[datetime_module.datetime]
-    read_from_db: typing.NotRequired[bool]
 
 
 class GetAuthFromJwtKwargs(_MakeGetAuthDepedencyAndGetAuthFromJwtKwargs, _GetAuthFromJwtAndGetAuthFromTableKwargs):
-    c: client.Client
     token: typing.Optional[types.JwtEncodedStr]
 
 
-async def get_auth_from_auth_credential_table_inst(
-        **kwargs: typing.Unpack[GetAuthFromTableKwargs]
-) -> GetAuthReturn:
+TAuthCredentialTableInstance = typing.TypeVar(
+    'TAuthCredentialTableInstance', bound=models.AuthCredentialTableModelInstance)
 
-    c = kwargs.get('c')
-    auth_credential_table_inst = kwargs.get('auth_credential_table_instance')
+
+async def get_auth_from_auth_credential_table_inst(
+    auth_credential_table_inst: TAuthCredentialTableInstance,
+        **kwargs: typing.Unpack[GetAuthFromTableKwargs]
+) -> GetAuthReturn[TAuthCredentialTableInstance]:
+
+    session = kwargs.get('session')
     auth_credential_service = kwargs.get('auth_credential_service')
     required_scopes = kwargs.get('required_scopes', set())
     override_lifetime = kwargs.get('override_lifetime', None)
     dt_now = kwargs.get(
         'dt_now', datetime_module.datetime.now(datetime_module.UTC))
-    read_from_db = kwargs.get('read_from_db', True)
 
-    async with c.AsyncSession() as session:
+    # if it expired, delete it
+    if dt_now > auth_credential_table_inst.expiry:
+        await session.delete(auth_credential_table_inst)
+        await session.commit()
+        return GetAuthReturn(exception=exceptions.authorization_expired())
 
-        if read_from_db:
-            auth_credential_from_db = await auth_credential_service.read(
-                {
-                    'session': session,
-                    'authorized_user_id': auth_credential_table_inst.user_id,
-                    'c': c,
-                    'id': auth_credential_table_inst.id,
-                }
-            )
-        else:
-            auth_credential_from_db = auth_credential_table_inst
-
-        if not auth_credential_from_db:
-            return GetAuthReturn(exception=exceptions.authorization_expired())
-
-        # if it expired, delete it
-        if dt_now > auth_credential_from_db.expiry:
-            await session.delete(auth_credential_from_db)
+    if override_lifetime != None:
+        if dt_now > (auth_credential_table_inst.issued + override_lifetime):
+            await session.delete(auth_credential_table_inst)
             await session.commit()
             return GetAuthReturn(exception=exceptions.authorization_expired())
 
-        if override_lifetime != None:
-            if dt_now > (auth_credential_from_db.issued + override_lifetime):
-                await session.delete(auth_credential_from_db)
-                await session.commit()
-                return GetAuthReturn(exception=exceptions.authorization_expired())
+    # if no user is associated with the auth_credential, raise an exception
+    user = auth_credential_table_inst.user
+    if user == None:
+        return GetAuthReturn(exception=exceptions.user_not_found())
 
-        # if no user is associated with the auth_credential, raise an exception
-        user = auth_credential_from_db.user
-        if user == None:
-            return GetAuthReturn(exception=exceptions.user_not_found())
+    required_scope_ids = set(
+        [settings.SCOPE_NAME_MAPPING[scope_name]
+            for scope_name in required_scopes]
+    )
 
-        scope_ids = set(await auth_credential_service.get_scope_ids(inst=auth_credential_from_db, session=session))  # type: ignore # noqa
+    scope_ids = set(await OTPService.get_scope_ids(inst=auth_credential_table_inst, session=session))  # type: ignore # noqa
 
-        required_scope_ids = set(
-            [settings.SCOPE_NAME_MAPPING[scope_name]
-                for scope_name in required_scopes]
-        )
-        if not required_scope_ids.issubset(scope_ids):
-            return GetAuthReturn(exception=exceptions.not_permitted())
+    if not required_scope_ids.issubset(scope_ids):
+        return GetAuthReturn(exception=exceptions.not_permitted())
 
-        return GetAuthReturn(
-            isAuthorized=True,
-            user=user_schema.UserPrivate.model_validate(user),
-            scope_ids=scope_ids,
-            auth_credential=auth_credential_from_db
-        )
+    return GetAuthReturn(
+        isAuthorized=True,
+        user=user_schema.UserPrivate.model_validate(user),
+        scope_ids=scope_ids,
+        auth_credential=auth_credential_table_inst
+    )
 
 
 async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJwtKwargs]) -> GetAuthReturn:
@@ -202,12 +190,14 @@ async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJ
     c = kwargs.get('c')
     token = kwargs.get('token', None)
     required_scopes = kwargs.get('required_scopes', set())
-    permitted_types = kwargs.get('permitted_types', set(
-        [c.auth_type for c in services.AUTH_CREDENTIAL_JWT_SERVICES]))
+    permitted_auth_credential_services = kwargs.get(
+        'permitted_auth_credential_services', services.AUTH_CREDENTIAL_JWT_SERVICES)
     override_lifetime = kwargs.get('override_lifetime', None)
 
     if token is None:
         return GetAuthReturn(exception=exceptions.missing_authorization())
+
+    print(token)
 
     # make sure the token is a valid jwt
     try:
@@ -215,13 +205,16 @@ async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJ
     except:
         return GetAuthReturn(exception=exceptions.improper_format())
 
+    print(payload)
+
     # make sure "type" is in the jwt
     if auth_credential_service.JwtIO._TYPE_CLAIM not in payload:
         return GetAuthReturn(exception=exceptions.missing_required_claims({'jwt'}))
 
     # make sure the "type" is a permitted auth_credential type
     auth_type: services.AuthCredentialJwtType = payload['type']
-    if auth_type not in permitted_types:
+
+    if auth_type not in [c.auth_type for c in permitted_auth_credential_services]:
         return GetAuthReturn(exception=exceptions.authorization_type_not_permitted())
 
     AuthCredentialService = services.AUTH_CREDENTIAL_TYPE_TO_SERVICE[auth_type]
@@ -249,20 +242,36 @@ async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJ
     # API keys are in the db, so it will be in the db
     if isinstance(auth_credential_inst_from_jwt, auth_credential_service.Table):
 
-        get_auth_from_table_kwargs: GetAuthFromTableKwargs = {
-            'c': c,
-            'auth_credential_table_instance': typing.cast(
-                models.AuthCredentialTableModelInstance, auth_credential_inst_from_jwt),
-            'auth_credential_service': typing.cast(services.AuthCredentialJwtAndTableService,  AuthCredentialService),
-            'dt_now': dt_now,
-        }
+        auth_credential_inst_from_jwt = typing.cast(
+            models.AuthCredentialJwtAndTableModelInstance, auth_credential_inst_from_jwt)
+        AuthCredentialService = typing.cast(
+            services.AuthCredentialJwtAndTableService, AuthCredentialService)
 
-        if required_scopes:
-            get_auth_from_table_kwargs['required_scopes'] = required_scopes
-        if override_lifetime:
-            get_auth_from_table_kwargs['override_lifetime'] = override_lifetime
+        async with c.AsyncSession() as session:
 
-        return await get_auth_from_auth_credential_table_inst(**get_auth_from_table_kwargs)
+            auth_credential_table_inst_from_db = await AuthCredentialService.read({
+                'session': session,
+                'c': c,
+                'id': auth_credential_inst_from_jwt.id,
+                'authorized_user_id': auth_credential_inst_from_jwt.user.id,
+            })
+
+            if not auth_credential_table_inst_from_db:
+                return GetAuthReturn(exception=exceptions.authorization_expired())
+
+            additional_kwargs = {}
+            if required_scopes:
+                additional_kwargs['required_scopes'] = required_scopes
+            if override_lifetime:
+                additional_kwargs['override_lifetime'] = override_lifetime
+
+            return await get_auth_from_auth_credential_table_inst(
+                auth_credential_table_inst_from_db,
+                session=session,
+                auth_credential_service=AuthCredentialService,
+                dt_now=dt_now,
+                **additional_kwargs
+            )
 
     else:
         # non-table auth_credentials have no scopes
@@ -321,14 +330,6 @@ def get_user_session_info(get_authorization_return: GetAuthReturn) -> GetUserSes
         scope_ids=get_authorization_return.scope_ids,
         access_token=access_token
     ))
-
-
-class DetailOnlyResponse(BaseModel):
-    detail: str
-
-
-class NotFoundResponse(DetailOnlyResponse):
-    pass
 
 
 def make_authenticate_user_with_username_and_password_dependency(c: client.Client):
@@ -404,10 +405,9 @@ async def post_login_otp(session: AsyncSession, c: client.Client, user: tables.U
         raise exceptions.Base(exceptions.invalid_otp())
 
     get_auth = await get_auth_from_auth_credential_table_inst(
-        c=c,
-        auth_credential_table_instance=user_otp,
+        user_otp,
+        session=session,
         auth_credential_service=OTPService,
-        read_from_db=False,
         override_lifetime=c.auth['credential_lifespans']['access_token']
     )
 

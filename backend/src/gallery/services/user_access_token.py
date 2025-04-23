@@ -47,11 +47,11 @@ class UserAccessToken(
         return select(cls._TABLE).where(cls._TABLE.id == id)
 
     @classmethod
-    async def table_inst_from_create_model(cls, create_model: user_access_token_schema.UserAccessTokenAdminCreate) -> UserAccessTokenTable:
+    async def table_inst_from_create_model(cls, create_model):
 
         return cls._TABLE(
             id=utils.generate_uuid(),
-            issued=datetime_module.datetime.now(datetime_module.timezone.utc),
+            issued=datetime_module.datetime.now().astimezone(datetime_module.UTC),
             **create_model.model_dump(exclude_unset=True, exclude_defaults=True, exclude_none=True)
         )
 

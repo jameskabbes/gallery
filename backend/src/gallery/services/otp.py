@@ -31,12 +31,12 @@ class OTP(
     _TABLE = OTPTable
 
     @classmethod
-    async def table_inst_from_create_model(cls, create_model: otp_schema.OTPAdminCreate) -> OTPTable:
+    async def table_inst_from_create_model(cls, create_model):
 
         return cls._TABLE(
             id=utils.generate_uuid(),
-            issued=datetime_module.datetime.now(datetime_module.timezone.utc),
-            **create_model.model_dump(exclude_unset=True, exclude_defaults=True, exclude_none=True)
+            issued=datetime_module.datetime.now().astimezone(datetime_module.UTC),
+            **create_model.model_dump()
         )
 
     @classmethod

@@ -1,6 +1,6 @@
 from sqlmodel import Field
+from pydantic import BaseModel
 from ..schemas import auth_credential as auth_credential_schema
-from ..models.bases import auth_credential as auth_credential_model_base
 from .. import types
 
 
@@ -12,9 +12,10 @@ class JwtModel(auth_credential_schema.JwtModel):
     email: types.User.email
 
 
-class SignUpAdminCreate(auth_credential_schema.Create):
+class SignUpAdminCreate(BaseModel):
     email: types.User.email
+    expiry: types.AuthCredential.expiry
 
 
-class SignUp(auth_credential_model_base.AuthCredentialBase):
+class SignUp(auth_credential_schema.Model):
     email: types.User.email = Field()

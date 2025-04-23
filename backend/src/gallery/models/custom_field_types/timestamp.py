@@ -44,7 +44,7 @@ class Timestamp(TypeDecorator):
             return None
         if dialect.name == "sqlite":
             # Convert from float to datetime for SQLite
-            return datetime_module.datetime.fromtimestamp(typing.cast(float, value))
+            return datetime_module.datetime.fromtimestamp(typing.cast(float, value)).astimezone(datetime_module.UTC)
         else:
             # For other databases, return the raw datetime object
             return typing.cast(datetime_module.datetime, value)

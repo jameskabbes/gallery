@@ -1,9 +1,8 @@
 from sqlmodel import Field, Relationship, SQLModel, PrimaryKeyConstraint, Column
 from pydantic import BaseModel, model_validator, field_serializer, field_validator, ValidationInfo
 from .. import types
-from typing import Optional
+from typing import Optional, Protocol
 from .custom_field_types import timestamp
-from .bases import auth_credential as auth_credential_model
 
 
 class User(SQLModel, table=True):
@@ -33,7 +32,7 @@ class User(SQLModel, table=True):
         back_populates='user', cascade_delete=True)
 
 
-class _AuthCredentialTableBase(auth_credential_model.AuthCredentialBase):
+class _AuthCredentialTableBase(SQLModel):
 
     user_id: types.User.id = Field(
         index=True, foreign_key=str(User.__tablename__) + '.id', const=True, ondelete='CASCADE')

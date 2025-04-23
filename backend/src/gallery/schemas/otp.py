@@ -9,6 +9,7 @@ class OTPAdminUpdate(BaseModel):
     pass
 
 
-class OTPAdminCreate(auth_credential_schema.Create):
+class OTPAdminCreate(BaseModel):
     user_id: types.User.id
     hashed_code: types.OTP.hashed_code
+    expiry: types.AuthCredential.expiry

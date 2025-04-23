@@ -7,8 +7,8 @@ from .. import client, types
 from ..schemas.pagination import Pagination
 from .. import models
 
-T = TypeVar('T', bound=SQLModel, covariant=False)
-TId = TypeVar('TId', bound=types._IdType, covariant=False)
+T = TypeVar('T', bound=SQLModel)
+TId = TypeVar('TId', bound=types._IdType)
 TCreateModel = TypeVar('TCreateModel', bound=BaseModel, default=BaseModel)
 TUpdateModel = TypeVar('TUpdateModel', bound=BaseModel, default=BaseModel)
 
