@@ -78,6 +78,10 @@ class ApiKey(AuthCredential):
     order_by = Literal['issued', 'expiry', 'name']
 
 
+class SignUp(AuthCredential):
+    email = User.email
+
+
 class Gallery:
     class BaseTypes:
         id = str

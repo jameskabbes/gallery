@@ -13,14 +13,6 @@ class UserAccessTokenAdminCreate(BaseModel):
     user_id: types.User.id
 
 
-class JwtPayload(auth_credential_schema.JwtPayload):
-    sub: types.User.id
-
-
-class JwtModel(auth_credential_schema.JwtModel):
-    id: types.User.id
-
-
 class UserAccessTokenExport(FromAttributes):
     pass
 

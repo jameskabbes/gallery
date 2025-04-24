@@ -92,11 +92,11 @@ TAfterDeleteCustomParams = TypeVar(
     'TAfterDeleteCustomParams', bound=AfterDeleteCustomParams, default=AfterDeleteCustomParams)
 
 
-class HasTableInstFromCreateModel(Generic[T, TCreateModel], models.HasTable[T]):
+class TableInstFromCreateModel(Generic[T, TCreateModel], models.HasTable[T]):
     @classmethod
     async def table_inst_from_create_model(cls, create_model: TCreateModel) -> T:
         """Create a new instance of the model from the create model (TCreateModel), don't overwrite this method"""
-        ...
+        raise NotImplementedError
 
 
 class Service(
@@ -110,7 +110,7 @@ class Service(
         TAfterUpdateCustomParams,
         TAfterDeleteCustomParams
     ],
-    HasTableInstFromCreateModel[T, TCreateModel],
+    TableInstFromCreateModel[T, TCreateModel],
 ):
 
     @classmethod

@@ -16,9 +16,9 @@ from .. import client, types, auth
 from ..auth import exceptions
 from ..config import settings
 from ..models import tables
-from .. import models
+from .. import models, schemas
 
-from ..schemas import user as user_schema, user_access_token as user_access_token_schema, sign_up as sign_up_schema, otp as otp_schema
+from ..schemas import user as user_schema, user_access_token as user_access_token_schema, sign_up as sign_up_schema, otp as otp_schema, auth_credential as auth_credential_schema
 from ..services.user import User as UserService
 from ..services.user_access_token import UserAccessToken as UserAccessTokenService
 from ..services.sign_up import SignUp as SignUpService
@@ -85,34 +85,33 @@ class OAuth2PasswordBearerMultiSource(OAuth2):
 oauth2_scheme = OAuth2PasswordBearerMultiSource(
     flows=OAuthFlowsModel(password=OAuthFlowPassword(tokenUrl="auth/token/")))
 
-TAuthCredentialModelInstance = typing.TypeVar(
-    'TAuthCredentialModelInstance', bound=models.AuthCredentialModelInstance)
+TAuthCredentialInstance = typing.TypeVar(
+    'TAuthCredentialInstance', bound=schemas.AuthCredentialInstance, covariant=True)
 
 
-class GetAuthReturn(BaseModel, Generic[TAuthCredentialModelInstance]):
+class GetAuthReturn(BaseModel, Generic[TAuthCredentialInstance]):
     isAuthorized: bool = False
     exception: typing.Optional[exceptions.StatusCodeAndDetail] = None
     user: typing.Optional[user_schema.UserPrivate] = None
     scope_ids: typing.Optional[set[types.Scope.id]] = None
-    auth_credential: typing.Optional[TAuthCredentialModelInstance] = None
+    auth_credential: typing.Optional[TAuthCredentialInstance] = None
 
     @property
-    def _user_id(self):
-        if self.auth_credential:
-            if isinstance(self.auth_credential, auth_credential_service.Table):
-                if self.auth_credential.user:
-                    return self.auth_credential.user.id
-        return None
+    def _user_id(self) -> types.User.id | None:
+        if self.user:
+            return self.user.id
+        else:
+            return None
 
 
 class _BaseKwargs(typing.TypedDict):
     required_scopes: typing.NotRequired[set[types.Scope.name]]
     override_lifetime: typing.NotRequired[datetime_module.timedelta]
+    c: client.Client
 
 
 class _MakeGetAuthDepedencyAndGetAuthFromJwtKwargs(_BaseKwargs):
-    c: client.Client
-    permitted_auth_credential_services: typing.NotRequired[set[services.AuthCredentialJwtService]]
+    permitted_types: typing.NotRequired[set[schemas.AuthCredentialJwtType]]
 
 
 class _GetAuthFromJwtAndGetAuthFromTableKwargs(_BaseKwargs):
@@ -135,7 +134,28 @@ class GetAuthFromJwtKwargs(_MakeGetAuthDepedencyAndGetAuthFromJwtKwargs, _GetAut
 
 
 TAuthCredentialTableInstance = typing.TypeVar(
-    'TAuthCredentialTableInstance', bound=models.AuthCredentialTableModelInstance)
+    'TAuthCredentialTableInstance', bound=schemas.AuthCredentialTableInstance)
+
+
+def is_valid_time_bounds(
+        issued: datetime_module.datetime,
+        expiry: datetime_module.datetime,
+        dt_now: datetime_module.datetime = datetime_module.datetime.now(
+        ).astimezone(datetime_module.UTC),
+        override_lifespan: datetime_module.timedelta | None = None) -> bool:
+    """Validate the time bounds of the issued and expiry dates."""
+
+    if dt_now > expiry:
+        return False
+
+    if override_lifespan is not None:
+        if dt_now > (issued + override_lifespan):
+            return False
+
+    if dt_now < issued:
+        return False
+
+    return True
 
 
 async def get_auth_from_auth_credential_table_inst(
@@ -144,27 +164,28 @@ async def get_auth_from_auth_credential_table_inst(
 ) -> GetAuthReturn[TAuthCredentialTableInstance]:
 
     session = kwargs.get('session')
-    auth_credential_service = kwargs.get('auth_credential_service')
+    c = kwargs.get('c')
+    service = kwargs.get('auth_credential_service')
     required_scopes = kwargs.get('required_scopes', set())
     override_lifetime = kwargs.get('override_lifetime', None)
     dt_now = kwargs.get(
-        'dt_now', datetime_module.datetime.now(datetime_module.UTC))
+        'dt_now', datetime_module.datetime.now().astimezone(datetime_module.UTC))
 
-    # if it expired, delete it
-    if dt_now > auth_credential_table_inst.expiry:
-        await session.delete(auth_credential_table_inst)
-        await session.commit()
+    # validate time bounds
+    if not is_valid_time_bounds(auth_credential_table_inst.issued, auth_credential_table_inst.expiry, dt_now, override_lifetime):
+        await service.delete(
+            {
+                'authorized_user_id': auth_credential_table_inst.user_id,
+                'id': auth_credential_table_inst.id,
+                'c': c,
+                'session': session,
+            }
+        )
         return GetAuthReturn(exception=exceptions.authorization_expired())
-
-    if override_lifetime != None:
-        if dt_now > (auth_credential_table_inst.issued + override_lifetime):
-            await session.delete(auth_credential_table_inst)
-            await session.commit()
-            return GetAuthReturn(exception=exceptions.authorization_expired())
 
     # if no user is associated with the auth_credential, raise an exception
     user = auth_credential_table_inst.user
-    if user == None:
+    if user is None:
         return GetAuthReturn(exception=exceptions.user_not_found())
 
     required_scope_ids = set(
@@ -172,7 +193,7 @@ async def get_auth_from_auth_credential_table_inst(
             for scope_name in required_scopes]
     )
 
-    scope_ids = set(await OTPService.get_scope_ids(inst=auth_credential_table_inst, session=session))  # type: ignore # noqa
+    scope_ids = set(await service.get_scope_ids(inst=auth_credential_table_inst, session=session))  # type: ignore # noqa
 
     if not required_scope_ids.issubset(scope_ids):
         return GetAuthReturn(exception=exceptions.not_permitted())
@@ -185,95 +206,87 @@ async def get_auth_from_auth_credential_table_inst(
     )
 
 
-async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJwtKwargs]) -> GetAuthReturn:
+async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJwtKwargs]) -> GetAuthReturn[schemas.AuthCredentialJwtInstance]:
 
     c = kwargs.get('c')
     token = kwargs.get('token', None)
     required_scopes = kwargs.get('required_scopes', set())
-    permitted_auth_credential_services = kwargs.get(
-        'permitted_auth_credential_services', services.AUTH_CREDENTIAL_JWT_SERVICES)
+    permitted_types = kwargs.get(
+        'permitted_types', {'user_access_token', 'api_key'})
     override_lifetime = kwargs.get('override_lifetime', None)
 
+    # 1. if token is blank
     if token is None:
         return GetAuthReturn(exception=exceptions.missing_authorization())
 
-    print(token)
-
-    # make sure the token is a valid jwt
+    # 2. make sure the token is a valid jwt
     try:
-        payload: dict = c.jwt_decode(token)
+        payload = typing.cast(
+            auth_credential_schema.JwtPayload[typing.Any], c.jwt_decode(token))
     except:
         return GetAuthReturn(exception=exceptions.improper_format())
 
-    print(payload)
-
-    # make sure "type" is in the jwt
-    if auth_credential_service.JwtIO._TYPE_CLAIM not in payload:
-        return GetAuthReturn(exception=exceptions.missing_required_claims({'jwt'}))
-
-    # make sure the "type" is a permitted auth_credential type
-    auth_type: services.AuthCredentialJwtType = payload['type']
-
-    if auth_type not in [c.auth_type for c in permitted_auth_credential_services]:
-        return GetAuthReturn(exception=exceptions.authorization_type_not_permitted())
-
-    AuthCredentialService = services.AUTH_CREDENTIAL_TYPE_TO_SERVICE[auth_type]
-
-    # turn the payload into an AuthCredential instance
+    # 3. make sure the jwt is a valid payload
     try:
-        auth_credential_inst_from_jwt = AuthCredentialService.from_payload(
+        auth_credential_service.JwtIO.validate_jwt_claims(
             payload)  # type: ignore
     except auth_credential_service.MissingRequiredClaimsError as e:
         return GetAuthReturn(exception=exceptions.missing_required_claims(set(e.claims)))
     except Exception:
         raise
 
-    dt_now = datetime_module.datetime.now(datetime_module.UTC)
+    auth_type = payload['type']
+    if auth_type not in permitted_types:
+        return GetAuthReturn(exception=exceptions.authorization_type_not_permitted(auth_type))
 
-    # check the dates from the jwt
-    if dt_now > auth_credential_inst_from_jwt.expiry:
+    AuthCredentialService = services.AUTH_CREDENTIAL_TYPE_TO_SERVICE[auth_type]
+
+    dt_now = datetime_module.datetime.now().astimezone(datetime_module.UTC)
+    dt_expiry = datetime_module.datetime.fromtimestamp(
+        payload['exp'], tz=datetime_module.UTC)
+    dt_issued = datetime_module.datetime.fromtimestamp(
+        payload['iat'], tz=datetime_module.UTC)
+
+    # 4. validate time bounds encoded in the jwt
+    if not is_valid_time_bounds(dt_issued, dt_expiry, dt_now, override_lifetime):
         return GetAuthReturn(exception=exceptions.authorization_expired())
-    if override_lifetime is not None:
-        if dt_now > auth_credential_inst_from_jwt.issued + override_lifetime:
-            return GetAuthReturn(exception=exceptions.authorization_expired())
 
-    # if the auth_credential is also stored in the table, it will need to be in the db
-    # for example, SignUp is a JWT only credential, so it will not be in the db
-    # API keys are in the db, so it will be in the db
-    if isinstance(auth_credential_inst_from_jwt, auth_credential_service.Table):
-
-        auth_credential_inst_from_jwt = typing.cast(
-            models.AuthCredentialJwtAndTableModelInstance, auth_credential_inst_from_jwt)
-        AuthCredentialService = typing.cast(
-            services.AuthCredentialJwtAndTableService, AuthCredentialService)
+    # if the auth_credential is stored in a table, check its db entry
+    if isinstance(AuthCredentialService, auth_credential_service.Table):
 
         async with c.AsyncSession() as session:
+
+            AuthCredentialService = typing.cast(
+                services.AuthCredentialJwtAndTableService, AuthCredentialService)
 
             auth_credential_table_inst_from_db = await AuthCredentialService.read({
                 'session': session,
                 'c': c,
-                'id': auth_credential_inst_from_jwt.id,
-                'authorized_user_id': auth_credential_inst_from_jwt.user.id,
+                'id': payload['sub'],
+                'admin': True
             })
 
             if not auth_credential_table_inst_from_db:
                 return GetAuthReturn(exception=exceptions.authorization_expired())
 
-            additional_kwargs = {}
-            if required_scopes:
-                additional_kwargs['required_scopes'] = required_scopes
-            if override_lifetime:
-                additional_kwargs['override_lifetime'] = override_lifetime
-
             return await get_auth_from_auth_credential_table_inst(
                 auth_credential_table_inst_from_db,
+                c=c,
                 session=session,
-                auth_credential_service=AuthCredentialService,
                 dt_now=dt_now,
-                **additional_kwargs
+                **{
+                    k: v for k, v in {
+                        'required_scopes': required_scopes,
+                        'override_lifetime': override_lifetime
+                    }.items() if v
+                }
             )
 
     else:
+
+        AuthCredentialService = typing.cast(
+            services.AuthCredentialJwtAndNotTableService, AuthCredentialService)
+
         # non-table auth_credentials have no scopes
         if required_scopes:
             return GetAuthReturn(exception=exceptions.not_permitted())
@@ -282,7 +295,8 @@ async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJ
             isAuthorized=True,
             user=None,
             scope_ids=set(),
-            auth_credential=auth_credential_inst_from_jwt
+            auth_credential=AuthCredentialService.table_inst_from_jwt_payload(
+                payload)
         )
 
 
@@ -339,8 +353,6 @@ def make_authenticate_user_with_username_and_password_dependency(c: client.Clien
             user = await UserService.authenticate(
                 session, form_data.username, form_data.password)
 
-            print(user)
-
             if user is None:
                 raise exceptions.Base(exceptions.credentials())
             return user
@@ -348,7 +360,7 @@ def make_authenticate_user_with_username_and_password_dependency(c: client.Clien
     return authenticate_user_with_username_and_password
 
 
-async def send_signup_link(session: AsyncSession, c: client.Client, user: tables.User,  email: typing.Optional[types.User.email] = None, phone_number: typing.Optional[types.User.phone_number] = None):
+async def send_signup_link(session: AsyncSession, c: client.Client, user: tables.User | None, email: types.User.email):
 
     # existing user, send email to existing user
     if user:
@@ -364,38 +376,33 @@ async def send_signup_link(session: AsyncSession, c: client.Client, user: tables
         })
 
         url = '{}{}/?token={}'.format(settings.FRONTEND_URLS['base'],
-                                      settings.FRONTEND_URLS['verify_magic_link'], c.jwt_encode(typing.cast(dict, UserAccessTokenService.to_payload(user_access_token))))
+                                      settings.FRONTEND_URLS['verify_magic_link'], c.jwt_encode(typing.cast(dict, UserAccessTokenService.to_jwt_payload(user_access_token))))
 
         if email:
             c.send_email(
                 email, 'Sign Up Request', 'Somebody requested to sign up with this email. An account already exists with this email. Click here to login instead: {}'.format(url))
-        if phone_number:
-            c.send_sms(
-                phone_number, 'Somebody requested to sign up with this phone number. An account already exists with this phone number. Click here to login instead: {}'.format(url))
 
     else:
 
         sign_up = await SignUpService.table_inst_from_create_model(sign_up_schema.SignUpAdminCreate(
-            email=email, lifespan=c.auth['credential_lifespans']['request_sign_up']
-        ))
+            email=email, expiry=auth_credential_service.lifespan_to_expiry(c.auth['credential_lifespans']['request_sign_up'])))
+
         sign_up_jwt = c.jwt_encode(typing.cast(
-            dict, SignUpService.to_payload(sign_up)))
+            dict, SignUpService.to_jwt_payload(sign_up)))
+
         url = '{}{}/?token={}'.format(settings.FRONTEND_URLS['base'],
                                       settings.FRONTEND_URLS['verify_signup'], sign_up_jwt)
 
         if email:
             c.send_email(email, 'Sign Up',
                          'Click here to sign up: {}'.format(url))
-        if phone_number:
-            c.send_sms(
-                phone_number, 'Click here to sign up: {}'.format(url))
 
 
 class PostLoginWithOTPResponse(GetUserSessionInfoNestedReturn):
     pass
 
 
-async def post_login_otp(session: AsyncSession, c: client.Client, user: tables.User, response: Response, code: types.OTP.code) -> PostLoginWithOTPResponse:
+async def post_login_otp(session: AsyncSession, c: client.Client, user: tables.User | None, response: Response, code: types.OTP.code) -> PostLoginWithOTPResponse:
 
     if user is None:
         raise exceptions.Base(exceptions.invalid_otp())
@@ -407,6 +414,7 @@ async def post_login_otp(session: AsyncSession, c: client.Client, user: tables.U
     get_auth = await get_auth_from_auth_credential_table_inst(
         user_otp,
         session=session,
+        c=c,
         auth_credential_service=OTPService,
         override_lifetime=c.auth['credential_lifespans']['access_token']
     )
@@ -427,11 +435,17 @@ async def post_login_otp(session: AsyncSession, c: client.Client, user: tables.U
     })
 
     set_access_token_cookie(response, c.jwt_encode(typing.cast(
-        dict, UserAccessTokenService.to_payload(user_access_token))), expiry=user_access_token.expiry)
+        dict, UserAccessTokenService.to_jwt_payload(user_access_token))), expiry=user_access_token.expiry)
 
-    # one time link, delete the auth_credential
-    await session.delete(user_otp)
-    await session.commit()
+    # one time link, delete the otp
+    await OTPService.delete(
+        {
+            'session': session,
+            'c': c,
+            'id': user_otp.id,
+            'authorized_user_id': user.id,
+        }
+    )
 
     return PostLoginWithOTPResponse(
         auth=GetUserSessionInfoReturn(
@@ -455,7 +469,7 @@ async def send_magic_link(session: AsyncSession, c: client.Client, user: tables.
     )
 
     url = '{}{}/?token={}'.format(settings.FRONTEND_URLS['base'],
-                                  settings.FRONTEND_URLS['verify_magic_link'], c.jwt_encode(typing.cast(dict, UserAccessTokenService.to_payload(user_access_token))))
+                                  settings.FRONTEND_URLS['verify_magic_link'], c.jwt_encode(typing.cast(dict, UserAccessTokenService.to_jwt_payload(user_access_token))))
 
     if email:
         c.send_email(email, 'Magic Link',

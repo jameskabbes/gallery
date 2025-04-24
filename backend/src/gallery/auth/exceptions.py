@@ -79,7 +79,8 @@ def invalid_otp() -> StatusCodeAndDetail:
     )
 
 
-def authorization_type_not_permitted() -> StatusCodeAndDetail:
+def authorization_type_not_permitted(type: types.AuthCredential.type) -> StatusCodeAndDetail:
     return StatusCodeAndDetail(
-        status_code=status.HTTP_400_BAD_REQUEST, detail="Authorization type not permitted for this endpoint"
+        status_code=status.HTTP_400_BAD_REQUEST, detail="Authorization type '{}' not permitted for this endpoint".format(
+            type)
     )

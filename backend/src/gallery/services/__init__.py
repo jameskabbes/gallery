@@ -10,7 +10,6 @@ from .. import types
 AuthCredentialService = Type[UserAccessTokenService] | Type[ApiKeyService] | Type[OTPService] | Type[SignUpService]
 AuthCredentialJwtService = Type[UserAccessTokenService] | Type[ApiKeyService] | Type[SignUpService]
 
-AuthCredentialJwtType = Literal['access_token', 'api_key', 'sign_up']
 
 AUTH_CREDENTIAL_JWT_SERVICES: set[AuthCredentialJwtService] = {
     UserAccessTokenService,
@@ -22,15 +21,18 @@ AUTH_CREDENTIAL_JWT_SERVICES: set[AuthCredentialJwtService] = {
 AuthCredentialTableService = Type[UserAccessTokenService] | Type[ApiKeyService] | Type[OTPService]
 AuthCredentialJwtAndTableService = Type[UserAccessTokenService] | Type[ApiKeyService]
 
+AuthCredentialJwtAndNotTableService = Type[SignUpService]
+AuthCredentialNotJwtAndTableService = Type[OTPService]
 
-class T(TypedDict):
+
+class AuthCredentialTypeToService(TypedDict):
     access_token: Type[UserAccessTokenService]
     api_key: Type[ApiKeyService]
     sign_up: Type[SignUpService]
     otp: Type[OTPService]
 
 
-AUTH_CREDENTIAL_TYPE_TO_SERVICE: T = {
+AUTH_CREDENTIAL_TYPE_TO_SERVICE: AuthCredentialTypeToService = {
     'access_token': UserAccessTokenService,
     'api_key': ApiKeyService,
     'sign_up': SignUpService,

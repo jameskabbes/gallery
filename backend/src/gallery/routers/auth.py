@@ -9,7 +9,7 @@ from .. import types
 from ..auth import utils as auth_utils, exceptions as auth_exceptions
 from ..config import settings
 
-from ..schemas import user_access_token as user_access_token_schema, user as user_schema, api as api_schema
+from ..schemas import user_access_token as user_access_token_schema, user as user_schema, api as api_schema, sign_up as sign_up_schema
 from ..models.tables import User, UserAccessToken
 from ..services.user import User as UserService
 from ..services.user_access_token import UserAccessToken as UserAccessTokenService
@@ -114,7 +114,7 @@ class AuthRouter(base.Router):
                 })
 
                 encoded_jwt = self.client.jwt_encode(
-                    cast(dict, UserAccessTokenService.to_payload(user_access_token)))
+                    cast(dict, UserAccessTokenService.to_jwt_payload(user_access_token)))
 
                 auth_utils.set_access_token_cookie(response, encoded_jwt, None if not stay_signed_in else auth_credential_service.lifespan_to_expiry(
                     self.client.auth['credential_lifespans']['access_token']))
@@ -145,7 +145,7 @@ class AuthRouter(base.Router):
                 })
 
                 encoded_jwt = self.client.jwt_encode(
-                    cast(dict, UserAccessTokenService.to_payload(user_access_token)))
+                    cast(dict, UserAccessTokenService.to_jwt_payload(user_access_token)))
 
                 auth_utils.set_access_token_cookie(response, encoded_jwt, None if not stay_signed_in else auth_credential_service.lifespan_to_expiry(
                     self.client.auth['credential_lifespans']['access_token']))
@@ -171,7 +171,7 @@ class AuthRouter(base.Router):
             authorization = await auth_utils.get_auth_from_auth_credential_jwt(
                 c=self.client,
                 token=model.token,
-                permitted_auth_credential_services={UserAccessTokenService},
+                permitted_types={'access_token'},
                 override_lifetime=self.client.auth['credential_lifespans']['magic_link']
             )
 
@@ -197,7 +197,7 @@ class AuthRouter(base.Router):
                 )
 
                 auth_utils.set_access_token_cookie(response, self.client.jwt_encode(
-                    dict(UserAccessTokenService.to_payload(user_access_token))), expiry=auth_credential_service.lifespan_to_expiry(token_lifespan))
+                    dict(UserAccessTokenService.to_jwt_payload(user_access_token))), expiry=auth_credential_service.lifespan_to_expiry(token_lifespan))
 
                 # one time link, delete the auth_credential
                 await session.delete(auth_credential)
@@ -215,26 +215,26 @@ class AuthRouter(base.Router):
                 )
             )
 
-        # @self.router.post('/login/otp/email/')
-        # async def post_login_otp_email(
-        #         model: PostLoginWithOTPEmailRequest,
-        #         response: Response) -> PostLoginWithOTPResponse:
+        @self.router.post('/login/otp/email/')
+        async def post_login_otp_email(
+                model: PostLoginWithOTPEmailRequest,
+                response: Response) -> auth_utils.PostLoginWithOTPResponse:
 
-        #     async with self.client.AsyncSession() as session:
-        #         user = session.exec(select(models.User).where(
-        #             models.User.email == model.email)).one_or_none()
-        #         return await post_login_otp(session, user, response, model.code)
+            async with self.client.AsyncSession() as session:
+                user = (await session.exec(select(User).where(
+                    User.email == model.email))).one_or_none()
+                return await auth_utils.post_login_otp(session, self.client, user, response, model.code)
 
-        # @self.router.post('/login/otp/phone_number/')
-        # async def post_login_otp_phone_number(
-        #     model: PostLoginWithOTPPhoneNumberRequest,
-        #     response: Response
-        # ) -> PostLoginWithOTPResponse:
+        @self.router.post('/login/otp/phone_number/')
+        async def post_login_otp_phone_number(
+            model: PostLoginWithOTPPhoneNumberRequest,
+            response: Response
+        ) -> auth_utils.PostLoginWithOTPResponse:
 
-        #     async with self.client.AsyncSession() as session:
-        #         user = session.exec(select(models.User).where(
-        #             models.User.phone_number == model.phone_number)).one_or_none()
-        #         return await post_login_otp(session, user, response, model.code)
+            async with self.client.AsyncSession() as session:
+                user = (await session.exec(select(User).where(
+                    User.phone_number == model.phone_number))).one_or_none()
+                return await auth_utils.post_login_otp(session, self.client, user, response, model.code)
 
         # @self.router.post("/login/google/", responses={status.HTTP_400_BAD_REQUEST: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
         # async def post_login_google(request_token: PostLoginWithGoogleRequest, response: Response) -> PostLoginWithGoogleResponse:
@@ -260,7 +260,10 @@ class AuthRouter(base.Router):
 
         #     ken_lifespan = self.client.auth['credential_lifespans']['access_token']
 
-        #         user_access_token = await models.UserAccessToken.api_post(models.UserAccessToken.PostParams.model_construct(session=session, c=c,  authorized_user_id=user._id, create_model=models.UserAccessTokenAdminCreate(
+        #         user_access_token = await UserAccessTokenService.create({
+        #
+        #
+        # models.UserAccessToken.PostParams.model_construct(session=session, c=c,  authorized_user_id=user._id, create_model=models.UserAccessTokenAdminCreate(
         #             user_id=user.id, lifespan=token_lifespan
         #         )))
 
@@ -277,67 +280,68 @@ class AuthRouter(base.Router):
         #             )
         #         )
 
-        # @self.router.post('/signup/')
-        # async def post_signup(response: Response, model: PostSignUpRequest) -> PostSignUpResponse:
+        @self.router.post('/signup/')
+        async def post_signup(response: Response, model: PostSignUpRequest) -> PostSignUpResponse:
 
-        #     authorization = await get_auth_from_token(
-        #         token=model.token,
-        #         permitted_auth_credential_types={'sign_up'},
-        #     erride_lifetime=self.client.auth['credential_lifespans']['request_sign_up'])
+            authorization = await auth_utils.get_auth_from_auth_credential_jwt(
+                c=self.client,
+                token=model.token,
+                permitted_types={'sign_up'},
+                override_lifetime=self.client.auth['credential_lifespans']['request_sign_up'])
 
-        #     async with self.client.AsyncSession() as session:
-        #         sign_up: models.SignUp = authorization.auth_credential
+            async with self.client.AsyncSession() as session:
+                sign_up = cast(sign_up_schema.SignUp,
+                               authorization.auth_credential)
 
-        #         user_create_admin = models.UserAdminCreate(
-        #             email=sign_up.email, user_role_id=settings.USER_ROLE_NAME_MAPPING['user'])
+                user = await UserService.create({
+                    'admin': True,
+                    'c': self.client,
+                    'session': session,
+                    'create_model': user_schema.UserAdminCreate(
+                        email=sign_up.email, user_role_id=settings.USER_ROLE_NAME_MAPPING['user'])
+                })
 
-        #         user = await models.User.api_post(models.User.PostParams.model_construct(
-        #             session=session, c=c, authorized_user_id=None, create_model=user_create_admin
-        #         ))
+            token_expiry = auth_credential_service.lifespan_to_expiry(
+                self.client.auth['credential_lifespans']['access_token'])
 
-        #     ken_lifespan = self.client.auth['credential_lifespans']['access_token']
-        #         user_access_token = await models.UserAccessToken.api_post(models.UserAccessToken.PostParams.model_construct(
-        #             session=session, c=c,  authorized_user_id=user._id, create_model=models.UserAccessTokenAdminCreate(
-        #                 user_id=user._id, type='access_token', lifespan=token_lifespan
-        #             )))
+            user_access_token = await UserAccessTokenService.create({
+                'session': session,
+                'c': self.client,
+                'authorized_user_id': user.id,
+                'create_model': user_access_token_schema.UserAccessTokenAdminCreate(
+                    user_id=user.id,
+                    expiry=token_expiry
+                )
+            })
 
-        #         auth.set_access_token_cookie(response, c.jwt_encode(
-        #             user_access_token.to_payload()), token_lifespan)
+            auth_utils.set_access_token_cookie(
+                response,
+                self.client.jwt_encode(
+                    cast(dict, UserAccessTokenService.to_jwt_payload(user_access_token))),
+                expiry=token_expiry)
 
-        #         return PostSignUpResponse(
-        #             auth=GetAuthBaseReturn(
-        #                 user=models.UserPrivate.model_validate(user),
-        #                 scope_ids=set(
-        #                     settings.USER_ROLE_ID_SCOPE_IDS[user.user_role_id]),
-        #                 auth_credential=AuthCredentialIdTypeAndExpiry(
-        #                     id=user_access_token.id, type='access_token', expiry=user_access_token.expiry)
-        #             )
-        #         )
+            return PostSignUpResponse(
+                auth=auth_utils.GetUserSessionInfoReturn(
+                    user=user_schema.UserPrivate.model_validate(user),
+                    scope_ids=set(
+                        settings.USER_ROLE_ID_SCOPE_IDS[user.user_role_id]),
+                    access_token=user_access_token_schema.UserAccessTokenPublic.model_validate(
+                        user_access_token),
+                )
+            )
 
-        # @self.router.post('/request/signup/email/')
-        # async def post_request_sign_up_email(
-        #     model: PostRequestSignUpEmailRequest,
-        #     background_tasks: BackgroundTasks
-        # ):
+        @self.router.post('/request/signup/email/')
+        async def post_request_sign_up_email(
+            model: PostRequestSignUpEmailRequest,
+            background_tasks: BackgroundTasks
+        ):
 
-        #     async with self.client.AsyncSession() as session:
-        #         user = session.exec(select(models.User).where(
-        #             models.User.email == model.email)).one_or_none()
-        #         background_tasks.add_task(
-        #             send_signup_link, session, user, email=model.email)
-        #         return Response()
-
-        # @self.router.post('/request/signup/sms/')
-        # async def post_request_sign_up_sms(
-        #     model: PostRequestSignUpSMSRequest,
-        #     background_tasks: BackgroundTasks
-        # ):
-        #     async with self.client.AsyncSession() as session:
-        #         user = session.exec(select(models.User).where(
-        #             models.User.phone_number == model.phone_number)).one_or_none()
-        #         background_tasks.add_task(
-        #             send_signup_link, session, user, phone_number=model.phone_number)
-        #         return Response()
+            async with self.client.AsyncSession() as session:
+                user = (await session.exec(select(User).where(
+                    User.email == model.email))).one_or_none()
+                background_tasks.add_task(
+                    auth_utils.send_signup_link, session, self.client, user, email=model.email)
+                return Response()
 
         @self.router.post('/request/magic-link/email/')
         async def post_request_magic_link_email(model: PostRequestMagicLinkEmailRequest, background_tasks: BackgroundTasks):
@@ -360,39 +364,41 @@ class AuthRouter(base.Router):
                         auth_utils.send_magic_link, session, self.client, user, phone_number=model.phone_number)
             return Response()
 
-        # @self.router.post('/request/otp/email/')
-        # async def post_request_otp_email(model: PostRequestOTPEmailRequest, background_tasks: BackgroundTasks):
+        @self.router.post('/request/otp/email/')
+        async def post_request_otp_email(model: PostRequestOTPEmailRequest, background_tasks: BackgroundTasks):
 
-        #     async with self.client.AsyncSession() as session:
-        #         user = session.exec(select(models.User).where(
-        #             models.User.email == model.email)).one_or_none()
+            async with self.client.AsyncSession() as session:
+                user = (await session.exec(select(User).where(
+                    User.email == model.email))).one_or_none()
 
-        #         if user:
-        #             background_tasks.add_task(
-        #                 send_otp, session, user, email=model.email)
-        #     return Response()
+                if user:
+                    background_tasks.add_task(
+                        auth_utils.send_otp, session, self.client, user, email=model.email)
+            return Response()
 
-        # @self.router.post('/request/otp/sms/')
-        # async def post_request_otp_email(model: PostRequestOTPSMSRequest, background_tasks: BackgroundTasks):
+        @self.router.post('/request/otp/sms/')
+        async def post_request_otp_sms(model: PostRequestOTPSMSRequest, background_tasks: BackgroundTasks):
 
-        #     async with self.client.AsyncSession() as session:
-        #         user = session.exec(select(models.User).where(
-        #             models.User.phone_number == model.phone_number)).one_or_none()
-        #         if user:
-        #             background_tasks.add_task(
-        #                 send_otp, session, user, phone_number=model.phone_number)
-        #     return Response()
+            async with self.client.AsyncSession() as session:
+                user = (await session.exec(select(User).where(
+                    User.phone_number == model.phone_number))).one_or_none()
+                if user:
+                    background_tasks.add_task(
+                        auth_utils.send_otp, session, self.client, user, phone_number=model.phone_number)
+            return Response()
 
-        # @self.router.post('/logout/')
-        # async def logout(response: Response, authorization: Annotated[GetAuthorizationReturn, Depends(
-        #         auth_utils.make_get_auth_dependency(c=self.client, raise_exceptions=False, permitted_auth_credential_types={'access_token'}))]) -> DetailOnlyResponse:
+        @self.router.post('/logout/')
+        async def logout(response: Response, authorization: Annotated[auth_utils.GetAuthReturn[UserAccessToken], Depends(
+                auth_utils.make_get_auth_dependency(c=self.client, raise_exceptions=False, permitted_types={'access_token'}))]) -> api_schema.DetailOnlyResponse:
 
-        #     if authorization.auth_credential:
-        #         if authorization.auth_credential.auth_type == 'access_token':
-        #             async with self.client.AsyncSession() as session:
-        #                 await models.UserAccessToken.api_delete(models.UserAccessToken.DeleteParams.model_construct(
-        #                     session=session, c=c, authorized_user_id=authorization._user_id, id=authorization.auth_credential.id
-        #                 ))
+            if authorization.isAuthorized:
+                async with self.client.AsyncSession() as session:
+                    await UserAccessTokenService.delete({
+                        'authorized_user_id': cast(types.User.id, authorization._user_id),
+                        'c': self.client,
+                        'session': session,
+                        'id': UserAccessTokenService.table_id(cast(UserAccessToken, authorization.auth_credential))
+                    })
 
-        #     auth.delete_access_token_cookie(response)
-        #     return DetailOnlyResponse(detail='Logged out')
+            auth_utils.delete_access_token_cookie(response)
+            return api_schema.DetailOnlyResponse(detail='Logged out')

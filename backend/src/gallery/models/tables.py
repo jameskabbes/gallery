@@ -32,7 +32,12 @@ class User(SQLModel, table=True):
         back_populates='user', cascade_delete=True)
 
 
-class _AuthCredentialTableBase(SQLModel):
+class _AuthCredentialModelBase(SQLModel):
+    issued: types.AuthCredential.issued
+    expiry: types.AuthCredential.expiry
+
+
+class _AuthCredentialTableBase(_AuthCredentialModelBase):
 
     user_id: types.User.id = Field(
         index=True, foreign_key=str(User.__tablename__) + '.id', const=True, ondelete='CASCADE')

@@ -21,19 +21,15 @@ class UserAccessToken(
     ],
     auth_credential_service.JwtIO[
         UserAccessTokenTable,
+        types.User.id,
         user_access_token_schema.UserAccessTokenAdminCreate,
-        user_access_token_schema.JwtPayload,
-        user_access_token_schema.JwtModel,
     ],
     auth_credential_service.Table[
         UserAccessTokenTable,
+        types.User.id,
         user_access_token_schema.UserAccessTokenAdminCreate,
     ],
 ):
-
-    _CLAIMS_MAPPING = {
-        **auth_credential_service.CLAIMS_MAPPING_BASE, **{'sub': 'id'}
-    }
 
     auth_type = 'access_token'
     _TABLE = UserAccessTokenTable
@@ -43,10 +39,6 @@ class UserAccessToken(
         return inst.id
 
     @classmethod
-    def _build_select_by_id(cls, id):
-        return select(cls._TABLE).where(cls._TABLE.id == id)
-
-    @classmethod
     async def table_inst_from_create_model(cls, create_model):
 
         return cls._TABLE(
@@ -54,29 +46,6 @@ class UserAccessToken(
             issued=datetime_module.datetime.now().astimezone(datetime_module.UTC),
             **create_model.model_dump(exclude_unset=True, exclude_defaults=True, exclude_none=True)
         )
-
-    @classmethod
-    def from_jwt_payload(cls, payload):
-
-        return cls._TABLE(
-            id=payload['sub'],
-            issued=datetime_module.datetime.fromtimestamp(
-                payload['iat'], tz=datetime_module.timezone.utc),
-            expiry=datetime_module.datetime.fromtimestamp(
-                payload['exp'], tz=datetime_module.timezone.utc),
-        )
-
-    @classmethod
-    def to_jwt_payload(cls, inst):
-
-        d: user_access_token_schema.JwtPayload = {
-            'exp': inst.expiry.timestamp(),
-            'iat': inst.issued.timestamp(),
-            'type': cls.auth_type,
-            'sub': inst.id,
-        }
-
-        return d
 
     # @classmethod
     # async def _check_authorization_new(cls, params):

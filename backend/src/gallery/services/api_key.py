@@ -16,20 +16,19 @@ class ApiKey(
             api_key_schema.ApiKeyAdminCreate,
             api_key_schema.ApiKeyAdminUpdate,
         ],
-        auth_credential_service.JwtIO[ApiKeyTable, api_key_schema.ApiKeyAdminCreate,
-                                      api_key_schema.JwtPayload, api_key_schema.JwtModel],
-        auth_credential_service.Table):
-
-    _CLAIMS_MAPPING = {
-        **auth_credential_service.CLAIMS_MAPPING_BASE, **{'sub': 'id'}
-    }
+        auth_credential_service.JwtIO[ApiKeyTable, types.ApiKey.id,
+                                      api_key_schema.ApiKeyAdminCreate,],
+        auth_credential_service.Table[ApiKeyTable,  types.ApiKey.id, api_key_schema.ApiKeyAdminCreate, ]):
 
     auth_type = 'api_key'
-
     _TABLE = ApiKeyTable
 
     @classmethod
     def table_id(cls, inst: ApiKeyTable):
+        return inst.id
+
+    @classmethod
+    def _table_sub(cls, inst):
         return inst.id
 
     @classmethod
