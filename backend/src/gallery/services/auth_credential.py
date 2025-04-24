@@ -19,12 +19,16 @@ def lifespan_to_expiry(lifespan: datetime_module.timedelta) -> types.AuthCredent
 
 
 TAuthCredential = TypeVar(
-    'TAuthCredential', bound=schemas.AuthCredentialInstance)
+    'TAuthCredential', bound=schemas.AuthCredentialInstance, covariant=True)
 TAuthCredentialTable = TypeVar(
     'TAuthCredentialTable', bound=schemas.AuthCredentialTableInstance)
 TAuthCredentialJwt = TypeVar(
     'TAuthCredentialJwt', bound=schemas.AuthCredentialJwtInstance)
 TSub = TypeVar('TSub')
+
+
+class Base(Generic[TAuthCredential], Protocol):
+    auth_type: ClassVar[auth_credential_schema.Type]
 
 
 class _Base(

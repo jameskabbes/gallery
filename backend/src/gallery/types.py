@@ -1,4 +1,4 @@
-from typing import Annotated, Literal, Union, NamedTuple
+from typing import Annotated, Literal, Union, NamedTuple, TypeVar
 from pydantic import EmailStr, StringConstraints
 import re
 import datetime as datetime_module
@@ -9,7 +9,23 @@ Email = Annotated[EmailStr, StringConstraints(
 JwtEncodedStr = str
 
 
-_IdType = Union[str, int, NamedTuple]
+_SimpleIdType = Union[str, int]
+_ComplexIdType = NamedTuple
+_IdType = Union[_SimpleIdType, _ComplexIdType]
+
+TIdSimple = TypeVar('TIdSimple', bound=_SimpleIdType)
+TIdSimple_co = TypeVar('TIdSimple_co', bound=_SimpleIdType, covariant=True)
+TIdSimple_contra = TypeVar(
+    'TIdSimple_contra', bound=_SimpleIdType, contravariant=True)
+
+TIdComplex = TypeVar('TIdComplex', bound=_ComplexIdType)
+TIdComplex_co = TypeVar('TIdComplex_co', bound=_ComplexIdType, covariant=True)
+TIdComplex_contra = TypeVar(
+    'TIdComplex_contra', bound=_ComplexIdType, contravariant=True)
+
+TId = TypeVar('TId', bound=_IdType)
+TId_co = TypeVar('TId_co', bound=_IdType, covariant=True)
+TId_contra = TypeVar('TId_contra', bound=_IdType, contravariant=True)
 
 # typing.TypeVar(
 #     '_IdType', bound=Union[str, int, typing.NamedTuple], covariant=True)
@@ -82,18 +98,18 @@ class SignUp(AuthCredential):
     email = User.email
 
 
-class Gallery:
-    class BaseTypes:
-        id = str
+_GalleryId = str
 
-    id = BaseTypes.id
+
+class Gallery:
+    id = _GalleryId
     user_id = User.id
 
     # name can't start with the `YYYY-MM-DD ` pattern
     name = Annotated[str, StringConstraints(
         min_length=1, max_length=256, pattern=re.compile(r'^(?!\d{4}-\d{2}-\d{2} ).*'))]
     visibility_level = VisibilityLevel.id
-    parent_id = BaseTypes.id
+    parent_id = _GalleryId
     description = Annotated[str, StringConstraints(
         min_length=0, max_length=20000)]
     date = datetime_module.date
@@ -107,7 +123,7 @@ class _GalleryPermissionBase:
 
 
 class GalleryPermissionId(NamedTuple):
-    gallery_id: Gallery.BaseTypes.id
+    gallery_id: _GalleryId
     user_id: User.id
 
 
@@ -138,12 +154,12 @@ class File:
     gallery_id = Gallery.id
 
 
+_ImageVersionId = str
+
+
 class ImageVersion:
 
-    class BaseTypes:
-        id = str
-
-    id = BaseTypes.id
+    id = _ImageVersionId
     gallery_id = Gallery.id
     base_name = Annotated[str, StringConstraints(
         # prohibit underscore
@@ -152,7 +168,7 @@ class ImageVersion:
     version = Annotated[str, StringConstraints(
         # version cannot be exactly two digits
         pattern=re.compile(r'^(?!\d{2}$).+$'))]
-    parent_id = BaseTypes.id
+    parent_id = _ImageVersionId
     datetime = datetime_module.datetime
     description = Annotated[str, StringConstraints(
         min_length=0, max_length=20000)]

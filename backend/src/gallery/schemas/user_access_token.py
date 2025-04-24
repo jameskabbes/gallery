@@ -5,7 +5,7 @@ from ..schemas import FromAttributes
 
 
 class UserAccessTokenAdminUpdate(BaseModel):
-    expiry: types.AuthCredential.expiry | None = None
+    expiry: types.AuthCredential.expiry
 
 
 class UserAccessTokenAdminCreate(BaseModel):

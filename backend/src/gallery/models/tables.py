@@ -1,7 +1,6 @@
 from sqlmodel import Field, Relationship, SQLModel, PrimaryKeyConstraint, Column
-from pydantic import BaseModel, model_validator, field_serializer, field_validator, ValidationInfo
 from .. import types
-from typing import Optional, Protocol
+from typing import Optional
 from .custom_field_types import timestamp
 
 
