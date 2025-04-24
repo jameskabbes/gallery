@@ -55,6 +55,29 @@ class UserAccessToken(
             **create_model.model_dump(exclude_unset=True, exclude_defaults=True, exclude_none=True)
         )
 
+    @classmethod
+    def from_jwt_payload(cls, payload):
+
+        return cls._TABLE(
+            id=payload['sub'],
+            issued=datetime_module.datetime.fromtimestamp(
+                payload['iat'], tz=datetime_module.timezone.utc),
+            expiry=datetime_module.datetime.fromtimestamp(
+                payload['exp'], tz=datetime_module.timezone.utc),
+        )
+
+    @classmethod
+    def to_jwt_payload(cls, inst):
+
+        d: user_access_token_schema.JwtPayload = {
+            'exp': inst.expiry.timestamp(),
+            'iat': inst.issued.timestamp(),
+            'type': cls.auth_type,
+            'sub': inst.id,
+        }
+
+        return d
+
     # @classmethod
     # async def _check_authorization_new(cls, params):
 

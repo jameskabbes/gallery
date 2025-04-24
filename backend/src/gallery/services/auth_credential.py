@@ -1,18 +1,16 @@
 from pydantic import BaseModel, model_validator, field_serializer, field_validator, ValidationInfo
 from sqlmodel import Field, SQLModel
 import datetime as datetime_module
-from sqlalchemy import Column
 from typing import Optional, TypedDict, ClassVar, cast, Self, Literal, Protocol
 from sqlmodel.ext.asyncio.session import AsyncSession
 from .. import types, client
 
 from typing import ClassVar, TypedDict, cast, TypeVar, Generic, Type
-from collections.abc import Collection
 
 from ..schemas import auth_credential as auth_credential_schema
 from ..models.tables import User
 from . import base
-from .. import utils, models
+from .. import utils, models, schemas
 
 
 def lifespan_to_expiry(lifespan: datetime_module.timedelta) -> types.AuthCredential.expiry:
@@ -27,15 +25,20 @@ CLAIMS_MAPPING_BASE = {
 
 
 TAuthCredential = TypeVar(
-    'TAuthCredential', bound=models.AuthCredentialInstance)
+    'TAuthCredential', bound=schemas.AuthCredentialInstance)
+TAuthCredentialTable = TypeVar(
+    'TAuthCredentialTable', bound=schemas.AuthCredentialTableInstance)
+TAuthCredentialJwt = TypeVar(
+    'TAuthCredentialJwt', bound=schemas.AuthCredentialJwtInstance)
+
 TAdminCreate = TypeVar(
     'TAdminCreate', bound=BaseModel)
 TJwtPayload = TypeVar('TJwtPayload', bound=auth_credential_schema.JwtPayload)
 TJwtModel = TypeVar('TJwtModel', bound=auth_credential_schema.JwtModel)
 
 
-class _Base(Generic[TAuthCredential, TAdminCreate], base.HasTableInstFromCreateModel[TAuthCredential, TAdminCreate], auth_credential_schema.HasAuthType):
-    pass
+class _Base(Generic[TAuthCredential, TAdminCreate], base.HasTableInstFromCreateModel[TAuthCredential, TAdminCreate]):
+    auth_type: ClassVar[types.AuthCredential.type]
 
 
 # class Model2(SQLModel):
@@ -52,9 +55,13 @@ class _Base(Generic[TAuthCredential, TAdminCreate], base.HasTableInstFromCreateM
 #         return timestamp.validate_and_normalize_datetime(value, info)
 
 
-class Table(Generic[TAuthCredential, TAdminCreate], _Base[TAuthCredential, TAdminCreate], auth_credential_schema.HasUser):
+class Table(Generic[TAuthCredentialTable, TAdminCreate], _Base[TAuthCredentialTable, TAdminCreate]):
     @classmethod
-    async def get_scope_ids(cls, inst: TAuthCredential | None = None, session: AsyncSession | None = None, c: client.Client | None = None) -> list[types.Scope.id]:
+    async def get_scope_ids(
+            cls,
+            inst: TAuthCredentialTable | None = None,
+            session: AsyncSession | None = None,
+            c: client.Client | None = None) -> list[types.Scope.id]:
         return []
 
 
@@ -64,7 +71,7 @@ class MissingRequiredClaimsError(Exception):
         self.claims = claims
 
 
-class JwtIO(Generic[TAuthCredential, TAdminCreate, TJwtPayload, TJwtModel], _Base[TAuthCredential, TAdminCreate]):
+class JwtIO(Generic[TAuthCredentialJwt, TAdminCreate, TJwtPayload, TJwtModel], _Base[TAuthCredentialJwt, TAdminCreate]):
     _TYPE_CLAIM: ClassVar[str] = 'type'
     _CLAIMS_MAPPING: ClassVar[dict[str, str]] = CLAIMS_MAPPING_BASE
 
@@ -77,27 +84,29 @@ class JwtIO(Generic[TAuthCredential, TAdminCreate, TJwtPayload, TJwtModel], _Bas
             raise MissingRequiredClaimsError(missing_claims)
 
     @classmethod
-    def from_payload(cls, payload: TJwtPayload) -> TAuthCredential:
+    def from_jwt_payload(cls, payload: TJwtPayload) -> TAuthCredentialJwt:
+        raise NotImplementedError
 
         cls.validate_jwt_claims(payload)
 
-        converted_claims_payload = cast(TJwtModel, {
-                                        cls._CLAIMS_MAPPING[claim]: payload[claim] for claim in cls._CLAIMS_MAPPING})
+        converted_claims_payload = {
+            cls._CLAIMS_MAPPING[claim]: payload[claim] for claim in cls._CLAIMS_MAPPING}
 
         # Create a new dictionary excluding certain keys
-        new_dict = {k: v for k, v in converted_claims_payload.items() if k not in {
+        new_dict: TJwtModel = {k: v for k, v in converted_claims_payload.items() if k not in {
             'issued', 'expiry', 'auth_type'}}
 
         return cls._TABLE(
-            **converted_claims_payload,
+            **new_dict,
             issued=datetime_module.datetime.fromtimestamp(
                 converted_claims_payload['issued'], datetime_module.timezone.utc),
             expiry=datetime_module.datetime.fromtimestamp(
                 converted_claims_payload['expiry'], datetime_module.timezone.utc)
-        )  # type: ignore
+        )
 
     @classmethod
-    def to_payload(cls, inst: TAuthCredential) -> TJwtPayload:
+    def to_jwt_payload(cls, inst: TAuthCredentialJwt) -> TJwtPayload:
+        raise NotImplementedError
 
         payload = inst.model_dump(
             include=set(cls._CLAIMS_MAPPING.values()))
