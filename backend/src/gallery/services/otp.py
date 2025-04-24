@@ -20,7 +20,7 @@ class OTP(
             otp_schema.OTPAdminCreate,
             otp_schema.OTPAdminUpdate,
         ],
-        auth_credential_service.Table[OTPTable, types.OTP.id, otp_schema.OTPAdminCreate]):
+        auth_credential_service.Table[OTPTable]):
 
     auth_type = 'otp'
     _TABLE = OTPTable

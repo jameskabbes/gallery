@@ -37,17 +37,6 @@ class _Base(
     def _table_sub(cls, inst: TAuthCredential) -> TSub:
         raise NotImplementedError
 
-# class Model2(SQLModel):
-#     issued: types.AuthCredential.issued
-#     expiry: types.AuthCredential.expiry
-#     # @field_serializer('issued', 'expiry')
-#     # def serialize_datetime(self, value: types.AuthCredential.issued | types.AuthCredential.expiry) -> datetime_module.datetime:
-#     #     return
-#     @field_validator('issued', 'expiry')
-#     @classmethod
-#     def validate_datetime(cls, value: datetime_module.datetime, info: ValidationInfo) -> datetime_module.datetime:
-#         return timestamp.validate_and_normalize_datetime(value, info)
-
 
 class Table(
     Generic[TAuthCredentialTable],

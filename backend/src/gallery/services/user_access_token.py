@@ -26,8 +26,6 @@ class UserAccessToken(
     ],
     auth_credential_service.Table[
         UserAccessTokenTable,
-        types.User.id,
-        user_access_token_schema.UserAccessTokenAdminCreate,
     ],
 ):
 

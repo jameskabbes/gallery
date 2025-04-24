@@ -18,7 +18,7 @@ class ApiKey(
         ],
         auth_credential_service.JwtIO[ApiKeyTable, types.ApiKey.id,
                                       api_key_schema.ApiKeyAdminCreate,],
-        auth_credential_service.Table[ApiKeyTable,  types.ApiKey.id, api_key_schema.ApiKeyAdminCreate, ]):
+        auth_credential_service.Table[ApiKeyTable]):
 
     auth_type = 'api_key'
     _TABLE = ApiKeyTable
