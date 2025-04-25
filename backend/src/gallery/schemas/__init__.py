@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 from typing import Type, Literal
 from ..models.tables import UserAccessToken, ApiKey, OTP
-from ..schemas.sign_up import SignUp
+from ..models.models import SignUp
 
 
 class FromAttributes(BaseModel):
@@ -33,6 +33,10 @@ AuthCredentialTableInstance = UserAccessToken | ApiKey | OTP
 AuthCredentialJwtAndTable = Type[UserAccessToken] | Type[ApiKey]
 AuthCredentialJwtAndTableType = Literal['access_token', 'api_key']
 AuthCredentialJwtAndTableInstance = UserAccessToken | ApiKey
+
+AuthCredentialJwtAndNotTable = Type[SignUp]
+AuthCredentialJwtAndNotTableType = Literal['sign_up']
+AuthCredentialJwtAndNotTableInstance = SignUp
 
 PrimaryAuthCredential = Type[UserAccessToken] | Type[ApiKey]
 PrimaryAuthCredentialInstance = UserAccessToken | ApiKey

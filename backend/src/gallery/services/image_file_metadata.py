@@ -16,18 +16,18 @@ class ImageFileMetadata(
             image_file_metadata_schema.ImageFileMetadataAdminUpdate
         ]):
 
-    _TABLE = ImageFileMetadataTable
+    _MODEL = ImageFileMetadataTable
 
     SUFFIXES: ClassVar[set[str]] = {
         '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'}
 
     @classmethod
-    def table_id(cls, inst):
+    def model_id(cls, inst):
         return inst.file_id
 
     @classmethod
     def _build_select_by_id(cls, id):
-        return select(cls._TABLE).where(cls._TABLE.file_id == id)
+        return select(cls._MODEL).where(cls._MODEL.file_id == id)
 
     @classmethod
     def parse_file_stem(cls, file_stem: str) -> tuple[types.ImageVersion.base_name, types.ImageVersion.version | None, types.ImageFileMetadata.scale | None]:

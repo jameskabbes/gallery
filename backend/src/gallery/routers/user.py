@@ -1,10 +1,10 @@
-from ..models.tables import User
+from ..models.tables import User as UserTable
 from ..schemas import user as user_schema
 from . import base
 from .. import types
 
 
-class UserRouter(base.Router):
+class UserRouter(base.Router[UserTable]):
 
     _PREFIX = '/user'
     _TAGS = ['User']

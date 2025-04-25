@@ -1,14 +1,16 @@
 from abc import ABC
-from typing import TypeVar, Type, List, Callable, ClassVar, TYPE_CHECKING
+from typing import TypeVar, Type, List, Callable, ClassVar, TYPE_CHECKING, Generic
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import SQLModel, Session, select
 from functools import wraps, lru_cache
 from enum import Enum
-from .. import client
-from ..models import HasTable
+from .. import client, models
+from ..services import base as base_service
 
 
-class Router(HasTable):
+class Router(
+        Generic[models.TModel],
+        base_service.HasModel[models.TModel]):
 
     _PREFIX: ClassVar[str] = ""
     _TAGS: ClassVar[list[str | Enum] | None] = None

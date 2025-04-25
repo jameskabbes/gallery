@@ -11,7 +11,18 @@ class ApiKeyScope(base.Service[
     types.ApiKeyScope.id,
 ]):
 
-    _TABLE = ApiKeyScopeTable
+    _MODEL = ApiKeyScopeTable
+
+    @classmethod
+    def model_id(cls, inst: ApiKeyScopeTable):
+        return types.ApiKeyScopeId(
+            api_key_id=inst.api_key_id,
+            scope_id=inst.scope_id,
+        )
+
+    @classmethod
+    def _build_select_by_id(cls, id):
+        return select(cls._MODEL).where(cls._MODEL.api_key_id == id.api_key_id, cls._MODEL.scope_id == id.scope_id)
 
     # @classmethod
     # async def _check_authorization_new(cls, params):
@@ -36,14 +47,3 @@ class ApiKeyScope(base.Service[
     #     if not params.admin:
     #         if self.api_key.user_id != params.authorized_user_id:
     #             raise self.not_found_exception()
-
-    @classmethod
-    def table_id(cls, inst: ApiKeyScopeTable):
-        return types.ApiKeyScopeId(
-            api_key_id=inst.api_key_id,
-            scope_id=inst.scope_id,
-        )
-
-    @classmethod
-    def _build_select_by_id(cls, id):
-        return select(cls._TABLE).where(cls._TABLE.api_key_id == id.api_key_id, cls._TABLE.scope_id == id.scope_id)

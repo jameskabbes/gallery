@@ -14,10 +14,10 @@ class GalleryPermission(
             gallery_permission_schema.GalleryPermissionAdminUpdate,
         ]):
 
-    _TABLE = GalleryPermissionTable
+    _MODEL = GalleryPermissionTable
 
     @classmethod
-    def table_id(cls, inst):
+    def model_id(cls, inst):
         return types.GalleryPermissionId(
             gallery_id=inst.gallery_id,
             user_id=inst.user_id,
@@ -25,7 +25,7 @@ class GalleryPermission(
 
     @classmethod
     def _build_select_by_id(cls, id):
-        return select(cls._TABLE).where(cls._TABLE.gallery_id == id.gallery_id, cls._TABLE.user_id == id.user_id)
+        return select(cls._MODEL).where(cls._MODEL.gallery_id == id.gallery_id, cls._MODEL.user_id == id.user_id)
 
     # @classmethod
     # async def _check_authorization_new(cls, params):

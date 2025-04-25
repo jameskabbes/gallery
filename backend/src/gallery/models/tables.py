@@ -1,7 +1,10 @@
 from sqlmodel import Field, Relationship, SQLModel, PrimaryKeyConstraint, Column
+from pydantic import field_serializer, field_validator, ValidationInfo
 from .. import types
-from typing import Optional
+from typing import Optional, Protocol
 from .custom_field_types import timestamp
+import datetime as datetime_module
+from .bases.auth_credential import AuthCredentialBase
 
 
 class User(SQLModel, table=True):
@@ -31,12 +34,7 @@ class User(SQLModel, table=True):
         back_populates='user', cascade_delete=True)
 
 
-class _AuthCredentialModelBase(SQLModel):
-    issued: types.AuthCredential.issued
-    expiry: types.AuthCredential.expiry
-
-
-class _AuthCredentialTableBase(_AuthCredentialModelBase):
+class _AuthCredentialTableBase(AuthCredentialBase):
 
     user_id: types.User.id = Field(
         index=True, foreign_key=str(User.__tablename__) + '.id', const=True, ondelete='CASCADE')
@@ -138,7 +136,7 @@ class Gallery(SQLModel, table=True):
         back_populates='gallery', cascade_delete=True)
 
 
-class GalleryPermission(SQLModel, table=True):
+class GalleryPermission(SQLModel,  table=True):
 
     __tablename__ = 'gallery_permission'  # type: ignore
 

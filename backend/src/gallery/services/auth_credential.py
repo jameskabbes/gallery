@@ -15,35 +15,56 @@ from .. import utils, models, schemas
 
 
 def lifespan_to_expiry(lifespan: datetime_module.timedelta) -> types.AuthCredential.expiry:
-    return datetime_module.datetime.now() + lifespan
+    return datetime_module.datetime.now().astimezone(datetime_module.UTC) + lifespan
 
 
 TAuthCredential = TypeVar(
     'TAuthCredential', bound=schemas.AuthCredentialInstance, covariant=True)
 TAuthCredentialTable = TypeVar(
     'TAuthCredentialTable', bound=schemas.AuthCredentialTableInstance)
+TAuthCredentialTable_contra = TypeVar(
+    'TAuthCredentialTable_contra', bound=schemas.AuthCredentialTableInstance, contravariant=True)
+
 TAuthCredentialJwt = TypeVar(
     'TAuthCredentialJwt', bound=schemas.AuthCredentialJwtInstance)
+TAuthCredentialJwt_co = TypeVar(
+    'TAuthCredentialJwt_co', bound=schemas.AuthCredentialJwtInstance, covariant=True)
+TAuthCredentialJwt_contra = TypeVar(
+    'TAuthCredentialJwt_contra', bound=schemas.AuthCredentialJwtInstance, contravariant=True)
+
+TAuthCredentialJwtAndTable = TypeVar(
+    'TAuthCredentialJwtAndTable', bound=schemas.AuthCredentialJwtAndTableInstance)
+
+TAuthCredentialJwtAndNotTable = TypeVar(
+    'TAuthCredentialJwtAndNotTable', bound=schemas.AuthCredentialJwtAndNotTableInstance)
+
 TSub = TypeVar('TSub')
+TSub_co = TypeVar(
+    'TSub_co', covariant=True)
 
 
-class Base(Generic[TAuthCredential], Protocol):
+class HasAuthType(Protocol[TAuthCredential]):
     auth_type: ClassVar[auth_credential_schema.Type]
 
 
-class _Base(
-        Generic[TAuthCredential, TSub, base.TCreateModel],
-        base.TableInstFromCreateModel[TAuthCredential, base.TCreateModel],
-):
-    auth_type: ClassVar[types.AuthCredential.type]
+class HasModelSub(Protocol[TAuthCredentialJwt_contra, TSub_co]):
 
     @classmethod
-    def _table_sub(cls, inst: TAuthCredential) -> TSub:
-        raise NotImplementedError
+    def _model_sub(cls, inst: TAuthCredentialJwt_contra) -> TSub_co:
+        ...
+
+
+class HasModelInstFromJwtPayload(Protocol[TAuthCredentialJwt_co, TSub]):
+    @classmethod
+    def model_inst_from_jwt_payload(
+            cls,
+            payload: auth_credential_schema.JwtPayload[TSub]) -> TAuthCredentialJwt_co:
+        ...
 
 
 class Table(
     Generic[TAuthCredentialTable],
+    HasAuthType[TAuthCredentialTable],
 ):
     @classmethod
     async def get_scope_ids(
@@ -61,8 +82,9 @@ class MissingRequiredClaimsError(Exception):
 
 
 class JwtIO(
-    Generic[TAuthCredentialJwt, TSub, base.TCreateModel],
-    _Base[TAuthCredentialJwt, TSub, base.TCreateModel]
+    Generic[TAuthCredentialJwt, TSub],
+    HasAuthType[TAuthCredentialJwt],
+    HasModelSub[TAuthCredentialJwt, TSub],
 ):
     _CLAIMS: ClassVar[set[str]] = {'type', 'exp', 'iat', 'sub'}
 
@@ -78,19 +100,29 @@ class JwtIO(
     def to_jwt_payload(cls, inst: TAuthCredentialJwt) -> auth_credential_schema.JwtPayload[TSub]:
 
         return {
-            'type': cls.auth_type,
+            'type': cls.auth_type.value,
             'exp': inst.expiry.timestamp(),
             'iat': inst.issued.timestamp(),
-            'sub': cls._table_sub(inst),
+            'sub': cls._model_sub(inst),
         }
 
 
-class JwtNotTable(
-    Generic[TAuthCredentialJwt, TSub],
-):
+class JwtAndSimpleIdTable(
+        Generic[TAuthCredentialJwtAndTable, types.TIdSimple],
+        HasModelSub[TAuthCredentialJwtAndTable, types.TIdSimple],
+        base.HasModelId[TAuthCredentialJwtAndTable, types.TIdSimple]):
 
     @classmethod
-    def table_inst_from_jwt_payload(
-            cls,
-            payload: auth_credential_schema.JwtPayload[TSub]) -> TAuthCredentialJwt:
-        raise NotImplementedError
+    def _model_sub(cls, inst: TAuthCredentialJwtAndTable) -> types.TIdSimple:
+        return cls.model_id(inst)
+
+
+class JwtNotTable(
+    Generic[TAuthCredentialJwtAndNotTable, TSub, base.TCreateModel],
+    HasModelInstFromJwtPayload[TAuthCredentialJwtAndNotTable, TSub],
+    base.HasModelInstFromCreateModel[TAuthCredentialJwtAndNotTable,
+                                     base.TCreateModel],
+    base.HasModel[TAuthCredentialJwtAndNotTable],
+    HasModelSub[TAuthCredentialJwtAndNotTable, TSub],
+):
+    pass

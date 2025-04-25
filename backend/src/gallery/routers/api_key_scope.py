@@ -1,8 +1,10 @@
 from .. import types
 from . import base
+from ..models.tables import ApiKeyScope as ApiKeyScopeTable
 
 
-class ApiKeyScopeRouter(base.Router):
+class ApiKeyScopeRouter(base.Router[ApiKeyScopeTable]):
+    _TABLE = ApiKeyScopeTable
     _PREFIX = '/api_key_scope'
     _TAGS = ['Api Key Scope']
 

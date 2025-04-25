@@ -12,18 +12,14 @@ class File(
             types.File.id,
             file_schema.FileAdminCreate,
             file_schema.FileAdminUpdate,
-        ]):
-
-    _TABLE = FileTable
+        ],
+        base.SimpleIdModelService[
+            FileTable,
+            types.File.id,
+        ],
+):
+    _MODEL = FileTable
 
     @classmethod
-    def table_id(cls, inst):
-        return inst.id
-
-    @classmethod
-    def table_name(cls, inst: FileTable) -> str:
+    def model_name(cls, inst: FileTable) -> str:
         return inst.stem + ('' if inst.suffix is None else inst.suffix)
-
-    @classmethod
-    def _build_select_by_id(cls, id):
-        return select(cls._TABLE).where(cls._TABLE.id == id)

@@ -13,17 +13,14 @@ class User(
             types.User.id,
             user_schema.UserAdminCreate,
             user_schema.UserAdminUpdate,
-        ]):
+        ],
+        base.SimpleIdModelService[
+            UserTable,
+            types.User.id,
+        ]
+):
 
-    _TABLE = UserTable
-
-    @classmethod
-    def table_id(cls, inst):
-        return inst.id
-
-    @classmethod
-    def _build_select_by_id(cls, id):
-        return select(cls._TABLE).where(cls._TABLE.id == id)
+    _MODEL = UserTable
 
     @classmethod
     def is_inst_public(cls, inst: UserTable) -> bool:
@@ -40,8 +37,8 @@ class User(
     @classmethod
     async def authenticate(cls, session: AsyncSession, username_or_email: types.User.email | types.User.username, password: types.User.password) -> UserTable | None:
 
-        query = select(cls._TABLE).where(
-            or_(cls._TABLE.username == username_or_email, cls._TABLE.email == username_or_email))
+        query = select(cls._MODEL).where(
+            or_(cls._MODEL.username == username_or_email, cls._MODEL.email == username_or_email))
 
         user = (await session.exec(query)).one_or_none()
 
@@ -52,6 +49,36 @@ class User(
         if not utils.verify_password(password, user.hashed_password):
             return None
         return user
+
+    @classmethod
+    async def model_inst_from_create_model(cls, create_model):
+
+        d = create_model.model_dump(exclude_unset=True, exclude={'password'})
+
+        if 'password' in create_model.model_fields_set:
+            if create_model.password is None:
+                d['hashed_password'] = None
+            else:
+                d['hashed_password'] = utils.hash_password(
+                    create_model.password)
+
+        return cls._MODEL(
+            id=utils.generate_uuid(),
+            **d,
+        )
+
+    @classmethod
+    async def _update_model_inst(cls, inst, update_model):
+
+        for key, value in update_model.model_dump(exclude_unset=True, exclude={'password'}).items():
+            setattr(inst, key, value)
+
+        if 'password' in update_model.model_fields_set:
+            if update_model.password is None:
+                inst.hashed_password = None
+            else:
+                inst.hashed_password = utils.hash_password(
+                    update_model.password)
 
     # @classmethod
     # async def is_username_available(cls, session: AsyncSession, username: types.User.username) -> bool:

@@ -3,6 +3,7 @@ from sqlalchemy.types import TypeDecorator, REAL, DateTime
 import datetime as datetime_module
 from pydantic import ValidationInfo
 import typing
+from ... import types
 
 """
 Developer's Note:
@@ -28,7 +29,7 @@ class Timestamp(TypeDecorator):
             return REAL()
         return DateTime()
 
-    def process_bind_param(self, value: datetime_module.datetime | None, dialect: Dialect) -> float | datetime_module.datetime | None:
+    def process_bind_param(self, value: datetime_module.datetime | None, dialect: Dialect) -> types.timestamp | datetime_module.datetime | None:
         # Convert to float (Unix timestamp) for SQLite, pass datetime for others
         if value is None:
             return None
@@ -39,12 +40,12 @@ class Timestamp(TypeDecorator):
             # Native datetime for other databases
             return value
 
-    def process_result_value(self, value: float | datetime_module.datetime | None, dialect: Dialect) -> datetime_module.datetime | None:
+    def process_result_value(self, value: types.timestamp | datetime_module.datetime | None, dialect: Dialect) -> datetime_module.datetime | None:
         if value is None:
             return None
         if dialect.name == "sqlite":
             # Convert from float to datetime for SQLite
-            return datetime_module.datetime.fromtimestamp(typing.cast(float, value)).astimezone(datetime_module.UTC)
+            return datetime_module.datetime.fromtimestamp(typing.cast(types.timestamp, value)).astimezone(datetime_module.UTC)
         else:
             # For other databases, return the raw datetime object
             return typing.cast(datetime_module.datetime, value)

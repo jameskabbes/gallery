@@ -3,7 +3,7 @@ from ..models.tables import ApiKey as ApiKeyTable
 from . import base
 from .. import types
 
-from ..schemas import api_key as api_key_schema
+from ..schemas import api_key as api_key_schema, auth_credential as auth_credential_schema
 from ..services import auth_credential as auth_credential_service
 from .. import utils
 import datetime as datetime_module
@@ -16,33 +16,24 @@ class ApiKey(
             api_key_schema.ApiKeyAdminCreate,
             api_key_schema.ApiKeyAdminUpdate,
         ],
-        auth_credential_service.JwtIO[ApiKeyTable, types.ApiKey.id,
-                                      api_key_schema.ApiKeyAdminCreate,],
-        auth_credential_service.Table[ApiKeyTable]):
+        base.SimpleIdModelService[ApiKeyTable, types.ApiKey.id],
+        auth_credential_service.JwtIO[ApiKeyTable, types.ApiKey.id],
+        auth_credential_service.Table[ApiKeyTable],
+        auth_credential_service.JwtAndSimpleIdTable[ApiKeyTable,
+                                                    types.ApiKey.id],
+):
 
-    auth_type = 'api_key'
-    _TABLE = ApiKeyTable
-
-    @classmethod
-    def table_id(cls, inst: ApiKeyTable):
-        return inst.id
-
-    @classmethod
-    def _table_sub(cls, inst):
-        return inst.id
-
-    @classmethod
-    def _build_select_by_id(cls, id):
-        return select(cls._TABLE).where(cls._TABLE.id == id)
+    auth_type = auth_credential_schema.Type.API_KEY
+    _MODEL = ApiKeyTable
 
     @classmethod
     def to_api_key_private(cls, api_key: ApiKeyTable) -> api_key_schema.ApiKeyPrivate:
         return api_key_schema.ApiKeyPrivate.model_construct(**api_key.model_dump(), scope_ids=[api_key_scope.scope_id for api_key_scope in api_key.api_key_scopes])
 
     @classmethod
-    async def table_inst_from_create_model(cls, create_model):
+    async def model_inst_from_create_model(cls, create_model):
 
-        return cls._TABLE(
+        return cls._MODEL(
             id=utils.generate_uuid(),
             issued=datetime_module.datetime.now().astimezone(datetime_module.UTC),
             **create_model.model_dump()

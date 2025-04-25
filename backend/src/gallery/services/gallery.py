@@ -16,20 +16,17 @@ class Gallery(
             base.AfterReadCustomParams,
             base.AfterUpdateCustomParams,
             gallery_schema.GalleryAfterDeleteCustomParams
-        ]):
+        ],
+        base.SimpleIdModelService[
+            GalleryTable,
+            types.Gallery.id,
+        ],
+):
 
-    _TABLE = GalleryTable
-
-    @classmethod
-    def table_id(cls, inst):
-        return inst.id
-
-    @classmethod
-    def _build_select_by_id(cls, id):
-        return select(cls._TABLE).where(cls._TABLE.id == id)
+    _MODEL = GalleryTable
 
     @classmethod
-    def table_folder_name(cls, inst: GalleryTable) -> types.Gallery.folder_name:
+    def model_folder_name(cls, inst: GalleryTable) -> types.Gallery.folder_name:
 
         if inst.parent_id == None and inst.name == 'root':
             return inst.user_id

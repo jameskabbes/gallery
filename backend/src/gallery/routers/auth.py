@@ -11,6 +11,7 @@ from ..config import settings
 
 from ..schemas import user_access_token as user_access_token_schema, user as user_schema, api as api_schema, sign_up as sign_up_schema
 from ..models.tables import User, UserAccessToken
+from ..models.models import SignUp
 from ..services.user import User as UserService
 from ..services.user_access_token import UserAccessToken as UserAccessTokenService
 from ..services import auth_credential as auth_credential_service
@@ -289,8 +290,18 @@ class AuthRouter(base.Router):
                 permitted_types={'sign_up'},
                 override_lifetime=self.client.auth['credential_lifespans']['request_sign_up'])
 
+            # double check the user doesn't already exist
             async with self.client.AsyncSession() as session:
-                sign_up = cast(sign_up_schema.SignUp,
+
+                if (await session.exec(select(User).where(
+                        User.email == cast(SignUp, authorization.auth_credential).email))).one_or_none() is not None:
+                    raise auth_exceptions.Base({
+                        'status_code': status.HTTP_409_CONFLICT,
+                        'detail': 'User already exists'
+                    })
+
+            async with self.client.AsyncSession() as session:
+                sign_up = cast(SignUp,
                                authorization.auth_credential)
 
                 user = await UserService.create({
@@ -330,7 +341,7 @@ class AuthRouter(base.Router):
                 )
             )
 
-        @self.router.post('/request/signup/email/')
+        @self.router.post('/request/signup/')
         async def post_request_sign_up_email(
             model: PostRequestSignUpEmailRequest,
             background_tasks: BackgroundTasks
@@ -397,7 +408,7 @@ class AuthRouter(base.Router):
                         'authorized_user_id': cast(types.User.id, authorization._user_id),
                         'c': self.client,
                         'session': session,
-                        'id': UserAccessTokenService.table_id(cast(UserAccessToken, authorization.auth_credential))
+                        'id': UserAccessTokenService.model_id(cast(UserAccessToken, authorization.auth_credential))
                     })
 
             auth_utils.delete_access_token_cookie(response)

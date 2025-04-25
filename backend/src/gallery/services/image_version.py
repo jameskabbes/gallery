@@ -12,17 +12,16 @@ class ImageVersion(
             types.ImageVersion.id,
             file_schema.FileAdminCreate,
             file_schema.FileAdminUpdate,
-        ]):
+        ],
 
-    _TABLE = ImageVersionTable
+        base.SimpleIdModelService[
+            ImageVersionTable,
+            types.ImageVersion.id,
+        ],
 
-    @classmethod
-    def table_id(cls, inst):
-        return inst.id
+):
 
-    @classmethod
-    def _build_select_by_id(cls, id):
-        return select(cls._TABLE).where(cls._TABLE.id == id)
+    _MODEL = ImageVersionTable
 
     # @model_validator(mode='after')
     # def validate_model(self, info: ValidationInfo) -> None:

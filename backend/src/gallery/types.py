@@ -64,14 +64,17 @@ class User:
     user_role_id = UserRole.id
 
 
+timestamp = float
+
+
 class AuthCredential:
     issued = Annotated[datetime_module.datetime,
                        'The datetime at which the auth credential was issued']
-    issued_timestamp = Annotated[float,
+    issued_timestamp = Annotated[timestamp,
                                  'The datetime at which the auth credential was issued']
     expiry = Annotated[datetime_module.datetime,
                        'The datetime at which the auth credential will expire']
-    expiry_timestamp = Annotated[float,
+    expiry_timestamp = Annotated[timestamp,
                                  'The datetime at which the auth credential will expire']
     type = Literal['access_token', 'api_key', 'otp', 'sign_up']
 

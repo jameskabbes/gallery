@@ -295,7 +295,7 @@ async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJ
             isAuthorized=True,
             user=None,
             scope_ids=set(),
-            auth_credential=AuthCredentialService.table_inst_from_jwt_payload(
+            auth_credential=AuthCredentialService.model_inst_from_jwt_payload(
                 payload)
         )
 
@@ -334,7 +334,7 @@ def get_user_session_info(get_authorization_return: GetAuthReturn) -> GetUserSes
     access_token: typing.Optional[user_access_token_schema.UserAccessTokenPublic] = None
     if get_authorization_return.auth_credential and isinstance(get_authorization_return.auth_credential, tables.UserAccessToken):
         access_token = user_access_token_schema.UserAccessTokenPublic(
-            id=UserAccessTokenService.table_id(
+            id=UserAccessTokenService.model_id(
                 get_authorization_return.auth_credential),
             expiry=get_authorization_return.auth_credential.expiry
         )
@@ -384,7 +384,7 @@ async def send_signup_link(session: AsyncSession, c: client.Client, user: tables
 
     else:
 
-        sign_up = await SignUpService.table_inst_from_create_model(sign_up_schema.SignUpAdminCreate(
+        sign_up = await SignUpService.model_inst_from_create_model(sign_up_schema.SignUpAdminCreate(
             email=email, expiry=auth_credential_service.lifespan_to_expiry(c.auth['credential_lifespans']['request_sign_up'])))
 
         sign_up_jwt = c.jwt_encode(typing.cast(

@@ -9,7 +9,7 @@ from ..config import settings
 from .. import utils, types
 from . import base
 
-from ..schemas import otp as otp_schema
+from ..schemas import otp as otp_schema, auth_credential as auth_credential_schema
 from ..services import auth_credential as auth_credential_service
 
 
@@ -20,19 +20,20 @@ class OTP(
             otp_schema.OTPAdminCreate,
             otp_schema.OTPAdminUpdate,
         ],
-        auth_credential_service.Table[OTPTable]):
+        base.SimpleIdModelService[
+            OTPTable,
+            types.OTP.id,
+        ],
+        auth_credential_service.Table[OTPTable],
+):
 
-    auth_type = 'otp'
-    _TABLE = OTPTable
+    auth_type = auth_credential_schema.Type.OTP
+    _MODEL = OTPTable
 
     @classmethod
-    def _table_sub(cls, inst):
-        return inst.id
+    async def model_inst_from_create_model(cls, create_model):
 
-    @classmethod
-    async def table_inst_from_create_model(cls, create_model):
-
-        return cls._TABLE(
+        return cls._MODEL(
             id=utils.generate_uuid(),
             issued=datetime_module.datetime.now().astimezone(datetime_module.UTC),
             **create_model.model_dump()
@@ -59,4 +60,4 @@ class OTP(
 
     @classmethod
     def _build_select_by_id(cls, id):
-        return select(cls._TABLE).where(cls._TABLE.id == id)
+        return select(cls._MODEL).where(cls._MODEL.id == id)
