@@ -31,7 +31,7 @@ class OTP(
     _MODEL = OTPTable
 
     @classmethod
-    async def model_inst_from_create_model(cls, create_model):
+    def model_inst_from_create_model(cls, create_model):
 
         return cls._MODEL(
             id=utils.generate_uuid(),

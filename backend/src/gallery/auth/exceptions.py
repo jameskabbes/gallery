@@ -22,10 +22,10 @@ def Base(status_code_and_detail: StatusCodeAndDetail, logout: bool = True) -> HT
     )
 
 
-def multiple_authorization_types_provided(types: set[str]) -> StatusCodeAndDetail:
+def different_tokens_provided(types: set[str], n: int) -> StatusCodeAndDetail:
     return StatusCodeAndDetail(
-        status_code=status.HTTP_400_BAD_REQUEST, detail="Multiple authorization types provided: {}. Only one type may be provided".format(
-            ", ".join(types))
+        status_code=status.HTTP_400_BAD_REQUEST, detail="{n} different tokens provided from the following sources: {}. Only one unique token may be provided".format(
+            n, ", ".join(types))
     )
 
 

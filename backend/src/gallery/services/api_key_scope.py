@@ -2,6 +2,8 @@ from sqlmodel import Field, Relationship, select, SQLModel
 from typing import TYPE_CHECKING, TypedDict, Optional, ClassVar, Annotated, Type
 
 from ..models.tables import ApiKeyScope as ApiKeyScopeTable, ApiKey as ApiKeyTable
+from ..services import api_key as api_key_service
+from ..schemas import api_key_scope as api_key_scope_schema
 from . import base
 from .. import types
 
@@ -9,6 +11,8 @@ from .. import types
 class ApiKeyScope(base.Service[
     ApiKeyScopeTable,
     types.ApiKeyScope.id,
+    api_key_scope_schema.ApiKeyScopeAdminCreate,
+    api_key_scope_schema.ApiKeyScopeAdminUpdate
 ]):
 
     _MODEL = ApiKeyScopeTable
@@ -24,26 +28,37 @@ class ApiKeyScope(base.Service[
     def _build_select_by_id(cls, id):
         return select(cls._MODEL).where(cls._MODEL.api_key_id == id.api_key_id, cls._MODEL.scope_id == id.scope_id)
 
-    # @classmethod
-    # async def _check_authorization_new(cls, params):
+    @classmethod
+    async def _check_authorization_new(cls, params):
 
-    #     api_key = await
+        api_key = await api_key_service.ApiKey._get_by_id_with_exception(
+            params['session'],
+            params['create_model'].api_key_id
+        )
 
-    #     api_key = await cls.read(params.session, params.create_model.api_key_id)
-    #     if not api_key:
-    #         raise ApiKey.not_found_exception()
+        if not params['admin']:
+            # if user is not admin, check if the api key belongs to the user
+            if api_key.user_id != params['authorized_user_id']:
+                raise base.NotFoundError(
+                    ApiKeyTable, params['create_model'].api_key_id)
 
-    #     if not params.admin:
-    #         if api_key.user_id != params.authorized_user_id:
-    #             raise cls.not_found_exception()
+    @classmethod
+    async def _check_authorization_existing(cls, params):
 
-    # @classmethod
-    # async def _check_validation_post(cls, params):
-    #     if await cls.read(params.session, params.create_model._id):
-    #         raise HTTPException(
-    #             status_code=status.HTTP_409_CONFLICT, detail='Api key scope already exists')
+        if not params['admin']:
+            # if user is not admin, check if the api key belongs to the user
+            if params['model_inst'].api_key.user_id != params['authorized_user_id']:
+                raise base.NotFoundError(
+                    ApiKeyTable, params['model_inst'].api_key_id)
 
-    # async def _check_authorization_existing(self, params):
-    #     if not params.admin:
-    #         if self.api_key.user_id != params.authorized_user_id:
-    #             raise self.not_found_exception()
+    @classmethod
+    async def _check_validation_post(cls, params):
+
+        id = types.ApiKeyScopeId(
+            api_key_id=params['create_model'].api_key_id,
+            scope_id=params['create_model'].scope_id
+        )
+
+        if await cls._get_by_id(params['session'], id):
+            raise base.AlreadyExistsError(
+                cls._MODEL, id)

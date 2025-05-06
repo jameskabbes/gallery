@@ -1,22 +1,39 @@
 from abc import ABC
 from typing import TypeVar, Type, List, Callable, ClassVar, TYPE_CHECKING, Generic
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlmodel import SQLModel, Session, select
 from functools import wraps, lru_cache
 from enum import Enum
 from .. import client, models
 from ..services import base as base_service
+from ..schemas import pagination as pagination_schema
+
+
+def get_pagination(max_limit: int = 100, default_limit: int = 10):
+    def dependency(limit: int = Query(default_limit, ge=1, le=max_limit, description='Quantity of results'), offset: int = Query(0, ge=0, description='Index of the first result')):
+        return pagination_schema.Pagination(limit=limit, offset=offset)
+    return dependency
 
 
 class Router(
-        Generic[models.TModel],
-        base_service.HasModel[models.TModel]):
+    Generic[models.TModel],
+):
 
+    _ADMIN: ClassVar[bool] = NotImplemented
     _PREFIX: ClassVar[str] = ""
     _TAGS: ClassVar[list[str | Enum] | None] = None
 
     def __init__(self, client: client.Client):
-        self.router = APIRouter(prefix=self._PREFIX, tags=self._TAGS)
+
+        prefix = self._PREFIX
+        if self._ADMIN:
+            prefix = f'/admin{prefix}'
+
+        tags = self._TAGS
+        if self._ADMIN:
+            tags = ['Admin'] + (tags or [])
+
+        self.router = APIRouter(prefix=prefix, tags=tags)
         self.client = client
         self._set_routes()
 

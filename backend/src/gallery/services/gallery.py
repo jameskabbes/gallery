@@ -1,9 +1,14 @@
 from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
+import re
+import datetime as datetime_module
+
 from ..models.tables import Gallery as GalleryTable
+from ..services.gallery_permission import GalleryPermission as GalleryPermissionService
 from . import base
 from .. import types
-
 from ..schemas import gallery as gallery_schema
+from ..config import constants, settings
 
 
 class Gallery(
@@ -35,16 +40,92 @@ class Gallery(
         else:
             return inst.date.isoformat() + ' ' + inst.name
 
-    # @classmethod
-    # def get_date_and_name_from_folder_name(cls, folder_name: types.Gallery.folder_name) -> tuple[types.Gallery.date | None, types.Gallery.name]:
+    @classmethod
+    def get_date_and_name_from_folder_name(cls, folder_name: types.Gallery.folder_name) -> types.GalleryDateAndName:
 
-    #     match = re.match(r'^(\d{4}-\d{2}-\d{2}) (.+)$', folder_name)
-    #     if match:
-    #         date_str, name = match.groups()
-    #         date = datetime_module.date.fromisoformat(date_str)
-    #         return (date, name)
-    #     else:
-    #         return (None, folder_name)
+        match = re.match(r'^(\d{4}-\d{2}-\d{2}) (.+)$', folder_name)
+        if match:
+            date_str, name = match.groups()
+            date = datetime_module.date.fromisoformat(date_str)
+            return types.GalleryDateAndName(
+                date=date,
+                name=name
+            )
+        else:
+            return types.GalleryDateAndName(
+                date=None,
+                name=folder_name
+            )
+
+    @classmethod
+    async def is_available(cls, session: AsyncSession, gallery_available_admin: gallery_schema.GalleryAdminAvailable) -> None:
+
+        # raise an exception if the parent gallery does not exist
+        if gallery_available_admin.parent_id is not None:
+            await cls._get_by_id_with_exception(session, gallery_available_admin.parent_id)
+
+        if (await session.exec(select(cls).where(
+            cls._MODEL.name == gallery_available_admin.name,
+            cls._MODEL.user_id == gallery_available_admin.user_id,
+            cls._MODEL.parent_id == gallery_available_admin.parent_id,
+            cls._MODEL.date == gallery_available_admin.date,
+        ))).one_or_none():
+            raise base.AlreadyExistsError(
+                cls._MODEL, 'asdf'
+            )
+
+    @classmethod
+    async def _check_authorization_new(cls, params):
+        if not params['admin']:
+            if params['authorized_user_id'] != params['create_model'].user_id:
+                raise base.UnauthorizedError(
+                    'Unauthorized to post gallery for another user'
+                )
+
+    @classmethod
+    async def _check_authorization_existing(cls, params):
+
+        if not params['admin']:
+            if params['authorized_user_id'] is not None and (params['authorized_user_id'] != params['model_inst'].user_id):
+
+                if params['method'] == 'delete':
+                    raise base.UnauthorizedError(
+                        'Unauthorized to {method} this gallery'.format(method=params['method']))
+
+                gallery_permission = await GalleryPermissionService._get_by_id(
+                    params['session'], types.GalleryPermissionId(
+                        gallery_id=params['id'],
+                        user_id=params['authorized_user_id']
+                    )
+                )
+
+                # if the gallery is private and user has no access, pretend it doesn't exist
+                if gallery_permission is None and params['model_inst'].visibility_level == settings.VISIBILITY_LEVEL_NAME_MAPPING['private']:
+                    raise base.NotFoundError(
+                        GalleryTable, params['id'])
+
+                # either public or user has access
+
+                elif params['method'] == 'get':
+                    if gallery_permission is None or (gallery_permission.permission_level < settings.PERMISSION_LEVEL_NAME_MAPPING['viewer']):
+                        raise base.UnauthorizedError(
+                            'Unauthorized to {method} this gallery'.format(method=params['method']))
+
+                elif params['method'] == 'patch':
+                    if gallery_permission is None or (gallery_permission.permission_level < settings.PERMISSION_LEVEL_NAME_MAPPING['editor']):
+                        raise base.UnauthorizedError(
+                            'Unauthorized to {method} this gallery'.format(method=params['method']))
+
+    @classmethod
+    async def _check_validation_post(cls, params):
+        await cls.is_available(params['session'], gallery_schema.GalleryAdminAvailable(**params['create_model'].model_dump(include=set(gallery_schema.GalleryAdminAvailable.model_fields.keys()), exclude_unset=True)))
+
+    @classmethod
+    async def _check_validation_patch(cls, params):
+        # take self, overwrite it with the update_model, and see if the combined model is available
+        await cls.is_available(params['session'], gallery_schema.GalleryAdminAvailable(**{
+            **params['model_inst'].model_dump(include=set(gallery_schema.GalleryAdminAvailable.model_fields.keys())), **params['update_model'].model_dump(include=set(gallery_schema.GalleryAdminAvailable.model_fields.keys()), exclude_unset=True)
+        }))
 
     # async def get_dir(self, session: Session, root: pathlib.Path) -> pathlib.Path:
 
@@ -64,61 +145,6 @@ class Gallery(
     # @classmethod
     # async def get_root_gallery(cls, session: Session, user_id: types.Gallery.user_id) -> typing.Self | None:
     #     return session.exec(select(cls).where(cls.user_id == user_id).where(cls.parent_id == None)).one_or_none()
-
-    # @classmethod
-    # async def api_get_is_available(cls, session: Session, gallery_available_admin: GalleryAdminGalleryAvailable) -> None:
-
-    #     # raise an exception if the parent gallery does not exist
-    #     if gallery_available_admin.parent_id:
-    #         if not await cls.read(session, gallery_available_admin.parent_id):
-    #             raise HTTPException(
-    #                 status_code=status.HTTP_404_NOT_FOUND, detail='Parent gallery does not exist')
-
-    #     if session.exec(select(cls).where(cls._build_conditions(gallery_available_admin.model_dump()))).one_or_none():
-    #         raise HTTPException(
-    #             status_code=status.HTTP_409_CONFLICT, detail=cls.already_exists_message())
-
-    # @classmethod
-    # async def _check_authorization_new(cls, params):
-    #     if not params.admin:
-    #         if params.authorized_user_id != params.create_model.user_id:
-    #             raise HTTPException(
-    #                 status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to post gallery for another user')
-
-    # async def _check_authorization_existing(self, params):
-
-    #     if not params.admin:
-    #         if params.authorized_user_id != self.user_id:
-
-    #             if params.method == 'delete':
-    #                 raise HTTPException(
-    #                     status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this gallery'.format(method=params.method))
-
-    #             gallery_permission = await GalleryPermission.read(params.session, (params.id, params.authorized_user_id))
-
-    #             # if the gallery is private and user has no access, pretend it doesn't exist
-    #             if not gallery_permission and self.visibility_level == config.VISIBILITY_LEVEL_NAME_MAPPING['private']:
-    #                 raise self.not_found_exception()
-
-    #             elif params.method == 'get':
-    #                 if gallery_permission.permission_level < config.PERMISSION_LEVEL_NAME_MAPPING['viewer']:
-    #                     raise HTTPException(
-    #                         status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this gallery'.format(method=params.method))
-
-    #             elif params.method == 'patch':
-    #                 if gallery_permission.permission_level < config.PERMISSION_LEVEL_NAME_MAPPING['editor']:
-    #                     raise HTTPException(
-    #                         status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this gallery'.format(method=params.method))
-
-    # @classmethod
-    # async def _check_validation_post(cls, params):
-    #     await cls.api_get_is_available(params.session, GalleryAdminGalleryAvailable(**params.create_model.model_dump(include=GalleryAdminGalleryAvailable.model_fields.keys(), exclude_unset=True)))
-
-    # async def _check_validation_patch(self, params):
-    #     # take self, overwrite it with the update_model, and see if the combined model is available
-    #     await self.api_get_is_available(params.session, GalleryAdminGalleryAvailable(**{
-    #         **self.model_dump(include=list(GalleryAdminGalleryAvailable.model_fields.keys())), **params.update_model.model_dump(include=GalleryAdminGalleryAvailable.model_fields.keys(), exclude_unset=True)
-    #     }))
 
     # @classmethod
     # async def create(cls, params):
@@ -352,7 +378,7 @@ class Gallery(
 #         return session.exec(select(cls).where(cls.user_id == user_id).where(cls.parent_id == None)).one_or_none()
 
 #     @classmethod
-#     async def api_get_is_available(cls, session: Session, gallery_available_admin: GalleryAdminGalleryAvailable) -> None:
+#     async def api_get_is_available(cls, session: Session, gallery_available_admin: gallery_schema.GalleryAdminAvailable) -> None:
 
 #         # raise an exception if the parent gallery does not exist
 #         if gallery_available_admin.parent_id:
@@ -398,12 +424,12 @@ class Gallery(
 
 #     @classmethod
 #     async def _check_validation_post(cls, params):
-#         await cls.api_get_is_available(params.session, GalleryAdminGalleryAvailable(**params.create_model.model_dump(include=GalleryAdminGalleryAvailable.model_fields.keys(), exclude_unset=True)))
+#         await cls.api_get_is_available(params.session, gallery_schema.GalleryAdminAvailable(**params.create_model.model_dump(include=gallery_schema.GalleryAdminAvailable.model_fields.keys(), exclude_unset=True)))
 
 #     async def _check_validation_patch(self, params):
 #         # take self, overwrite it with the update_model, and see if the combined model is available
-#         await self.api_get_is_available(params.session, GalleryAdminGalleryAvailable(**{
-#             **self.model_dump(include=list(GalleryAdminGalleryAvailable.model_fields.keys())), **params.update_model.model_dump(include=GalleryAdminGalleryAvailable.model_fields.keys(), exclude_unset=True)
+#         await self.api_get_is_available(params.session, gallery_schema.GalleryAdminAvailable(**{
+#             **self.model_dump(include=list(gallery_schema.GalleryAdminAvailable.model_fields.keys())), **params.update_model.model_dump(include=gallery_schema.GalleryAdminAvailable.model_fields.keys(), exclude_unset=True)
 #         }))
 
 #     @classmethod

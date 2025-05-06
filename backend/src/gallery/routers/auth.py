@@ -85,6 +85,8 @@ class PostRequestOTPSMSRequest(BaseModel):
 
 
 class AuthRouter(base.Router):
+
+    _ADMIN = False
     _PREFIX = '/auth'
     _TAGS = ['Auth']
 

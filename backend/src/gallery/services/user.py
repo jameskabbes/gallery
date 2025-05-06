@@ -51,7 +51,7 @@ class User(
         return user
 
     @classmethod
-    async def model_inst_from_create_model(cls, create_model):
+    def model_inst_from_create_model(cls, create_model):
 
         d = create_model.model_dump(exclude_unset=True, exclude={'password'})
 
@@ -59,7 +59,7 @@ class User(
             if create_model.password is None:
                 d['hashed_password'] = None
             else:
-                d['hashed_password'] = utils.hash_password(
+                d['hashed_password'] = cls.hash_password(
                     create_model.password)
 
         return cls._MODEL(
@@ -77,100 +77,69 @@ class User(
             if update_model.password is None:
                 inst.hashed_password = None
             else:
-                inst.hashed_password = utils.hash_password(
+                inst.hashed_password = cls.hash_password(
                     update_model.password)
 
-    # @classmethod
-    # async def is_username_available(cls, session: AsyncSession, username: types.User.username) -> bool:
+    @classmethod
+    async def is_username_available(cls, session: AsyncSession, username: types.User.username) -> bool:
 
-    #     query = select(cls).where(cls.username == username)
-    #     return (await session.exec(query)).one_or_none() is not None
+        query = select(cls._MODEL).where(cls._MODEL.username == username)
+        return (await session.exec(query)).one_or_none() is not None
 
-    # @classmethod
-    # async def api_get_is_username_available(cls, session: AsyncSession, username: types.User.username) -> None:
-    #     if not await cls.is_username_available(session, username):
-    #         raise HTTPException(
-    #             status_code=status.HTTP_409_CONFLICT, detail='Username already exists')
+    @classmethod
+    async def is_email_available(cls, session: AsyncSession, email: types.User.email) -> bool:
 
-    # @classmethod
-    # async def is_email_available(cls, session: AsyncSession, email: types.User.email) -> bool:
+        query = select(cls._MODEL).where(cls._MODEL.email == email)
+        return (await session.exec(query)).one_or_none() is not None
 
-    #     query = select(cls).where(cls.email == email)
-    #     return (await session.exec(query)).one_or_none() is not None
+    @classmethod
+    async def _check_authorization_existing(cls, params):
 
-    # @classmethod
-    # async def get_is_email_available(cls, session: AsyncSession, email: types.User.email) -> None:
-    #     if not await cls.is_email_available(session, email):
-    #         raise HTTPException(
-    #             status_code=status.HTTP_409_CONFLICT, detail='Email already exists')
+        if not params['admin']:
+            if params['model_inst'].id != params['authorized_user_id']:
+                if cls.is_inst_public(params['model_inst']):
+                    if params['method'] == 'delete' or params['method'] == 'patch':
+                        raise base.UnauthorizedError(
+                            'Unauthorized to {method} this user'.format(method=params['method']))
+                else:
+                    raise base.NotFoundError(
+                        UserTable, params['model_inst'].id)
 
-    # @classmethod
-    # def hash_password(cls, password: types.User.password) -> types.User.hashed_password:
-    #     return utils.hash_password(password)
+    @classmethod
+    async def _check_validation_post(cls, params):
 
-    # @classmethod
-    # async def _check_authorization_existing(cls, **kwargs):
-    #     if not kwargs.get('admin'):
-    #         if kwargs['inst']._id != kwargs.get('authorized_user_id'):
-    #             if kwargs['inst'].is_public:
-    #                 if kwargs['method'] == 'delete' or kwargs['method'] == 'patch':
-    #                     raise HTTPException(
-    #                         status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {method} this user'.format(method=kwargs['method']))
-    #             else:
-    #                 raise cls.not_found_exception()
+        if 'username' in params['create_model'].model_fields_set:
+            if params['create_model'].username is not None:
+                await cls.is_username_available(params['session'], params['create_model'].username)
+        if 'email' in params['create_model'].model_fields_set:
+            if params['create_model'].email is not None:
+                await cls.is_email_available(params['session'], params['create_model'].email)
 
-    # @classmethod
-    # async def _check_validation_post(cls, **kwargs):
+    @classmethod
+    async def _check_validation_patch(cls, params):
+        if 'username' in params['update_model'].model_fields_set:
+            if params['update_model'].username is not None:
+                await cls.is_username_available(params['session'], params['update_model'].username)
+        if 'email' in params['update_model'].model_fields_set:
+            if params['update_model'].email is not None:
+                await cls.is_email_available(params['session'], params['update_model'].email)
 
-    #     if 'username' in kwargs['cCreate_model'].model_fields_set:
-    #         if kwargs['cCreate_model'].username is not None:
-    #             await User.api_get_is_username_available(
-    #                 kwargs['session'], kwargs['cCreate_model'].username)
-    #     if 'email' in kwargs['cCreate_model'].model_fields_set:
-    #         if kwargs['cCreate_model'].email is not None:
-    #             await User.api_get_is_email_available(kwargs['session'], kwargs['cCreate_model'].email)
-
-    # @classmethod
-    # async def _check_validation_patch(cls, **kwargs):
-    #     if 'username' in kwargs['update_model'].model_fields_set:
-    #         if kwargs['update_model'].username is not None:
-    #             await User.api_get_is_username_available(
-    #                 kwargs['session'], kwargs['update_model'].username)
-    #     if 'email' in kwargs['update_model'].model_fields_set:
-    #         if kwargs['update_model'].email is not None:
-    #             await User.api_get_is_email_available(kwargs['session'], kwargs['update_model'].email)
+    @classmethod
+    def hash_password(cls, password: types.User.password) -> types.User.hashed_password:
+        return utils.hash_password(password)
 
 
 '''
 
 
 
-
-
-    @classmethod
-    async def db_inst_from_add_model(cls, **kwargs):
-        return UserDB(
-            id=UserDB.generate_id(),
-            hashed_password=cls.hash_password(
-                kwargs['cCreate_model'].password) if 'password' in kwargs['cCreate_model'].model_fields_set else None,
-            **kwargs['cCreate_model'].model_dump(exclude=['password'])
-        )
-
     @classmethod
     async def api_post_custom(cls, **kwargs):
         pass
-        # root_gallery = await Gallery.api_post(Gallery.ApiPostParams(**params.model_dump(exclude=['cCreate_model', 'cCreate_method_params', 'authorized_user_id']), authorized_user_id=new_user._id, cCreate_model=GalleryAdminCreate(
+        # root_gallery = await Gallery.api_post(Gallery.ApiPostParams(**params.model_dump(exclude=['create_model', 'cCreate_method_params', 'authorized_user_id']), authorized_user_id=new_user._id, create_model=GalleryAdminCreate(
         #     name='root', user_id=new_user._id, visibility_level=config.VISIBILITY_LEVEL_NAME_MAPPING['private']
         # )))
 
-    @classmethod
-    async def update_db_inst_from_update_model(cls, db_inst, **kwargs):
-        for key, value in kwargs['update_model'].model_dump(exclude_unset=True, exclude={'password'}).items():
-            setattr(db_inst, key, value)
-
-        if 'password' in kwargs['update_model'].model_fields_set:
-            db_inst.hashed_password = cls.hash_password(
-                kwargs['update_model'].password)
 
     @classmethod
     async def api_patch_custom(cls, test=None, **kwargs):

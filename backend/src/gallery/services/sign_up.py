@@ -20,7 +20,7 @@ class SignUp(
         return inst.email
 
     @classmethod
-    async def model_inst_from_create_model(cls, create_model):
+    def model_inst_from_create_model(cls, create_model):
         """Create a new instance of the model from the create model (TCreateModel), don't overwrite this method"""
 
         return cls._MODEL(

@@ -69,9 +69,10 @@ class Table(
     @classmethod
     async def get_scope_ids(
             cls,
-            inst: TAuthCredentialTable | None = None,
-            session: AsyncSession | None = None,
-            c: client.Client | None = None) -> list[types.Scope.id]:
+            session: AsyncSession,
+            c: client.Client,
+            inst: TAuthCredentialTable,
+    ) -> list[types.Scope.id]:
         return []
 
 

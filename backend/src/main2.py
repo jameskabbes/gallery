@@ -33,5 +33,6 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
 c = client.Client(config={})
 
 
-app.include_router(user.UserRouter(c).router)
 app.include_router(auth.AuthRouter(c).router)
+app.include_router(user.UserRouter(c).router)
+app.include_router(user.UserAdminRouter(c).router)

@@ -7,3 +7,7 @@ class DetailOnlyResponse(BaseModel):
 
 class NotFoundResponse(DetailOnlyResponse):
     pass
+
+
+class IsAvailableResponse(BaseModel):
+    available: bool

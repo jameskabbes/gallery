@@ -119,6 +119,11 @@ class Gallery:
     folder_name = str
 
 
+class GalleryDateAndName(NamedTuple):
+    date: datetime_module.date | None
+    name: str
+
+
 class _GalleryPermissionBase:
     gallery_id = Gallery.id
     user_id = User.id

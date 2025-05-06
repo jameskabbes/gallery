@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, select
 from sqlmodel.sql.expression import SelectOfScalar
 from sqlmodel.ext.asyncio.session import AsyncSession
-from typing import Protocol, Unpack, TypeVar, TypedDict, Generic, NotRequired, Literal, Self, ClassVar, Type
+from typing import Protocol, Unpack, TypeVar, TypedDict, Generic, NotRequired, Literal, Self, ClassVar, Type, Optional
 from pydantic import BaseModel
 from .. import client, types
 from ..schemas.pagination import Pagination
@@ -23,8 +23,8 @@ TUpdateModel_co = TypeVar('TUpdateModel_co', bound=BaseModel,
 class CRUDParamsBase(TypedDict):
     session: AsyncSession
     c: client.Client
-    authorized_user_id: NotRequired[types.User.id]
-    admin: NotRequired[bool]
+    authorized_user_id: Optional[types.User.id]
+    admin: bool
 
 
 class WithId(Generic[types.TId], TypedDict):
@@ -68,9 +68,24 @@ class AfterDeleteParams(Generic[models.TModel_contra, types.TId], DeleteParams[t
     pass
 
 
-class CheckAuthorizationExistingParams(Generic[models.TModel_contra], CRUDParamsBase):
-    inst: models.TModel_contra
+class CheckAuthorizationExistingParams(Generic[models.TModel_contra, types.TId], CRUDParamsBase, WithId[types.TId], WithModelInst[models.TModel_contra]):
     method: Literal['get', 'patch', 'delete']
+
+
+class CheckAuthorizationNewParams(Generic[TCreateModel_contra], CreateParams[TCreateModel_contra]):
+    pass
+
+
+class CheckValidationDeleteParams(Generic[types.TId], DeleteParams[types.TId]):
+    pass
+
+
+class CheckValidationPatchParams(Generic[models.TModel, types.TId, TUpdateModel_contra], UpdateParams[types.TId, TUpdateModel_contra], WithModelInst[models.TModel]):
+    pass
+
+
+class CheckValidationPostParams(Generic[TCreateModel_contra], CreateParams[TCreateModel_contra]):
+    pass
 
 
 class AfterCreateCustomParams(TypedDict):
@@ -105,7 +120,7 @@ class HasModel(Protocol[models.TModel_co]):
 
 class HasModelInstFromCreateModel(Protocol[models.TModel_co, TCreateModel_contra]):
     @classmethod
-    async def model_inst_from_create_model(cls, create_model: TCreateModel_contra) -> models.TModel_co:
+    def model_inst_from_create_model(cls, create_model: TCreateModel_contra) -> models.TModel_co:
         ...
 
 
@@ -139,6 +154,26 @@ class SimpleIdModelService(
         return select(cls._MODEL).where(cls._MODEL.id == id)
 
 
+class NotFoundError(Exception):
+    def __init__(self, model: Type[models.Model], id: types._IdType):
+        raise ValueError(model.__class__.__name__ +
+                         ' with id ' + str(id) + ' not found')
+
+
+class AlreadyExistsError(Exception):
+    def __init__(self, model: Type[models.Model], id: types._IdType):
+        raise ValueError(
+            model.__class__.__name__ + ' with id ' + str(id) + ' already exists')
+
+
+class NotAvailableError(Exception):
+    pass
+
+
+class UnauthorizedError(Exception):
+    pass
+
+
 class Service(
     Generic[
         models.TModel,
@@ -164,38 +199,38 @@ class Service(
     async def _get_by_id_with_exception(cls, session: AsyncSession, id: types.TId) -> models.TModel:
         inst = await cls._get_by_id(session, id)
         if not inst:
-            raise ValueError(cls.__class__.__name__ +
-                             ' with id ' + str(id) + ' not found')
+            raise NotFoundError(cls._MODEL, id)
         return inst
 
-    def build_pagination(self, query: SelectOfScalar[models.TModel], pagination: Pagination):
+    @classmethod
+    def build_pagination(cls, query: SelectOfScalar[models.TModel], pagination: Pagination):
         return query.offset(pagination.offset).limit(pagination.limit)
 
     async def _delete(self, session: AsyncSession):
         await session.delete(self)
 
     @classmethod
-    async def _check_authorization_existing(cls, params: CheckAuthorizationExistingParams[models.TModel]) -> None:
+    async def _check_authorization_existing(cls, params: CheckAuthorizationExistingParams[models.TModel, types.TId]) -> None:
         """Check if the user is authorized to access the instance"""
         pass
 
     @classmethod
-    async def _check_authorization_new(cls, params: CreateParams[TCreateModel]) -> None:
+    async def _check_authorization_new(cls, params: CheckAuthorizationNewParams[TCreateModel]) -> None:
         """Check if the user is authorized to create a new instance"""
         pass
 
     @classmethod
-    async def _check_validation_delete(cls, params: DeleteParams[types.TId]) -> None:
+    async def _check_validation_delete(cls, params: CheckValidationDeleteParams[types.TId]) -> None:
         """Check if the user is authorized to delete the instance"""
         pass
 
     @classmethod
-    async def _check_validation_patch(cls, params: UpdateParams[types.TId, TUpdateModel]) -> None:
+    async def _check_validation_patch(cls, params: CheckValidationPatchParams[models.TModel, types.TId, TUpdateModel]) -> None:
         """Check if the user is authorized to update the instance"""
         pass
 
     @classmethod
-    async def _check_validation_post(cls, params: CreateParams[TCreateModel]) -> None:
+    async def _check_validation_post(cls, params: CheckValidationPostParams[TCreateModel]) -> None:
         """Check if the user is authorized to create a new instance"""
         pass
 
@@ -203,38 +238,14 @@ class Service(
     async def read(cls, params: ReadParams[types.TId], custom_params: TAfterReadCustomParams = {}) -> models.TModel:
         """Used in conjunction with API endpoints, raises exceptions while trying to get an instance of the model by ID"""
 
-        inst = await cls._get_by_id_with_exception(params['session'], params['id'])
+        model_inst = await cls._get_by_id_with_exception(params['session'], params['id'])
 
-        check_auth_params: CheckAuthorizationExistingParams[models.TModel] = {
-            'session': params['session'],
-            'c': params['c'],
-            'inst': inst,
-            'method': 'get'
-        }
+        await cls._check_authorization_existing(
+            {**params, 'model_inst': model_inst, 'method': 'get'})
 
-        if 'authorized_user_id' in params:
-            check_auth_params['authorized_user_id'] = params['authorized_user_id']
-
-        if 'admin' in params:
-            check_auth_params['admin'] = params['admin']
-
-        await cls._check_authorization_existing(check_auth_params)
-
-        after_read_params: AfterReadParams[models.TModel, types.TId] = {
-            'session': params['session'],
-            'c': params['c'],
-            'model_inst': inst,
-            'id': params['id']
-        }
-
-        if 'authorized_user_id' in params:
-            after_read_params['authorized_user_id'] = params['authorized_user_id']
-
-        if 'admin' in params:
-            after_read_params['admin'] = params['admin']
-
-        await cls._after_read(after_read_params, custom_params)
-        return inst
+        await cls._after_read({
+            **params, 'model_inst': model_inst}, custom_params)
+        return model_inst
 
     @classmethod
     async def _after_read(cls, params: AfterReadParams[models.TModel, types.TId], custom_params: TAfterReadCustomParams = {}) -> None:
@@ -248,7 +259,7 @@ class Service(
         await cls._check_authorization_new(params)
         await cls._check_validation_post(params)
 
-        model_inst = await cls.model_inst_from_create_model(params['create_model'])
+        model_inst = cls.model_inst_from_create_model(params['create_model'])
 
         await cls._after_create({**params, 'model_inst': model_inst, 'id': cls.model_id(model_inst)}, custom_params)
 
@@ -258,7 +269,7 @@ class Service(
         return model_inst
 
     @classmethod
-    async def model_inst_from_create_model(cls, create_model: TCreateModel) -> models.TModel:
+    def model_inst_from_create_model(cls, create_model: TCreateModel) -> models.TModel:
         return cls._MODEL(**create_model.model_dump())
 
     @classmethod
@@ -270,43 +281,26 @@ class Service(
     async def update(cls, params: UpdateParams[types.TId, TUpdateModel], custom_params: TAfterUpdateCustomParams = {}) -> models.TModel:
         """Used in conjunction with API endpoints, raises exceptions while trying to update an instance of the model by ID"""
 
-        inst = await cls._get_by_id_with_exception(params['session'], params['id'])
+        model_inst = await cls._get_by_id_with_exception(params['session'], params['id'])
 
-        check_auth_params: CheckAuthorizationExistingParams[models.TModel] = {
+        await cls._check_authorization_existing({
             'session': params['session'],
             'c': params['c'],
-            'inst': inst,
-            'method': 'get'
-        }
-
-        if 'authorized_user_id' in params:
-            check_auth_params['authorized_user_id'] = params['authorized_user_id']
-
-        if 'admin' in params:
-            check_auth_params['admin'] = params['admin']
-
-        await cls._check_authorization_existing(check_auth_params)
-        await cls._check_validation_patch(params)
-        await cls._update_model_inst(inst, params['update_model'])
-
-        after_update_params: AfterUpdateParams[models.TModel, types.TId, TUpdateModel] = {
-            'session': params['session'],
-            'c': params['c'],
-            'model_inst': inst,
+            'model_inst': model_inst,
+            'method': 'get',
             'id': params['id'],
-            'update_model': params['update_model']
-        }
+            'admin': params['admin'],
+            'authorized_user_id': params['authorized_user_id']
+        })
+        await cls._check_validation_patch({**params, 'model_inst': model_inst})
+        await cls._update_model_inst(model_inst, params['update_model'])
 
-        if 'authorized_user_id' in params:
-            after_update_params['authorized_user_id'] = params['authorized_user_id']
-        if 'admin' in params:
-            after_update_params['admin'] = params['admin']
-
-        await cls._after_update(after_update_params, custom_params)
+        await cls._after_update({
+            **params, 'model_inst': model_inst}, custom_params)
 
         await params['session'].commit()
-        await params['session'].refresh(inst)
-        return inst
+        await params['session'].refresh(model_inst)
+        return model_inst
 
     @classmethod
     async def _update_model_inst(cls, inst: models.TModel, update_model: TUpdateModel) -> None:
@@ -324,39 +318,21 @@ class Service(
     async def delete(cls, params: DeleteParams[types.TId], custom_params: TAfterDeleteCustomParams = {}) -> None:
         """Used in conjunction with API endpoints, raises exceptions while trying to delete an instance of the model by ID"""
 
-        inst = await cls._get_by_id_with_exception(params['session'], params['id'])
+        model_inst = await cls._get_by_id_with_exception(params['session'], params['id'])
 
-        check_auth_params = CheckAuthorizationExistingParams[models.TModel](
-            session=params['session'],
-            c=params['c'],
-            inst=inst,
-            method='get'
-        )
-
-        if 'authorized_user_id' in params:
-            check_auth_params['authorized_user_id'] = params['authorized_user_id']
-
-        if 'admin' in params:
-            check_auth_params['admin'] = params['admin']
-
-        await cls._check_authorization_existing(check_auth_params)
-        await cls._check_validation_delete(params)
-
-        await params['session'].delete(inst)
-
-        after_delete_params: AfterDeleteParams[models.TModel, types.TId] = {
+        await cls._check_authorization_existing({
             'session': params['session'],
             'c': params['c'],
-            'model_inst': inst,
-            'id': params['id']
-        }
-
-        if 'authorized_user_id' in params:
-            after_delete_params['authorized_user_id'] = params['authorized_user_id']
-        if 'admin' in params:
-            after_delete_params['admin'] = params['admin']
-
-        await cls._after_delete(after_delete_params, custom_params)
+            'method': 'delete',
+            'id': params['id'],
+            'model_inst': model_inst,
+            'admin': params['admin'],
+            'authorized_user_id': params['authorized_user_id']
+        })
+        await cls._check_validation_delete(params)
+        await params['session'].delete(model_inst)
+        await cls._after_delete({
+            **params, 'model_inst': model_inst}, custom_params)
 
         await params['session'].commit()
 

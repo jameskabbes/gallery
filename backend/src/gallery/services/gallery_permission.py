@@ -27,37 +27,38 @@ class GalleryPermission(
     def _build_select_by_id(cls, id):
         return select(cls._MODEL).where(cls._MODEL.gallery_id == id.gallery_id, cls._MODEL.user_id == id.user_id)
 
-    # @classmethod
-    # async def _check_authorization_new(cls, params):
+    @classmethod
+    async def _check_authorization_new(cls, params):
 
-    #     if not params.admin:
-    #         if not params.authorized_user_id == params.create_model.user_id:
-    #             raise HTTPException(
-    #                 status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to post gallery permission for another user')
+        if not params['admin']:
+            if not params['authorized_user_id'] == params['create_model'].user_id:
+                raise base.UnauthorizedError(
+                    'Unauthorized to post gallery permission for another user'
+                )
 
-    # @classmethod
-    # async def _check_validation_post(cls, params):
-    #     if await GalleryPermission.read(params.session, params.create_model._id):
-    #         raise HTTPException(
-    #             status.HTTP_409_CONFLICT, detail='Gallery permission already exists')
+    @classmethod
+    async def _check_authorization_existing(cls, params):
 
-    # @classmethod
-    # async def create(cls, params):
-    #     return cls(
-    #         params.create_model.model_dump()
-    #     )
+        if not params['admin']:
+            if params['model_inst'].gallery.user_id != params['authorized_user_id']:
+                authorized_user_gallery_permission = await cls._get_by_id_with_exception(
+                    params['session'], params['id']
+                )
 
-    # async def _check_authorization_existing(self, params):
+                if params['method'] in {'delete', 'patch'}:
+                    if authorized_user_gallery_permission.user_id != params['authorized_user_id']:
+                        raise base.UnauthorizedError(
+                            'Unauthorized to {} gallery permission with id {}'.format(params['method'], params['id']))
 
-    #     if not params.admin:
-    #         if self.gallery.user._id != params.authorized_user_id:
-    #             authorized_user_gallery_permission = await self.read(params.session, GalleryPermissionGalleryPermissionIdBase(
-    #                 gallery_id=self.gallery._id, user_id=params.authorized_user_id
-    #             )._id)
+    @classmethod
+    async def _check_validation_post(cls, params):
 
-    #             if not authorized_user_gallery_permission:
-    #                 raise self.not_found_exception()
+        id = types.GalleryPermissionId(
+            gallery_id=params['create_model'].gallery_id,
+            user_id=params['create_model'].user_id
+        )
 
-    #             if params.method == 'delete' or params.method == 'patch':
-    #                 raise HTTPException(
-    #                     status.HTTP_401_UNAUTHORIZED, detail='Unauthorized to {} this gallery permission'.format(params.method))
+        if await cls._get_by_id(params['session'], id):
+            raise base.AlreadyExistsError(
+                cls._MODEL, id
+            )

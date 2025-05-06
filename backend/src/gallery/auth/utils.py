@@ -23,6 +23,7 @@ from ..services.user import User as UserService
 from ..services.user_access_token import UserAccessToken as UserAccessTokenService
 from ..services.sign_up import SignUp as SignUpService
 from ..services.otp import OTP as OTPService
+from ..services.api_key import ApiKey as ApiKeyService
 
 from ..services import auth_credential as auth_credential_service
 from .. import services
@@ -56,7 +57,8 @@ class OAuth2PasswordBearerMultiSource(OAuth2):
         super().__init__(flows=flows, auto_error=False)
 
     async def __call__(self, request: Request) -> types.JwtEncodedStr | None:
-        token: types.JwtEncodedStr | None = None
+
+        tokens: set[types.JwtEncodedStr] = set()
         provided_auth_types = set()
 
         # Authorization: bearer <token>
@@ -64,22 +66,26 @@ class OAuth2PasswordBearerMultiSource(OAuth2):
         if authorization:
             scheme, param = get_authorization_scheme_param(authorization)
             if scheme.lower() == "bearer":
-                token = param
+                tokens.add(param)
                 provided_auth_types.add("bearer")
 
         # HTTP-only Cookie
         cookie_access_token = request.cookies.get(auth.ACCESS_TOKEN_COOKIE_KEY)
         if cookie_access_token:
-            token = cookie_access_token
+            tokens.add(cookie_access_token)
             provided_auth_types.add("cookie")
 
-        if len(provided_auth_types) > 1:
+        if len(tokens) > 1:
             raise exceptions.Base(
-                exceptions.multiple_authorization_types_provided(
-                    provided_auth_types), logout=False
+                exceptions.different_tokens_provided(
+                    provided_auth_types, len(tokens)
+                ), logout=False
             )
 
-        return token
+        elif len(tokens) == 1:
+            return tokens.pop()
+        else:
+            return None
 
 
 oauth2_scheme = OAuth2PasswordBearerMultiSource(
@@ -175,16 +181,26 @@ async def get_auth_from_auth_credential_table_inst(
     if not is_valid_time_bounds(auth_credential_table_inst.issued, auth_credential_table_inst.expiry, dt_now, override_lifetime):
         await service.delete(
             {
+                'session': session,
+                'c': c,
+                'admin': True,
                 'authorized_user_id': auth_credential_table_inst.user_id,
                 'id': auth_credential_table_inst.id,
-                'c': c,
-                'session': session,
             }
         )
         return GetAuthReturn(exception=exceptions.authorization_expired())
 
     # if no user is associated with the auth_credential, raise an exception
-    user = auth_credential_table_inst.user
+    async with c.AsyncSession() as session:
+        user = await UserService.read(
+            {
+                'session': session,
+                'c': c,
+                'id': auth_credential_table_inst.user_id,
+                'admin': True,
+                'authorized_user_id': auth_credential_table_inst.user_id,
+            })
+
     if user is None:
         return GetAuthReturn(exception=exceptions.user_not_found())
 
@@ -212,7 +228,7 @@ async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJ
     token = kwargs.get('token', None)
     required_scopes = kwargs.get('required_scopes', set())
     permitted_types = kwargs.get(
-        'permitted_types', {'user_access_token', 'api_key'})
+        'permitted_types', {UserAccessTokenService.auth_type.value, ApiKeyService.auth_type.value})
     override_lifetime = kwargs.get('override_lifetime', None)
 
     # 1. if token is blank
@@ -235,6 +251,7 @@ async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJ
     except Exception:
         raise
 
+    # 4. check if the auth_credential type is permitted
     auth_type = payload['type']
     if auth_type not in permitted_types:
         return GetAuthReturn(exception=exceptions.authorization_type_not_permitted(auth_type))
@@ -247,12 +264,12 @@ async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJ
     dt_issued = datetime_module.datetime.fromtimestamp(
         payload['iat'], tz=datetime_module.UTC)
 
-    # 4. validate time bounds encoded in the jwt
+    # 5. validate time bounds encoded in the jwt
     if not is_valid_time_bounds(dt_issued, dt_expiry, dt_now, override_lifetime):
         return GetAuthReturn(exception=exceptions.authorization_expired())
 
     # if the auth_credential is stored in a table, check its db entry
-    if isinstance(AuthCredentialService, auth_credential_service.Table):
+    if issubclass(AuthCredentialService, auth_credential_service.Table):
 
         async with c.AsyncSession() as session:
 
@@ -263,7 +280,8 @@ async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJ
                 'session': session,
                 'c': c,
                 'id': payload['sub'],
-                'admin': True
+                'admin': True,
+                'authorized_user_id': None
             })
 
             if not auth_credential_table_inst_from_db:
@@ -272,6 +290,7 @@ async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJ
             return await get_auth_from_auth_credential_table_inst(
                 auth_credential_table_inst_from_db,
                 c=c,
+                auth_credential_service=AuthCredentialService,
                 session=session,
                 dt_now=dt_now,
                 **{
@@ -372,7 +391,8 @@ async def send_signup_link(session: AsyncSession, c: client.Client, user: tables
                 user_id=user.id,
                 expiry=auth_credential_service.lifespan_to_expiry(
                     c.auth['credential_lifespans']['request_sign_up'])
-            )
+            ),
+            'admin': False
         })
 
         url = '{}{}/?token={}'.format(settings.FRONTEND_URLS['base'],
@@ -384,7 +404,7 @@ async def send_signup_link(session: AsyncSession, c: client.Client, user: tables
 
     else:
 
-        sign_up = await SignUpService.model_inst_from_create_model(sign_up_schema.SignUpAdminCreate(
+        sign_up = SignUpService.model_inst_from_create_model(sign_up_schema.SignUpAdminCreate(
             email=email, expiry=auth_credential_service.lifespan_to_expiry(c.auth['credential_lifespans']['request_sign_up'])))
 
         sign_up_jwt = c.jwt_encode(typing.cast(
@@ -431,7 +451,8 @@ async def post_login_otp(session: AsyncSession, c: client.Client, user: tables.U
             user_id=user.id,
             expiry=auth_credential_service.lifespan_to_expiry(
                 c.auth['credential_lifespans']['access_token']),
-        )
+        ),
+        'admin': False
     })
 
     set_access_token_cookie(response, c.jwt_encode(typing.cast(
@@ -444,13 +465,14 @@ async def post_login_otp(session: AsyncSession, c: client.Client, user: tables.U
             'c': c,
             'id': user_otp.id,
             'authorized_user_id': user.id,
+            'admin': False
         }
     )
 
     return PostLoginWithOTPResponse(
         auth=GetUserSessionInfoReturn(
             user=user_schema.UserPrivate.model_validate(user),
-            scope_ids=set(await UserAccessTokenService.get_scope_ids(inst=user_access_token, session=session)),
+            scope_ids=set(await UserAccessTokenService.get_scope_ids(session, c, user_access_token)),
             access_token=user_access_token_schema.UserAccessTokenPublic.model_validate(
                 user_access_token)
         )
@@ -464,6 +486,7 @@ async def send_magic_link(session: AsyncSession, c: client.Client, user: tables.
             'authorized_user_id': user.id,
             'c': c,
             'session': session,
+            'admin': False,
             'create_model': user_access_token_schema.UserAccessTokenAdminCreate(user_id=user.id, expiry=auth_credential_service.lifespan_to_expiry(c.auth['credential_lifespans']['magic_link']))
         }
     )
@@ -486,6 +509,7 @@ async def send_otp(session: AsyncSession, c: client.Client, user: tables.User, e
         'authorized_user_id': user.id,
         'c': c,
         'session': session,
+        'admin': False,
         'create_model': otp_schema.OTPAdminCreate(
             user_id=user.id, hashed_code=OTPService.hash_code(code), expiry=auth_credential_service.lifespan_to_expiry(c.auth['credential_lifespans']['otp'])
         )
