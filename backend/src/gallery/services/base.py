@@ -306,8 +306,7 @@ class Service(
     async def _update_model_inst(cls, inst: models.TModel, update_model: TUpdateModel) -> None:
         """Update an instance of the model from the update model (TUpdateModel)"""
 
-        for key, value in update_model.model_dump(exclude_unset=True).items():
-            setattr(inst, key, value)
+        inst.sqlmodel_update(update_model.model_dump(exclude_unset=True))
 
     @classmethod
     async def _after_update(cls, params: AfterUpdateParams[models.TModel, types.TId, TUpdateModel], custom_params: TAfterUpdateCustomParams = {}) -> None:

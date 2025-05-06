@@ -2,6 +2,7 @@ from .. import types
 from pydantic import BaseModel
 from typing import Optional
 from ..services import base as base_service
+import pathlib
 
 
 class GalleryExport(BaseModel):
@@ -70,3 +71,8 @@ class GalleryAdminAvailable(GalleryAvailable):
 
 class GalleryAfterDeleteCustomParams(base_service.AfterDeleteCustomParams):
     rmtree: bool
+
+
+class GalleryAfterUpdateCustomParams(base_service.AfterUpdateCustomParams):
+    previous_path: pathlib.Path | None
+    rename_folder: bool | None
