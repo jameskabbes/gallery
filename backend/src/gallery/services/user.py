@@ -64,8 +64,8 @@ class User(
                     create_model.password)
 
         return cls._MODEL(
-            id=utils.generate_uuid(),
-            **d,
+            id=types.TUserId(utils.generate_uuid()),
+            ** d,
         )
 
     @classmethod

@@ -1,11 +1,11 @@
 from abc import ABC
-from typing import TypeVar, Type, List, Callable, ClassVar, TYPE_CHECKING, Generic, Protocol
+from typing import TypeVar, Type, List, Callable, ClassVar, TYPE_CHECKING, Generic, Protocol, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.routing import APIRoute
 from sqlmodel import SQLModel, Session, select
 from functools import wraps, lru_cache
 from enum import Enum
-from .. import client, models, types
+from .. import client, models, types, services
 from ..services import base as base_service
 from ..schemas import pagination as pagination_schema
 from ..auth import utils as auth_utils
@@ -17,20 +17,30 @@ def get_pagination(max_limit: int = 100, default_limit: int = 10):
     return dependency
 
 
-class HasRouterNecessities(Generic[base_service.TService], Protocol):
-    _SERVICE: Type[base_service.TService]
-    _ADMIN: ClassVar[bool]
-    _PREFIX: ClassVar[str]
-    _TAGS: ClassVar[list[str | Enum] | None]
+class HasService(Generic[services.TServiceProtocol], Protocol):
+    _SERVICE: Type[services.TServiceProtocol]
 
 
 class Router(
     Generic[
         models.TModel,
         types.TId,
+        base_service.TCreateModel,
+        base_service.TUpdateModel,
+        base_service.TAfterCreateCustomParams_contra,
+        base_service.TAfterReadCustomParams_contra,
+        base_service.TAfterUpdateCustomParams_contra,
+        base_service.TAfterDeleteCustomParams_contra,
     ],
-    HasRouterNecessities,
+    HasService[base_service.ServiceProtocol[
+        models.TModel,
+        types.TId,
+    ]],
 ):
+
+    _ADMIN: ClassVar[bool]
+    _PREFIX: ClassVar[str]
+    _TAGS: ClassVar[list[str | Enum] | None]
 
     def __init__(self, client: client.Client):
 
@@ -54,15 +64,13 @@ class Router(
 
         async with c.AsyncSession() as session:
             try:
-                item = await cls._SERVICE.read(
-                    {
-                        'session': session,
-                        'admin': cls._ADMIN,
-                        'c': c,
-                        'id': id,
-                        'authorized_user_id': authorization._user_id,
-                    }
-                )
+                item = await cls._SERVICE.read({
+                    'admin': cls._ADMIN,
+                    'c': c,
+                    'session': session,
+                    'id': id,
+                    'authorized_user_id': authorization._user_id,
+                })
             except base_service.NotFoundError as e:
                 raise HTTPException(
                     status.HTTP_404_NOT_FOUND, detail=e.error_message)

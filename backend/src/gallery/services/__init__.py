@@ -1,9 +1,17 @@
-from typing import Type, TypedDict, Literal
+from typing import Type, TypedDict, TypeVar
 
+from . import base
+
+from .api_key_scope import ApiKeyScope as ApiKeyScopeService
 from .api_key import ApiKey as ApiKeyService
+from .file import File as FileService
+from .gallery import Gallery as GalleryService
+from .gallery_permission import GalleryPermission as GalleryPermissionService
+from .image_version import ImageVersion as ImageVersionService
 from .otp import OTP as OTPService
-from .user_access_token import UserAccessToken as UserAccessTokenService
 from .sign_up import SignUp as SignUpService
+from .user_access_token import UserAccessToken as UserAccessTokenService
+from .user import User as UserService
 
 from .. import types
 
@@ -38,3 +46,12 @@ AUTH_CREDENTIAL_TYPE_TO_SERVICE: AuthCredentialTypeToService = {
     'sign_up': SignUpService,
     'otp': OTPService,
 }
+
+Service = UserService | UserAccessTokenService | ApiKeyService | OTPService | GalleryService | GalleryPermissionService | FileService | ImageVersionService | ApiKeyScopeService
+
+TService = TypeVar('TService', bound=Service)
+TService_co = TypeVar('TService_co', bound=Service, covariant=True)
+TService_contra = TypeVar('TService_contra', bound=Service, contravariant=True)
+
+TServiceProtocol = TypeVar(
+    'TServiceProtocol', bound=base.ServiceProtocol, covariant=True)

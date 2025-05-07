@@ -5,19 +5,22 @@ from ..services.user import User as UserService
 from ..schemas import user as user_schema, pagination as pagination_schema, api as api_schema
 from . import base
 from .. import types
-from typing import Annotated, cast
+from typing import Annotated, cast, Type
 from ..auth import utils as auth_utils
+from ..services import base as base_service
 
 
-class _Base(base.HasRouterNecessities[UserService]):
-    _PREFIX = '/users'
-    _TAGS = ['User']
-    _SERVICE = UserService
-
-
-class UserRouter(base.Router[UserTable, types.User.id], _Base):
+class UserRouter(
+        base.Router[
+            UserTable,
+            types.User.id,
+        ]):
 
     _ADMIN = False
+    _SERVICE = base.base_service.ServiceProtocol[
+        UserTable,
+        types.User.id,
+    ]
 
     def _set_routes(self):
 

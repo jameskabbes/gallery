@@ -40,7 +40,7 @@ class CreateParams(Generic[TCreateModel_contra], CRUDParamsBase):
 
 
 class AfterCreateParams(
-        Generic[models.TModel_contra, TCreateModel_contra], CreateParams[TCreateModel_contra], WithId[types._IdType], WithModelInst[models.TModel_contra]):
+        Generic[models.TModel_contra, types.TId, TCreateModel_contra], CreateParams[TCreateModel_contra], WithId[types.TId], WithModelInst[models.TModel_contra]):
     pass
 
 
@@ -104,14 +104,14 @@ class AfterDeleteCustomParams(TypedDict):
     pass
 
 
-TAfterCreateCustomParams = TypeVar(
-    'TAfterCreateCustomParams', bound=AfterCreateCustomParams, default=AfterCreateCustomParams)
-TAfterReadCustomParams = TypeVar(
-    'TAfterReadCustomParams', bound=AfterReadCustomParams, default=AfterReadCustomParams)
-TAfterUpdateCustomParams = TypeVar(
-    'TAfterUpdateCustomParams', bound=AfterUpdateCustomParams, default=AfterUpdateCustomParams)
-TAfterDeleteCustomParams = TypeVar(
-    'TAfterDeleteCustomParams', bound=AfterDeleteCustomParams, default=AfterDeleteCustomParams)
+TAfterCreateCustomParams_contra = TypeVar(
+    'TAfterCreateCustomParams_contra', bound=AfterCreateCustomParams, default=AfterCreateCustomParams, contravariant=True)
+TAfterReadCustomParams_contra = TypeVar(
+    'TAfterReadCustomParams_contra', bound=AfterReadCustomParams, default=AfterReadCustomParams, contravariant=True)
+TAfterUpdateCustomParams_contra = TypeVar(
+    'TAfterUpdateCustomParams_contra', bound=AfterUpdateCustomParams, default=AfterUpdateCustomParams, contravariant=True)
+TAfterDeleteCustomParams_contra = TypeVar(
+    'TAfterDeleteCustomParams_contra', bound=AfterDeleteCustomParams, default=AfterDeleteCustomParams, contravariant=True)
 
 
 class HasModel(Protocol[models.TModel_co]):
@@ -137,20 +137,20 @@ class HasBuildSelectById(Protocol[models.TModel, types.TId_contra]):
 
 
 class SimpleIdModelService(
-    Generic[models.TModelSimple, types.TIdSimple],
-    HasModel[models.TModelSimple],
-    HasModelId[models.TModelSimple, types.TIdSimple],
-    HasBuildSelectById[models.TModelSimple, types.TIdSimple],
+    Generic[models.TSimpleModel, types.TSimpleId],
+    HasModel[models.TSimpleModel],
+    HasModelId[models.TSimpleModel, types.TSimpleId],
+    HasBuildSelectById[models.TSimpleModel, types.TSimpleId],
 ):
 
-    _MODEL: Type[models.TModelSimple]
+    _MODEL: Type[models.TSimpleModel]
 
     @classmethod
-    def model_id(cls, inst: models.TModelSimple) -> types.TIdSimple:
+    def model_id(cls, inst: models.TSimpleModel) -> types.TSimpleId:
         return inst.id  # type: ignore
 
     @classmethod
-    def _build_select_by_id(cls, id: types.TIdSimple) -> SelectOfScalar[models.TModelSimple]:
+    def _build_select_by_id(cls, id: types.TSimpleId) -> SelectOfScalar[models.TSimpleModel]:
         return select(cls._MODEL).where(cls._MODEL.id == id)
 
 
@@ -163,14 +163,14 @@ class ServiceError(Exception):
 
 
 class NotFoundError(ServiceError):
-    def __init__(self, model: Type[models.Model], id: types._IdType):
+    def __init__(self, model: Type[models.Model], id: types.Id):
         self.error_message = model.__class__.__name__ + \
             ' with id ' + str(id) + ' not found'
         raise ValueError(self.error_message)
 
 
 class AlreadyExistsError(ServiceError):
-    def __init__(self, model: Type[models.Model], id: types._IdType):
+    def __init__(self, model: Type[models.Model], id: types.Id):
         self.error_message = model.__class__.__name__ + \
             ' with id ' + str(id) + ' already exists'
         raise ValueError(self.error_message)
@@ -184,21 +184,111 @@ class UnauthorizedError(ServiceError):
     pass
 
 
+class ServiceProtocol(Generic[
+    models.TModel,
+        types.TId,
+        TCreateModel,
+        TUpdateModel,
+        TAfterCreateCustomParams_contra,
+        TAfterReadCustomParams_contra,
+        TAfterUpdateCustomParams_contra,
+        TAfterDeleteCustomParams_contra
+],
+        HasModel[models.TModel],
+        HasModelInstFromCreateModel[models.TModel, TCreateModel],
+        HasModelId[models.TModel, types.TId],
+        HasBuildSelectById[models.TModel, types.TId],
+        Protocol):
+
+    @classmethod
+    async def _get_by_id(cls, session: AsyncSession, id: types.TId) -> models.TModel | None:
+        ...
+
+    @classmethod
+    async def _get_by_id_with_exception(cls, session: AsyncSession, id: types.TId) -> models.TModel:
+        ...
+
+    @classmethod
+    def build_pagination(cls, query: SelectOfScalar[models.TModel], pagination: Pagination) -> SelectOfScalar[models.TModel]:
+        ...
+
+    @classmethod
+    async def _check_authorization_existing(cls, params: CheckAuthorizationExistingParams[models.TModel, types.TId]) -> None:
+        ...
+
+    @classmethod
+    async def _check_authorization_new(cls, params: CheckAuthorizationNewParams[TCreateModel]) -> None:
+        ...
+
+    @classmethod
+    async def _check_validation_delete(cls, params: CheckValidationDeleteParams[types.TId]) -> None:
+        ...
+
+    @classmethod
+    async def _check_validation_patch(cls, params: CheckValidationPatchParams[models.TModel, types.TId, TUpdateModel]) -> None:
+        ...
+
+    @classmethod
+    async def _check_validation_post(cls, params: CheckValidationPostParams[TCreateModel]) -> None:
+        ...
+
+    @classmethod
+    async def read(cls, params: ReadParams[types.TId], custom_params: TAfterReadCustomParams_contra = {}) -> models.TModel:
+        ...
+
+    @classmethod
+    async def _after_read(cls, params: AfterReadParams[models.TModel, types.TId], custom_params: TAfterReadCustomParams_contra = {}) -> None:
+        ...
+
+    @classmethod
+    async def create(cls, params: CreateParams[TCreateModel], custom_params: TAfterCreateCustomParams_contra = {}) -> models.TModel:
+        ...
+
+    @classmethod
+    async def _after_create(cls, params: AfterCreateParams[models.TModel, types.TId, TCreateModel], custom_params: TAfterCreateCustomParams_contra = {}) -> None:
+        ...
+
+    @classmethod
+    async def update(cls, params: UpdateParams[types.TId, TUpdateModel], custom_params: TAfterUpdateCustomParams_contra = {}) -> models.TModel:
+        ...
+
+    @classmethod
+    async def _update_model_inst(cls, inst: models.TModel, update_model: TUpdateModel) -> None:
+        ...
+
+    @classmethod
+    async def _after_update(cls, params: AfterUpdateParams[models.TModel, types.TId, TUpdateModel], custom_params: TAfterUpdateCustomParams_contra = {}) -> None:
+        ...
+
+    @classmethod
+    async def delete(cls, params: DeleteParams[types.TId], custom_params: TAfterDeleteCustomParams_contra = {}) -> None:
+        ...
+
+    @classmethod
+    async def _after_delete(cls, params: AfterDeleteParams[models.TModel, types.TId], custom_params: TAfterDeleteCustomParams_contra = {}) -> None:
+        ...
+
+
 class Service(
     Generic[
         models.TModel,
         types.TId,
         TCreateModel,
         TUpdateModel,
-        TAfterCreateCustomParams,
-        TAfterReadCustomParams,
-        TAfterUpdateCustomParams,
-        TAfterDeleteCustomParams
+        TAfterCreateCustomParams_contra,
+        TAfterReadCustomParams_contra,
+        TAfterUpdateCustomParams_contra,
+        TAfterDeleteCustomParams_contra
     ],
-    HasModel[models.TModel],
-    HasModelInstFromCreateModel[models.TModel, TCreateModel],
-    HasModelId[models.TModel, types.TId],
-    HasBuildSelectById[models.TModel, types.TId],
+    ServiceProtocol[
+        models.TModel,
+        types.TId,
+        TCreateModel,
+        TUpdateModel,
+        TAfterCreateCustomParams_contra,
+        TAfterReadCustomParams_contra,
+        TAfterUpdateCustomParams_contra,
+        TAfterDeleteCustomParams_contra],
 ):
 
     @classmethod
@@ -215,9 +305,6 @@ class Service(
     @classmethod
     def build_pagination(cls, query: SelectOfScalar[models.TModel], pagination: Pagination):
         return query.offset(pagination.offset).limit(pagination.limit)
-
-    async def _delete(self, session: AsyncSession):
-        await session.delete(self)
 
     @classmethod
     async def _check_authorization_existing(cls, params: CheckAuthorizationExistingParams[models.TModel, types.TId]) -> None:
@@ -245,7 +332,7 @@ class Service(
         pass
 
     @classmethod
-    async def read(cls, params: ReadParams[types.TId], custom_params: TAfterReadCustomParams = {}) -> models.TModel:
+    async def read(cls, params: ReadParams[types.TId], custom_params: TAfterReadCustomParams_contra = {}) -> models.TModel:
         """Used in conjunction with API endpoints, raises exceptions while trying to get an instance of the model by ID"""
 
         model_inst = await cls._get_by_id_with_exception(params['session'], params['id'])
@@ -258,12 +345,12 @@ class Service(
         return model_inst
 
     @classmethod
-    async def _after_read(cls, params: AfterReadParams[models.TModel, types.TId], custom_params: TAfterReadCustomParams = {}) -> None:
+    async def _after_read(cls, params: AfterReadParams[models.TModel, types.TId], custom_params: TAfterReadCustomParams_contra = {}) -> None:
         """Functionality to run after getting an instance of the model by ID but before returning"""
         pass
 
     @classmethod
-    async def create(cls, params: CreateParams[TCreateModel], custom_params: TAfterCreateCustomParams = {}) -> models.TModel:
+    async def create(cls, params: CreateParams[TCreateModel], custom_params: TAfterCreateCustomParams_contra = {}) -> models.TModel:
         """Used in conjunction with API endpoints, raises exceptions while trying to create a new instance of the model"""
 
         await cls._check_authorization_new(params)
@@ -283,12 +370,12 @@ class Service(
         return cls._MODEL(**create_model.model_dump())
 
     @classmethod
-    async def _after_create(cls, params: AfterCreateParams[models.TModel, TCreateModel], custom_params: TAfterCreateCustomParams = {}) -> None:
+    async def _after_create(cls, params: AfterCreateParams[models.TModel, types.TId, TCreateModel], custom_params: TAfterCreateCustomParams_contra = {}) -> None:
         """Functionality to run after creating a new instance of the model but before returning"""
         pass
 
     @classmethod
-    async def update(cls, params: UpdateParams[types.TId, TUpdateModel], custom_params: TAfterUpdateCustomParams = {}) -> models.TModel:
+    async def update(cls, params: UpdateParams[types.TId, TUpdateModel], custom_params: TAfterUpdateCustomParams_contra = {}) -> models.TModel:
         """Used in conjunction with API endpoints, raises exceptions while trying to update an instance of the model by ID"""
 
         # when changing this, be sure to update the services/gallery.py file as well
@@ -321,12 +408,12 @@ class Service(
         inst.sqlmodel_update(update_model.model_dump(exclude_unset=True))
 
     @classmethod
-    async def _after_update(cls, params: AfterUpdateParams[models.TModel, types.TId, TUpdateModel], custom_params: TAfterUpdateCustomParams = {}) -> None:
+    async def _after_update(cls, params: AfterUpdateParams[models.TModel, types.TId, TUpdateModel], custom_params: TAfterUpdateCustomParams_contra = {}) -> None:
         """Functionality to run after updating an instance of the model but before returning"""
         pass
 
     @classmethod
-    async def delete(cls, params: DeleteParams[types.TId], custom_params: TAfterDeleteCustomParams = {}) -> None:
+    async def delete(cls, params: DeleteParams[types.TId], custom_params: TAfterDeleteCustomParams_contra = {}) -> None:
         """Used in conjunction with API endpoints, raises exceptions while trying to delete an instance of the model by ID"""
 
         model_inst = await cls._get_by_id_with_exception(params['session'], params['id'])
@@ -348,12 +435,9 @@ class Service(
         await params['session'].commit()
 
     @classmethod
-    async def _after_delete(cls, params: AfterDeleteParams[models.TModel, types.TId], custom_params: TAfterDeleteCustomParams = {}) -> None:
+    async def _after_delete(cls, params: AfterDeleteParams[models.TModel, types.TId], custom_params: TAfterDeleteCustomParams_contra = {}) -> None:
         """Functionality to run after deleting an instance of the model but before returning"""
         pass
-
-
-TService = TypeVar('TService', bound=Service, covariant=True)
 
 
 '''
