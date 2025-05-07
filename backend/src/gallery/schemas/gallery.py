@@ -74,5 +74,4 @@ class GalleryAfterDeleteCustomParams(base_service.AfterDeleteCustomParams):
 
 
 class GalleryAfterUpdateCustomParams(base_service.AfterUpdateCustomParams):
-    previous_path: pathlib.Path | None
     rename_folder: bool | None

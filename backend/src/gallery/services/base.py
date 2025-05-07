@@ -154,23 +154,33 @@ class SimpleIdModelService(
         return select(cls._MODEL).where(cls._MODEL.id == id)
 
 
-class NotFoundError(Exception):
+class ServiceError(Exception):
+    error_message: str
+
+    def __init__(self, error_message: str):
+        self.error_message = error_message
+        raise Exception(error_message)
+
+
+class NotFoundError(ServiceError):
     def __init__(self, model: Type[models.Model], id: types._IdType):
-        raise ValueError(model.__class__.__name__ +
-                         ' with id ' + str(id) + ' not found')
+        self.error_message = model.__class__.__name__ + \
+            ' with id ' + str(id) + ' not found'
+        raise ValueError(self.error_message)
 
 
-class AlreadyExistsError(Exception):
+class AlreadyExistsError(ServiceError):
     def __init__(self, model: Type[models.Model], id: types._IdType):
-        raise ValueError(
-            model.__class__.__name__ + ' with id ' + str(id) + ' already exists')
+        self.error_message = model.__class__.__name__ + \
+            ' with id ' + str(id) + ' already exists'
+        raise ValueError(self.error_message)
 
 
-class NotAvailableError(Exception):
+class NotAvailableError(ServiceError):
     pass
 
 
-class UnauthorizedError(Exception):
+class UnauthorizedError(ServiceError):
     pass
 
 
@@ -281,6 +291,8 @@ class Service(
     async def update(cls, params: UpdateParams[types.TId, TUpdateModel], custom_params: TAfterUpdateCustomParams = {}) -> models.TModel:
         """Used in conjunction with API endpoints, raises exceptions while trying to update an instance of the model by ID"""
 
+        # when changing this, be sure to update the services/gallery.py file as well
+
         model_inst = await cls._get_by_id_with_exception(params['session'], params['id'])
 
         await cls._check_authorization_existing({
@@ -339,6 +351,9 @@ class Service(
     async def _after_delete(cls, params: AfterDeleteParams[models.TModel, types.TId], custom_params: TAfterDeleteCustomParams = {}) -> None:
         """Functionality to run after deleting an instance of the model but before returning"""
         pass
+
+
+TService = TypeVar('TService', bound=Service, covariant=True)
 
 
 '''

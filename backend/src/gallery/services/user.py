@@ -1,5 +1,6 @@
 from sqlmodel import select, or_
 from sqlmodel.ext.asyncio.session import AsyncSession
+from pydantic import BaseModel
 from ..models.tables import User as UserTable
 from . import base
 from .. import types, utils

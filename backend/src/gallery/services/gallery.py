@@ -161,26 +161,46 @@ class Gallery(
         )
 
     @classmethod
+    async def update(cls, params, custom_params={}):
+        """Used in conjunction with API endpoints, raises exceptions while trying to update an instance of the model by ID"""
+
+        model_inst = await cls._get_by_id_with_exception(params['session'], params['id'])
+
+        await cls._check_authorization_existing({
+            'session': params['session'],
+            'c': params['c'],
+            'model_inst': model_inst,
+            'method': 'get',
+            'id': params['id'],
+            'admin': params['admin'],
+            'authorized_user_id': params['authorized_user_id']
+        })
+        await cls._check_validation_patch({**params, 'model_inst': model_inst})
+
+        original_dir = await cls.get_dir(params['session'], model_inst, params['c'].galleries_dir)
+
+        await cls._update_model_inst(model_inst, params['update_model'])
+
+        # await cls._after_update({
+        #     **params, 'model_inst': model_inst}, custom_params)
+
+        # by default, rename the folder if the name, date, or parent_id has changed
+        if custom_params.get('rename_folder', True):
+            if 'name' in params['update_model'].model_fields_set or 'date' in params['update_model'].model_fields_set or 'parent_id' in params['update_model'].model_fields_set:
+                new_dir = (await cls.get_dir(params['session'], model_inst, params['c'].galleries_dir)).parent / cls.model_folder_name(model_inst)
+                original_dir.rename(new_dir)
+
+        await params['session'].commit()
+        await params['session'].refresh(model_inst)
+        return model_inst
+
+    @classmethod
     async def _after_create(cls, params, custom_params={}):
 
         if custom_params.get('mkdir', False):
             (await cls.get_dir(params['session'], params['model_inst'], params['c'].galleries_dir)).mkdir()
 
         return await super()._after_create(params, custom_params)
-
-    @classmethod
-    async def _after_update(cls, params, custom_params={}):
-
-        # rename the folder
-        if 'name' in params['update_model'].model_fields_set or 'date' in params['update_model'].model_fields_set or 'parent_id' in params['update_model'].model_fields_set:
-            if custom_params['rename_folder']:
-                new_dir = (await cls.get_dir(params['session'], params['model_inst'], params['c'].galleries_dir)).parent / cls.model_folder_name(params['model_inst'])
-
-                if custom_params['previous_path'] is None:
-                    raise Exception(
-                        'Cannot have have previous_path None when rename_folder=True')
-
-                custom_params['previous_path'].rename(new_dir)
 
     @classmethod
     async def _after_delete(cls, params, custom_params={}):

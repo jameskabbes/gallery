@@ -8,15 +8,16 @@ from .. import types
 from typing import Annotated, cast
 from ..auth import utils as auth_utils
 
-PREFIX = '/users'
-TAG = 'User'
+
+class _Base(base.HasRouterNecessities[UserService]):
+    _PREFIX = '/users'
+    _TAGS = ['User']
+    _SERVICE = UserService
 
 
-class UserRouter(base.Router[UserTable]):
+class UserRouter(base.Router[UserTable, types.User.id], _Base):
 
     _ADMIN = False
-    _PREFIX = PREFIX
-    _TAGS = [TAG]
 
     def _set_routes(self):
 
@@ -25,14 +26,9 @@ class UserRouter(base.Router[UserTable]):
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
                 auth_utils.make_get_auth_dependency(raise_exceptions=True, c=self.client))]
         ) -> user_schema.UserPrivate:
-            async with self.client.AsyncSession() as session:
-                return user_schema.UserPrivate.model_validate(await UserService.read({
-                    'session': session,
-                    'c': self.client,
-                    'id': cast(types.User.id, authorization._user_id),
-                    'authorized_user_id': authorization._user_id,
-                    'admin': False,
-                }))
+            user = self.get(self.client, authorization, cast(
+                types.User.id, authorization._user_id))
+            return user_schema.UserPrivate.model_validate(user)
 
         @self.router.patch('/me/')
         async def patch_user_me(
@@ -102,86 +98,86 @@ class UserRouter(base.Router[UserTable]):
                     available=not await UserService.is_username_available(session, username))
 
 
-class UserAdminRouter(base.Router[UserTable]):
+# class UserAdminRouter(_Base, base.Router[UserTable, types.User.id, UserService, user_schema.UserCreate, user_schema.UserUpdate]):
 
-    _ADMIN = True
-    _PREFIX = PREFIX
-    _TAGS = [TAG]
+#     _ADMIN = True
+#     _PREFIX = PREFIX
+#     _TAGS = [TAG]
 
-    def _set_routes(self):
+#     def _set_routes(self):
 
-        @self.router.get('/{user_id}/')
-        async def get_user_by_id(
-            user_id: types.User.id,
-            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))]
-        ) -> UserTable:
-            async with self.client.AsyncSession() as session:
-                return await UserService.read({
-                    'admin': True,
-                    'c': self.client,
-                    'session': session,
-                    'id': user_id,
-                    'authorized_user_id': authorization._user_id,
-                })
+#         @self.router.get('/{user_id}/')
+#         async def get_user_by_id(
+#             user_id: types.User.id,
+#             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+#                 auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))]
+#         ) -> UserTable:
+#             async with self.client.AsyncSession() as session:
+#                 return await UserService.read({
+#                     'admin': True,
+#                     'c': self.client,
+#                     'session': session,
+#                     'id': user_id,
+#                     'authorized_user_id': authorization._user_id,
+#                 })
 
-        @self.router.get('/')
-        async def get_users_admin(
-            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))],
-            pagination: Annotated[pagination_schema.Pagination, Depends(
-                base.get_pagination())]
-        ) -> list[UserTable]:
+#         @self.router.get('/')
+#         async def get_users_admin(
+#             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+#                 auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))],
+#             pagination: Annotated[pagination_schema.Pagination, Depends(
+#                 base.get_pagination())]
+#         ) -> list[UserTable]:
 
-            async with self.client.AsyncSession() as session:
-                query = select(UserTable)
-                query = UserService.build_pagination(query, pagination)
-                users = (await session.exec(query)).all()
-                return list(users)
+#             async with self.client.AsyncSession() as session:
+#                 query = select(UserTable)
+#                 query = UserService.build_pagination(query, pagination)
+#                 users = (await session.exec(query)).all()
+#                 return list(users)
 
-        @self.router.post('/')
-        async def post_user(
-            user_create_admin: user_schema.UserAdminCreate,
-            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))]
-        ) -> UserTable:
-            async with self.client.AsyncSession() as session:
-                return await UserService.create({
-                    'session': session,
-                    'admin': True,
-                    'authorized_user_id': authorization._user_id,
-                    'c': self.client,
-                    'create_model': user_create_admin,
-                })
+#         @self.router.post('/')
+#         async def post_user(
+#             user_create_admin: user_schema.UserAdminCreate,
+#             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+#                 auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))]
+#         ) -> UserTable:
+#             async with self.client.AsyncSession() as session:
+#                 return await UserService.create({
+#                     'session': session,
+#                     'admin': True,
+#                     'authorized_user_id': authorization._user_id,
+#                     'c': self.client,
+#                     'create_model': user_create_admin,
+#                 })
 
-        @self.router.patch('/{user_id}/')
-        async def patch_user(
-            user_id: types.User.id,
-            user_update_admin: user_schema.UserAdminUpdate,
-            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))]
-        ) -> UserTable:
-            async with self.client.AsyncSession() as session:
-                return await UserService.update({
-                    'session': session,
-                    'c': self.client,
-                    'admin': True,
-                    'authorized_user_id': authorization._user_id,
-                    'id': user_id,
-                    'update_model': user_update_admin,
-                })
+#         @self.router.patch('/{user_id}/')
+#         async def patch_user(
+#             user_id: types.User.id,
+#             user_update_admin: user_schema.UserAdminUpdate,
+#             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+#                 auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))]
+#         ) -> UserTable:
+#             async with self.client.AsyncSession() as session:
+#                 return await UserService.update({
+#                     'session': session,
+#                     'c': self.client,
+#                     'admin': True,
+#                     'authorized_user_id': authorization._user_id,
+#                     'id': user_id,
+#                     'update_model': user_update_admin,
+#                 })
 
-        @self.router.delete('/{user_id}/', status_code=status.HTTP_204_NO_CONTENT)
-        async def delete_user(
-            user_id: types.User.id,
-            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))]
-        ):
-            async with self.client.AsyncSession() as session:
-                return await UserService.delete({
-                    'session': session,
-                    'c': self.client,
-                    'authorized_user_id': authorization._user_id,
-                    'id': user_id,
-                    'admin': True,
-                })
+#         @self.router.delete('/{user_id}/', status_code=status.HTTP_204_NO_CONTENT)
+#         async def delete_user(
+#             user_id: types.User.id,
+#             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+#                 auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))]
+#         ):
+#             async with self.client.AsyncSession() as session:
+#                 return await UserService.delete({
+#                     'session': session,
+#                     'c': self.client,
+#                     'authorized_user_id': authorization._user_id,
+#                     'id': user_id,
+#                     'admin': True,
+#                 })

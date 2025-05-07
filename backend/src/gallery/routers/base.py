@@ -1,12 +1,14 @@
 from abc import ABC
-from typing import TypeVar, Type, List, Callable, ClassVar, TYPE_CHECKING, Generic
+from typing import TypeVar, Type, List, Callable, ClassVar, TYPE_CHECKING, Generic, Protocol
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.routing import APIRoute
 from sqlmodel import SQLModel, Session, select
 from functools import wraps, lru_cache
 from enum import Enum
-from .. import client, models
+from .. import client, models, types
 from ..services import base as base_service
 from ..schemas import pagination as pagination_schema
+from ..auth import utils as auth_utils
 
 
 def get_pagination(max_limit: int = 100, default_limit: int = 10):
@@ -15,13 +17,20 @@ def get_pagination(max_limit: int = 100, default_limit: int = 10):
     return dependency
 
 
-class Router(
-    Generic[models.TModel],
-):
+class HasRouterNecessities(Generic[base_service.TService], Protocol):
+    _SERVICE: Type[base_service.TService]
+    _ADMIN: ClassVar[bool]
+    _PREFIX: ClassVar[str]
+    _TAGS: ClassVar[list[str | Enum] | None]
 
-    _ADMIN: ClassVar[bool] = NotImplemented
-    _PREFIX: ClassVar[str] = ""
-    _TAGS: ClassVar[list[str | Enum] | None] = None
+
+class Router(
+    Generic[
+        models.TModel,
+        types.TId,
+    ],
+    HasRouterNecessities,
+):
 
     def __init__(self, client: client.Client):
 
@@ -39,6 +48,28 @@ class Router(
 
     def _set_routes(self) -> None:
         pass
+
+    @classmethod
+    async def get(cls, c: client.Client, authorization: auth_utils.GetAuthReturn, id: types.TId) -> models.TModel:
+
+        async with c.AsyncSession() as session:
+            try:
+                item = await cls._SERVICE.read(
+                    {
+                        'session': session,
+                        'admin': cls._ADMIN,
+                        'c': c,
+                        'id': id,
+                        'authorized_user_id': authorization._user_id,
+                    }
+                )
+            except base_service.NotFoundError as e:
+                raise HTTPException(
+                    status.HTTP_404_NOT_FOUND, detail=e.error_message)
+            except Exception as e:
+                raise
+
+            return item
 
     @classmethod
     @lru_cache(maxsize=None)
