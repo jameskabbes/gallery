@@ -3,10 +3,10 @@ from pydantic import EmailStr, StringConstraints
 import re
 import datetime as datetime_module
 
-TPhoneNumber = NewType('TPhoneNumber', str)
-TEmail = Annotated[EmailStr, StringConstraints(
+PhoneNumber = NewType('PhoneNumber', str)
+Email = Annotated[EmailStr, StringConstraints(
     min_length=1, max_length=254)]
-TJwtEncodedStr = NewType('TJwtEncodedStr', str)
+JwtEncodedStr = NewType('JwtEncodedStr', str)
 
 
 class PermissionLevel:
@@ -29,13 +29,13 @@ class UserRole:
     name = Literal['admin', 'user']
 
 
-TUserId = NewType('TUserId', str)
+UserId = NewType('UserId', str)
 
 
 class User:
-    id = TUserId
-    email = TEmail
-    phone_number = TPhoneNumber
+    id = UserId
+    email = Email
+    phone_number = PhoneNumber
 
     password = Annotated[str, StringConstraints(
         min_length=1, max_length=64)]
@@ -60,28 +60,28 @@ class AuthCredential:
     type = Literal['access_token', 'api_key', 'otp', 'sign_up']
 
 
-TOTPId = NewType('TOTPId', str)
+OTPId = NewType('OTPId', str)
 
 
 class OTP(AuthCredential):
-    id = TOTPId
+    id = OTPId
     code = Annotated[str, StringConstraints(
         min_length=6, max_length=6, pattern=re.compile(r'^\d{' + str(6) + r'}$'))]
     hashed_code = str
 
 
-TUserAccessTokenId = NewType('TUserAccessTokenId', str)
+UserAccessTokenId = NewType('UserAccessTokenId', str)
 
 
 class UserAccessToken(AuthCredential):
-    id = TUserAccessTokenId
+    id = UserAccessTokenId
 
 
-TApiKeyId = NewType('TApiKeyId', str)
+ApiKeyId = NewType('ApiKeyId', str)
 
 
 class ApiKey(AuthCredential):
-    id = TApiKeyId
+    id = ApiKeyId
     name = Annotated[str, StringConstraints(
         min_length=1, max_length=256)]
     order_by = Literal['issued', 'expiry', 'name']
@@ -91,18 +91,18 @@ class SignUp(AuthCredential):
     email = User.email
 
 
-TGalleryId = NewType('TGalleryId', str)
+GalleryId = NewType('GalleryId', str)
 
 
 class Gallery:
-    id = TGalleryId
+    id = GalleryId
     user_id = User.id
 
     # name can't start with the `YYYY-MM-DD ` pattern
     name = Annotated[str, StringConstraints(
         min_length=1, max_length=256, pattern=re.compile(r'^(?!\d{4}-\d{2}-\d{2} ).*'))]
     visibility_level = VisibilityLevel.id
-    parent_id = TGalleryId
+    parent_id = GalleryId
     description = Annotated[str, StringConstraints(
         min_length=0, max_length=20000)]
     date = datetime_module.date
@@ -121,7 +121,7 @@ class _GalleryPermissionBase:
 
 
 class GalleryPermissionId(NamedTuple):
-    gallery_id: TGalleryId
+    gallery_id: GalleryId
     user_id: User.id
 
 
@@ -143,11 +143,11 @@ class ApiKeyScope(_ApiKeyScopeBase):
     id = ApiKeyScopeId
 
 
-TFileId = NewType('TFileId', str)
+FileId = NewType('FileId', str)
 
 
 class File:
-    id = TFileId
+    id = FileId
     stem = str
     suffix = Annotated[str, StringConstraints(
         to_lower=True)]
@@ -155,12 +155,12 @@ class File:
     gallery_id = Gallery.id
 
 
-TImageVersionId = NewType('TImageVersionId', str)
+ImageVersionId = NewType('ImageVersionId', str)
 
 
 class ImageVersion:
 
-    id = TImageVersionId
+    id = ImageVersionId
     gallery_id = Gallery.id
     base_name = Annotated[str, StringConstraints(
         # prohibit underscore
@@ -169,7 +169,7 @@ class ImageVersion:
     version = Annotated[str, StringConstraints(
         # version cannot be exactly two digits
         pattern=re.compile(r'^(?!\d{2}$).+$'))]
-    parent_id = TImageVersionId
+    parent_id = ImageVersionId
     datetime = datetime_module.datetime
     description = Annotated[str, StringConstraints(
         min_length=0, max_length=20000)]
@@ -183,7 +183,7 @@ class ImageFileMetadata:
     scale = int
 
 
-SimpleId = TUserId | TOTPId | TUserAccessTokenId | TApiKeyId | TGalleryId | TFileId | TImageVersionId
+SimpleId = UserId | OTPId | UserAccessTokenId | ApiKeyId | GalleryId | FileId | ImageVersionId
 Id = SimpleId | GalleryPermissionId | ApiKeyScopeId
 
 TSimpleId = TypeVar('TSimpleId', bound=SimpleId)

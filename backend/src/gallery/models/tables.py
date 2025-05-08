@@ -44,7 +44,7 @@ class UserAccessToken(_AuthCredentialTableBase, table=True):
 
     __tablename__ = 'user_access_token'  # type: ignore
 
-    id: types.ImageVersion.id = Field(
+    id: types.UserAccessToken.id = Field(
         primary_key=True, index=True, unique=True, const=True)
 
     issued: types.AuthCredential.issued = Field(

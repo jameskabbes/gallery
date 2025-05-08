@@ -22,7 +22,7 @@ class ApiKeyUpdate(ApiKeyImport):
     expiry: types.AuthCredential.expiry | None = None
 
 
-class ApiKeyAdminUpdate(ApiKeyUpdate):
+class ApiKeyAdminUpdate(ApiKeyUpdate, BaseModel):
     pass
 
 
@@ -31,7 +31,7 @@ class ApiKeyCreate(ApiKeyImport):
     expiry: types.AuthCredential.expiry
 
 
-class ApiKeyAdminCreate(ApiKeyCreate):
+class ApiKeyAdminCreate(ApiKeyCreate, BaseModel):
     user_id: types.User.id
 
 

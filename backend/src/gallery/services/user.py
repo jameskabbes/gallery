@@ -64,7 +64,7 @@ class User(
                     create_model.password)
 
         return cls._MODEL(
-            id=types.TUserId(utils.generate_uuid()),
+            id=types.User.id(utils.generate_uuid()),
             ** d,
         )
 
@@ -99,9 +99,9 @@ class User(
         if not params['admin']:
             if params['model_inst'].id != params['authorized_user_id']:
                 if cls.is_inst_public(params['model_inst']):
-                    if params['method'] == 'delete' or params['method'] == 'patch':
+                    if params['operation'] == 'delete' or params['operation'] == 'patch':
                         raise base.UnauthorizedError(
-                            'Unauthorized to {method} this user'.format(method=params['method']))
+                            'Unauthorized to {method} this user'.format(method=params['operation']))
                 else:
                     raise base.NotFoundError(
                         UserTable, params['model_inst'].id)

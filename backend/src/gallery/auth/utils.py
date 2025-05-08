@@ -66,13 +66,13 @@ class OAuth2PasswordBearerMultiSource(OAuth2):
         if authorization:
             scheme, param = get_authorization_scheme_param(authorization)
             if scheme.lower() == "bearer":
-                tokens.add(param)
+                tokens.add(typing.cast(types.JwtEncodedStr, param))
                 provided_auth_types.add("bearer")
 
         # HTTP-only Cookie
         cookie_access_token = request.cookies.get(auth.ACCESS_TOKEN_COOKIE_KEY)
         if cookie_access_token:
-            tokens.add(cookie_access_token)
+            tokens.add(typing.cast(types.JwtEncodedStr, cookie_access_token))
             provided_auth_types.add("cookie")
 
         if len(tokens) > 1:
@@ -91,16 +91,13 @@ class OAuth2PasswordBearerMultiSource(OAuth2):
 oauth2_scheme = OAuth2PasswordBearerMultiSource(
     flows=OAuthFlowsModel(password=OAuthFlowPassword(tokenUrl="auth/token/")))
 
-TAuthCredentialInstance = typing.TypeVar(
-    'TAuthCredentialInstance', bound=schemas.AuthCredentialInstance, covariant=True)
 
-
-class GetAuthReturn(BaseModel, Generic[TAuthCredentialInstance]):
+class GetAuthReturn(BaseModel, Generic[schemas.TAuthCredentialInstance_co]):
     isAuthorized: bool = False
     exception: typing.Optional[exceptions.StatusCodeAndDetail] = None
     user: typing.Optional[user_schema.UserPrivate] = None
     scope_ids: typing.Optional[set[types.Scope.id]] = None
-    auth_credential: typing.Optional[TAuthCredentialInstance] = None
+    auth_credential: typing.Optional[schemas.TAuthCredentialInstance_co] = None
 
     @property
     def _user_id(self) -> types.User.id | None:
@@ -139,10 +136,6 @@ class GetAuthFromJwtKwargs(_MakeGetAuthDepedencyAndGetAuthFromJwtKwargs, _GetAut
     token: typing.Optional[types.JwtEncodedStr]
 
 
-TAuthCredentialTableInstance = typing.TypeVar(
-    'TAuthCredentialTableInstance', bound=schemas.AuthCredentialTableInstance)
-
-
 def is_valid_time_bounds(
         issued: datetime_module.datetime,
         expiry: datetime_module.datetime,
@@ -165,9 +158,9 @@ def is_valid_time_bounds(
 
 
 async def get_auth_from_auth_credential_table_inst(
-    auth_credential_table_inst: TAuthCredentialTableInstance,
+    auth_credential_table_inst: schemas.TAuthCredentialTableInstance,
         **kwargs: typing.Unpack[GetAuthFromTableKwargs]
-) -> GetAuthReturn[TAuthCredentialTableInstance]:
+) -> GetAuthReturn[schemas.TAuthCredentialTableInstance]:
 
     session = kwargs.get('session')
     c = kwargs.get('c')

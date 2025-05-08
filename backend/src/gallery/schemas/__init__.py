@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from typing import Type, Literal
+from typing import Type, Literal, TypeVar
 from ..models.tables import UserAccessToken, ApiKey, OTP
 from ..models.models import SignUp
 
@@ -40,3 +40,11 @@ AuthCredentialJwtAndNotTableInstance = SignUp
 
 PrimaryAuthCredential = Type[UserAccessToken] | Type[ApiKey]
 PrimaryAuthCredentialInstance = UserAccessToken | ApiKey
+
+
+TAuthCredentialTableInstance = TypeVar(
+    'TAuthCredentialTableInstance', bound=AuthCredentialTableInstance)
+
+
+TAuthCredentialInstance_co = TypeVar(
+    'TAuthCredentialInstance_co', bound=AuthCredentialInstance, covariant=True)

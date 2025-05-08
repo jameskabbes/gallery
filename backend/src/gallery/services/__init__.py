@@ -52,6 +52,3 @@ Service = UserService | UserAccessTokenService | ApiKeyService | OTPService | Ga
 TService = TypeVar('TService', bound=Service)
 TService_co = TypeVar('TService_co', bound=Service, covariant=True)
 TService_contra = TypeVar('TService_contra', bound=Service, contravariant=True)
-
-TServiceProtocol = TypeVar(
-    'TServiceProtocol', bound=base.ServiceProtocol, covariant=True)

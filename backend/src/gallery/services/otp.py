@@ -34,7 +34,7 @@ class OTP(
     def model_inst_from_create_model(cls, create_model):
 
         return cls._MODEL(
-            id=utils.generate_uuid(),
+            id=types.OTP.id(utils.generate_uuid()),
             issued=datetime_module.datetime.now().astimezone(datetime_module.UTC),
             **create_model.model_dump()
         )

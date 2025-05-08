@@ -26,7 +26,7 @@ class UserAccessToken(
     ],
     auth_credential_service.JwtIO[
         UserAccessTokenTable,
-        types.User.id,
+        types.UserAccessToken.id,
     ],
     auth_credential_service.Table[
         UserAccessTokenTable,
@@ -44,7 +44,7 @@ class UserAccessToken(
     def model_inst_from_create_model(cls, create_model):
 
         return cls._MODEL(
-            id=utils.generate_uuid(),
+            id=types.UserAccessToken.id(utils.generate_uuid()),
             issued=datetime_module.datetime.now().astimezone(datetime_module.UTC),
             **create_model.model_dump(exclude_unset=True, exclude_defaults=True, exclude_none=True)
         )
