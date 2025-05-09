@@ -8,12 +8,12 @@ from ..schemas.pagination import Pagination
 from .. import models
 from collections.abc import Sequence
 
-TCreateModelService = TypeVar(
-    'TCreateModelService', bound=BaseModel, default=BaseModel)
-TCreateModelService_contra = TypeVar(
-    'TCreateModelService_contra', bound=BaseModel, default=BaseModel, contravariant=True)
-TCreateModelService_co = TypeVar(
-    'TCreateModelService_co', bound=BaseModel, default=BaseModel, covariant=True)
+TCreateModel = TypeVar(
+    'TCreateModel', bound=BaseModel, default=BaseModel)
+TCreateModel_contra = TypeVar(
+    'TCreateModel_contra', bound=BaseModel, default=BaseModel, contravariant=True)
+TCreateModel_co = TypeVar(
+    'TCreateModel_co', bound=BaseModel, default=BaseModel, covariant=True)
 
 TUpdateModelService = TypeVar(
     'TUpdateModelService', bound=BaseModel, default=BaseModel)
@@ -38,8 +38,8 @@ class WithModelInst(Generic[models.TModel_contra], TypedDict):
     model_inst: models.TModel_contra
 
 
-class CreateParams(Generic[TCreateModelService_contra], CRUDParamsBase):
-    create_model: TCreateModelService_contra
+class CreateParams(Generic[TCreateModel_contra], CRUDParamsBase):
+    create_model: TCreateModel_contra
 
 
 class ReadParams(Generic[types.TId], CRUDParamsBase, WithId[types.TId]):
@@ -58,11 +58,14 @@ class DeleteParams(Generic[types.TId], CRUDParamsBase, WithId[types.TId]):
     pass
 
 
+CheckAuthorizationExistingOperation = Literal['read', 'update', 'delete']
+
+
 class CheckAuthorizationExistingParams(Generic[models.TModel_contra, types.TId], CRUDParamsBase, WithId[types.TId], WithModelInst[models.TModel_contra]):
-    operation: Literal['read', 'update', 'delete']
+    operation: CheckAuthorizationExistingOperation
 
 
-class CheckAuthorizationNewParams(Generic[TCreateModelService_contra], CreateParams[TCreateModelService_contra]):
+class CheckAuthorizationNewParams(Generic[TCreateModel_contra], CreateParams[TCreateModel_contra]):
     pass
 
 
@@ -78,7 +81,7 @@ class CheckValidationPatchParams(Generic[models.TModel, types.TId, TUpdateModelS
     pass
 
 
-class CheckValidationPostParams(Generic[TCreateModelService_contra], CreateParams[TCreateModelService_contra]):
+class CheckValidationPostParams(Generic[TCreateModel_contra], CreateParams[TCreateModel_contra]):
     pass
 
 
@@ -86,9 +89,9 @@ class HasModel(Protocol[models.TModel_co]):
     _MODEL: Type[models.TModel_co]
 
 
-class HasModelInstFromCreateModel(Protocol[models.TModel_co, TCreateModelService_contra]):
+class HasModelInstFromCreateModel(Protocol[models.TModel_co, TCreateModel_contra]):
     @classmethod
-    def model_inst_from_create_model(cls, create_model: TCreateModelService_contra) -> models.TModel_co:
+    def model_inst_from_create_model(cls, create_model: TCreateModel_contra) -> models.TModel_co:
         ...
 
 
@@ -161,11 +164,11 @@ class Service(
     Generic[
         models.TModel,
         types.TId,
-        TCreateModelService,
+        TCreateModel,
         TUpdateModelService,
     ],
     HasModel[models.TModel],
-    HasModelInstFromCreateModel[models.TModel, TCreateModelService],
+    HasModelInstFromCreateModel[models.TModel, TCreateModel],
     HasModelId[models.TModel, types.TId],
     HasBuildSelectById[models.TModel, types.TId],
 
@@ -194,7 +197,7 @@ class Service(
         pass
 
     @classmethod
-    async def _check_authorization_new(cls, params: CheckAuthorizationNewParams[TCreateModelService]) -> None:
+    async def _check_authorization_new(cls, params: CheckAuthorizationNewParams[TCreateModel]) -> None:
         """Check if the user is authorized to create a new instance"""
         pass
 
@@ -214,7 +217,7 @@ class Service(
         pass
 
     @classmethod
-    async def _check_validation_post(cls, params: CheckValidationPostParams[TCreateModelService]) -> None:
+    async def _check_validation_post(cls, params: CheckValidationPostParams[TCreateModel]) -> None:
         """Check if the user is authorized to create a new instance"""
         pass
 
@@ -237,7 +240,7 @@ class Service(
         return await cls.fetch_many(params['session'], params['pagination'])
 
     @classmethod
-    async def create(cls, params: CreateParams[TCreateModelService]) -> models.TModel:
+    async def create(cls, params: CreateParams[TCreateModel]) -> models.TModel:
         """Used in conjunction with API endpoints, raises exceptions while trying to create a new instance of the model"""
 
         await cls._check_authorization_new(params)
@@ -251,7 +254,7 @@ class Service(
         return model_inst
 
     @classmethod
-    def model_inst_from_create_model(cls, create_model: TCreateModelService) -> models.TModel:
+    def model_inst_from_create_model(cls, create_model: TCreateModel) -> models.TModel:
         return cls._MODEL(**create_model.model_dump())
 
     @classmethod

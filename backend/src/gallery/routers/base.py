@@ -50,8 +50,8 @@ class GetManyParams(RouterVerbParams):
     pagination: pagination_schema.Pagination
 
 
-class PostParams(Generic[base_service.TCreateModelService], RouterVerbParams):
-    create_model: base_service.TCreateModelService
+class PostParams(Generic[base_service.TCreateModel], RouterVerbParams):
+    create_model: base_service.TCreateModel
 
 
 class PatchParams(Generic[types.TId, base_service.TUpdateModelService], RouterVerbParams, WithId[types.TId]):
@@ -73,13 +73,13 @@ class HasAdmin(Protocol):
 class HasService(
     Generic[models.TModel,
             types.TId,
-            base_service.TCreateModelService,
+            base_service.TCreateModel,
             base_service.TUpdateModelService]):
 
     _SERVICE: Type[base_service.Service[
         models.TModel,
         types.TId,
-        base_service.TCreateModelService,
+        base_service.TCreateModel,
         base_service.TUpdateModelService,
     ]]
 
@@ -87,12 +87,12 @@ class HasService(
 class Router(Generic[
     models.TModel,
     types.TId,
-    base_service.TCreateModelService,
+    base_service.TCreateModel,
     base_service.TUpdateModelService,
 ], HasService[
     models.TModel,
     types.TId,
-    base_service.TCreateModelService,
+    base_service.TCreateModel,
     base_service.TUpdateModelService,
 
 ], HasPrefix, HasAdmin):
@@ -155,7 +155,7 @@ class Router(Generic[
             return model_insts
 
     @classmethod
-    async def post(cls, params: PostParams[base_service.TCreateModelService]) -> models.TModel:
+    async def post(cls, params: PostParams[base_service.TCreateModel]) -> models.TModel:
         async with params['c'].AsyncSession() as session:
 
             try:

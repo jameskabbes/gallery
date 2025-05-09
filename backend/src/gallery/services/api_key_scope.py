@@ -31,7 +31,7 @@ class ApiKeyScope(base.Service[
     @classmethod
     async def _check_authorization_new(cls, params):
 
-        api_key = await api_key_service.ApiKey._get_by_id_with_exception(
+        api_key = await api_key_service.ApiKey.fetch_by_id_with_exception(
             params['session'],
             params['create_model'].api_key_id
         )
@@ -59,6 +59,6 @@ class ApiKeyScope(base.Service[
             scope_id=params['create_model'].scope_id
         )
 
-        if await cls._get_by_id(params['session'], id):
+        if await cls.fetch_by_id(params['session'], id):
             raise base.AlreadyExistsError(
                 cls._MODEL, id)

@@ -55,10 +55,6 @@ class GalleryAdminCreate(_CreateBase):
     parent_id: Optional[types.Gallery.parent_id] = None
 
 
-class GalleryAfterCreateCustomParams(base_service.AfterCreateCustomParams):
-    mkdir: bool
-
-
 class GalleryAvailable(BaseModel):
     name: types.Gallery.name
     parent_id: Optional[types.Gallery.parent_id] = None
@@ -69,9 +65,13 @@ class GalleryAdminAvailable(GalleryAvailable):
     user_id: types.User.id
 
 
-class GalleryAfterDeleteCustomParams(base_service.AfterDeleteCustomParams):
-    rmtree: bool
+# class GalleryAfterCreateCustomParams(base_service.AfterCreateCustomParams):
+#     mkdir: bool
 
 
-class GalleryAfterUpdateCustomParams(base_service.AfterUpdateCustomParams):
-    rename_folder: bool | None
+# class GalleryAfterDeleteCustomParams(base_service.AfterDeleteCustomParams):
+#     rmtree: bool
+
+
+# class GalleryAfterUpdateCustomParams(base_service.AfterUpdateCustomParams):
+#     rename_folder: bool | None

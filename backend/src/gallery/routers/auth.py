@@ -53,7 +53,7 @@ class PostLoginWithOTPPhoneNumberRequest(BaseModel):
 
 
 class PostSignUpRequest(BaseModel):
-    token: str
+    token: types.JwtEncodedStr
 
 
 class PostSignUpResponse(auth_utils.GetUserSessionInfoNestedReturn):
@@ -106,14 +106,15 @@ class AuthRouter(base.Router):
             async with self.client.AsyncSession() as session:
 
                 user_access_token = await UserAccessTokenService.create({
-                    'authorized_user_id': user.id,
+                    'session': session,
                     'c': self.client,
+                    'admin': False,
                     'create_model': user_access_token_schema.UserAccessTokenAdminCreate(
                         user_id=user.id,
                         expiry=auth_credential_service.lifespan_to_expiry(self.client.auth[
                             'credential_lifespans']['access_token']),
                     ),
-                    'session': session
+                    'authorized_user_id': user.id,
                 })
 
                 encoded_jwt = self.client.jwt_encode(
@@ -137,14 +138,15 @@ class AuthRouter(base.Router):
                 tokken_lifespan = self.client.auth['credential_lifespans']['access_token']
 
                 user_access_token = await UserAccessTokenService.create({
-                    'authorized_user_id': user.id,
+                    'session': session,
                     'c': self.client,
+                    'admin': False,
+                    'authorized_user_id': user.id,
                     'create_model': user_access_token_schema.UserAccessTokenAdminCreate(
                         user_id=user.id,
                         expiry=auth_credential_service.lifespan_to_expiry(self.client.auth[
                             'credential_lifespans']['access_token']),
                     ),
-                    'session': session
                 })
 
                 encoded_jwt = self.client.jwt_encode(
@@ -190,12 +192,13 @@ class AuthRouter(base.Router):
                     {
                         'session': session,
                         'c': self.client,
+                        'admin': False,
                         'create_model': user_access_token_schema.UserAccessTokenAdminCreate(
                             user_id=auth_credential.user_id,
                             expiry=auth_credential_service.lifespan_to_expiry(
                                 token_lifespan),
-                        )
-
+                        ),
+                        'authorized_user_id': auth_credential.user_id,
                     }
                 )
 
@@ -311,7 +314,8 @@ class AuthRouter(base.Router):
                     'c': self.client,
                     'session': session,
                     'create_model': user_schema.UserAdminCreate(
-                        email=sign_up.email, user_role_id=settings.USER_ROLE_NAME_MAPPING['user'])
+                        email=sign_up.email, user_role_id=settings.USER_ROLE_NAME_MAPPING['user']),
+                    'authorized_user_id': authorization._user_id,
                 })
 
             token_expiry = auth_credential_service.lifespan_to_expiry(
@@ -320,6 +324,7 @@ class AuthRouter(base.Router):
             user_access_token = await UserAccessTokenService.create({
                 'session': session,
                 'c': self.client,
+                'admin': False,
                 'authorized_user_id': user.id,
                 'create_model': user_access_token_schema.UserAccessTokenAdminCreate(
                     user_id=user.id,
@@ -407,9 +412,10 @@ class AuthRouter(base.Router):
             if authorization.isAuthorized:
                 async with self.client.AsyncSession() as session:
                     await UserAccessTokenService.delete({
-                        'authorized_user_id': cast(types.User.id, authorization._user_id),
-                        'c': self.client,
                         'session': session,
+                        'c': self.client,
+                        'admin': False,
+                        'authorized_user_id': cast(types.User.id, authorization._user_id),
                         'id': UserAccessTokenService.model_id(cast(UserAccessToken, authorization.auth_credential))
                     })
 

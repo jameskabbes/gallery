@@ -20,3 +20,9 @@ class UserAccessTokenExport(FromAttributes):
 class UserAccessTokenPublic(UserAccessTokenExport):
     id: types.UserAccessToken.id
     expiry: types.AuthCredential.expiry
+
+
+class UserAccessTokenPrivate(UserAccessTokenExport):
+    id: types.UserAccessToken.id
+    expiry: types.AuthCredential.expiry
+    user_id: types.User.id

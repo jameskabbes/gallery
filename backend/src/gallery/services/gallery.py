@@ -19,10 +19,6 @@ class Gallery(
             types.Gallery.id,
             gallery_schema.GalleryAdminCreate,
             gallery_schema.GalleryAdminUpdate,
-            gallery_schema.GalleryAfterCreateCustomParams,
-            base.AfterReadCustomParams,
-            gallery_schema.GalleryAfterUpdateCustomParams,
-            gallery_schema.GalleryAfterDeleteCustomParams
         ],
         base.SimpleIdModelService[
             GalleryTable,
@@ -64,7 +60,7 @@ class Gallery(
 
         # raise an exception if the parent gallery does not exist
         if gallery_available_admin.parent_id is not None:
-            await cls._get_by_id_with_exception(session, gallery_available_admin.parent_id)
+            await cls.fetch_by_id_with_exception(session, gallery_available_admin.parent_id)
 
         if (await session.exec(select(cls).where(
             cls._MODEL.name == gallery_available_admin.name,
@@ -90,11 +86,11 @@ class Gallery(
         if not params['admin']:
             if params['authorized_user_id'] is not None and (params['authorized_user_id'] != params['model_inst'].user_id):
 
-                if params['method'] == 'delete':
+                if params['operation'] == 'delete':
                     raise base.UnauthorizedError(
-                        'Unauthorized to {method} this gallery'.format(method=params['method']))
+                        'Unauthorized to {operation} this gallery'.format(operation=params['operation']))
 
-                gallery_permission = await GalleryPermissionService._get_by_id(
+                gallery_permission = await GalleryPermissionService.fetch_by_id(
                     params['session'], types.GalleryPermissionId(
                         gallery_id=params['id'],
                         user_id=params['authorized_user_id']
@@ -108,15 +104,15 @@ class Gallery(
 
                 # either public or user has access
 
-                elif params['method'] == 'get':
+                elif params['operation'] == 'get':
                     if gallery_permission is None or (gallery_permission.permission_level < settings.PERMISSION_LEVEL_NAME_MAPPING['viewer']):
                         raise base.UnauthorizedError(
-                            'Unauthorized to {method} this gallery'.format(method=params['method']))
+                            'Unauthorized to {operation} this gallery'.format(operation=params['operation']))
 
-                elif params['method'] == 'patch':
+                elif params['operation'] == 'patch':
                     if gallery_permission is None or (gallery_permission.permission_level < settings.PERMISSION_LEVEL_NAME_MAPPING['editor']):
                         raise base.UnauthorizedError(
-                            'Unauthorized to {method} this gallery'.format(method=params['method']))
+                            'Unauthorized to {operation} this gallery'.format(operation=params['operation']))
 
     @classmethod
     async def _check_validation_post(cls, params):
@@ -135,7 +131,7 @@ class Gallery(
         if gallery.parent_id is None:
             return root / cls.model_folder_name(gallery)
         else:
-            a = await cls.get_dir(session, await cls._get_by_id_with_exception(session, gallery.parent_id), root)
+            a = await cls.get_dir(session, await cls.fetch_by_id_with_exception(session, gallery.parent_id), root)
             return a / cls.model_folder_name(gallery)
 
     @classmethod
@@ -145,7 +141,7 @@ class Gallery(
             return []
 
         else:
-            parents = (await cls.get_parents(session, await cls._get_by_id_with_exception(session, gallery.parent_id)))
+            parents = (await cls.get_parents(session, await cls.fetch_by_id_with_exception(session, gallery.parent_id)))
             parents.append(gallery)
             return parents
 
@@ -160,53 +156,53 @@ class Gallery(
             ** create_model.model_dump(exclude_unset=True, exclude_defaults=True, exclude_none=True)
         )
 
-    @classmethod
-    async def update(cls, params, custom_params={}):
-        """Used in conjunction with API endpoints, raises exceptions while trying to update an instance of the model by ID"""
+    # @classmethod
+    # async def update(cls, params, custom_params={}):
+    #     """Used in conjunction with API endpoints, raises exceptions while trying to update an instance of the model by ID"""
 
-        model_inst = await cls._get_by_id_with_exception(params['session'], params['id'])
+    #     model_inst = await cls.fetch_by_id_with_exception(params['session'], params['id'])
 
-        await cls._check_authorization_existing({
-            'session': params['session'],
-            'c': params['c'],
-            'model_inst': model_inst,
-            'method': 'get',
-            'id': params['id'],
-            'admin': params['admin'],
-            'authorized_user_id': params['authorized_user_id']
-        })
-        await cls._check_validation_patch({**params, 'model_inst': model_inst})
+    #     await cls._check_authorization_existing({
+    #         'session': params['session'],
+    #         'c': params['c'],
+    #         'model_inst': model_inst,
+    #         'operation': 'update',
+    #         'id': params['id'],
+    #         'admin': params['admin'],
+    #         'authorized_user_id': params['authorized_user_id']
+    #     })
+    #     await cls._check_validation_patch({**params, 'model_inst': model_inst})
 
-        original_dir = await cls.get_dir(params['session'], model_inst, params['c'].galleries_dir)
+    #     original_dir = await cls.get_dir(params['session'], model_inst, params['c'].galleries_dir)
 
-        await cls._update_model_inst(model_inst, params['update_model'])
+    #     await cls._update_model_inst(model_inst, params['update_model'])
 
-        # await cls._after_update({
-        #     **params, 'model_inst': model_inst}, custom_params)
+    #     # await cls._after_update({
+    #     #     **params, 'model_inst': model_inst}, custom_params)
 
-        # by default, rename the folder if the name, date, or parent_id has changed
-        if custom_params.get('rename_folder', True):
-            if 'name' in params['update_model'].model_fields_set or 'date' in params['update_model'].model_fields_set or 'parent_id' in params['update_model'].model_fields_set:
-                new_dir = (await cls.get_dir(params['session'], model_inst, params['c'].galleries_dir)).parent / cls.model_folder_name(model_inst)
-                original_dir.rename(new_dir)
+    #     # by default, rename the folder if the name, date, or parent_id has changed
+    #     if custom_params.get('rename_folder', True):
+    #         if 'name' in params['update_model'].model_fields_set or 'date' in params['update_model'].model_fields_set or 'parent_id' in params['update_model'].model_fields_set:
+    #             new_dir = (await cls.get_dir(params['session'], model_inst, params['c'].galleries_dir)).parent / cls.model_folder_name(model_inst)
+    #             original_dir.rename(new_dir)
 
-        await params['session'].commit()
-        await params['session'].refresh(model_inst)
-        return model_inst
+    #     await params['session'].commit()
+    #     await params['session'].refresh(model_inst)
+    #     return model_inst
 
-    @classmethod
-    async def _after_create(cls, params, custom_params={}):
+    # @classmethod
+    # async def _after_create(cls, params, custom_params={}):
 
-        if custom_params.get('mkdir', False):
-            (await cls.get_dir(params['session'], params['model_inst'], params['c'].galleries_dir)).mkdir()
+    #     if custom_params.get('mkdir', False):
+    #         (await cls.get_dir(params['session'], params['model_inst'], params['c'].galleries_dir)).mkdir()
 
-        return await super()._after_create(params, custom_params)
+    #     return await super()._after_create(params, custom_params)
 
-    @classmethod
-    async def _after_delete(cls, params, custom_params={}):
+    # @classmethod
+    # async def _after_delete(cls, params, custom_params={}):
 
-        if custom_params.get('rmtree', False):
-            shutil.rmtree((await cls.get_dir(params['session'], params['model_inst'], params['c'].galleries_dir)))
+    #     if custom_params.get('rmtree', False):
+    #         shutil.rmtree((await cls.get_dir(params['session'], params['model_inst'], params['c'].galleries_dir)))
 
     # async def sync_with_local(self, session: Session, c: client.Client, dir: pathlib.Path) -> None:
 

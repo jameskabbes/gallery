@@ -41,14 +41,17 @@ class GalleryPermission(
 
         if not params['admin']:
             if params['model_inst'].gallery.user_id != params['authorized_user_id']:
-                authorized_user_gallery_permission = await cls._get_by_id_with_exception(
+                authorized_user_gallery_permission = await cls.fetch_by_id_with_exception(
                     params['session'], params['id']
                 )
 
-                if params['method'] in {'delete', 'patch'}:
+                blocked_operations: set[base.CheckAuthorizationExistingOperation] = {
+                    'delete', 'update'}
+
+                if params['operation'] in blocked_operations:
                     if authorized_user_gallery_permission.user_id != params['authorized_user_id']:
                         raise base.UnauthorizedError(
-                            'Unauthorized to {} gallery permission with id {}'.format(params['method'], params['id']))
+                            'Unauthorized to {} gallery permission with id {}'.format(params['operation'], params['id']))
 
     @classmethod
     async def _check_validation_post(cls, params):
@@ -58,7 +61,7 @@ class GalleryPermission(
             user_id=params['create_model'].user_id
         )
 
-        if await cls._get_by_id(params['session'], id):
+        if await cls.fetch_by_id(params['session'], id):
             raise base.AlreadyExistsError(
                 cls._MODEL, id
             )

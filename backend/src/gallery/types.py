@@ -3,7 +3,7 @@ from pydantic import EmailStr, StringConstraints
 import re
 import datetime as datetime_module
 
-PhoneNumber = NewType('PhoneNumber', str)
+PhoneNumber = str
 Email = Annotated[EmailStr, StringConstraints(
     min_length=1, max_length=254)]
 JwtEncodedStr = NewType('JwtEncodedStr', str)
@@ -29,11 +29,11 @@ class UserRole:
     name = Literal['admin', 'user']
 
 
-UserId = NewType('UserId', str)
+UserId = str
 
 
 class User:
-    id = UserId
+    id = str
     email = Email
     phone_number = PhoneNumber
 
@@ -60,7 +60,7 @@ class AuthCredential:
     type = Literal['access_token', 'api_key', 'otp', 'sign_up']
 
 
-OTPId = NewType('OTPId', str)
+OTPId = str
 
 
 class OTP(AuthCredential):
@@ -70,14 +70,14 @@ class OTP(AuthCredential):
     hashed_code = str
 
 
-UserAccessTokenId = NewType('UserAccessTokenId', str)
+UserAccessTokenId = str
 
 
 class UserAccessToken(AuthCredential):
     id = UserAccessTokenId
 
 
-ApiKeyId = NewType('ApiKeyId', str)
+ApiKeyId = str
 
 
 class ApiKey(AuthCredential):
@@ -91,7 +91,7 @@ class SignUp(AuthCredential):
     email = User.email
 
 
-GalleryId = NewType('GalleryId', str)
+GalleryId = str
 
 
 class Gallery:
@@ -143,7 +143,7 @@ class ApiKeyScope(_ApiKeyScopeBase):
     id = ApiKeyScopeId
 
 
-FileId = NewType('FileId', str)
+FileId = str
 
 
 class File:
@@ -155,7 +155,7 @@ class File:
     gallery_id = Gallery.id
 
 
-ImageVersionId = NewType('ImageVersionId', str)
+ImageVersionId = str
 
 
 class ImageVersion:

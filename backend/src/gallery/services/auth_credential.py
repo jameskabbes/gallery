@@ -109,12 +109,12 @@ class JwtIO(
 
 
 class JwtAndSimpleIdTable(
-        Generic[TAuthCredentialJwtAndTable, types.TIdSimple],
-        HasModelSub[TAuthCredentialJwtAndTable, types.TIdSimple],
-        base.HasModelId[TAuthCredentialJwtAndTable, types.TIdSimple]):
+        Generic[TAuthCredentialJwtAndTable, types.TSimpleId],
+        HasModelSub[TAuthCredentialJwtAndTable, types.TSimpleId],
+        base.HasModelId[TAuthCredentialJwtAndTable, types.TSimpleId]):
 
     @classmethod
-    def _model_sub(cls, inst: TAuthCredentialJwtAndTable) -> types.TIdSimple:
+    def _model_sub(cls, inst: TAuthCredentialJwtAndTable) -> types.TSimpleId:
         return cls.model_id(inst)
 
 
