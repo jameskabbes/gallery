@@ -46,8 +46,9 @@ class GetParams(Generic[types.TId], RouterVerbParams, WithId[types.TId]):
     pass
 
 
-class GetManyParams(RouterVerbParams):
+class GetManyParams(Generic[models.TModel], RouterVerbParams):
     pagination: pagination_schema.Pagination
+    query: NotRequired[SelectOfScalar[models.TModel]]
 
 
 class PostParams(Generic[base_service.TCreateModel], RouterVerbParams):
@@ -145,6 +146,7 @@ class Router(Generic[
                     'session': session,
                     'pagination': params['pagination'],
                     'authorized_user_id': params['authorization']._user_id,
+                    'query': params['query'] if 'query' in params else None,
                 })
             except base_service.NotFoundError as e:
                 raise HTTPException(

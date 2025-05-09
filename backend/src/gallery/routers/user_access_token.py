@@ -9,60 +9,71 @@ from typing import Annotated, cast
 from ..auth import utils as auth_utils
 
 
-# WrongUserPermissionUserAccessToken = HTTPException(
-#     status.HTTP_403_FORBIDDEN, detail='User does not have permission to view another user\'s access tokens')
+WrongUserPermissionUserAccessToken = HTTPException(
+    status.HTTP_403_FORBIDDEN, detail='User does not have permission to view another user\'s access tokens')
 
 
-# def user_access_token_pagination(
-#     pagination: Annotated[pagination_schema.Pagination, Depends(
-#         base.get_pagination(default_limit=50, max_limit=500))]
-# ):
-#     return pagination
+def user_access_token_pagination(
+    pagination: Annotated[pagination_schema.Pagination, Depends(
+        base.get_pagination(default_limit=50, max_limit=500))]
+):
+    return pagination
 
 
-# class _Base(base.Router[UserAccessTokenTable, types.UserAccessToken.id, user_access_token_schema.UserAccessTokenAdminCreate, user_access_token_schema.UserAccessTokenAdminUpdate]):
+class _Base(base.Router[UserAccessTokenTable, types.UserAccessToken.id, user_access_token_schema.UserAccessTokenAdminCreate, user_access_token_schema.UserAccessTokenAdminUpdate]):
 
-#     _PREFIX = '/user_access_tokens'
-#     _TAGS = ['User Access Token']
-#     _SERVICE = UserAccessTokenService
+    _PREFIX = '/user_access_tokens'
+    _TAGS = ['User Access Token']
+    _SERVICE = UserAccessTokenService
 
 
-# class UserAccessTokenRouter(_Base):
+class UserAccessTokenRouter(_Base):
 
-#     _ADMIN = False
+    _ADMIN = False
 
-#     def _set_routes(self):
-#         @self.router.get('/{user_access_token_id}/')
-#         async def get_user_access_token_by_id(
-#             user_access_token_id: types.UserAccessToken.id,
-#             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-#                 auth_utils.make_get_auth_dependency(c=self.client))]
-#         ) -> UserAccessTokenTable:
+    def _set_routes(self):
+        @self.router.get('/{user_access_token_id}/')
+        async def get_user_access_token_by_id(
+            user_access_token_id: types.UserAccessToken.id,
+            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+                auth_utils.make_get_auth_dependency(c=self.client))]
+        ) -> UserAccessTokenTable:
 
-#             return await self.get({
-#                 'authorization': authorization,
-#                 'c': self.client,
-#                 'id': user_access_token_id,
-#             })
+            return await self.get({
+                'authorization': authorization,
+                'c': self.client,
+                'id': user_access_token_id,
+            })
 
-#         @self.router.delete('/{user_access_token_id}/', status_code=status.HTTP_204_NO_CONTENT)
-#         async def delete_user_access_token(
-#             user_access_token_id: types.UserAccessToken.id,
-#             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-#                 auth_utils.make_get_auth_dependency(c=self.client))]
-#         ):
-#             async with self.client.AsyncSession() as session:
-#                 return await UserAccessTokenTable.api_delete(UserAccessTokenTable.DeleteParams.model_construct(
-#                     session=session, c=self.client, authorized_user_id=authorization._user_id, id=user_access_token_id))
+        @self.router.delete('/{user_access_token_id}/', status_code=status.HTTP_204_NO_CONTENT)
+        async def delete_user_access_token(
+            user_access_token_id: types.UserAccessToken.id,
+            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+                auth_utils.make_get_auth_dependency(c=self.client))]
+        ):
+            return await self.delete({
+                'authorization': authorization,
+                'c': self.client,
+                'id': user_access_token_id,
+            })
 
-#         @self.router.get('/', tags=[tables.User._ROUTER_TAG], responses={status.HTTP_404_NOT_FOUND: {"description": tables.User.not_found_message(), 'model': NotFoundResponse}, WrongUserPermissionUserAccessToken.status_code: {'description': WrongUserPermissionUserAccessToken.detail, 'model': DetailOnlyResponse}})
+        # need to add User tag to this
+
+#         @self.router.get('/')
 #         async def get_user_access_tokens(
 #             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-#                 auth_utils.make_get_auth_dependency(c=self.client))]
-#             pagination: tables.Pagination = Depends(
+#                 auth_utils.make_get_auth_dependency(c=self.client))],
+#             pagination: pagination_schema.Pagination = Depends(
 #                 user_access_token_pagination)
 
 #         ) -> list[UserAccessTokenTable]:
+
+#             return await self.get_many({
+#                 'authorization': authorization,
+#                 'c': self.client,
+#                 'pagination': pagination,
+#             })
+
 #             async with self.client.AsyncSession() as session:
 #                 query = select(UserAccessTokenTable).where(
 #                     UserAccessTokenTable.user_id == authorization._user_id)

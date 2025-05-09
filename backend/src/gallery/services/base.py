@@ -7,6 +7,7 @@ from .. import client, types
 from ..schemas.pagination import Pagination
 from .. import models
 from collections.abc import Sequence
+from .. import models
 
 TCreateModel = TypeVar(
     'TCreateModel', bound=BaseModel, default=BaseModel)
@@ -46,8 +47,9 @@ class ReadParams(Generic[types.TId], CRUDParamsBase, WithId[types.TId]):
     pass
 
 
-class ReadManyParams(CRUDParamsBase):
+class ReadManyParams(Generic[models.TModel], CRUDParamsBase):
     pagination: Pagination
+    query: Optional[SelectOfScalar[models.TModel]]
 
 
 class UpdateParams(Generic[types.TId, TUpdateModelService_contra], CRUDParamsBase, WithId[types.TId]):
@@ -179,9 +181,12 @@ class Service(
         return (await session.exec(cls._build_select_by_id(id))).one_or_none()
 
     @classmethod
-    async def fetch_many(cls, session: AsyncSession, pagination: Pagination) -> Sequence[models.TModel]:
-        query = select(cls._MODEL).offset(
-            pagination.offset).limit(pagination.limit)
+    async def fetch_many(cls, session: AsyncSession, pagination: Pagination, query: SelectOfScalar[models.TModel] | None = None) -> Sequence[models.TModel]:
+
+        if query is None:
+            query = select(cls._MODEL)
+
+        query = query.offset(pagination.offset).limit(pagination.limit)
         return (await session.exec(query)).all()
 
     @classmethod
@@ -233,11 +238,12 @@ class Service(
         return model_inst
 
     @classmethod
-    async def read_many(cls, params: ReadManyParams) -> Sequence[models.TModel]:
+    async def read_many(cls, params: ReadManyParams[models.TModel]) -> Sequence[models.TModel]:
         """Used in conjunction with API endpoints, raises exceptions while trying to get a list of instances of the model"""
 
         await cls._check_authorization_read_many(params)
-        return await cls.fetch_many(params['session'], params['pagination'])
+        kwargs = {"query": params['query']} if 'query' in params else {}
+        return await cls.fetch_many(params['session'], params['pagination'], **kwargs)
 
     @classmethod
     async def create(cls, params: CreateParams[TCreateModel]) -> models.TModel:
