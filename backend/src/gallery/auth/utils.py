@@ -107,32 +107,49 @@ class GetAuthReturn(BaseModel, Generic[schemas.TAuthCredentialInstance_co]):
             return None
 
 
-class _BaseKwargs(typing.TypedDict):
-    required_scopes: typing.NotRequired[set[types.Scope.name]]
-    override_lifetime: typing.NotRequired[datetime_module.timedelta]
+class _WithClient(typing.TypedDict):
     c: client.Client
 
 
-class _MakeGetAuthDepedencyAndGetAuthFromJwtKwargs(_BaseKwargs):
+class _WithRequiredScopes(typing.TypedDict):
+    required_scopes: typing.NotRequired[set[types.Scope.name]]
+
+
+class _WithOverrideLifetime(typing.TypedDict):
+    override_lifetime: typing.NotRequired[datetime_module.timedelta]
+
+
+class _WithPermittedTypes(typing.TypedDict):
     permitted_types: typing.NotRequired[set[schemas.AuthCredentialJwtType]]
 
 
-class _GetAuthFromJwtAndGetAuthFromTableKwargs(_BaseKwargs):
+class MakeGetAuthDependencyNoClientKwargs(
+        _WithRequiredScopes,
+        _WithOverrideLifetime,
+        _WithPermittedTypes):
     pass
 
 
-class MakeGetAuthDepedencyKwargs(_MakeGetAuthDepedencyAndGetAuthFromJwtKwargs):
-    raise_exceptions: typing.NotRequired[bool]
-    logout_on_exception: typing.NotRequired[bool]
+class MakeGetAuthDepedencyKwargs(
+        MakeGetAuthDependencyNoClientKwargs,
+        _WithClient):
+    pass
 
 
-class GetAuthFromTableKwargs(_GetAuthFromJwtAndGetAuthFromTableKwargs):
+class GetAuthFromTableKwargs(
+        _WithClient,
+        _WithRequiredScopes,
+        _WithOverrideLifetime):
     session: AsyncSession
     auth_credential_service: services.AuthCredentialTableService
     dt_now: typing.NotRequired[datetime_module.datetime]
 
 
-class GetAuthFromJwtKwargs(_MakeGetAuthDepedencyAndGetAuthFromJwtKwargs, _GetAuthFromJwtAndGetAuthFromTableKwargs):
+class GetAuthFromJwtKwargs(
+        _WithClient,
+        _WithRequiredScopes,
+        _WithOverrideLifetime,
+        _WithPermittedTypes):
     token: typing.Optional[types.JwtEncodedStr]
 
 
