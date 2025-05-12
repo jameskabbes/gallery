@@ -56,7 +56,7 @@ class Gallery(
             )
 
     @classmethod
-    async def is_available(cls, session: AsyncSession, gallery_available_admin: gallery_schema.GalleryAdminAvailable) -> None:
+    async def is_available(cls, session: AsyncSession, gallery_available_admin: gallery_schema.GalleryAdminAvailable) -> bool:
 
         # raise an exception if the parent gallery does not exist
         if gallery_available_admin.parent_id is not None:
@@ -68,9 +68,8 @@ class Gallery(
             cls._MODEL.parent_id == gallery_available_admin.parent_id,
             cls._MODEL.date == gallery_available_admin.date,
         ))).one_or_none():
-            raise base.AlreadyExistsError(
-                cls._MODEL, 'asdf'
-            )
+            return False
+        return True
 
     @classmethod
     async def _check_authorization_new(cls, params):

@@ -1,10 +1,12 @@
 from sqlmodel import SQLModel, select
+from sqlalchemy.orm import InstrumentedAttribute
 from sqlmodel.sql.expression import SelectOfScalar
 from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import Protocol, Unpack, TypeVar, TypedDict, Generic, NotRequired, Literal, Self, ClassVar, Type, Optional
 from pydantic import BaseModel
 from .. import client, types
 from ..schemas.pagination import Pagination
+from ..schemas.order_by import OrderBy
 from .. import models
 from collections.abc import Sequence
 from .. import models
@@ -22,6 +24,8 @@ TUpdateModelService_contra = TypeVar(
     'TUpdateModelService_contra', bound=BaseModel, default=BaseModel, contravariant=True)
 TUpdateModelService_co = TypeVar('TUpdateModelService_co', bound=BaseModel,
                                  default=BaseModel, covariant=True)
+
+TOrderBy_co = TypeVar('TOrderBy_co', bound=str, default=str, covariant=True)
 
 
 class CRUDParamsBase(TypedDict):
@@ -47,9 +51,14 @@ class ReadParams(Generic[types.TId], CRUDParamsBase, WithId[types.TId]):
     pass
 
 
-class ReadManyParams(Generic[models.TModel], CRUDParamsBase):
+class ReadManyBase(Generic[models.TModel, TOrderBy_co], TypedDict):
     pagination: Pagination
-    query: Optional[SelectOfScalar[models.TModel]]
+    order_bys: NotRequired[list[OrderBy[TOrderBy_co]]]
+    query: NotRequired[SelectOfScalar[models.TModel] | None]
+
+
+class ReadManyParams(Generic[models.TModel, TOrderBy_co], CRUDParamsBase, ReadManyBase[models.TModel, TOrderBy_co]):
+    pass
 
 
 class UpdateParams(Generic[types.TId, TUpdateModelService_contra], CRUDParamsBase, WithId[types.TId]):
@@ -71,7 +80,7 @@ class CheckAuthorizationNewParams(Generic[TCreateModel_contra], CreateParams[TCr
     pass
 
 
-class CheckAuthorizationReadManyParams(ReadManyParams):
+class CheckAuthorizationReadManyParams(Generic[models.TModel, TOrderBy_co], ReadManyParams[models.TModel, TOrderBy_co]):
     pass
 
 
@@ -168,6 +177,7 @@ class Service(
         types.TId,
         TCreateModel,
         TUpdateModelService,
+        TOrderBy_co
     ],
     HasModel[models.TModel],
     HasModelInstFromCreateModel[models.TModel, TCreateModel],
@@ -181,12 +191,25 @@ class Service(
         return (await session.exec(cls._build_select_by_id(id))).one_or_none()
 
     @classmethod
-    async def fetch_many(cls, session: AsyncSession, pagination: Pagination, query: SelectOfScalar[models.TModel] | None = None) -> Sequence[models.TModel]:
+    def build_order_by(cls, query: SelectOfScalar[models.TModel], order_by: list[OrderBy[TOrderBy_co]]):
+        for order in order_by:
+            field: InstrumentedAttribute = getattr(cls, order.field)
+            if order.ascending:
+                query = query.order_by(field.asc())
+            else:
+                query = query.order_by(field.desc())
+
+        return query
+
+    @classmethod
+    async def fetch_many(cls, session: AsyncSession, pagination: Pagination, order_bys: list[OrderBy[TOrderBy_co]] = [], query: SelectOfScalar[models.TModel] | None = None) -> Sequence[models.TModel]:
 
         if query is None:
             query = select(cls._MODEL)
 
+        query = cls.build_order_by(query, order_bys)
         query = query.offset(pagination.offset).limit(pagination.limit)
+
         return (await session.exec(query)).all()
 
     @classmethod
@@ -207,7 +230,7 @@ class Service(
         pass
 
     @classmethod
-    async def _check_authorization_read_many(cls, params: CheckAuthorizationReadManyParams) -> None:
+    async def _check_authorization_read_many(cls, params: CheckAuthorizationReadManyParams[models.TModel, TOrderBy_co]) -> None:
         """Check if the user is authorized to read many instances"""
         pass
 
@@ -238,11 +261,17 @@ class Service(
         return model_inst
 
     @classmethod
-    async def read_many(cls, params: ReadManyParams[models.TModel]) -> Sequence[models.TModel]:
+    async def read_many(cls, params: ReadManyParams[models.TModel, TOrderBy_co]) -> Sequence[models.TModel]:
         """Used in conjunction with API endpoints, raises exceptions while trying to get a list of instances of the model"""
 
         await cls._check_authorization_read_many(params)
-        kwargs = {"query": params['query']} if 'query' in params else {}
+
+        kwargs = {}
+        if 'order_bys' in params:
+            kwargs['order_bys'] = params['order_bys']
+        if 'query' in params:
+            kwargs['query'] = params['query']
+
         return await cls.fetch_many(params['session'], params['pagination'], **kwargs)
 
     @classmethod
@@ -330,31 +359,8 @@ def export_plural_to_dict(cls, items: collections.abc.Iterable[typing.Self]) -> 
 
 
 
-    @classmethod
-    def make_order_by_dependency(cls):
 
-        def order_by_depends(
-                order_by: list[TOrderBy] = Query(
-                    [], description='Ordered series of fields to sort the results by, in the order they should be applied'),
-                order_by_desc: list[TOrderBy] = Query(
-                    [], description='Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields')
-        ) -> list[OrderBy[TOrderBy]]:
-
-            order_by_set = set(order_by)
-            order_by_desc_set = set(order_by_desc)
-
-            if not order_by_desc_set.issubset(order_by_set):
-                raise HTTPException(status.HTTP_400_BAD_REQUEST,
-                                    detail='"order_by_desc" fields must be a subset of "order_by" fields')
-
-            return [
-                OrderBy[TOrderBy](
-                    field=field, ascending=field not in order_by_desc_set)
-                for field in order_by
-            ]
-
-        return order_by_depends
-
+        
     # @classmethod
     # def _build_conditions(cls, filters: dict[str, typing.Any]):
 
@@ -370,16 +376,6 @@ def export_plural_to_dict(cls, items: collections.abc.Iterable[typing.Self]) -> 
 
     #     return and_(*conditions)
 
-    # @classmethod
-    # def _build_order_by[TQuery: Select, TOrderBy](cls, query: TQuery, order_by: list[OrderBy[TOrderBy]]):
-    #     for order in order_by:
-    #         field: InstrumentedAttribute = getattr(cls, order.field)
-    #         if order.ascending:
-    #             query = query.order_by(field.asc())
-    #         else:
-    #             query = query.order_by(field.desc())
-
-    #     return query
 
 
 '''

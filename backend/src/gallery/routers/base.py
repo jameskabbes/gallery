@@ -14,7 +14,7 @@ from functools import wraps, lru_cache
 from enum import Enum
 from .. import client, models, types, services
 from ..services import base as base_service
-from ..schemas import pagination as pagination_schema
+from ..schemas import pagination as pagination_schema, order_by as order_by_schema
 from ..auth import utils as auth_utils
 from collections.abc import Sequence
 
@@ -46,9 +46,8 @@ class GetParams(Generic[types.TId], RouterVerbParams, WithId[types.TId]):
     pass
 
 
-class GetManyParams(Generic[models.TModel], RouterVerbParams):
-    pagination: pagination_schema.Pagination
-    query: NotRequired[SelectOfScalar[models.TModel]]
+class GetManyParams(Generic[models.TModel, base_service.TOrderBy_co], RouterVerbParams, base_service.ReadManyBase[models.TModel, base_service.TOrderBy_co]):
+    pass
 
 
 class PostParams(Generic[base_service.TCreateModel], RouterVerbParams):
@@ -75,13 +74,15 @@ class HasService(
     Generic[models.TModel,
             types.TId,
             base_service.TCreateModel,
-            base_service.TUpdateModelService]):
+            base_service.TUpdateModelService,
+            base_service.TOrderBy_co]):
 
     _SERVICE: Type[base_service.Service[
         models.TModel,
         types.TId,
         base_service.TCreateModel,
         base_service.TUpdateModelService,
+        base_service.TOrderBy_co,
     ]]
 
 
@@ -90,11 +91,13 @@ class Router(Generic[
     types.TId,
     base_service.TCreateModel,
     base_service.TUpdateModelService,
+    base_service.TOrderBy_co,
 ], HasService[
     models.TModel,
     types.TId,
     base_service.TCreateModel,
     base_service.TUpdateModelService,
+    base_service.TOrderBy_co
 
 ], HasPrefix, HasAdmin):
     _TAGS: ClassVar[list[str | Enum] | None] = NotImplemented
@@ -137,17 +140,22 @@ class Router(Generic[
             return model_inst
 
     @classmethod
-    async def get_many(cls, params: GetManyParams) -> Sequence[models.TModel]:
+    async def get_many(cls, params: GetManyParams[models.TModel, base_service.TOrderBy_co]) -> Sequence[models.TModel]:
         async with params['c'].AsyncSession() as session:
             try:
-                model_insts = await cls._SERVICE.read_many({
+                d: base_service.ReadManyParams[models.TModel, base_service.TOrderBy_co] = {
                     'admin': cls._ADMIN,
                     'c': params['c'],
                     'session': session,
-                    'pagination': params['pagination'],
                     'authorized_user_id': params['authorization']._user_id,
-                    'query': params['query'] if 'query' in params else None,
-                })
+                    'pagination': params['pagination']}
+
+                if 'order_bys' in params:
+                    d['order_bys'] = params['order_bys']
+                if 'query' in params:
+                    d['query'] = params['query']
+
+                model_insts = await cls._SERVICE.read_many(d)
             except base_service.NotFoundError as e:
                 raise HTTPException(
                     status.HTTP_404_NOT_FOUND, detail=e.error_message)
@@ -249,6 +257,31 @@ class Router(Generic[
     @lru_cache(maxsize=None)
     def delete_responses(cls):
         return {}
+
+    @classmethod
+    def make_order_by_dependency(cls):
+
+        def order_by_depends(
+                order_by: list[base_service.TOrderBy_co] = Query(
+                    [], description='Ordered series of fields to sort the results by, in the order they should be applied'),
+                order_by_desc: list[base_service.TOrderBy_co] = Query(
+                    [], description='Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields')
+        ) -> list[order_by_schema.OrderBy[base_service.TOrderBy_co]]:
+
+            order_by_set = set(order_by)
+            order_by_desc_set = set(order_by_desc)
+
+            if not order_by_desc_set.issubset(order_by_set):
+                raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                                    detail='"order_by_desc" fields must be a subset of "order_by" fields')
+
+            return [
+                order_by_schema.OrderBy[base_service.TOrderBy_co](
+                    field=field, ascending=field not in order_by_desc_set)
+                for field in order_by
+            ]
+
+        return order_by_depends
 
     # def get_item(self, func: Callable) -> Callable:
     #     @wraps(func)

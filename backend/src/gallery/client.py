@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import jwt
 import secrets
+from typing import TypeVar, Mapping
 
 UvicornPortType = int
 
@@ -89,6 +90,8 @@ DEFAULT_CONFIG: Config = {
     }
 }
 
+TDict = TypeVar('TDict', bound=dict)
+
 
 class Client:
 
@@ -148,7 +151,7 @@ class Client:
     def generate_jwt_secret_key(self):
         return secrets.token_hex(32)
 
-    def jwt_encode(self, payload: dict) -> types.JwtEncodedStr:
+    def jwt_encode(self, payload: dict[str, typing.Any]) -> types.JwtEncodedStr:
         return jwt.encode(payload, self.jwt_secret_key, algorithm=self.jwt_algorithm)
 
     def jwt_decode(self, token: types.JwtEncodedStr) -> dict:

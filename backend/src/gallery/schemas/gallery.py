@@ -63,15 +63,3 @@ class GalleryAvailable(BaseModel):
 
 class GalleryAdminAvailable(GalleryAvailable):
     user_id: types.User.id
-
-
-# class GalleryAfterCreateCustomParams(base_service.AfterCreateCustomParams):
-#     mkdir: bool
-
-
-# class GalleryAfterDeleteCustomParams(base_service.AfterDeleteCustomParams):
-#     rmtree: bool
-
-
-# class GalleryAfterUpdateCustomParams(base_service.AfterUpdateCustomParams):
-#     rename_folder: bool | None

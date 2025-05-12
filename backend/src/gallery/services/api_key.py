@@ -16,6 +16,7 @@ class ApiKey(
             types.ApiKey.id,
             api_key_schema.ApiKeyAdminCreate,
             api_key_schema.ApiKeyAdminUpdate,
+            types.ApiKey.order_by
         ],
         base.SimpleIdModelService[ApiKeyTable, types.ApiKey.id],
         auth_credential_service.JwtIO[ApiKeyTable, types.ApiKey.id],
@@ -26,10 +27,6 @@ class ApiKey(
 
     auth_type = auth_credential_schema.Type.API_KEY
     _MODEL = ApiKeyTable
-
-    @classmethod
-    def to_api_key_private(cls, api_key: ApiKeyTable) -> api_key_schema.ApiKeyPrivate:
-        return api_key_schema.ApiKeyPrivate.model_construct(**api_key.model_dump(), scope_ids=[api_key_scope.scope_id for api_key_scope in api_key.api_key_scopes])
 
     @classmethod
     def model_inst_from_create_model(cls, create_model):

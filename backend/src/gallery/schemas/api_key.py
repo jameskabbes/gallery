@@ -48,4 +48,4 @@ class ApiKeyPublic(ApiKeyExport):
 
 
 class ApiKeyPrivate(ApiKeyExport):
-    scope_ids: list[types.Scope.id]
+    pass

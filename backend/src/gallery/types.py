@@ -6,7 +6,7 @@ import datetime as datetime_module
 PhoneNumber = str
 Email = Annotated[EmailStr, StringConstraints(
     min_length=1, max_length=254)]
-JwtEncodedStr = NewType('JwtEncodedStr', str)
+JwtEncodedStr = str
 
 
 class PermissionLevel:
