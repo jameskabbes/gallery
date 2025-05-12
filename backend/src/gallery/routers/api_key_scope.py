@@ -17,7 +17,7 @@ class _Base(
     ],
 ):
     _PREFIX = '/api_key_scopes'
-    _TAGS = ['Api Key Scope']
+    _TAG = 'API Key Scope'
     _SERVICE = ApiKeyScopeService
 
 

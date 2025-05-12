@@ -88,7 +88,7 @@ class AuthRouter(base.Router):
 
     _ADMIN = False
     _PREFIX = '/auth'
-    _TAGS = ['Auth']
+    _TAG = 'Auth'
 
     def _set_routes(self):
 

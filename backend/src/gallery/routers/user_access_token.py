@@ -3,6 +3,7 @@ from sqlmodel import select, func
 from ..models.tables import UserAccessToken as UserAccessTokenTable
 from ..services.user_access_token import UserAccessToken as UserAccessTokenService
 from ..schemas import user_access_token as user_access_token_schema, pagination as pagination_schema, api as api_schema
+from ..routers import user as user_router
 from . import base
 from .. import types
 from typing import Annotated, cast, Literal
@@ -27,7 +28,7 @@ class _Base(
 ):
 
     _PREFIX = '/user_access_tokens'
-    _TAGS = ['User Access Token']
+    _TAG = 'User Access Token'
     _SERVICE = UserAccessTokenService
 
 
@@ -36,6 +37,22 @@ class UserAccessTokenRouter(_Base):
     _ADMIN = False
 
     def _set_routes(self):
+
+        @self.router.get('/', tags=[user_router._Base._TAG])
+        async def get_user_access_tokens(
+            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+                auth_utils.make_get_auth_dependency(c=self.client))],
+            pagination: pagination_schema.Pagination = Depends(
+                user_access_token_pagination)
+
+        ) -> list[UserAccessTokenTable]:
+
+            return list(await self.get_many({
+                'authorization': authorization,
+                'c': self.client,
+                'pagination': pagination,
+            }))
+
         @self.router.get('/{user_access_token_id}/')
         async def get_user_access_token_by_id(
             user_access_token_id: types.UserAccessToken.id,
@@ -61,23 +78,6 @@ class UserAccessTokenRouter(_Base):
                 'id': user_access_token_id,
             })
 
-        # need to add User tag to this
-
-        @self.router.get('/')
-        async def get_user_access_tokens(
-            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client))],
-            pagination: pagination_schema.Pagination = Depends(
-                user_access_token_pagination)
-
-        ) -> list[UserAccessTokenTable]:
-
-            return list(await self.get_many({
-                'authorization': authorization,
-                'c': self.client,
-                'pagination': pagination,
-            }))
-
         @self.router.get('/details/count/')
         async def get_user_access_tokens_count(
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
@@ -94,6 +94,24 @@ class UserAccessTokenAdminRouter(_Base):
     _ADMIN = True
 
     def _set_routes(self):
+
+        @self.router.get('/users/{user_id}/', tags=[user_router._Base._TAG])
+        async def get_user_access_tokens_admin(
+            user_id: types.User.id,
+            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+                auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))],
+            pagination: pagination_schema.Pagination = Depends(
+                user_access_token_pagination)
+        ) -> list[UserAccessTokenTable]:
+
+            return list(await self.get_many({
+                'authorization': authorization,
+                'c': self.client,
+                'pagination': pagination,
+                'query': select(UserAccessTokenTable).where(
+                    UserAccessTokenTable.user_id == user_id)
+
+            }))
 
         @self.router.get('/{user_access_token_id}/')
         async def get_user_access_token_by_id_admin(
@@ -133,22 +151,3 @@ class UserAccessTokenAdminRouter(_Base):
                 'c': self.client,
                 'id': user_access_token_id,
             })
-
-        # Add User tag to this
-        @self.router.get('/users/{user_id}/')
-        async def get_user_access_tokens_admin(
-            user_id: types.User.id,
-            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))],
-            pagination: pagination_schema.Pagination = Depends(
-                user_access_token_pagination)
-        ) -> list[UserAccessTokenTable]:
-
-            return list(await self.get_many({
-                'authorization': authorization,
-                'c': self.client,
-                'pagination': pagination,
-                'query': select(UserAccessTokenTable).where(
-                    UserAccessTokenTable.user_id == user_id)
-
-            }))

@@ -20,7 +20,7 @@ class _Base(
     ],
 ):
     _PREFIX = '/users'
-    _TAGS = ['User']
+    _TAG = 'User'
     _SERVICE = UserService
 
 
@@ -29,6 +29,20 @@ class UserRouter(_Base):
     _ADMIN = False
 
     def _set_routes(self):
+
+        @self.router.get('/')
+        async def get_users(
+            pagination: Annotated[pagination_schema.Pagination, Depends(
+                base.get_pagination())],
+            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+                auth_utils.make_get_auth_dependency(raise_exceptions=False, c=self.client))]
+        ) -> Sequence[user_schema.UserPublic]:
+
+            return [user_schema.UserPublic.model_validate(user) for user in await self.get_many({
+                'authorization': authorization,
+                'c': self.client,
+                'pagination': pagination,
+            })]
 
         @self.router.get('/me/')
         async def get_user_me(
@@ -77,20 +91,6 @@ class UserRouter(_Base):
             })
             return user_schema.UserPublic.model_validate(user)
 
-        @self.router.get('/')
-        async def get_users(
-            pagination: Annotated[pagination_schema.Pagination, Depends(
-                base.get_pagination())],
-            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(raise_exceptions=False, c=self.client))]
-        ) -> Sequence[user_schema.UserPublic]:
-
-            return [user_schema.UserPublic.model_validate(user) for user in await self.get_many({
-                'authorization': authorization,
-                'c': self.client,
-                'pagination': pagination,
-            })]
-
         @self.router.get('/available/username/{username}/',
                          responses={status.HTTP_409_CONFLICT: {
                              "description": 'Username already exists', 'model': api_schema.IsAvailableResponse}})
@@ -105,21 +105,6 @@ class UserAdminRouter(_Base):
     _ADMIN = True
 
     def _set_routes(self):
-
-        @self.router.get('/{user_id}/')
-        async def get_user_by_id(
-            user_id: types.User.id,
-            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))]
-        ) -> user_schema.UserPrivate:
-            return user_schema.UserPrivate.model_validate(
-                await self.get({
-                    'authorization': authorization,
-                    'c': self.client,
-                    'id': user_id,
-                })
-            )
-
         @self.router.get('/')
         async def get_users_admin(
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
@@ -134,6 +119,20 @@ class UserAdminRouter(_Base):
                     'c': self.client,
                     'pagination': pagination,
                 })]
+
+        @self.router.get('/{user_id}/')
+        async def get_user_by_id(
+            user_id: types.User.id,
+            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+                auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))]
+        ) -> user_schema.UserPrivate:
+            return user_schema.UserPrivate.model_validate(
+                await self.get({
+                    'authorization': authorization,
+                    'c': self.client,
+                    'id': user_id,
+                })
+            )
 
         @self.router.post('/')
         async def post_user(

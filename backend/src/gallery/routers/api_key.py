@@ -4,6 +4,8 @@ from pydantic import BaseModel
 from ..models.tables import ApiKey as ApiKeyTable
 from ..services.api_key import ApiKey as ApiKeyService
 from ..schemas import api_key as api_key_schema, pagination as pagination_schema, api as api_schema, order_by as order_by_schema
+from ..routers import user as user_router
+
 from . import base
 from .. import types
 from typing import Annotated, cast
@@ -22,12 +24,8 @@ class _Base(
     ],
 ):
     _PREFIX = '/api_keys'
-    _TAGS = ['API Key']
+    _TAG = 'API Key'
     _SERVICE = ApiKeyService
-
-    def __init__(self, *args, **kwargs):
-        self.order_by_depends = self.make_order_by_dependency()
-        super().__init__(*args, **kwargs)
 
 
 api_key_pagination = base.get_pagination()
@@ -42,21 +40,6 @@ class ApiKeyRouter(_Base):
     _ADMIN = False
 
     def _set_routes(self):
-
-        @self.router.get('/{api_key_id}/')
-        async def get_api_key_by_id(
-            api_key_id: types.ApiKey.id,
-            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client, ))]
-        ) -> api_key_schema.ApiKeyPrivate:
-
-            return api_key_schema.ApiKeyPrivate.model_validate(
-                await self.get({
-                    'authorization': authorization,
-                    'c': self.client,
-                    'id': api_key_id,
-                })
-            )
 
         @self.router.get('/')
         async def get_user_api_keys(
@@ -74,6 +57,21 @@ class ApiKeyRouter(_Base):
                 'pagination': pagination,
                 'query': select(ApiKeyTable).where(ApiKeyTable.user_id == authorization._user_id)
             })]
+
+        @self.router.get('/{api_key_id}/')
+        async def get_api_key_by_id(
+            api_key_id: types.ApiKey.id,
+            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+                auth_utils.make_get_auth_dependency(c=self.client, ))]
+        ) -> api_key_schema.ApiKeyPrivate:
+
+            return api_key_schema.ApiKeyPrivate.model_validate(
+                await self.get({
+                    'authorization': authorization,
+                    'c': self.client,
+                    'id': api_key_id,
+                })
+            )
 
         @self.router.post('/')
         async def post_api_key_to_user(
@@ -176,6 +174,25 @@ class ApiKeyAdminRouter(_Base):
 
     def _set_routes(self):
 
+        @self.router.get('/users/{user_id}/', tags=[user_router._Base._TAG])
+        async def get_user_api_keys_admin(
+            user_id: types.User.id,
+            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+                auth_utils.make_get_auth_dependency(c=self.client, required_scopes={'admin'}))],
+            pagination: Annotated[pagination_schema.Pagination, Depends(api_key_pagination)],
+            order_bys: Annotated[list[order_by_schema.OrderBy[types.ApiKey.order_by]], Depends(
+                self.order_by_depends)]
+
+        ) -> list[ApiKeyTable]:
+
+            return list(await self.get_many(
+                {
+                    'authorization': authorization,
+                    'c': self.client,
+                    'order_bys': order_bys,
+                    'pagination': pagination,
+                    'query': select(ApiKeyTable).where(ApiKeyTable.user_id == authorization._user_id)}))
+
         @self.router.get('/{api_key_id}/')
         async def get_api_key_by_id_admin(
             api_key_id: types.ApiKey.id,
@@ -229,46 +246,6 @@ class ApiKeyAdminRouter(_Base):
                 'c': self.client,
                 'id': api_key_id,
             })
-
-        # Add User tag to this
-
-        # @self.router.get('/')
-        # async def get_user_api_keys(
-        #     authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-        #         auth_utils.make_get_auth_dependency(c=self.client))],
-        #     pagination: Annotated[pagination_schema.Pagination, Depends(api_key_pagination)],
-        #     order_bys: Annotated[list[order_by_schema.OrderBy[types.ApiKey.order_by]], Depends(
-        #         self.order_by_depends)]
-        # ) -> list[api_key_schema.ApiKeyPrivate]:
-
-        #     return [ApiKeyService.to_api_key_private(api_key) for api_key in await self.get_many({
-        #         'authorization': authorization,
-        #         'c': self.client,
-        #         'order_bys': order_bys,
-        #         'pagination': pagination,
-        #         'query': select(ApiKeyTable).options(selectinload(ApiKeyTable.api_key_scopes)).where(
-        #             ApiKeyTable.user_id == authorization._user_id)
-        #     })
-        #     ]
-
-        @self.router.get('/users/{user_id}/')
-        async def get_user_api_keys_admin(
-            user_id: types.User.id,
-            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client, required_scopes={'admin'}))],
-            pagination: Annotated[pagination_schema.Pagination, Depends(api_key_pagination)],
-            order_bys: Annotated[list[order_by_schema.OrderBy[types.ApiKey.order_by]], Depends(
-                self.order_by_depends)]
-
-        ) -> list[ApiKeyTable]:
-
-            return list(await self.get_many(
-                {
-                    'authorization': authorization,
-                    'c': self.client,
-                    'order_bys': order_bys,
-                    'pagination': pagination,
-                    'query': select(ApiKeyTable).where(ApiKeyTable.user_id == authorization._user_id)}))
 
         @self.router.get('/details/available/')
         async def get_api_key_available_admin(

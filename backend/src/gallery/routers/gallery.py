@@ -4,6 +4,7 @@ from ..models.tables import Gallery as GalleryTable, GalleryPermission as Galler
 from ..services.gallery import Gallery as GalleryService
 from ..services.gallery_permission import GalleryPermission as GalleryPermissionService
 from ..schemas import gallery as gallery_schema, pagination as pagination_schema, api as api_schema, gallery_permission as gallery_permission_schema
+from ..routers import user as user_router
 from . import base
 from .. import types
 from typing import Annotated, cast
@@ -21,7 +22,7 @@ class _Base(
     ],
 ):
     _PREFIX = '/galleries'
-    _TAGS = ['Gallery']
+    _TAG = 'Gallery'
     _SERVICE = GalleryService
 
 
@@ -36,6 +37,25 @@ class GalleryRouter(_Base):
     _ADMIN = False
 
     def _set_routes(self):
+
+        # @self.router.get('/', tags=[user_router._Base._TAG])
+        # async def get_galleries(
+        #     authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+        #         auth_utils.make_get_auth_dependency(c=self.client))],
+        #     pagination: pagination_schema.Pagination = Depends(
+        #         galleries_pagination)
+
+        # ) -> list[gallery_schema.GalleryPrivate]:
+
+        #     return [gallery_schema.GalleryPrivate.model_validate(gallery) for gallery in
+        #             await self.get_many({
+        #                 'authorization': authorization,
+        #                 'c': self.client,
+        #                 'pagination': pagination,
+        #                 'query': select(GalleryTable).where(GalleryTable.user_id == authorization._user_id)
+        #             })
+        #             ]
+
         @self.router.get('/{gallery_id}/')
         async def get_gallery_by_id(
             gallery_id: types.Gallery.id,
@@ -91,24 +111,6 @@ class GalleryRouter(_Base):
                 'c': self.client,
                 'id': gallery_id,
             })
-
-        @self.router.get('/')
-        async def get_galleries(
-            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client))],
-            pagination: pagination_schema.Pagination = Depends(
-                galleries_pagination)
-
-        ) -> list[gallery_schema.GalleryPrivate]:
-
-            return [gallery_schema.GalleryPrivate.model_validate(gallery) for gallery in
-                    await self.get_many({
-                        'authorization': authorization,
-                        'c': self.client,
-                        'pagination': pagination,
-                        'query': select(GalleryTable).where(GalleryTable.user_id == authorization._user_id)
-                    })
-                    ]
 
         @self.router.get('/details/available/')
         async def get_gallery_available(

@@ -70,6 +70,10 @@ class HasAdmin(Protocol):
     _ADMIN: ClassVar[bool]
 
 
+class HasTag(Protocol):
+    _TAG: ClassVar[str]
+
+
 class HasService(
     Generic[models.TModel,
             types.TId,
@@ -99,8 +103,7 @@ class Router(Generic[
     base_service.TUpdateModelService,
     base_service.TOrderBy_co
 
-], HasPrefix, HasAdmin):
-    _TAGS: ClassVar[list[str | Enum] | None] = NotImplemented
+], HasPrefix, HasAdmin, HasTag):
 
     def __init__(self, client: client.Client):
 
@@ -108,9 +111,9 @@ class Router(Generic[
         if self._ADMIN:
             prefix = f'/admin{prefix}'
 
-        tags = self._TAGS
+        tags: list[str | Enum] = [self._TAG]
         if self._ADMIN:
-            tags = ['Admin'] + (tags or [])
+            tags.append('Admin')
 
         self.router = APIRouter(prefix=prefix, tags=tags)
         self.client = client
@@ -258,30 +261,26 @@ class Router(Generic[
     def delete_responses(cls):
         return {}
 
-    @classmethod
-    def make_order_by_dependency(cls):
+    @staticmethod
+    def order_by_depends(
+            order_by: list[base_service.TOrderBy_co] = Query(
+                [], description='Ordered series of fields to sort the results by, in the order they should be applied'),
+            order_by_desc: list[base_service.TOrderBy_co] = Query(
+                [], description='Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields')
+    ) -> list[order_by_schema.OrderBy[base_service.TOrderBy_co]]:
 
-        def order_by_depends(
-                order_by: list[base_service.TOrderBy_co] = Query(
-                    [], description='Ordered series of fields to sort the results by, in the order they should be applied'),
-                order_by_desc: list[base_service.TOrderBy_co] = Query(
-                    [], description='Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields')
-        ) -> list[order_by_schema.OrderBy[base_service.TOrderBy_co]]:
+        order_by_set = set(order_by)
+        order_by_desc_set = set(order_by_desc)
 
-            order_by_set = set(order_by)
-            order_by_desc_set = set(order_by_desc)
+        if not order_by_desc_set.issubset(order_by_set):
+            raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                                detail='"order_by_desc" fields must be a subset of "order_by" fields')
 
-            if not order_by_desc_set.issubset(order_by_set):
-                raise HTTPException(status.HTTP_400_BAD_REQUEST,
-                                    detail='"order_by_desc" fields must be a subset of "order_by" fields')
-
-            return [
-                order_by_schema.OrderBy[base_service.TOrderBy_co](
-                    field=field, ascending=field not in order_by_desc_set)
-                for field in order_by
-            ]
-
-        return order_by_depends
+        return [
+            order_by_schema.OrderBy[base_service.TOrderBy_co](
+                field=field, ascending=field not in order_by_desc_set)
+            for field in order_by
+        ]
 
     # def get_item(self, func: Callable) -> Callable:
     #     @wraps(func)
