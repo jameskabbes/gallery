@@ -6,7 +6,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import SelectOfScalar
 from sqlmodel import SQLModel, select
 from abc import ABC
-from typing import TypeVar, Type, List, Callable, ClassVar, TYPE_CHECKING, Generic, Protocol, Any
+from typing import TypeVar, Type, List, Callable, ClassVar, TYPE_CHECKING, Generic, Protocol, Any, Annotated
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.routing import APIRoute
 from sqlmodel import SQLModel, Session, select
@@ -23,6 +23,27 @@ def get_pagination(max_limit: int = 100, default_limit: int = 10):
     def dependency(limit: int = Query(default_limit, ge=1, le=max_limit, description='Quantity of results'), offset: int = Query(0, ge=0, description='Index of the first result')):
         return pagination_schema.Pagination(limit=limit, offset=offset)
     return dependency
+
+
+def order_by_depends(
+    order_by: list[base_service.TOrderBy_co] = Query(
+        [], description='Ordered series of fields to sort the results by, in the order they should be applied'),
+    order_by_desc: list[base_service.TOrderBy_co] = Query(
+        [], description='Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields')
+) -> list[order_by_schema.OrderBy[base_service.TOrderBy_co]]:
+
+    order_by_set = set(order_by)
+    order_by_desc_set = set(order_by_desc)
+
+    if not order_by_desc_set.issubset(order_by_set):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            detail='"order_by_desc" fields must be a subset of "order_by" fields')
+
+    return [
+        order_by_schema.OrderBy[base_service.TOrderBy_co](
+            field=field, ascending=field not in order_by_desc_set)
+        for field in order_by
+    ]
 
 
 class NotFoundError(HTTPException, base_service.NotFoundError):
@@ -121,6 +142,33 @@ class Router(Generic[
 
     def _set_routes(self) -> None:
         pass
+
+    def make_get_many_endpoint(
+            self,
+            response_model: Type[BaseModel],
+            pagination_depends: Callable = get_pagination(),
+            order_by_depends: Callable = order_by_depends,
+            path: str = '/',
+            get_auth_kwargs: auth_utils.MakeGetAuthDependencyNoClientKwargs = {}
+    ) -> Callable:
+
+        async def endpoint(
+                pagination: Annotated[pagination_schema.Pagination, Depends(pagination_depends)],
+                order_bys: Annotated[list[order_by_schema.OrderBy[base_service.TOrderBy_co]], Depends(order_by_depends)],
+                authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+                    auth_utils.make_get_auth_dependency(
+                        **get_auth_kwargs, c=self.client))],
+        ):
+
+            return [response_model.model_validate(model) for model in await self.get_many({
+                'authorization': authorization,
+                'c': self.client,
+                'pagination': pagination,
+                'order_bys': order_bys,
+                'query': None,
+            })]
+
+        return endpoint
 
     @classmethod
     async def get(cls, params: GetParams[types.TId]) -> models.TModel:
@@ -260,27 +308,6 @@ class Router(Generic[
     @lru_cache(maxsize=None)
     def delete_responses(cls):
         return {}
-
-    @staticmethod
-    def order_by_depends(
-            order_by: list[base_service.TOrderBy_co] = Query(
-                [], description='Ordered series of fields to sort the results by, in the order they should be applied'),
-            order_by_desc: list[base_service.TOrderBy_co] = Query(
-                [], description='Unordered series of fields which should be sorted in a descending manner, must be a subset of "order_by" fields')
-    ) -> list[order_by_schema.OrderBy[base_service.TOrderBy_co]]:
-
-        order_by_set = set(order_by)
-        order_by_desc_set = set(order_by_desc)
-
-        if not order_by_desc_set.issubset(order_by_set):
-            raise HTTPException(status.HTTP_400_BAD_REQUEST,
-                                detail='"order_by_desc" fields must be a subset of "order_by" fields')
-
-        return [
-            order_by_schema.OrderBy[base_service.TOrderBy_co](
-                field=field, ascending=field not in order_by_desc_set)
-            for field in order_by
-        ]
 
     # def get_item(self, func: Callable) -> Callable:
     #     @wraps(func)
