@@ -6,7 +6,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import SelectOfScalar
 from sqlmodel import SQLModel, select
 from abc import ABC
-from typing import TypeVar, Type, List, Callable, ClassVar, TYPE_CHECKING, Generic, Protocol, Any, Annotated
+from typing import TypeVar, Type, List, Callable, ClassVar, TYPE_CHECKING, Generic, Protocol, Any, Annotated, cast
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.routing import APIRoute
 from sqlmodel import SQLModel, Session, select
@@ -83,6 +83,16 @@ class DeleteParams(Generic[types.TId], RouterVerbParams, WithId[types.TId]):
     pass
 
 
+TGetManyResponse = TypeVar(
+    'TGetManyResponse', bound=Type[BaseModel], default=Type[BaseModel])
+TGetResponse = TypeVar(
+    'TGetResponse', bound=Type[BaseModel], default=Type[BaseModel])
+TPostResponse = TypeVar(
+    'TPostResponse', bound=Type[BaseModel], default=Type[BaseModel])
+TUpdateResponse = TypeVar(
+    'TUpdateResponse', bound=Type[BaseModel], default=Type[BaseModel])
+
+
 class HasPrefix(Protocol):
     _PREFIX: ClassVar[str]
 
@@ -93,6 +103,10 @@ class HasAdmin(Protocol):
 
 class HasTag(Protocol):
     _TAG: ClassVar[str]
+
+
+class HasIdParamName(Protocol):
+    _ID_PARAM_NAME: ClassVar[str]
 
 
 class HasService(
@@ -114,6 +128,10 @@ class HasService(
 class Router(Generic[
     models.TModel,
     types.TId,
+    TGetManyResponse,
+    TGetResponse,
+    TPostResponse,
+    TUpdateResponse,
     base_service.TCreateModel,
     base_service.TUpdateModelService,
     base_service.TOrderBy_co,
@@ -124,7 +142,21 @@ class Router(Generic[
     base_service.TUpdateModelService,
     base_service.TOrderBy_co
 
-], HasPrefix, HasAdmin, HasTag):
+], HasPrefix, HasAdmin, HasTag, HasIdParamName):
+
+    get_many_endpoint: Callable
+    get_endpoint: Callable
+    post_endpoint: Callable
+    patch_endpoint: Callable
+    delete_endpoint: Callable
+
+    get_many_response_model: Type[TGetManyResponse]
+    get_response_model: Type[TGetResponse]
+    post_response_model: Type[TPostResponse]
+    patch_response_model: Type[TUpdateResponse]
+
+    _ENDPOINTS_TO_GENERATE: ClassVar[set[Literal['get_many', 'get', 'post', 'patch', 'delete']]] = {
+        'get_many', 'get', 'post', 'patch', 'delete'}
 
     def __init__(self, client: client.Client):
 
@@ -138,17 +170,17 @@ class Router(Generic[
 
         self.router = APIRouter(prefix=prefix, tags=tags)
         self.client = client
-        self._set_routes()
 
-    def _set_routes(self) -> None:
-        pass
+    def set_generated_endpoints(self):
+
+        if 'get_many' in self._ENDPOINTS_TO_GENERATE:
+            self.router.get('/')(self.get_many_endpoint)
 
     def make_get_many_endpoint(
             self,
-            response_model: Type[BaseModel],
+            response_model: TGetManyResponse,
             pagination_depends: Callable = get_pagination(),
             order_by_depends: Callable = order_by_depends,
-            path: str = '/',
             get_auth_kwargs: auth_utils.MakeGetAuthDependencyNoClientKwargs = {}
     ) -> Callable:
 
@@ -158,17 +190,94 @@ class Router(Generic[
                 authorization: Annotated[auth_utils.GetAuthReturn, Depends(
                     auth_utils.make_get_auth_dependency(
                         **get_auth_kwargs, c=self.client))],
-        ):
+        ) -> Sequence[TGetManyResponse]:
 
-            return [response_model.model_validate(model) for model in await self.get_many({
+            items = await self.get_many({
                 'authorization': authorization,
                 'c': self.client,
                 'pagination': pagination,
                 'order_bys': order_bys,
                 'query': None,
-            })]
+            })
+            return [response_model.model_validate(model) for model in items]
 
         return endpoint
+
+    def make_get_endpoint(
+        self,
+        response_model: TGetResponse,
+        get_auth_kwargs: auth_utils.MakeGetAuthDependencyNoClientKwargs = {}
+    ) -> Callable:
+        async def endpoint(
+                authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+                    auth_utils.make_get_auth_dependency(
+                        **get_auth_kwargs, c=self.client))],
+                id: types.TId,
+        ) -> TGetResponse:
+            item = await self.get({
+                'authorization': authorization,
+                'c': self.client,
+                'id': id
+            })
+            return response_model.model_validate(item)
+
+        return endpoint
+
+    # def make_post_endpoint(
+    #     self,
+    #     response_model: TPostResponse,
+    #     create_model_param_name: str = 'item',
+    #     get_auth_kwargs: auth_utils.MakeGetAuthDependencyNoClientKwargs = {}
+    # ) -> Callable:
+    #     async def endpoint(
+    #             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+    #                 auth_utils.make_get_auth_dependency(
+    #                     **get_auth_kwargs, c=self.client))],
+    #             **kwargs: Any,
+    #     ) -> TPostResponse:
+    #         model = await self.post({
+    #             'authorization': authorization,
+    #             'c': self.client,
+    #             'create_model': cast(
+    #                 base_service.TCreateModel, kwargs.get(create_model_param_name)),
+    #         })
+    #         return response_model.model_validate(model)
+
+    #     endpoint.__annotations__ = {
+    #         create_model_param_name: base_service.TCreateModel,
+    #         'authorization': Annotated[auth_utils.GetAuthReturn, Depends(
+    #             auth_utils.make_get_auth_dependency(
+    #                 **get_auth_kwargs, c=self.client))],
+    #         'return': response_model
+    #     }
+
+    #     return endpoint
+
+    # def make_patch_endpoint(
+    #         self,
+    #         response_model: TUpdateResponse,
+    #         id_param_name: str = 'id',
+    #         get_auth_kwargs: auth_utils.MakeGetAuthDependencyNoClientKwargs = {}
+    # ) -> Callable:
+
+    #     async def endpoint(
+    #             item: base_service.TUpdateModelService,
+    #             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+    #                 auth_utils.make_get_auth_dependency(
+    #                     c=self.client, **get_auth_kwargs))],
+    #             **kwargs
+    #     ) -> TUpdateResponse:
+    #         id = cast(types.TId, kwargs.get(id_param_name))
+
+    #         model = await self.patch({
+    #             'authorization': authorization,
+    #             'c': self.client,
+    #             'id': id,
+    #             'update_model': item,
+    #         })
+    #         return response_model.model_validate(model)
+
+    #     return endpoint
 
     @classmethod
     async def get(cls, params: GetParams[types.TId]) -> models.TModel:

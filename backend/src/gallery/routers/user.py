@@ -1,20 +1,27 @@
 from fastapi import Depends, status
 from sqlmodel import select
 from ..models.tables import User as UserTable
-from ..services.user import User as UserService
-from ..schemas import user as user_schema, pagination as pagination_schema, api as api_schema
+from ..services.user import User as UserService, base as base_service
+from ..schemas import user as user_schema, pagination as pagination_schema, api as api_schema, order_by as order_by_schema
 from . import base
 from .. import types
-from typing import Annotated, cast
+from typing import Annotated, cast, Type
 from ..auth import utils as auth_utils
 
 from collections.abc import Sequence
+
+
+PAGINATION_DEPENDS = base.get_pagination()
 
 
 class _Base(
     base.Router[
         UserTable,
         types.User.id,
+        Type[user_schema.UserPublic],
+        Type[user_schema.UserPublic],
+        Type[user_schema.UserPrivate],
+        Type[user_schema.UserPrivate],
         user_schema.UserAdminCreate,
         user_schema.UserAdminUpdate,
     ],
@@ -22,27 +29,43 @@ class _Base(
     _PREFIX = '/users'
     _TAG = 'User'
     _SERVICE = UserService
+    _ID_PARAM_NAME = 'user_id'
 
 
 class UserRouter(_Base):
 
     _ADMIN = False
 
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        self.get_many_endpoint = self.make_get_many_endpoint(
+            user_schema.UserPublic)
+        self.get_endpoint = self.make_get_endpoint(
+            user_schema.UserPublic)
+
+        self._set_routes()
+
     def _set_routes(self):
 
-        @self.router.get('/')
-        async def get_users(
-            pagination: Annotated[pagination_schema.Pagination, Depends(
-                base.get_pagination())],
-            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(raise_exceptions=False, c=self.client))]
-        ) -> Sequence[user_schema.UserPublic]:
+        self.router.get('/')(self.get_many_endpoint)
+        self.router.get('/{id}/')(self.get_endpoint)
 
-            return [user_schema.UserPublic.model_validate(user) for user in await self.get_many({
-                'authorization': authorization,
-                'c': self.client,
-                'pagination': pagination,
-            })]
+        pass
+
+        # @self.router.get('/')
+        # async def get_users(
+        #     pagination: Annotated[pagination_schema.Pagination, Depends(
+        #         base.get_pagination())],
+        #     authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+        #         auth_utils.make_get_auth_dependency(raise_exceptions=False, c=self.client))]
+        # ) -> Sequence[user_schema.UserPublic]:
+        #     return [user_schema.UserPublic.model_validate(user) for user in await self.get_many({
+        #         'authorization': authorization,
+        #         'c': self.client,
+        #         'pagination': pagination,
+        #     })]
 
         @self.router.get('/me/')
         async def get_user_me(
@@ -78,18 +101,18 @@ class UserRouter(_Base):
                 'id': cast(types.User.id, authorization._user_id),
             })
 
-        @self.router.get('/{user_id}/')
-        async def get_user_by_id(
-            user_id: types.User.id,
-            authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(raise_exceptions=False, c=self.client))]
-        ) -> user_schema.UserPublic:
-            user = await self.get({
-                'authorization': authorization,
-                'c': self.client,
-                'id': user_id,
-            })
-            return user_schema.UserPublic.model_validate(user)
+        # @self.router.get('/{user_id}/')
+        # async def get_user_by_id(
+        #     user_id: types.User.id,
+        #     authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+        #         auth_utils.make_get_auth_dependency(raise_exceptions=False, c=self.client))]
+        # ) -> user_schema.UserPublic:
+        #     user = await self.get({
+        #         'authorization': authorization,
+        #         'c': self.client,
+        #         'id': user_id,
+        #     })
+        #     return user_schema.UserPublic.model_validate(user)
 
         @self.router.get('/available/username/{username}/',
                          responses={status.HTTP_409_CONFLICT: {

@@ -123,10 +123,15 @@ class _WithPermittedTypes(typing.TypedDict):
     permitted_types: typing.NotRequired[set[schemas.AuthCredentialJwtType]]
 
 
+class _WithRaiseExceptions(typing.TypedDict):
+    raise_exceptions: typing.NotRequired[bool]
+
+
 class MakeGetAuthDependencyNoClientKwargs(
         _WithRequiredScopes,
         _WithOverrideLifetime,
-        _WithPermittedTypes):
+        _WithPermittedTypes,
+        _WithRaiseExceptions):
     pass
 
 
