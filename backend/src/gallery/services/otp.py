@@ -5,7 +5,7 @@ import secrets
 import datetime as datetime_module
 
 from ..models.tables import OTP as OTPTable
-from ..config import settings
+from ...config import settings
 from .. import utils, types
 from . import base
 

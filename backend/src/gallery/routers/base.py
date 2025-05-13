@@ -1,5 +1,4 @@
 from ..schemas.pagination import Pagination
-from .. import client, types, models, services
 from pydantic import BaseModel
 from typing import Protocol, Unpack, TypeVar, TypedDict, Generic, NotRequired, Literal, Self, ClassVar, Type, Optional
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -12,10 +11,11 @@ from fastapi.routing import APIRoute
 from sqlmodel import SQLModel, Session, select
 from functools import wraps, lru_cache
 from enum import Enum
-from .. import client, models, types, services
+from .. import models, types, services
 from ..services import base as base_service
 from ..schemas import pagination as pagination_schema, order_by as order_by_schema
 from ..auth import utils as auth_utils
+from ... import config
 from collections.abc import Sequence
 
 
@@ -55,7 +55,6 @@ class NotFoundError(HTTPException, base_service.NotFoundError):
 
 
 class RouterVerbParams(TypedDict):
-    c: client.Client
     authorization: auth_utils.GetAuthReturn
 
 
@@ -158,7 +157,7 @@ class Router(Generic[
     _ENDPOINTS_TO_GENERATE: ClassVar[set[Literal['get_many', 'get', 'post', 'patch', 'delete']]] = {
         'get_many', 'get', 'post', 'patch', 'delete'}
 
-    def __init__(self, client: client.Client):
+    def __init__(self):
 
         prefix = self._PREFIX
         if self._ADMIN:
@@ -169,7 +168,6 @@ class Router(Generic[
             tags.append('Admin')
 
         self.router = APIRouter(prefix=prefix, tags=tags)
-        self.client = client
 
     def set_generated_endpoints(self):
 
@@ -181,7 +179,7 @@ class Router(Generic[
             response_model: TGetManyResponse,
             pagination_depends: Callable = get_pagination(),
             order_by_depends: Callable = order_by_depends,
-            get_auth_kwargs: auth_utils.MakeGetAuthDependencyNoClientKwargs = {}
+            get_auth_kwargs: auth_utils.MakeGetAuthDepedencyKwargs = {}
     ) -> Callable:
 
         async def endpoint(
@@ -189,12 +187,11 @@ class Router(Generic[
                 order_bys: Annotated[list[order_by_schema.OrderBy[base_service.TOrderBy_co]], Depends(order_by_depends)],
                 authorization: Annotated[auth_utils.GetAuthReturn, Depends(
                     auth_utils.make_get_auth_dependency(
-                        **get_auth_kwargs, c=self.client))],
+                        **get_auth_kwargs))],
         ) -> Sequence[TGetManyResponse]:
 
             items = await self.get_many({
                 'authorization': authorization,
-                'c': self.client,
                 'pagination': pagination,
                 'order_bys': order_bys,
                 'query': None,
@@ -206,17 +203,16 @@ class Router(Generic[
     def make_get_endpoint(
         self,
         response_model: TGetResponse,
-        get_auth_kwargs: auth_utils.MakeGetAuthDependencyNoClientKwargs = {}
+        get_auth_kwargs: auth_utils.MakeGetAuthDepedencyKwargs = {}
     ) -> Callable:
         async def endpoint(
                 authorization: Annotated[auth_utils.GetAuthReturn, Depends(
                     auth_utils.make_get_auth_dependency(
-                        **get_auth_kwargs, c=self.client))],
+                        **get_auth_kwargs))],
                 id: types.TId,
         ) -> TGetResponse:
             item = await self.get({
                 'authorization': authorization,
-                'c': self.client,
                 'id': id
             })
             return response_model.model_validate(item)
@@ -282,11 +278,10 @@ class Router(Generic[
     @classmethod
     async def get(cls, params: GetParams[types.TId]) -> models.TModel:
 
-        async with params['c'].AsyncSession() as session:
+        async with config.ASYNC_SESSIONMAKER() as session:
             try:
                 model_inst = await cls._SERVICE.read({
                     'admin': cls._ADMIN,
-                    'c': params['c'],
                     'session': session,
                     'id': params['id'],
                     'authorized_user_id': params['authorization']._user_id,
@@ -301,11 +296,10 @@ class Router(Generic[
 
     @classmethod
     async def get_many(cls, params: GetManyParams[models.TModel, base_service.TOrderBy_co]) -> Sequence[models.TModel]:
-        async with params['c'].AsyncSession() as session:
+        async with config.ASYNC_SESSIONMAKER() as session:
             try:
                 d: base_service.ReadManyParams[models.TModel, base_service.TOrderBy_co] = {
                     'admin': cls._ADMIN,
-                    'c': params['c'],
                     'session': session,
                     'authorized_user_id': params['authorization']._user_id,
                     'pagination': params['pagination']}
@@ -326,12 +320,11 @@ class Router(Generic[
 
     @classmethod
     async def post(cls, params: PostParams[base_service.TCreateModel]) -> models.TModel:
-        async with params['c'].AsyncSession() as session:
+        async with config.ASYNC_SESSIONMAKER() as session:
 
             try:
                 model_inst = await cls._SERVICE.create({
                     'admin': cls._ADMIN,
-                    'c': params['c'],
                     'session': session,
                     'authorized_user_id': params['authorization']._user_id,
                     'create_model': params['create_model'],
@@ -345,11 +338,10 @@ class Router(Generic[
 
     @classmethod
     async def patch(cls, params: PatchParams[types.TId, base_service.TUpdateModelService]) -> models.TModel:
-        async with params['c'].AsyncSession() as session:
+        async with config.ASYNC_SESSIONMAKER() as session:
             try:
                 model_inst = await cls._SERVICE.update({
                     'admin': cls._ADMIN,
-                    'c': params['c'],
                     'session': session,
                     'id': params['id'],
                     'authorized_user_id': params['authorization']._user_id,
@@ -364,11 +356,10 @@ class Router(Generic[
 
     @classmethod
     async def delete(cls, params: DeleteParams[types.TId]) -> None:
-        async with params['c'].AsyncSession() as session:
+        async with config.ASYNC_SESSIONMAKER() as session:
             try:
                 await cls._SERVICE.delete({
                     'admin': cls._ADMIN,
-                    'c': params['c'],
                     'session': session,
                     'id': params['id'],
                     'authorized_user_id': params['authorization']._user_id,

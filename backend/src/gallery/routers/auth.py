@@ -7,7 +7,7 @@ from typing import Annotated, cast
 from . import base
 from .. import types
 from ..auth import utils as auth_utils, exceptions as auth_exceptions
-from ..config import settings
+from ... import config
 
 from ..schemas import user_access_token as user_access_token_schema, user as user_schema, api as api_schema, sign_up as sign_up_schema
 from ..models.tables import User, UserAccessToken
@@ -162,7 +162,7 @@ class AuthRouter(base.Router):
                         user=user_schema.UserPrivate.model_validate(
                             user),
                         scope_ids=set(
-                            settings.USER_ROLE_ID_SCOPE_IDS[user.user_role_id]),
+                            config.USER_ROLE_ID_SCOPE_IDS[user.user_role_id]),
                         access_token=user_access_token_schema.UserAccessTokenPublic.model_validate(
                             user_access_token),
                     ))
@@ -214,7 +214,7 @@ class AuthRouter(base.Router):
                     user=user_schema.UserPrivate.model_validate(
                         authorization.user),
                     scope_ids=set(
-                        settings.USER_ROLE_ID_SCOPE_IDS[cast(user_schema.UserPrivate, authorization.user).user_role_id]),
+                        config.USER_ROLE_ID_SCOPE_IDS[cast(user_schema.UserPrivate, authorization.user).user_role_id]),
                     access_token=user_access_token_schema.UserAccessTokenPublic.model_validate(
                         user_access_token
                     )
@@ -314,7 +314,7 @@ class AuthRouter(base.Router):
                     'c': self.client,
                     'session': session,
                     'create_model': user_schema.UserAdminCreate(
-                        email=sign_up.email, user_role_id=settings.USER_ROLE_NAME_MAPPING['user']),
+                        email=sign_up.email, user_role_id=config.USER_ROLE_NAME_MAPPING['user']),
                     'authorized_user_id': authorization._user_id,
                 })
 
@@ -342,7 +342,7 @@ class AuthRouter(base.Router):
                 auth=auth_utils.GetUserSessionInfoReturn(
                     user=user_schema.UserPrivate.model_validate(user),
                     scope_ids=set(
-                        settings.USER_ROLE_ID_SCOPE_IDS[user.user_role_id]),
+                        config.USER_ROLE_ID_SCOPE_IDS[user.user_role_id]),
                     access_token=user_access_token_schema.UserAccessTokenPublic.model_validate(
                         user_access_token),
                 )

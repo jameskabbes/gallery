@@ -10,7 +10,7 @@ from ..services.gallery_permission import GalleryPermission as GalleryPermission
 from . import base
 from .. import types, utils
 from ..schemas import gallery as gallery_schema
-from ..config import constants, settings
+from ...config import constants, settings
 
 
 class Gallery(
@@ -322,3 +322,108 @@ class Gallery(
     #     # recursively sync children
     #     for child in self.children:
     #         await child.sync_with_local(session, c, dir / child.folder_name)
+
+    '''
+        def sync_with_local(self):
+        """sync database with local directory contents"""
+
+        if input('Are you sure you want to sync with local? (y/n) ') != 'y':
+            return
+
+        # Studios
+        studio_id_keys_to_add, studio_ids_to_delete = studio.Studio.find_to_add_and_delete(
+            self.db[studio.Studio.COLLECTION_NAME], self.studios_dir)
+
+        print('Studios to add')
+        print(studio_id_keys_to_add)
+        print('Studios to delete')
+        print(studio_ids_to_delete)
+        print()
+
+        for studio_id_keys in studio_id_keys_to_add:
+            new_studio = studio.Studio.make_from_id_keys(studio_id_keys)
+            new_studio.insert(self.db[studio.Studio.COLLECTION_NAME])
+
+        studio.Studio.delete_by_ids(
+            self.db[studio.Studio.COLLECTION_NAME], list(studio_ids_to_delete))
+
+        # Events
+        # remove events that reference studios that no longer exist
+        studio_id_keys_by_id = studio.Studio.find_id_keys_by_id(
+            self.db[studio.Studio.COLLECTION_NAME])
+
+        stale_event_ids = event.Event.find_ids(
+            self.db[event.Event.COLLECTION_NAME], filter={'studio_id': {'$nin': list(studio_id_keys_by_id.keys())}})
+
+        print('Stale event ids')
+        print(stale_event_ids)
+        print()
+
+        event.Event.delete_by_ids(
+            self.db[event.Event.COLLECTION_NAME], list(stale_event_ids))
+
+        # loop through existing studios and update events
+        for studio_id in studio_id_keys_by_id:
+            studio_dir_name = studio_id_keys_by_id[studio_id][0]
+            studio_dir = self.studios_dir.joinpath(studio_dir_name)
+
+            event_id_keys_to_add, event_ids_to_delete = event.Event.find_to_add_and_delete(
+                self.db[event.Event.COLLECTION_NAME], studio_dir, studio_id)
+
+            print(studio_id)
+            print(event_id_keys_to_add)
+            print(event_ids_to_delete)
+            print()
+
+            for event_id_keys in event_id_keys_to_add:
+                new_event = event.Event.make_from_id_keys(event_id_keys)
+                new_event.insert(self.db[event.Event.COLLECTION_NAME])
+
+            event.Event.delete_by_ids(
+                self.db[event.Event.COLLECTION_NAME], list(event_ids_to_delete))
+
+        # groups
+        # remove groups that reference events that no longer exist
+        event_id_keys_by_id = event.Event.find_id_keys_by_id(
+            self.db[event.Event.COLLECTION_NAME])
+
+        stale_file_ids = media.Media.find_ids(
+            self.db[media.Media.COLLECTION_NAME], filter={'event_id': {'$nin': list(event_id_keys_by_id.keys())}})
+
+        print('Stale file ids')
+        print(stale_file_ids)
+        print()
+
+        media.Media.delete_by_ids(
+            self.db[media.Media.COLLECTION_NAME], list(stale_file_ids))
+
+        # loop through existing events and update groups
+        for event_id in event_id_keys_by_id:
+            event_dict = event.Event.id_keys_to_dict(
+                event_id_keys_by_id[event_id])
+
+            event_dir = self.studios_dir.joinpath(studio_id_keys_by_id[event_dict['studio_id']][0]).joinpath(
+                event.Event.build_directory_name(
+                    {'datetime': event_dict['datetime'], 'name': event_dict['name']})
+            )
+
+            file_id_keys_to_add, file_ids_to_delete = media.Media.find_to_add_and_delete(
+                self.db[media.Media.COLLECTION_NAME], event_dir, event_id)
+
+            print(event_id)
+            print(file_id_keys_to_add)
+            print(file_ids_to_delete)
+
+            for file_id_keys in file_id_keys_to_add:
+                file_class = media.Media.get_media_type_from_id_keys(
+                    file_id_keys)
+                if file_class is None:
+                    Warning('File ending not recognized {} not recognized on file {}'.format(
+                        file_id_keys['file_ending'], file_id_keys))
+                    continue
+                new_file = file_class.make_from_id_keys(file_id_keys)
+                new_file.insert(self.db[media.Media.COLLECTION_NAME])
+
+            media.Media.delete_by_ids(
+                self.db[media.Media.COLLECTION_NAME], list(file_ids_to_delete))
+        '''

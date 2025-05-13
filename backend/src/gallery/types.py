@@ -7,6 +7,7 @@ PhoneNumber = str
 Email = Annotated[EmailStr, StringConstraints(
     min_length=1, max_length=254)]
 JwtEncodedStr = str
+ISO8601DurationStr = Annotated[str, "ISO 8601 duration string"]
 
 
 class PermissionLevel:

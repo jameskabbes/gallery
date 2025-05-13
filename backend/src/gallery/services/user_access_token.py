@@ -10,7 +10,7 @@ from .. import types
 from ..schemas import user_access_token as user_access_token_schema, auth_credential as auth_credential_schema
 from ..services import auth_credential as auth_credential_service
 from .. import utils
-from ..config import settings
+from ...config import settings
 
 
 class UserAccessToken(

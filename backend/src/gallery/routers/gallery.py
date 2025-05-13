@@ -9,7 +9,7 @@ from . import base
 from .. import types
 from typing import Annotated, cast
 from ..auth import utils as auth_utils
-from ..config import settings
+from ...config import settings
 import shutil
 
 

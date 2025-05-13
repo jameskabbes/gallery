@@ -12,9 +12,9 @@ import typing
 from typing import Annotated, Generic
 from fastapi import Request, HTTPException, status, Response
 import datetime as datetime_module
-from .. import client, types, auth
+from .. import types, auth, utils
 from ..auth import exceptions
-from ..config import settings
+from ... import config
 from ..models import tables
 from .. import models, schemas
 
@@ -107,10 +107,6 @@ class GetAuthReturn(BaseModel, Generic[schemas.TAuthCredentialInstance_co]):
             return None
 
 
-class _WithClient(typing.TypedDict):
-    c: client.Client
-
-
 class _WithRequiredScopes(typing.TypedDict):
     required_scopes: typing.NotRequired[set[types.Scope.name]]
 
@@ -127,7 +123,7 @@ class _WithRaiseExceptions(typing.TypedDict):
     raise_exceptions: typing.NotRequired[bool]
 
 
-class MakeGetAuthDependencyNoClientKwargs(
+class MakeGetAuthDepedencyKwargs(
         _WithRequiredScopes,
         _WithOverrideLifetime,
         _WithPermittedTypes,
@@ -135,14 +131,7 @@ class MakeGetAuthDependencyNoClientKwargs(
     pass
 
 
-class MakeGetAuthDepedencyKwargs(
-        MakeGetAuthDependencyNoClientKwargs,
-        _WithClient):
-    pass
-
-
 class GetAuthFromTableKwargs(
-        _WithClient,
         _WithRequiredScopes,
         _WithOverrideLifetime):
     session: AsyncSession
@@ -151,7 +140,6 @@ class GetAuthFromTableKwargs(
 
 
 class GetAuthFromJwtKwargs(
-        _WithClient,
         _WithRequiredScopes,
         _WithOverrideLifetime,
         _WithPermittedTypes):
@@ -185,7 +173,6 @@ async def get_auth_from_auth_credential_table_inst(
 ) -> GetAuthReturn[schemas.TAuthCredentialTableInstance]:
 
     session = kwargs.get('session')
-    c = kwargs.get('c')
     service = kwargs.get('auth_credential_service')
     required_scopes = kwargs.get('required_scopes', set())
     override_lifetime = kwargs.get('override_lifetime', None)
@@ -197,7 +184,6 @@ async def get_auth_from_auth_credential_table_inst(
         await service.delete(
             {
                 'session': session,
-                'c': c,
                 'admin': True,
                 'authorized_user_id': auth_credential_table_inst.user_id,
                 'id': auth_credential_table_inst.id,
@@ -206,11 +192,10 @@ async def get_auth_from_auth_credential_table_inst(
         return GetAuthReturn(exception=exceptions.authorization_expired())
 
     # if no user is associated with the auth_credential, raise an exception
-    async with c.AsyncSession() as session:
+    async with config.ASYNC_SESSIONMAKER() as session:
         user = await UserService.read(
             {
                 'session': session,
-                'c': c,
                 'id': auth_credential_table_inst.user_id,
                 'admin': True,
                 'authorized_user_id': auth_credential_table_inst.user_id,
@@ -220,7 +205,7 @@ async def get_auth_from_auth_credential_table_inst(
         return GetAuthReturn(exception=exceptions.user_not_found())
 
     required_scope_ids = set(
-        [settings.SCOPE_NAME_MAPPING[scope_name]
+        [config.SCOPE_NAME_MAPPING[scope_name]
             for scope_name in required_scopes]
     )
 
@@ -239,7 +224,6 @@ async def get_auth_from_auth_credential_table_inst(
 
 async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJwtKwargs]) -> GetAuthReturn[schemas.AuthCredentialJwtInstance]:
 
-    c = kwargs.get('c')
     token = kwargs.get('token', None)
     required_scopes = kwargs.get('required_scopes', set())
     permitted_types = kwargs.get(
@@ -253,7 +237,7 @@ async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJ
     # 2. make sure the token is a valid jwt
     try:
         payload = typing.cast(
-            auth_credential_schema.JwtPayload[typing.Any], c.jwt_decode(token))
+            auth_credential_schema.JwtPayload[typing.Any], utils.jwt_decode(token))
     except:
         return GetAuthReturn(exception=exceptions.improper_format())
 
@@ -286,7 +270,7 @@ async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJ
     # if the auth_credential is stored in a table, check its db entry
     if issubclass(AuthCredentialService, auth_credential_service.Table):
 
-        async with c.AsyncSession() as session:
+        async with config.ASYNC_SESSIONMAKER() as session:
 
             AuthCredentialService = typing.cast(
                 services.AuthCredentialJwtAndTableService, AuthCredentialService)
@@ -356,7 +340,7 @@ class GetUserSessionInfoReturn(BaseModel):
     access_token: typing.Optional[user_access_token_schema.UserAccessTokenPublic]
 
 
-assert settings.SHARED_CONSTANTS['auth_key'] == 'auth'
+assert config.SHARED_CONSTANTS['auth_key'] == 'auth'
 
 
 class GetUserSessionInfoNestedReturn(BaseModel):
@@ -380,10 +364,10 @@ def get_user_session_info(get_authorization_return: GetAuthReturn) -> GetUserSes
     ))
 
 
-def make_authenticate_user_with_username_and_password_dependency(c: client.Client):
+def make_authenticate_user_with_username_and_password_dependency():
     async def authenticate_user_with_username_and_password(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> tables.User:
 
-        async with c.AsyncSession() as session:
+        async with config.ASYNC_SESSIONMAKER() as session:
             user = await UserService.authenticate(
                 session, form_data.username, form_data.password)
 
@@ -394,27 +378,26 @@ def make_authenticate_user_with_username_and_password_dependency(c: client.Clien
     return authenticate_user_with_username_and_password
 
 
-async def send_signup_link(session: AsyncSession, c: client.Client, user: tables.User | None, email: types.User.email):
+async def send_signup_link(session: AsyncSession, user: tables.User | None, email: types.User.email):
 
     # existing user, send email to existing user
     if user:
         user_access_token = await UserAccessTokenService.create({
             'authorized_user_id': user.id,
             'session': session,
-            'c': c,
             'create_model': user_access_token_schema.UserAccessTokenAdminCreate(
                 user_id=user.id,
                 expiry=auth_credential_service.lifespan_to_expiry(
-                    c.auth['credential_lifespans']['request_sign_up'])
+                    config.AUTH['credential_lifespans']['request_sign_up'])
             ),
             'admin': False
         })
 
-        url = '{}{}/?token={}'.format(settings.FRONTEND_URLS['base'],
-                                      settings.FRONTEND_URLS['verify_magic_link'], c.jwt_encode(typing.cast(dict, UserAccessTokenService.to_jwt_payload(user_access_token))))
+        url = '{}{}/?token={}'.format(config.ENV['URL'],
+                                      config.FRONTEND_URLS['verify_magic_link'], c.jwt_encode(typing.cast(dict, UserAccessTokenService.to_jwt_payload(user_access_token))))
 
         if email:
-            c.send_email(
+            utils.send_email(
                 email, 'Sign Up Request', 'Somebody requested to sign up with this email. An account already exists with this email. Click here to login instead: {}'.format(url))
 
     else:
@@ -422,22 +405,22 @@ async def send_signup_link(session: AsyncSession, c: client.Client, user: tables
         sign_up = SignUpService.model_inst_from_create_model(sign_up_schema.SignUpAdminCreate(
             email=email, expiry=auth_credential_service.lifespan_to_expiry(c.auth['credential_lifespans']['request_sign_up'])))
 
-        sign_up_jwt = c.jwt_encode(typing.cast(
+        sign_up_jwt = utils.jwt_encode(typing.cast(
             dict, SignUpService.to_jwt_payload(sign_up)))
 
-        url = '{}{}/?token={}'.format(settings.FRONTEND_URLS['base'],
-                                      settings.FRONTEND_URLS['verify_signup'], sign_up_jwt)
+        url = '{}{}/?token={}'.format(config.ENV['base'],
+                                      config.FRONTEND_URLS['verify_signup'], sign_up_jwt)
 
         if email:
-            c.send_email(email, 'Sign Up',
-                         'Click here to sign up: {}'.format(url))
+            utils.send_email(email, 'Sign Up',
+                             'Click here to sign up: {}'.format(url))
 
 
 class PostLoginWithOTPResponse(GetUserSessionInfoNestedReturn):
     pass
 
 
-async def post_login_otp(session: AsyncSession, c: client.Client, user: tables.User | None, response: Response, code: types.OTP.code) -> PostLoginWithOTPResponse:
+async def post_login_otp(session: AsyncSession, user: tables.User | None, response: Response, code: types.OTP.code) -> PostLoginWithOTPResponse:
 
     if user is None:
         raise exceptions.Base(exceptions.invalid_otp())
@@ -449,9 +432,8 @@ async def post_login_otp(session: AsyncSession, c: client.Client, user: tables.U
     get_auth = await get_auth_from_auth_credential_table_inst(
         user_otp,
         session=session,
-        c=c,
         auth_credential_service=OTPService,
-        override_lifetime=c.auth['credential_lifespans']['access_token']
+        override_lifetime=config.AUTH['credential_lifespans']['access_token']
     )
 
     if get_auth.exception:
@@ -460,24 +442,22 @@ async def post_login_otp(session: AsyncSession, c: client.Client, user: tables.U
     # if the code is active and correct, create a new access token
     user_access_token = await UserAccessTokenService.create({
         'authorized_user_id': user.id,
-        "c": c,
         'session': session,
         'create_model': user_access_token_schema.UserAccessTokenAdminCreate(
             user_id=user.id,
             expiry=auth_credential_service.lifespan_to_expiry(
-                c.auth['credential_lifespans']['access_token']),
+                config.AUTH['credential_lifespans']['access_token']),
         ),
         'admin': False
     })
 
-    set_access_token_cookie(response, c.jwt_encode(typing.cast(
+    set_access_token_cookie(response, utils.jwt_encode(typing.cast(
         dict, UserAccessTokenService.to_jwt_payload(user_access_token))), expiry=user_access_token.expiry)
 
     # one time link, delete the otp
     await OTPService.delete(
         {
             'session': session,
-            'c': c,
             'id': user_otp.id,
             'authorized_user_id': user.id,
             'admin': False
@@ -487,50 +467,48 @@ async def post_login_otp(session: AsyncSession, c: client.Client, user: tables.U
     return PostLoginWithOTPResponse(
         auth=GetUserSessionInfoReturn(
             user=user_schema.UserPrivate.model_validate(user),
-            scope_ids=set(await UserAccessTokenService.get_scope_ids(session, c, user_access_token)),
+            scope_ids=set(await UserAccessTokenService.get_scope_ids(session, user_access_token)),
             access_token=user_access_token_schema.UserAccessTokenPublic.model_validate(
                 user_access_token)
         )
     )
 
 
-async def send_magic_link(session: AsyncSession, c: client.Client, user: tables.User, email: typing.Optional[types.User.email] = None, phone_number: typing.Optional[types.User.phone_number] = None):
+async def send_magic_link(session: AsyncSession, user: tables.User, email: typing.Optional[types.User.email] = None, phone_number: typing.Optional[types.User.phone_number] = None):
 
     user_access_token = await UserAccessTokenService.create(
         {
             'authorized_user_id': user.id,
-            'c': c,
             'session': session,
             'admin': False,
             'create_model': user_access_token_schema.UserAccessTokenAdminCreate(user_id=user.id, expiry=auth_credential_service.lifespan_to_expiry(c.auth['credential_lifespans']['magic_link']))
         }
     )
 
-    url = '{}{}/?token={}'.format(settings.FRONTEND_URLS['base'],
-                                  settings.FRONTEND_URLS['verify_magic_link'], c.jwt_encode(typing.cast(dict, UserAccessTokenService.to_jwt_payload(user_access_token))))
+    url = '{}{}/?token={}'.format(config.ENV['URL'],
+                                  config.FRONTEND_URLS['verify_magic_link'], c.jwt_encode(typing.cast(dict, UserAccessTokenService.to_jwt_payload(user_access_token))))
 
     if email:
-        c.send_email(email, 'Magic Link',
-                     'Click to login: {}'.format(url))
+        utils.send_email(email, 'Magic Link',
+                         'Click to login: {}'.format(url))
     if phone_number:
         if user.phone_number:
-            c.send_sms(user.phone_number, 'Click to login: {}'.format(url))
+            utils.send_sms(user.phone_number, 'Click to login: {}'.format(url))
 
 
-async def send_otp(session: AsyncSession, c: client.Client, user: tables.User, email: typing.Optional[types.User.email] = None, phone_number: typing.Optional[types.User.phone_number] = None):
+async def send_otp(session: AsyncSession, user: tables.User, email: typing.Optional[types.User.email] = None, phone_number: typing.Optional[types.User.phone_number] = None):
 
     code = OTPService.generate_code()
     otp = await OTPService.create({
         'authorized_user_id': user.id,
-        'c': c,
         'session': session,
         'admin': False,
         'create_model': otp_schema.OTPAdminCreate(
-            user_id=user.id, hashed_code=OTPService.hash_code(code), expiry=auth_credential_service.lifespan_to_expiry(c.auth['credential_lifespans']['otp'])
+            user_id=user.id, hashed_code=OTPService.hash_code(code), expiry=auth_credential_service.lifespan_to_expiry(config.AUTH['credential_lifespans']['otp'])
         )
     })
 
     if email:
-        c.send_email(email, 'OTP', 'Your OTP is: {}'.format(code))
+        utils.send_email(email, 'OTP', 'Your OTP is: {}'.format(code))
     if phone_number:
-        c.send_sms(phone_number, 'Your OTP is: {}'.format(code))
+        utils.send_sms(phone_number, 'Your OTP is: {}'.format(code))

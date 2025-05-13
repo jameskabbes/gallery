@@ -4,12 +4,10 @@ from sqlmodel.sql.expression import SelectOfScalar
 from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import Protocol, Unpack, TypeVar, TypedDict, Generic, NotRequired, Literal, Self, ClassVar, Type, Optional
 from pydantic import BaseModel
-from .. import client, types
+from .. import types, models
 from ..schemas.pagination import Pagination
 from ..schemas.order_by import OrderBy
-from .. import models
 from collections.abc import Sequence
-from .. import models
 
 TCreateModel = TypeVar(
     'TCreateModel', bound=BaseModel, default=BaseModel)
@@ -30,7 +28,6 @@ TOrderBy_co = TypeVar('TOrderBy_co', bound=str, default=str, covariant=True)
 
 class CRUDParamsBase(TypedDict):
     session: AsyncSession
-    c: client.Client
     authorized_user_id: Optional[types.User.id]
     admin: bool
 
@@ -302,7 +299,6 @@ class Service(
 
         await cls._check_authorization_existing({
             'session': params['session'],
-            'c': params['c'],
             'model_inst': model_inst,
             'operation': 'read',
             'id': params['id'],
@@ -330,7 +326,6 @@ class Service(
 
         await cls._check_authorization_existing({
             'session': params['session'],
-            'c': params['c'],
             'operation': 'delete',
             'id': params['id'],
             'model_inst': model_inst,
