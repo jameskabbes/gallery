@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import Annotated, cast
 
 
-from src import config
+from backend.src.gallery import config
 from src.gallery import types, utils
 from src.gallery.auth import utils as auth_utils, exceptions as auth_exceptions
 from src.gallery.schemas import user_access_token as user_access_token_schema, user as user_schema, api as api_schema, sign_up as sign_up_schema
@@ -16,70 +16,70 @@ from src.gallery.services.user_access_token import UserAccessToken as UserAccess
 from src.gallery.routers import base
 
 
-class PostTokenResponse(BaseModel):
+class TokenResponse(BaseModel):
     access_token: types.JwtEncodedStr
     token_type: str
 
 
-class PostLoginWithPasswordResponse(auth_utils.GetUserSessionInfoNestedReturn):
+class LoginWithPasswordResponse(auth_utils.GetUserSessionInfoNestedReturn):
     pass
 
 
-class PostLoginWithMagicLinkRequest(BaseModel):
+class LoginWithMagicLinkRequest(BaseModel):
     token: types.JwtEncodedStr
 
 
-class PostLoginWithMagicLinkResponse(auth_utils.GetUserSessionInfoNestedReturn):
+class LoginWithMagicLinkResponse(auth_utils.GetUserSessionInfoNestedReturn):
     pass
 
 
-class PostLoginWithOTPEmailRequest(BaseModel):
+class LoginWithOTPEmailRequest(BaseModel):
     code: types.OTP.code
     email: types.User.email
 
 
-class PostLoginWithGoogleRequest(BaseModel):
+class LoginWithGoogleRequest(BaseModel):
     access_token: str
 
 
-class PostLoginWithGoogleResponse(auth_utils.GetUserSessionInfoNestedReturn):
+class LoginWithGoogleResponse(auth_utils.GetUserSessionInfoNestedReturn):
     pass
 
 
-class PostLoginWithOTPPhoneNumberRequest(BaseModel):
+class LoginWithOTPPhoneNumberRequest(BaseModel):
     code: types.OTP.code
     phone_number: types.User.phone_number
 
 
-class PostSignUpRequest(BaseModel):
+class SignUpRequest(BaseModel):
     token: types.JwtEncodedStr
 
 
-class PostSignUpResponse(auth_utils.GetUserSessionInfoNestedReturn):
+class SignUpResponse(auth_utils.GetUserSessionInfoNestedReturn):
     pass
 
 
-class PostRequestSignUpEmailRequest(BaseModel):
+class RequestSignUpEmailRequest(BaseModel):
     email: types.User.email
 
 
-class PostRequestSignUpSMSRequest(BaseModel):
+class RequestSignUpSMSRequest(BaseModel):
     phone_number: types.User.phone_number
 
 
-class PostRequestMagicLinkEmailRequest(BaseModel):
+class RequestMagicLinkEmailRequest(BaseModel):
     email: types.User.email
 
 
-class PostRequestMagicLinkSMSRequest(BaseModel):
+class RequestMagicLinkSMSRequest(BaseModel):
     phone_number: types.User.phone_number
 
 
-class PostRequestOTPEmailRequest(BaseModel):
+class RequestOTPEmailRequest(BaseModel):
     email: types.User.email
 
 
-class PostRequestOTPSMSRequest(BaseModel):
+class RequestOTPSMSRequest(BaseModel):
     phone_number: types.User.phone_number
 
 
@@ -89,228 +89,53 @@ class AuthRouter(base.Router):
     _PREFIX = '/auth'
     _TAG = 'Auth'
 
-    def _set_routes(self):
+    @classmethod
+    async def auth_root(
+        cls,
+        authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+            auth_utils.make_get_auth_dependency(raise_exceptions=False))]
+    ) -> auth_utils.GetUserSessionInfoNestedReturn:
+        return auth_utils.get_user_session_info(authorization)
 
-        @self.router.get('/')
-        async def get_auth_root(authorization: Annotated[auth_utils.GetAuthReturn, Depends(auth_utils.make_get_auth_dependency(raise_exceptions=False))]) -> auth_utils.GetUserSessionInfoNestedReturn:
-            return auth_utils.get_user_session_info(authorization)
+    @classmethod
+    async def token(
+        cls,
+        user: Annotated[User, Depends(auth_utils.make_authenticate_user_with_username_and_password_dependency())],
+        response: Response,
+        stay_signed_in: bool = Form(False)
+    ) -> TokenResponse:
+        async with config.ASYNC_SESSIONMAKER() as session:
 
-        @self.router.post('/token/')
-        async def post_token(
-            user: Annotated[User, Depends(auth_utils.make_authenticate_user_with_username_and_password_dependency())],
-            response: Response,
-            stay_signed_in: bool = Form(False)
-        ) -> PostTokenResponse:
-            async with config.ASYNC_SESSIONMAKER() as session:
+            user_access_token = await UserAccessTokenService.create({
+                'session': session,
+                'admin': False,
+                'create_model': user_access_token_schema.UserAccessTokenAdminCreate(
+                    user_id=user.id,
+                    expiry=auth_credential_service.lifespan_to_expiry(config.AUTH[
+                        'credential_lifespans']['access_token']),
+                ),
+                'authorized_user_id': user.id,
+            })
 
-                user_access_token = await UserAccessTokenService.create({
-                    'session': session,
-                    'admin': False,
-                    'create_model': user_access_token_schema.UserAccessTokenAdminCreate(
-                        user_id=user.id,
-                        expiry=auth_credential_service.lifespan_to_expiry(config.AUTH[
-                            'credential_lifespans']['access_token']),
-                    ),
-                    'authorized_user_id': user.id,
-                })
+            encoded_jwt = utils.jwt_encode(
+                cast(dict, UserAccessTokenService.to_jwt_payload(user_access_token)))
 
-                encoded_jwt = utils.jwt_encode(
-                    cast(dict, UserAccessTokenService.to_jwt_payload(user_access_token)))
+            auth_utils.set_access_token_cookie(response, encoded_jwt, None if not stay_signed_in else auth_credential_service.lifespan_to_expiry(
+                config.AUTH['credential_lifespans']['access_token']))
+            return TokenResponse(access_token=encoded_jwt, token_type='bearer')
 
-                auth_utils.set_access_token_cookie(response, encoded_jwt, None if not stay_signed_in else auth_credential_service.lifespan_to_expiry(
-                    config.AUTH['credential_lifespans']['access_token']))
-                return PostTokenResponse(access_token=encoded_jwt, token_type='bearer')
+    @classmethod
+    async def login_password(
+        cls,
+        user: Annotated[User, Depends(auth_utils.make_authenticate_user_with_username_and_password_dependency())],
+        response: Response,
+        request: Request,
+        stay_signed_in: bool = Form(False)
+    ) -> LoginWithPasswordResponse:
 
-        @self.router.post('/login/password/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Could not validate credentials', 'model': api_schema.DetailOnlyResponse}})
-        async def post_login_password(
-            user: Annotated[User, Depends(auth_utils.make_authenticate_user_with_username_and_password_dependency())],
-            response: Response,
-            request: Request,
-            stay_signed_in: bool = Form(False)
-        ) -> PostLoginWithPasswordResponse:
+        async with config.ASYNC_SESSIONMAKER() as session:
 
-            async with config.ASYNC_SESSIONMAKER() as session:
-
-                tokken_lifespan = config.AUTH['credential_lifespans']['access_token']
-
-                user_access_token = await UserAccessTokenService.create({
-                    'session': session,
-                    'admin': False,
-                    'authorized_user_id': user.id,
-                    'create_model': user_access_token_schema.UserAccessTokenAdminCreate(
-                        user_id=user.id,
-                        expiry=auth_credential_service.lifespan_to_expiry(config.AUTH[
-                            'credential_lifespans']['access_token']),
-                    ),
-                })
-
-                encoded_jwt = utils.jwt_encode(
-                    cast(dict, UserAccessTokenService.to_jwt_payload(user_access_token)))
-
-                auth_utils.set_access_token_cookie(response, encoded_jwt, None if not stay_signed_in else auth_credential_service.lifespan_to_expiry(
-                    config.AUTH['credential_lifespans']['access_token']))
-
-                user_private = user_schema.UserPrivate.model_validate(user)
-
-                return PostLoginWithPasswordResponse(
-                    auth=auth_utils.GetUserSessionInfoReturn(
-                        user=user_schema.UserPrivate.model_validate(
-                            user),
-                        scope_ids=set(
-                            config.USER_ROLE_ID_SCOPE_IDS[user.user_role_id]),
-                        access_token=user_access_token_schema.UserAccessTokenPublic.model_validate(
-                            user_access_token),
-                    ))
-
-        @self.router.post('/login/magic-link/', responses={status.HTTP_401_UNAUTHORIZED: {'description': 'Invalid token', 'model': api_schema.DetailOnlyResponse}})
-        async def post_login_magic_link(
-                response: Response,
-                model: PostLoginWithMagicLinkRequest
-        ) -> PostLoginWithMagicLinkResponse:
-
-            authorization = await auth_utils.get_auth_from_auth_credential_jwt(
-                token=model.token,
-                permitted_types={'access_token'},
-                override_lifetime=config.AUTH['credential_lifespans']['magic_link']
-            )
-
-            if authorization.exception:
-                raise auth_exceptions.Base(authorization.exception)
-
-            auth_credential = cast(
-                UserAccessToken, authorization.auth_credential)
-
-            async with config.ASYNC_SESSIONMAKER() as session:
-                token_lifespan = config.AUTH['credential_lifespans']['access_token']
-                user_access_token = await UserAccessTokenService.create(
-                    {
-                        'session': session,
-                        'admin': False,
-                        'create_model': user_access_token_schema.UserAccessTokenAdminCreate(
-                            user_id=auth_credential.user_id,
-                            expiry=auth_credential_service.lifespan_to_expiry(
-                                token_lifespan),
-                        ),
-                        'authorized_user_id': auth_credential.user_id,
-                    }
-                )
-
-                auth_utils.set_access_token_cookie(response, utils.jwt_encode(
-                    dict(UserAccessTokenService.to_jwt_payload(user_access_token))), expiry=auth_credential_service.lifespan_to_expiry(token_lifespan))
-
-                # one time link, delete the auth_credential
-                await session.delete(auth_credential)
-                await session.commit()
-
-            return PostLoginWithMagicLinkResponse(
-                auth=auth_utils.GetUserSessionInfoReturn(
-                    user=user_schema.UserPrivate.model_validate(
-                        authorization.user),
-                    scope_ids=set(
-                        config.USER_ROLE_ID_SCOPE_IDS[cast(user_schema.UserPrivate, authorization.user).user_role_id]),
-                    access_token=user_access_token_schema.UserAccessTokenPublic.model_validate(
-                        user_access_token
-                    )
-                )
-            )
-
-        @self.router.post('/login/otp/email/')
-        async def post_login_otp_email(
-                model: PostLoginWithOTPEmailRequest,
-                response: Response) -> auth_utils.PostLoginWithOTPResponse:
-
-            async with config.ASYNC_SESSIONMAKER() as session:
-                user = (await session.exec(select(User).where(
-                    User.email == model.email))).one_or_none()
-                return await auth_utils.post_login_otp(session, user, response, model.code)
-
-        @self.router.post('/login/otp/phone_number/')
-        async def post_login_otp_phone_number(
-            model: PostLoginWithOTPPhoneNumberRequest,
-            response: Response
-        ) -> auth_utils.PostLoginWithOTPResponse:
-
-            async with config.ASYNC_SESSIONMAKER() as session:
-                user = (await session.exec(select(User).where(
-                    User.phone_number == model.phone_number))).one_or_none()
-                return await auth_utils.post_login_otp(session, user, response, model.code)
-
-        # @self.router.post("/login/google/", responses={status.HTTP_400_BAD_REQUEST: {'description': 'Invalid token', 'model': DetailOnlyResponse}})
-        # async def post_login_google(request_token: PostLoginWithGoogleRequest, response: Response) -> PostLoginWithGoogleResponse:
-
-        #     async with httpx.AsyncClient() as client:
-        #         res = await client.get('https://www.googleapis.com/oauth2/v3/userinfo?access_token={}'.format(request_token.access_token))
-        #         res.raise_for_status()
-        #         user_info = res.json()
-
-        #     # fields: sub, name, given_name, family_name, picture, email, email_verified
-        #     email = user_info.get('email')
-        #     if not email:
-        #         raise HTTPException(status.HTTP_400_BAD_REQUEST,
-        #                             detail='Invalid token')
-        #     async with config.ASYNC_SESSIONMAKER() as session:
-
-        #         user = session.exec(select(models.User).where(
-        #             models.User.email == email)).one_or_none()
-        #         if not user:
-        #             user = await models.User.api_post(models.User.PostParams.model_construct(
-        #                 session=session, c=c, authorized_user_id=None, admin=True, create_model=models.UserAdminCreate(email=email, user_role_id=settings.USER_ROLE_NAME_MAPPING['user'])
-        #             ))
-
-        #     ken_lifespan = config.AUTH['credential_lifespans']['access_token']
-
-        #         user_access_token = await UserAccessTokenService.create({
-        #
-        #
-        # models.UserAccessToken.PostParams.model_construct(session=session, c=c,  authorized_user_id=user._id, create_model=models.UserAccessTokenAdminCreate(
-        #             user_id=user.id, lifespan=token_lifespan
-        #         )))
-
-        #         auth.set_access_token_cookie(response, c.jwt_encode(
-        #             user_access_token.to_payload()), token_lifespan)
-
-        #         return PostLoginWithGoogleResponse(
-        #             auth=GetAuthBaseReturn(
-        #                 user=models.UserPrivate.model_validate(user),
-        #                 scope_ids=set(
-        #                     settings.USER_ROLE_ID_SCOPE_IDS[user.user_role_id]),
-        #                 auth_credential=AuthCredentialIdTypeAndExpiry(
-        #                     id=user_access_token.id, type='access_token', expiry=user_access_token.expiry)
-        #             )
-        #         )
-
-        @self.router.post('/signup/')
-        async def post_signup(response: Response, model: PostSignUpRequest) -> PostSignUpResponse:
-
-            authorization = await auth_utils.get_auth_from_auth_credential_jwt(
-                token=model.token,
-                permitted_types={'sign_up'},
-                override_lifetime=config.AUTH['credential_lifespans']['request_sign_up'])
-
-            # double check the user doesn't already exist
-            async with config.ASYNC_SESSIONMAKER() as session:
-
-                if (await session.exec(select(User).where(
-                        User.email == cast(SignUp, authorization.auth_credential).email))).one_or_none() is not None:
-                    raise auth_exceptions.Base({
-                        'status_code': status.HTTP_409_CONFLICT,
-                        'detail': 'User already exists'
-                    })
-
-            async with config.ASYNC_SESSIONMAKER() as session:
-                sign_up = cast(SignUp,
-                               authorization.auth_credential)
-
-                user = await UserService.create({
-                    'admin': True,
-                    'session': session,
-                    'create_model': user_schema.UserAdminCreate(
-                        email=sign_up.email, user_role_id=config.USER_ROLE_NAME_MAPPING['user']),
-                    'authorized_user_id': authorization._user_id,
-                })
-
-            token_expiry = auth_credential_service.lifespan_to_expiry(
-                config.AUTH['credential_lifespans']['access_token'])
+            tokken_lifespan = config.AUTH['credential_lifespans']['access_token']
 
             user_access_token = await UserAccessTokenService.create({
                 'session': session,
@@ -318,95 +143,300 @@ class AuthRouter(base.Router):
                 'authorized_user_id': user.id,
                 'create_model': user_access_token_schema.UserAccessTokenAdminCreate(
                     user_id=user.id,
-                    expiry=token_expiry
-                )
+                    expiry=auth_credential_service.lifespan_to_expiry(config.AUTH[
+                        'credential_lifespans']['access_token']),
+                ),
             })
 
-            auth_utils.set_access_token_cookie(
-                response,
-                utils.jwt_encode(
-                    cast(dict, UserAccessTokenService.to_jwt_payload(user_access_token))),
-                expiry=token_expiry)
+            encoded_jwt = utils.jwt_encode(
+                cast(dict, UserAccessTokenService.to_jwt_payload(user_access_token)))
 
-            return PostSignUpResponse(
+            auth_utils.set_access_token_cookie(response, encoded_jwt, None if not stay_signed_in else auth_credential_service.lifespan_to_expiry(
+                config.AUTH['credential_lifespans']['access_token']))
+
+            user_private = user_schema.UserPrivate.model_validate(user)
+
+            return LoginWithPasswordResponse(
                 auth=auth_utils.GetUserSessionInfoReturn(
-                    user=user_schema.UserPrivate.model_validate(user),
+                    user=user_schema.UserPrivate.model_validate(
+                        user),
                     scope_ids=set(
                         config.USER_ROLE_ID_SCOPE_IDS[user.user_role_id]),
                     access_token=user_access_token_schema.UserAccessTokenPublic.model_validate(
                         user_access_token),
-                )
+                ))
+
+    @classmethod
+    async def login_magic_link(
+        cls,
+        response: Response,
+        model: LoginWithMagicLinkRequest
+    ) -> LoginWithMagicLinkResponse:
+
+        authorization = await auth_utils.get_auth_from_auth_credential_jwt(
+            token=model.token,
+            permitted_types={'access_token'},
+            override_lifetime=config.AUTH['credential_lifespans']['magic_link']
+        )
+
+        if authorization.exception:
+            raise auth_exceptions.Base(authorization.exception)
+
+        auth_credential = cast(
+            UserAccessToken, authorization.auth_credential)
+
+        async with config.ASYNC_SESSIONMAKER() as session:
+            token_lifespan = config.AUTH['credential_lifespans']['access_token']
+            user_access_token = await UserAccessTokenService.create(
+                {
+                    'session': session,
+                    'admin': False,
+                    'create_model': user_access_token_schema.UserAccessTokenAdminCreate(
+                        user_id=auth_credential.user_id,
+                        expiry=auth_credential_service.lifespan_to_expiry(
+                            token_lifespan),
+                    ),
+                    'authorized_user_id': auth_credential.user_id,
+                }
             )
 
-        @self.router.post('/request/signup/')
-        async def post_request_sign_up_email(
-            model: PostRequestSignUpEmailRequest,
-            background_tasks: BackgroundTasks
-        ):
+            auth_utils.set_access_token_cookie(response, utils.jwt_encode(
+                dict(UserAccessTokenService.to_jwt_payload(user_access_token))), expiry=auth_credential_service.lifespan_to_expiry(token_lifespan))
 
-            async with config.ASYNC_SESSIONMAKER() as session:
-                user = (await session.exec(select(User).where(
-                    User.email == model.email))).one_or_none()
+            # one time link, delete the auth_credential
+            await session.delete(auth_credential)
+            await session.commit()
+
+        return LoginWithMagicLinkResponse(
+            auth=auth_utils.GetUserSessionInfoReturn(
+                user=user_schema.UserPrivate.model_validate(
+                    authorization.user),
+                scope_ids=set(
+                    config.USER_ROLE_ID_SCOPE_IDS[cast(user_schema.UserPrivate, authorization.user).user_role_id]),
+                access_token=user_access_token_schema.UserAccessTokenPublic.model_validate(
+                    user_access_token
+                )
+            )
+        )
+
+    @classmethod
+    async def login_otp_email(
+        cls,
+        model: LoginWithOTPEmailRequest,
+        response: Response
+    ) -> auth_utils.PostLoginWithOTPResponse:
+
+        async with config.ASYNC_SESSIONMAKER() as session:
+            user = (await session.exec(select(User).where(
+                User.email == model.email))).one_or_none()
+            return await auth_utils.post_login_otp(session, user, response, model.code)
+
+    @classmethod
+    async def login_otp_phone_number(
+        cls,
+        model: LoginWithOTPPhoneNumberRequest,
+        response: Response
+    ) -> auth_utils.PostLoginWithOTPResponse:
+
+        async with config.ASYNC_SESSIONMAKER() as session:
+            user = (await session.exec(select(User).where(
+                User.phone_number == model.phone_number))).one_or_none()
+            return await auth_utils.post_login_otp(session, user, response, model.code)
+
+    @classmethod
+    async def signup(cls, response: Response, model: SignUpRequest) -> SignUpResponse:
+
+        authorization = await auth_utils.get_auth_from_auth_credential_jwt(
+            token=model.token,
+            permitted_types={'sign_up'},
+            override_lifetime=config.AUTH['credential_lifespans']['request_sign_up'])
+
+        # double check the user doesn't already exist
+        async with config.ASYNC_SESSIONMAKER() as session:
+
+            if (await session.exec(select(User).where(
+                    User.email == cast(SignUp, authorization.auth_credential).email))).one_or_none() is not None:
+                raise auth_exceptions.Base({
+                    'status_code': status.HTTP_409_CONFLICT,
+                    'detail': 'User already exists'
+                })
+
+        async with config.ASYNC_SESSIONMAKER() as session:
+            sign_up = cast(SignUp,
+                           authorization.auth_credential)
+
+            user = await UserService.create({
+                'admin': True,
+                'session': session,
+                'create_model': user_schema.UserAdminCreate(
+                    email=sign_up.email, user_role_id=config.USER_ROLE_NAME_MAPPING['user']),
+                'authorized_user_id': authorization._user_id,
+            })
+
+        token_expiry = auth_credential_service.lifespan_to_expiry(
+            config.AUTH['credential_lifespans']['access_token'])
+
+        user_access_token = await UserAccessTokenService.create({
+            'session': session,
+            'admin': False,
+            'authorized_user_id': user.id,
+            'create_model': user_access_token_schema.UserAccessTokenAdminCreate(
+                user_id=user.id,
+                expiry=token_expiry
+            )
+        })
+
+        auth_utils.set_access_token_cookie(
+            response,
+            utils.jwt_encode(
+                cast(dict, UserAccessTokenService.to_jwt_payload(user_access_token))),
+            expiry=token_expiry)
+
+        return SignUpResponse(
+            auth=auth_utils.GetUserSessionInfoReturn(
+                user=user_schema.UserPrivate.model_validate(user),
+                scope_ids=set(
+                    config.USER_ROLE_ID_SCOPE_IDS[user.user_role_id]),
+                access_token=user_access_token_schema.UserAccessTokenPublic.model_validate(
+                    user_access_token),
+            )
+        )
+
+    # @classmethod
+    # async def login_google(cls, request_token: LoginWithGoogleRequest, response: Response) -> LoginWithGoogleResponse:
+
+    #     async with httpx.AsyncClient() as client:
+    #         res = await client.get('https://www.googleapis.com/oauth2/v3/userinfo?access_token={}'.format(request_token.access_token))
+    #         res.raise_for_status()
+    #         user_info = res.json()
+
+    #     # fields: sub, name, given_name, family_name, picture, email, email_verified
+    #     email = user_info.get('email')
+    #     if not email:
+    #         raise HTTPException(status.HTTP_400_BAD_REQUEST,
+    #                             detail='Invalid token')
+    #     async with config.ASYNC_SESSIONMAKER() as session:
+
+    #         user = session.exec(select(models.User).where(
+    #             models.User.email == email)).one_or_none()
+    #         if not user:
+    #             user = await models.User.api_post(models.User.PostParams.model_construct(
+    #                 session=session, c=c, authorized_user_id=None, admin=True, create_model=models.UserAdminCreate(email=email, user_role_id=settings.USER_ROLE_NAME_MAPPING['user'])
+    #             ))
+
+    #     ken_lifespan = config.AUTH['credential_lifespans']['access_token']
+
+    #         user_access_token = await UserAccessTokenService.create({
+
+    # models.UserAccessToken.PostParams.model_construct(session=session, c=c,  authorized_user_id=user._id, create_model=models.UserAccessTokenAdminCreate(
+    #             user_id=user.id, lifespan=token_lifespan
+    #         )))
+
+    #         auth.set_access_token_cookie(response, c.jwt_encode(
+    #             user_access_token.to_payload()), token_lifespan)
+
+    #         return LoginWithGoogleResponse(
+    #             auth=GetAuthBaseReturn(
+    #                 user=models.UserPrivate.model_validate(user),
+    #                 scope_ids=set(
+    #                     settings.USER_ROLE_ID_SCOPE_IDS[user.user_role_id]),
+    #                 auth_credential=AuthCredentialIdTypeAndExpiry(
+    #                     id=user_access_token.id, type='access_token', expiry=user_access_token.expiry)
+    #             )
+    #         )
+
+    @classmethod
+    async def request_sign_up_email(
+        cls,
+        model: RequestSignUpEmailRequest,
+        background_tasks: BackgroundTasks
+    ):
+
+        async with config.ASYNC_SESSIONMAKER() as session:
+            user = (await session.exec(select(User).where(
+                User.email == model.email))).one_or_none()
+            background_tasks.add_task(
+                auth_utils.send_signup_link, session, user, email=model.email)
+            return Response()
+
+    @classmethod
+    async def request_magic_link_email(cls, model: RequestMagicLinkEmailRequest, background_tasks: BackgroundTasks):
+
+        async with config.ASYNC_SESSIONMAKER() as session:
+            user = (await session.exec(select(User).where(
+                User.email == model.email))).one_or_none()
+            if user:
                 background_tasks.add_task(
-                    auth_utils.send_signup_link, session, user, email=model.email)
-                return Response()
+                    auth_utils.send_magic_link, session, user, email=model.email)
+        return Response()
 
-        @self.router.post('/request/magic-link/email/')
-        async def post_request_magic_link_email(model: PostRequestMagicLinkEmailRequest, background_tasks: BackgroundTasks):
+    @classmethod
+    async def request_magic_link_sms(cls, model: RequestMagicLinkSMSRequest, background_tasks: BackgroundTasks):
+        async with config.ASYNC_SESSIONMAKER() as session:
+            user = (await session.exec(select(User).where(
+                User.phone_number == model.phone_number))).one_or_none()
+            if user:
+                background_tasks.add_task(
+                    auth_utils.send_magic_link, session, user, phone_number=model.phone_number)
+        return Response()
 
+    @classmethod
+    async def request_otp_email(cls, model: RequestOTPEmailRequest, background_tasks: BackgroundTasks):
+
+        async with config.ASYNC_SESSIONMAKER() as session:
+            user = (await session.exec(select(User).where(
+                User.email == model.email))).one_or_none()
+
+            if user:
+                background_tasks.add_task(
+                    auth_utils.send_otp, session, user, email=model.email)
+        return Response()
+
+    @classmethod
+    async def request_otp_sms(cls, model: RequestOTPSMSRequest, background_tasks: BackgroundTasks):
+
+        async with config.ASYNC_SESSIONMAKER() as session:
+            user = (await session.exec(select(User).where(
+                User.phone_number == model.phone_number))).one_or_none()
+            if user:
+                background_tasks.add_task(
+                    auth_utils.send_otp, session, user, phone_number=model.phone_number)
+        return Response()
+
+    @classmethod
+    async def logout(cls, response: Response, authorization: Annotated[auth_utils.GetAuthReturn[UserAccessToken], Depends(
+            auth_utils.make_get_auth_dependency(raise_exceptions=False, permitted_types={'access_token'}))]) -> api_schema.DetailOnlyResponse:
+
+        if authorization.isAuthorized:
             async with config.ASYNC_SESSIONMAKER() as session:
-                user = (await session.exec(select(User).where(
-                    User.email == model.email))).one_or_none()
-                if user:
-                    background_tasks.add_task(
-                        auth_utils.send_magic_link, session, user, email=model.email)
-            return Response()
+                await UserAccessTokenService.delete({
+                    'session': session,
+                    'admin': False,
+                    'authorized_user_id': cast(types.User.id, authorization._user_id),
+                    'id': UserAccessTokenService.model_id(cast(UserAccessToken, authorization.auth_credential))
+                })
 
-        @self.router.post('/request/magic-link/sms/')
-        async def post_request_magic_link_sms(model: PostRequestMagicLinkSMSRequest, background_tasks: BackgroundTasks):
-            async with config.ASYNC_SESSIONMAKER() as session:
-                user = (await session.exec(select(User).where(
-                    User.phone_number == model.phone_number))).one_or_none()
-                if user:
-                    background_tasks.add_task(
-                        auth_utils.send_magic_link, session, user, phone_number=model.phone_number)
-            return Response()
+        auth_utils.delete_access_token_cookie(response)
+        return api_schema.DetailOnlyResponse(detail='Logged out')
 
-        @self.router.post('/request/otp/email/')
-        async def post_request_otp_email(model: PostRequestOTPEmailRequest, background_tasks: BackgroundTasks):
+    def _set_routes(self):
 
-            async with config.ASYNC_SESSIONMAKER() as session:
-                user = (await session.exec(select(User).where(
-                    User.email == model.email))).one_or_none()
-
-                if user:
-                    background_tasks.add_task(
-                        auth_utils.send_otp, session, user, email=model.email)
-            return Response()
-
-        @self.router.post('/request/otp/sms/')
-        async def post_request_otp_sms(model: PostRequestOTPSMSRequest, background_tasks: BackgroundTasks):
-
-            async with config.ASYNC_SESSIONMAKER() as session:
-                user = (await session.exec(select(User).where(
-                    User.phone_number == model.phone_number))).one_or_none()
-                if user:
-                    background_tasks.add_task(
-                        auth_utils.send_otp, session, user, phone_number=model.phone_number)
-            return Response()
-
-        @self.router.post('/logout/')
-        async def logout(response: Response, authorization: Annotated[auth_utils.GetAuthReturn[UserAccessToken], Depends(
-                auth_utils.make_get_auth_dependency(raise_exceptions=False, permitted_types={'access_token'}))]) -> api_schema.DetailOnlyResponse:
-
-            if authorization.isAuthorized:
-                async with config.ASYNC_SESSIONMAKER() as session:
-                    await UserAccessTokenService.delete({
-                        'session': session,
-                        'admin': False,
-                        'authorized_user_id': cast(types.User.id, authorization._user_id),
-                        'id': UserAccessTokenService.model_id(cast(UserAccessToken, authorization.auth_credential))
-                    })
-
-            auth_utils.delete_access_token_cookie(response)
-            return api_schema.DetailOnlyResponse(detail='Logged out')
+        self.router.get('/')(self.auth_root)
+        self.router.post('/token/')(self.token)
+        self.router.post('/login/password/', responses={status.HTTP_401_UNAUTHORIZED: {
+                         'description': 'Could not validate credentials', 'model': api_schema.DetailOnlyResponse}})(self.login_password)
+        self.router.post('/login/magic-link/', responses={status.HTTP_401_UNAUTHORIZED: {
+                         'description': 'Invalid token', 'model': api_schema.DetailOnlyResponse}})(self.login_magic_link)
+        self.router.post('/login/otp/email/')(self.login_otp_email)
+        self.router.post(
+            '/login/otp/phone_number/')(self.login_otp_phone_number)
+        self.router.post('/signup/')(self.signup)
+        # self.router.post("/login/google/", responses={status.HTTP_400_BAD_REQUEST: {'description': 'Invalid token', 'model': DetailOnlyResponse}})(self.login_google)
+        self.router.post('/request/signup/')(self.request_sign_up_email)
+        self.router.post(
+            '/request/magic-link/email/')(self.request_magic_link_email)
+        self.router.post(
+            '/request/magic-link/sms/')(self.request_magic_link_sms)
+        self.router.post('/request/otp/email/')(self.request_otp_email)
+        self.router.post('/request/otp/sms/')(self.request_otp_sms)
+        self.router.post('/logout/')(self.logout)

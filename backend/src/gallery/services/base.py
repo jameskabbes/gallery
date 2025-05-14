@@ -2,7 +2,7 @@ from sqlmodel import SQLModel, select
 from sqlalchemy.orm import InstrumentedAttribute
 from sqlmodel.sql.expression import SelectOfScalar
 from sqlmodel.ext.asyncio.session import AsyncSession
-from typing import Protocol, Unpack, TypeVar, TypedDict, Generic, NotRequired, Literal, Self, ClassVar, Type, Optional
+from typing import Any, Protocol, Unpack, TypeVar, TypedDict, Generic, NotRequired, Literal, Self, ClassVar, Type, Optional
 from pydantic import BaseModel
 from collections.abc import Sequence
 
@@ -139,26 +139,25 @@ class ServiceError(Exception):
 
     def __init__(self, error_message: str):
         self.error_message = error_message
-        raise Exception(error_message)
+        super().__init__(error_message)
 
 
 class NotFoundError(ValueError, ServiceError):
 
     def __init__(self, model: Type[models.Model], id: types.Id):
         self.error_message = NotFoundError.not_found_message(model, id)
-
-        raise ValueError(self.error_message)
+        super().__init__(self.error_message)
 
     @staticmethod
     def not_found_message(model: Type[models.Model], id: types.Id) -> str:
-        return model.__class__.__name__ + ' with id ' + str(id) + ' not found'
+        return model.__name__ + ' with id `' + str(id) + '` not found'
 
 
 class AlreadyExistsError(ServiceError):
     def __init__(self, model: Type[models.Model], id: types.Id):
-        self.error_message = model.__class__.__name__ + \
-            ' with id ' + str(id) + ' already exists'
-        raise ValueError(self.error_message)
+        self.error_message = model.__name__ + \
+            ' with id `' + str(id) + '` already exists'
+        super().__init__(self.error_message)
 
 
 class NotAvailableError(ServiceError):
@@ -189,6 +188,13 @@ class Service(
         return (await session.exec(cls._build_select_by_id(id))).one_or_none()
 
     @classmethod
+    async def fetch_by_id_with_exception(cls, session: AsyncSession, id: types.TId) -> models.TModel:
+        inst = await cls.fetch_by_id(session, id)
+        if inst is None:
+            raise NotFoundError(cls._MODEL, id)
+        return inst
+
+    @classmethod
     def build_order_by(cls, query: SelectOfScalar[models.TModel], order_by: list[OrderBy[TOrderBy_co]]):
         for order in order_by:
             field: InstrumentedAttribute = getattr(cls, order.field)
@@ -209,13 +215,6 @@ class Service(
         query = query.offset(pagination.offset).limit(pagination.limit)
 
         return (await session.exec(query)).all()
-
-    @classmethod
-    async def fetch_by_id_with_exception(cls, session: AsyncSession, id: types.TId) -> models.TModel:
-        inst = await cls.fetch_by_id(session, id)
-        if inst is None:
-            raise NotFoundError(cls._MODEL, id)
-        return inst
 
     @classmethod
     async def _check_authorization_existing(cls, params: CheckAuthorizationExistingParams[models.TModel, types.TId]) -> None:

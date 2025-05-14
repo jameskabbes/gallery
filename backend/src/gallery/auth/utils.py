@@ -14,7 +14,7 @@ import datetime as datetime_module
 
 from src.gallery import types, auth, utils
 from src.gallery.auth import exceptions
-from src import config
+from backend.src.gallery import config
 
 from src.gallery.models import tables
 from src.gallery import models, schemas

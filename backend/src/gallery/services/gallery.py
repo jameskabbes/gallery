@@ -5,8 +5,8 @@ import datetime as datetime_module
 import pathlib
 import shutil
 
-from src import config
-from src.gallery import types, utils
+from backend.src.gallery import config
+from src.gallery import types, utils, core_utils
 from src.gallery.models.tables import Gallery as GalleryTable
 from src.gallery.services.gallery_permission import GalleryPermission as GalleryPermissionService, base
 from src.gallery.schemas import gallery as gallery_schema
@@ -150,7 +150,7 @@ class Gallery(
     @classmethod
     def model_inst_from_create_model(cls, create_model):
         return cls._MODEL(
-            id=utils.generate_uuid(),
+            id=core_utils.generate_uuid(),
             ** create_model.model_dump(exclude_unset=True, exclude_defaults=True, exclude_none=True)
         )
 

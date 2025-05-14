@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 
-from src import config
+from backend.src.gallery import config
 from src.gallery.routers import user, auth, user_access_token, api_key_scope, gallery, api_key, pages
 from src.gallery.auth import utils as auth_utils
 
@@ -30,15 +30,15 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
 
 
 app.include_router(auth.AuthRouter().router)
-# app.include_router(user.UserRouter().router)
-# app.include_router(gallery.GalleryRouter().router)
-# app.include_router(user_access_token.UserAccessTokenRouter().router)
-# app.include_router(api_key.ApiKeyRouter().router)
-# app.include_router(api_key_scope.ApiKeyScopeRouter().router)
-# app.include_router(pages.PagesRouter().router)
+app.include_router(user.UserRouter().router)
+app.include_router(gallery.GalleryRouter().router)
+app.include_router(user_access_token.UserAccessTokenRouter().router)
+app.include_router(api_key.ApiKeyRouter().router)
+app.include_router(api_key_scope.ApiKeyScopeRouter().router)
+app.include_router(pages.PagesRouter().router)
 
-# app.include_router(user.UserAdminRouter().router)
-# app.include_router(gallery.GalleryAdminRouter().router)
-# app.include_router(user_access_token.UserAccessTokenAdminRouter().router)
-# app.include_router(api_key.ApiKeyAdminRouter().router)
-# app.include_router(api_key_scope.ApiKeyScopeAdminRouter().router)
+app.include_router(user.UserAdminRouter().router)
+app.include_router(gallery.GalleryAdminRouter().router)
+app.include_router(user_access_token.UserAccessTokenAdminRouter().router)
+app.include_router(api_key.ApiKeyAdminRouter().router)
+app.include_router(api_key_scope.ApiKeyScopeAdminRouter().router)

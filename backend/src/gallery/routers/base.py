@@ -7,7 +7,7 @@ from enum import Enum
 from collections.abc import Sequence
 
 
-from src import config
+from backend.src.gallery import config
 from src.gallery import models, types
 from src.gallery.services import base as base_service
 from src.gallery.schemas import pagination as pagination_schema, order_by as order_by_schema
@@ -43,10 +43,12 @@ def order_by_depends(
 
 class NotFoundError(HTTPException, base_service.NotFoundError):
     def __init__(self, model: Type[models.Model], id: types.Id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f'{model.__name__} with id {id} not found'
-        )
+        self.status_code = status.HTTP_404_NOT_FOUND
+        self.detail = base_service.NotFoundError.not_found_message(model, id)
+
+        base_service.NotFoundError.__init__(self, model, id)
+        HTTPException.__init__(
+            self, status_code=self.status_code, detail=self.detail)
 
 
 class RouterVerbParams(TypedDict):
@@ -271,7 +273,7 @@ class Router(Generic[
     #     return endpoint
 
     @classmethod
-    async def get(cls, params: GetParams[types.TId]) -> models.TModel:
+    async def _get(cls, params: GetParams[types.TId]) -> models.TModel:
 
         async with config.ASYNC_SESSIONMAKER() as session:
             try:
@@ -282,15 +284,19 @@ class Router(Generic[
                     'authorized_user_id': params['authorization']._user_id,
                 })
             except base_service.NotFoundError as e:
+                print('raising HTTP Exception')
                 raise HTTPException(
                     status.HTTP_404_NOT_FOUND, detail=e.error_message)
             except Exception as e:
+                print(f"Exception type: {type(e)}")
+                print(e)
+                print('raising exception')
                 raise
 
             return model_inst
 
     @classmethod
-    async def get_many(cls, params: GetManyParams[models.TModel, base_service.TOrderBy_co]) -> Sequence[models.TModel]:
+    async def _get_many(cls, params: GetManyParams[models.TModel, base_service.TOrderBy_co]) -> Sequence[models.TModel]:
         async with config.ASYNC_SESSIONMAKER() as session:
             try:
                 d: base_service.ReadManyParams[models.TModel, base_service.TOrderBy_co] = {
@@ -314,7 +320,7 @@ class Router(Generic[
             return model_insts
 
     @classmethod
-    async def post(cls, params: PostParams[base_service.TCreateModel]) -> models.TModel:
+    async def _post(cls, params: PostParams[base_service.TCreateModel]) -> models.TModel:
         async with config.ASYNC_SESSIONMAKER() as session:
 
             try:
@@ -332,7 +338,7 @@ class Router(Generic[
             return model_inst
 
     @classmethod
-    async def patch(cls, params: PatchParams[types.TId, base_service.TUpdateModelService]) -> models.TModel:
+    async def _patch(cls, params: PatchParams[types.TId, base_service.TUpdateModelService]) -> models.TModel:
         async with config.ASYNC_SESSIONMAKER() as session:
             try:
                 model_inst = await cls._SERVICE.update({
@@ -350,7 +356,7 @@ class Router(Generic[
             return model_inst
 
     @classmethod
-    async def delete(cls, params: DeleteParams[types.TId]) -> None:
+    async def _delete(cls, params: DeleteParams[types.TId]) -> None:
         async with config.ASYNC_SESSIONMAKER() as session:
             try:
                 await cls._SERVICE.delete({

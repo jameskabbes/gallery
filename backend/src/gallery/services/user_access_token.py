@@ -3,7 +3,7 @@ from sqlmodel import select
 from pydantic import BaseModel
 import datetime as datetime_module
 
-from src import config
+from backend.src.gallery import config
 from src.gallery import utils, types
 from src.gallery.models.tables import UserAccessToken as UserAccessTokenTable
 from src.gallery.schemas import user_access_token as user_access_token_schema, auth_credential as auth_credential_schema

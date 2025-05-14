@@ -1,0 +1,47 @@
+[project]
+name = "gallery"
+version = "0.1.0"
+description = "A simple gallery application"
+readme = "README.md"
+requires-python = ">=3.13"
+license = { file = "LICENSE" }
+authors = [
+    { name = "James Kabbes", email = "james.kabbes@gmail.com"}]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "pydantic",
+    "fastapi[standard]",
+    "sqlalchemy",
+    "uvicorn",
+    "google-auth",
+    "httpx",
+    "requests",
+    "bcrypt",
+    "pyjwt",
+    "pytest",
+    "aiosqlite",
+    "sqlmodel",
+    "greenlet",
+    "isodate",
+    "platformdirs"
+]
+
+
+[project.urls]
+Homepage = "https://github.com/jameskabbes/gallery"
+Repository = "https://github.com/jameskabbes/gallery"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.target.wheel]
+packages = ["src/gallery"]
+

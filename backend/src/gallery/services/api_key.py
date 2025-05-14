@@ -1,8 +1,9 @@
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 import datetime as datetime_module
+from typing import cast
 
-from src.gallery import types, utils
+from src.gallery import types, core_utils
 from src.gallery.models.tables import ApiKey as ApiKeyTable
 from src.gallery.schemas import api_key as api_key_schema, auth_credential as auth_credential_schema
 from src.gallery.services import auth_credential as auth_credential_service, base
@@ -30,7 +31,7 @@ class ApiKey(
     def model_inst_from_create_model(cls, create_model):
 
         return cls._MODEL(
-            id=types.ApiKey.id(utils.generate_uuid()),
+            id=types.ApiKey.id(core_utils.generate_uuid()),
             issued=datetime_module.datetime.now().astimezone(datetime_module.UTC),
             **create_model.model_dump()
         )
@@ -63,13 +64,25 @@ class ApiKey(
                     ApiKeyTable, params['id']
                 )
 
-    # @classmethod
-    # async def _check_validation_post(cls, params):
-    #     await cls.api_get_is_available(params.session, ApiKeyAdminAvailable(
-    #         name=params.create_model.name, user_id=params.create_model.user_id)
-    #     )
+    @classmethod
+    async def _check_validation_post(cls, params):
+        if not await cls.is_available(params['session'], api_key_schema.ApiKeyAdminAvailable(
+            **params['create_model'].model_dump(exclude_unset=True), user_id=cast(types.User.id, params['authorized_user_id']),
+        )):
+            raise base.NotAvailableError(
+                'Cannot create API Key {} for user {}, not available'.format(
+                    str(params['create_model']), params['authorized_user_id']
+                )
+            )
 
-    # async def _check_validation_patch(self, params):
-    #     if 'name' in params.update_model.model_fields_set:
-    #         await self.api_get_is_available(params.session, ApiKeyAdminAvailable(
-    #             name=params.update_model.name, user_id=params.authorized_user_id))
+    @classmethod
+    async def _check_validation_patch(cls, params):
+        if 'name' in params['update_model'].model_fields_set:
+            if not await cls.is_available(params['session'], api_key_schema.ApiKeyAdminAvailable(
+                    name=cast(types.ApiKey.name, params['update_model'].name), user_id=cast(types.User.id, params['authorized_user_id']))):
+                raise base.NotAvailableError(
+                    'Cannot update API Key {} for user {}, not available'.format(
+                        str(params['update_model']
+                            ), params['authorized_user_id']
+                    )
+                )

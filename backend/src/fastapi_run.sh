@@ -1,2 +1,2 @@
 export APP_ENV="prod" 
-python -m src.main
+python -m gallery.main

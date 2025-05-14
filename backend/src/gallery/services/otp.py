@@ -4,7 +4,7 @@ import string
 import secrets
 import datetime as datetime_module
 
-from src import config
+from backend.src.gallery import config
 from src.gallery import utils, types
 from src.gallery.models.tables import OTP as OTPTable
 from src.gallery.schemas import otp as otp_schema, auth_credential as auth_credential_schema
