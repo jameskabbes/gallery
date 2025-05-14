@@ -104,10 +104,6 @@ class HasTag(Protocol):
     _TAG: ClassVar[str]
 
 
-class HasIdParamName(Protocol):
-    _ID_PARAM_NAME: ClassVar[str]
-
-
 class HasService(
     Generic[models.TModel,
             types.TId,
@@ -141,7 +137,7 @@ class Router(Generic[
     base_service.TUpdateModelService,
     base_service.TOrderBy_co
 
-], HasPrefix, HasAdmin, HasTag, HasIdParamName):
+], HasPrefix, HasAdmin, HasTag):
 
     get_many_endpoint: Callable
     get_endpoint: Callable

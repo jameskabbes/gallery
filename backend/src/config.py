@@ -151,9 +151,7 @@ def resolve_db_url(db_url: str, config_dir: Path) -> str:
 
 
 db_url = _BACKEND_CONFIG_ENV['DB']['URL']
-print(db_url)
 db_url = resolve_db_url(db_url, BACKEND_CONFIG_ENV_DIR)
-print(db_url)
 
 DB_ASYNC_ENGINE = create_async_engine(_BACKEND_CONFIG_ENV['DB']['URL'])
 ASYNC_SESSIONMAKER = async_sessionmaker(
