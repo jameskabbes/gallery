@@ -8,19 +8,26 @@ import yaml
 from dotenv import dotenv_values
 import datetime as datetime_module
 import isodate
+from platformdirs import user_config_dir
+import warnings
+import secrets
+from gallery import types, core_utils
 
-from src.gallery import types
-
-
-SRC_DIR = Path(__file__).parent  # /gallery/backend/src/
+GALLERY_DIR = Path(__file__).parent  # /gallery/backend/src/gallery/
+EXAMPLES_DIR = GALLERY_DIR / 'examples'  # /gallery/backend/examples/
+EXAMPLE_CONFIG_DIR = EXAMPLES_DIR / 'config'  # /gallery/backend/examples/config/
+EXAMPLE_BACKEND_CONFIG_DIR = EXAMPLE_CONFIG_DIR / 'backend'
+EXAMPLE_SHARED_CONFIG_DIR = EXAMPLE_CONFIG_DIR / 'shared'
+EXAMPLE_BACKEND_CONFIG_YAML_PATH = EXAMPLE_BACKEND_CONFIG_DIR / 'config.yaml'
+EXAMPLE_BACKEND_SECRETS_ENV_PATH = EXAMPLE_BACKEND_CONFIG_DIR / 'secrets.env'
+EXAMPLE_SHARED_CONFIG_YAML_PATH = EXAMPLE_SHARED_CONFIG_DIR / 'config.yaml'
+SRC_DIR = GALLERY_DIR.parent  # /gallery/backend/src/
 BACKEND_DIR = SRC_DIR.parent  # /gallery/backend/
 REPO_DIR = BACKEND_DIR.parent  # /gallery/
 
-BACKEND_CONFIG_DIR = BACKEND_DIR / '.config'
-BACKEND_DATA_DIR = BACKEND_DIR / 'data'
-REPO_DATA_DIR = REPO_DIR / 'data'
-SHARED_CONFIG_DIR = REPO_DIR / '.config'
-REQUIREMENTS_INSTALLED_PATH = SRC_DIR / 'requirements_installed.txt'
+CONFIG_DIR = Path(user_config_dir('gallery', appauthor=False))
+if not CONFIG_DIR.exists():
+    CONFIG_DIR.mkdir()
 
 
 def convert_env_path_to_absolute(root_dir: Path, a: str) -> Path:
@@ -31,23 +38,30 @@ def convert_env_path_to_absolute(root_dir: Path, a: str) -> Path:
         return (root_dir / A).resolve()
 
 
-# THREE POSSIBLE ENV VARS
+# TWO POSSIBLE ENV VARS
 
-_app_env = os.getenv('APP_ENV', 'dev')  # default to dev
-_shared_config_env_dir = os.getenv('SHARED_CONFIG_ENV_DIR')
+_app_env = os.getenv('APP_ENV', None)
+_config_env_dir = os.getenv('CONFIG_ENV_DIR', None)
 
-if _shared_config_env_dir is None:
-    SHARED_CONFIG_ENV_DIR = SHARED_CONFIG_DIR / _app_env
+
+if _config_env_dir is not None:
+    CONFIG_ENV_DIR = convert_env_path_to_absolute(Path.cwd(), _config_env_dir)
+elif _app_env is not None:
+    CONFIG_ENV_DIR = CONFIG_DIR / _app_env
 else:
-    SHARED_CONFIG_ENV_DIR = convert_env_path_to_absolute(
-        BACKEND_DIR, _shared_config_env_dir)
+    CONFIG_ENV_DIR = CONFIG_DIR / 'dev'
+    warnings.warn(
+        'Environment variables APP_ENV and CONFIG_ENV_DIR are not set. Defaulting to builtin dev environment located at {}.'.format(CONFIG_ENV_DIR))
 
-_backend_config_env_dir = os.getenv('BACKEND_CONFIG_ENV_DIR')
-if _backend_config_env_dir is None:
-    BACKEND_CONFIG_ENV_DIR = BACKEND_CONFIG_DIR / _app_env
-else:
-    BACKEND_CONFIG_ENV_DIR = convert_env_path_to_absolute(
-        BACKEND_DIR, _backend_config_env_dir)
+BACKEND_CONFIG_ENV_DIR = CONFIG_ENV_DIR / 'backend'
+SHARED_CONFIG_ENV_DIR = CONFIG_ENV_DIR / 'shared'
+
+
+if not BACKEND_CONFIG_ENV_DIR.exists():
+    BACKEND_CONFIG_ENV_DIR.mkdir()
+
+if not SHARED_CONFIG_ENV_DIR.exists():
+    SHARED_CONFIG_ENV_DIR.mkdir()
 
 
 # Shared config
@@ -70,10 +84,38 @@ class SharedConfigEnv(typing.TypedDict):
     GOOGLE_CLIENT_SECRET_PATH: str
 
 
-SHARED_CONFIG_ENV_PATH = SHARED_CONFIG_ENV_DIR / 'config.yaml'
+# generate these files if they do not exist
+
+
+SHARED_CONFIG_ENV_PATH = SHARED_CONFIG_ENV_DIR / \
+    EXAMPLE_SHARED_CONFIG_YAML_PATH.name
+if not SHARED_CONFIG_ENV_PATH.exists():
+    warnings.warn(
+        'Shared config file {} does not exist. Creating a new one.'.format(SHARED_CONFIG_ENV_PATH))
+    SHARED_CONFIG_ENV_PATH.write_text(
+        EXAMPLE_SHARED_CONFIG_YAML_PATH.read_text())
+
+BACKEND_CONFIG_ENV_YAML_PATH = BACKEND_CONFIG_ENV_DIR / \
+    EXAMPLE_BACKEND_CONFIG_YAML_PATH.name
+if not BACKEND_CONFIG_ENV_YAML_PATH.exists():
+    warnings.warn(
+        'Backend config file {} does not exist. Creating a new one.'.format(BACKEND_CONFIG_ENV_YAML_PATH))
+    BACKEND_CONFIG_ENV_YAML_PATH.write_text(
+        EXAMPLE_BACKEND_CONFIG_YAML_PATH.read_text())
+
+BACKEND_CONFIG_ENV_SECRETS_PATH = BACKEND_CONFIG_ENV_DIR / \
+    EXAMPLE_BACKEND_SECRETS_ENV_PATH.name
+if not BACKEND_CONFIG_ENV_SECRETS_PATH.exists():
+    warnings.warn(
+        'Backend secrets file {} does not exist. Creating a new one.'.format(BACKEND_CONFIG_ENV_SECRETS_PATH))
+    BACKEND_CONFIG_ENV_SECRETS_PATH.write_text(
+        EXAMPLE_BACKEND_SECRETS_ENV_PATH.read_text().format(JWT_SECRET_KEY=core_utils.generate_jwt_secret_key()))
+
+# read in the shared config file
 
 with SHARED_CONFIG_ENV_PATH.open('r') as f:
     _SHARED_CONFIG_ENV: SharedConfigEnv = yaml.safe_load(f)
+
 
 # info from shared constants constants
 BACKEND_URL: str = _SHARED_CONFIG_ENV['BACKEND_URL']
@@ -137,11 +179,7 @@ class BackendConfigEnv(typing.TypedDict):
     AUTH: AuthEnv
 
 
-BACKEND_CONFIG_ENV_PATH = BACKEND_CONFIG_ENV_DIR / 'config.yaml'
-BACKEND_SECRETS_ENV_PATH = BACKEND_CONFIG_ENV_DIR / 'secrets.env'
-
-
-with BACKEND_CONFIG_ENV_PATH.open('r') as f:
+with BACKEND_CONFIG_ENV_YAML_PATH.open('r') as f:
     _BACKEND_CONFIG_ENV: BackendConfigEnv = yaml.safe_load(f)
 
 
@@ -192,4 +230,4 @@ class BackendSecrets(typing.TypedDict):
 
 
 BACKEND_SECRETS = typing.cast(
-    BackendSecrets, dotenv_values(BACKEND_SECRETS_ENV_PATH))
+    BackendSecrets, dotenv_values(BACKEND_CONFIG_ENV_SECRETS_PATH))
