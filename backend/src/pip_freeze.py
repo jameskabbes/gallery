@@ -1,6 +1,5 @@
 import subprocess
-from backend.src import config
-
+import config
 
 # Example usage
 if __name__ == "__main__":
