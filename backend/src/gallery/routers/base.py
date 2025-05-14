@@ -159,6 +159,10 @@ class Router(Generic[
             tags.append('Admin')
 
         self.router = APIRouter(prefix=prefix, tags=tags)
+        self._set_routes()
+
+    def _set_routes(self):
+        pass
 
     # def set_generated_endpoints(self):
 
