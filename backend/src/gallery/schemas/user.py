@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional
-from .. import types
-from ..schemas import FromAttributes
+from src.gallery import types
+from src.gallery.schemas import FromAttributes
 
 
 class UserImport(BaseModel):

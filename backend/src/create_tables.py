@@ -1,12 +1,11 @@
-from gallery import client, models
 import asyncio
 from sqlmodel import SQLModel
+from src.gallery import models
+from src import config
 
 
 async def main():
-    c = client.Client()
-
-    async with c.db_async_engine.begin() as conn:
+    async with config.DB_ASYNC_ENGINE.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
 
 if __name__ == '__main__':

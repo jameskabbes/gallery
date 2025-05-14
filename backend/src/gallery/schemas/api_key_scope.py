@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from .. import types
+from src.gallery import types
 
 
 class ApiKeyScopeAdminUpdate(BaseModel):

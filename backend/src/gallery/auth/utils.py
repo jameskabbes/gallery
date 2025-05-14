@@ -6,27 +6,26 @@ from fastapi.security.utils import get_authorization_scheme_param
 from fastapi.responses import JSONResponse
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-
 from pydantic import BaseModel
 import typing
 from typing import Annotated, Generic
 from fastapi import Request, HTTPException, status, Response
 import datetime as datetime_module
-from .. import types, auth, utils
-from ..auth import exceptions
-from ... import config
-from ..models import tables
-from .. import models, schemas
 
-from ..schemas import user as user_schema, user_access_token as user_access_token_schema, sign_up as sign_up_schema, otp as otp_schema, auth_credential as auth_credential_schema
-from ..services.user import User as UserService
-from ..services.user_access_token import UserAccessToken as UserAccessTokenService
-from ..services.sign_up import SignUp as SignUpService
-from ..services.otp import OTP as OTPService
-from ..services.api_key import ApiKey as ApiKeyService
+from src.gallery import types, auth, utils
+from src.gallery.auth import exceptions
+from src import config
 
-from ..services import auth_credential as auth_credential_service
-from .. import services
+from src.gallery.models import tables
+from src.gallery import models, schemas
+from src.gallery.schemas import user as user_schema, user_access_token as user_access_token_schema, sign_up as sign_up_schema, otp as otp_schema, auth_credential as auth_credential_schema
+from src.gallery.services.user import User as UserService
+from src.gallery.services.user_access_token import UserAccessToken as UserAccessTokenService
+from src.gallery.services.sign_up import SignUp as SignUpService
+from src.gallery.services.otp import OTP as OTPService
+from src.gallery.services.api_key import ApiKey as ApiKeyService
+from src.gallery.services import auth_credential as auth_credential_service
+from src.gallery import services
 
 
 def set_access_token_cookie(response: Response, access_token: types.JwtEncodedStr,  expiry: datetime_module.datetime | None = None):
@@ -277,7 +276,6 @@ async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJ
 
             auth_credential_table_inst_from_db = await AuthCredentialService.read({
                 'session': session,
-                'c': c,
                 'id': payload['sub'],
                 'admin': True,
                 'authorized_user_id': None
@@ -288,7 +286,6 @@ async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJ
 
             return await get_auth_from_auth_credential_table_inst(
                 auth_credential_table_inst_from_db,
-                c=c,
                 auth_credential_service=AuthCredentialService,
                 session=session,
                 dt_now=dt_now,
@@ -340,7 +337,7 @@ class GetUserSessionInfoReturn(BaseModel):
     access_token: typing.Optional[user_access_token_schema.UserAccessTokenPublic]
 
 
-assert config.SHARED_CONSTANTS['auth_key'] == 'auth'
+assert config.AUTH_KEY == 'auth'
 
 
 class GetUserSessionInfoNestedReturn(BaseModel):
@@ -393,8 +390,8 @@ async def send_signup_link(session: AsyncSession, user: tables.User | None, emai
             'admin': False
         })
 
-        url = '{}{}/?token={}'.format(config.ENV['URL'],
-                                      config.FRONTEND_URLS['verify_magic_link'], c.jwt_encode(typing.cast(dict, UserAccessTokenService.to_jwt_payload(user_access_token))))
+        url = '{}{}/?token={}'.format(config.FRONTEND_URL,
+                                      config.FRONTEND_ROUTES['verify_magic_link'], utils.jwt_encode(typing.cast(dict, UserAccessTokenService.to_jwt_payload(user_access_token))))
 
         if email:
             utils.send_email(
@@ -403,13 +400,13 @@ async def send_signup_link(session: AsyncSession, user: tables.User | None, emai
     else:
 
         sign_up = SignUpService.model_inst_from_create_model(sign_up_schema.SignUpAdminCreate(
-            email=email, expiry=auth_credential_service.lifespan_to_expiry(c.auth['credential_lifespans']['request_sign_up'])))
+            email=email, expiry=auth_credential_service.lifespan_to_expiry(config.AUTH['credential_lifespans']['request_sign_up'])))
 
         sign_up_jwt = utils.jwt_encode(typing.cast(
             dict, SignUpService.to_jwt_payload(sign_up)))
 
-        url = '{}{}/?token={}'.format(config.ENV['base'],
-                                      config.FRONTEND_URLS['verify_signup'], sign_up_jwt)
+        url = '{}{}/?token={}'.format(config.BACKEND_URL,
+                                      config.FRONTEND_ROUTES['verify_signup'], sign_up_jwt)
 
         if email:
             utils.send_email(email, 'Sign Up',
@@ -481,12 +478,12 @@ async def send_magic_link(session: AsyncSession, user: tables.User, email: typin
             'authorized_user_id': user.id,
             'session': session,
             'admin': False,
-            'create_model': user_access_token_schema.UserAccessTokenAdminCreate(user_id=user.id, expiry=auth_credential_service.lifespan_to_expiry(c.auth['credential_lifespans']['magic_link']))
+            'create_model': user_access_token_schema.UserAccessTokenAdminCreate(user_id=user.id, expiry=auth_credential_service.lifespan_to_expiry(config.AUTH['credential_lifespans']['magic_link']))
         }
     )
 
-    url = '{}{}/?token={}'.format(config.ENV['URL'],
-                                  config.FRONTEND_URLS['verify_magic_link'], c.jwt_encode(typing.cast(dict, UserAccessTokenService.to_jwt_payload(user_access_token))))
+    url = '{}{}/?token={}'.format(config.BACKEND_URL,
+                                  config.FRONTEND_ROUTES['verify_magic_link'], utils.jwt_encode(typing.cast(dict, UserAccessTokenService.to_jwt_payload(user_access_token))))
 
     if email:
         utils.send_email(email, 'Magic Link',

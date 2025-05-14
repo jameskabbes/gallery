@@ -1,2 +1,2 @@
 export APP_ENV="prod" 
-python main.py
+python -m src.main

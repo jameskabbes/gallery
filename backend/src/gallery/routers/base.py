@@ -1,22 +1,17 @@
-from ..schemas.pagination import Pagination
 from pydantic import BaseModel
 from typing import Protocol, Unpack, TypeVar, TypedDict, Generic, NotRequired, Literal, Self, ClassVar, Type, Optional
-from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel.sql.expression import SelectOfScalar
-from sqlmodel import SQLModel, select
-from abc import ABC
 from typing import TypeVar, Type, List, Callable, ClassVar, TYPE_CHECKING, Generic, Protocol, Any, Annotated, cast
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from fastapi.routing import APIRoute
-from sqlmodel import SQLModel, Session, select
 from functools import wraps, lru_cache
 from enum import Enum
-from .. import models, types, services
-from ..services import base as base_service
-from ..schemas import pagination as pagination_schema, order_by as order_by_schema
-from ..auth import utils as auth_utils
-from ... import config
 from collections.abc import Sequence
+
+
+from src import config
+from src.gallery import models, types
+from src.gallery.services import base as base_service
+from src.gallery.schemas import pagination as pagination_schema, order_by as order_by_schema
+from src.gallery.auth import utils as auth_utils
 
 
 def get_pagination(max_limit: int = 100, default_limit: int = 10):
@@ -123,10 +118,10 @@ class HasService(
 class Router(Generic[
     models.TModel,
     types.TId,
-    TGetManyResponse,
-    TGetResponse,
-    TPostResponse,
-    TUpdateResponse,
+    # TGetManyResponse,
+    # TGetResponse,
+    # TPostResponse,
+    # TUpdateResponse,
     base_service.TCreateModel,
     base_service.TUpdateModelService,
     base_service.TOrderBy_co,
@@ -139,19 +134,19 @@ class Router(Generic[
 
 ], HasPrefix, HasAdmin, HasTag):
 
-    get_many_endpoint: Callable
-    get_endpoint: Callable
-    post_endpoint: Callable
-    patch_endpoint: Callable
-    delete_endpoint: Callable
+    # get_many_endpoint: Callable
+    # get_endpoint: Callable
+    # post_endpoint: Callable
+    # patch_endpoint: Callable
+    # delete_endpoint: Callable
 
-    get_many_response_model: Type[TGetManyResponse]
-    get_response_model: Type[TGetResponse]
-    post_response_model: Type[TPostResponse]
-    patch_response_model: Type[TUpdateResponse]
+    # get_many_response_model: Type[TGetManyResponse]
+    # get_response_model: Type[TGetResponse]
+    # post_response_model: Type[TPostResponse]
+    # patch_response_model: Type[TUpdateResponse]
 
-    _ENDPOINTS_TO_GENERATE: ClassVar[set[Literal['get_many', 'get', 'post', 'patch', 'delete']]] = {
-        'get_many', 'get', 'post', 'patch', 'delete'}
+    # _ENDPOINTS_TO_GENERATE: ClassVar[set[Literal['get_many', 'get', 'post', 'patch', 'delete']]] = {
+    #     'get_many', 'get', 'post', 'patch', 'delete'}
 
     def __init__(self):
 
@@ -165,55 +160,55 @@ class Router(Generic[
 
         self.router = APIRouter(prefix=prefix, tags=tags)
 
-    def set_generated_endpoints(self):
+    # def set_generated_endpoints(self):
 
-        if 'get_many' in self._ENDPOINTS_TO_GENERATE:
-            self.router.get('/')(self.get_many_endpoint)
+    #     if 'get_many' in self._ENDPOINTS_TO_GENERATE:
+    #         self.router.get('/')(self.get_many_endpoint)
 
-    def make_get_many_endpoint(
-            self,
-            response_model: TGetManyResponse,
-            pagination_depends: Callable = get_pagination(),
-            order_by_depends: Callable = order_by_depends,
-            get_auth_kwargs: auth_utils.MakeGetAuthDepedencyKwargs = {}
-    ) -> Callable:
+    # def make_get_many_endpoint(
+    #         self,
+    #         response_model: TGetManyResponse,
+    #         pagination_depends: Callable = get_pagination(),
+    #         order_by_depends: Callable = order_by_depends,
+    #         get_auth_kwargs: auth_utils.MakeGetAuthDepedencyKwargs = {}
+    # ) -> Callable:
 
-        async def endpoint(
-                pagination: Annotated[pagination_schema.Pagination, Depends(pagination_depends)],
-                order_bys: Annotated[list[order_by_schema.OrderBy[base_service.TOrderBy_co]], Depends(order_by_depends)],
-                authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                    auth_utils.make_get_auth_dependency(
-                        **get_auth_kwargs))],
-        ) -> Sequence[TGetManyResponse]:
+    #     async def endpoint(
+    #             pagination: Annotated[pagination_schema.Pagination, Depends(pagination_depends)],
+    #             order_bys: Annotated[list[order_by_schema.OrderBy[base_service.TOrderBy_co]], Depends(order_by_depends)],
+    #             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+    #                 auth_utils.make_get_auth_dependency(
+    #                     **get_auth_kwargs))],
+    #     ) -> Sequence[TGetManyResponse]:
 
-            items = await self.get_many({
-                'authorization': authorization,
-                'pagination': pagination,
-                'order_bys': order_bys,
-                'query': None,
-            })
-            return [response_model.model_validate(model) for model in items]
+    #         items = await self.get_many({
+    #             'authorization': authorization,
+    #             'pagination': pagination,
+    #             'order_bys': order_bys,
+    #             'query': None,
+    #         })
+    #         return [response_model.model_validate(model) for model in items]
 
-        return endpoint
+    #     return endpoint
 
-    def make_get_endpoint(
-        self,
-        response_model: TGetResponse,
-        get_auth_kwargs: auth_utils.MakeGetAuthDepedencyKwargs = {}
-    ) -> Callable:
-        async def endpoint(
-                authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                    auth_utils.make_get_auth_dependency(
-                        **get_auth_kwargs))],
-                id: types.TId,
-        ) -> TGetResponse:
-            item = await self.get({
-                'authorization': authorization,
-                'id': id
-            })
-            return response_model.model_validate(item)
+    # def make_get_endpoint(
+    #     self,
+    #     response_model: TGetResponse,
+    #     get_auth_kwargs: auth_utils.MakeGetAuthDepedencyKwargs = {}
+    # ) -> Callable:
+    #     async def endpoint(
+    #             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+    #                 auth_utils.make_get_auth_dependency(
+    #                     **get_auth_kwargs))],
+    #             id: types.TId,
+    #     ) -> TGetResponse:
+    #         item = await self.get({
+    #             'authorization': authorization,
+    #             'id': id
+    #         })
+    #         return response_model.model_validate(item)
 
-        return endpoint
+    #     return endpoint
 
     # def make_post_endpoint(
     #     self,
@@ -364,26 +359,6 @@ class Router(Generic[
                 raise
             except Exception as e:
                 raise
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def not_found_message(cls) -> str:
-        return f'{cls.__name__} not found'
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def already_exists_message(cls) -> str:
-        return f'{cls.__name__} already exists'
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def not_found_exception(cls) -> HTTPException:
-        return HTTPException(status.HTTP_404_NOT_FOUND, detail=cls.not_found_message())
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def already_exists_exception(cls) -> HTTPException:
-        return HTTPException(status.HTTP_409_CONFLICT, detail=cls.already_exists_message())
 
     @classmethod
     @lru_cache(maxsize=None)

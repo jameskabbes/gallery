@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 from typing import Optional
 
-from .. import types
-from ..schemas import auth_credential as auth_credential_schema
+from src.gallery import types
+from src.gallery.schemas import auth_credential as auth_credential_schema
 
 
 class ApiKeyAvailable(BaseModel):

@@ -3,14 +3,11 @@ from sqlmodel import select
 from pydantic import BaseModel
 import datetime as datetime_module
 
-from ..models.tables import UserAccessToken as UserAccessTokenTable
-from . import base
-from .. import types
-
-from ..schemas import user_access_token as user_access_token_schema, auth_credential as auth_credential_schema
-from ..services import auth_credential as auth_credential_service
-from .. import utils
-from ...config import settings
+from src import config
+from src.gallery import utils, types
+from src.gallery.models.tables import UserAccessToken as UserAccessTokenTable
+from src.gallery.schemas import user_access_token as user_access_token_schema, auth_credential as auth_credential_schema
+from src.gallery.services import auth_credential as auth_credential_service, base
 
 
 class UserAccessToken(
@@ -66,5 +63,5 @@ class UserAccessToken(
                     UserAccessTokenTable, params['model_inst'].id)
 
     @classmethod
-    async def get_scope_ids(cls, session, c, inst):
-        return list(settings.USER_ROLE_ID_SCOPE_IDS[inst.user.user_role_id])
+    async def get_scope_ids(cls, session, inst):
+        return list(config.USER_ROLE_ID_SCOPE_IDS[inst.user.user_role_id])

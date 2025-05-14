@@ -1,14 +1,15 @@
 from fastapi import Depends, status
 from sqlmodel import select
-from ..models.tables import User as UserTable
-from ..services.user import User as UserService, base as base_service
-from ..schemas import user as user_schema, pagination as pagination_schema, api as api_schema, order_by as order_by_schema
-from . import base
-from .. import types
 from typing import Annotated, cast, Type
-from ..auth import utils as auth_utils
-
 from collections.abc import Sequence
+
+from src import config
+from src.gallery import types
+from src.gallery.auth import utils as auth_utils
+from src.gallery.routers import base
+from src.gallery.models.tables import User as UserTable
+from src.gallery.services.user import User as UserService, base as base_service
+from src.gallery.schemas import user as user_schema, pagination as pagination_schema, api as api_schema, order_by as order_by_schema
 
 
 PAGINATION_DEPENDS = base.get_pagination()
@@ -18,10 +19,6 @@ class _Base(
     base.Router[
         UserTable,
         types.User.id,
-        Type[user_schema.UserPublic],
-        Type[user_schema.UserPublic],
-        Type[user_schema.UserPrivate],
-        Type[user_schema.UserPrivate],
         user_schema.UserAdminCreate,
         user_schema.UserAdminUpdate,
     ],
@@ -36,43 +33,27 @@ class UserRouter(_Base):
 
     _ADMIN = False
 
-    def __init__(self, *args, **kwargs):
-
-        super().__init__(*args, **kwargs)
-
-        self.get_many_endpoint = self.make_get_many_endpoint(
-            user_schema.UserPublic)
-        self.get_endpoint = self.make_get_endpoint(
-            user_schema.UserPublic)
-
-        self._set_routes()
-
     def _set_routes(self):
-
-        self.router.get('/')(self.get_many_endpoint)
-        self.router.get('/{id}/')(self.get_endpoint)
-
-        pass
 
         # @self.router.get('/')
         # async def get_users(
         #     pagination: Annotated[pagination_schema.Pagination, Depends(
         #         base.get_pagination())],
         #     authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-        #         auth_utils.make_get_auth_dependency(raise_exceptions=False, c=self.client))]
+        #         auth_utils.make_get_auth_dependency(raise_exceptions=False))]
         # ) -> Sequence[user_schema.UserPublic]:
         #     return [user_schema.UserPublic.model_validate(user) for user in await self.get_many({
         #         'authorization': authorization,
-        #         'c': self.client,
+        #
         #         'pagination': pagination,
         #     })]
 
         @self.router.get('/me/')
         async def get_user_me(
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(raise_exceptions=True, c=self.client))]
+                auth_utils.make_get_auth_dependency(raise_exceptions=True))]
         ) -> user_schema.UserPrivate:
-            user = await self.get({'authorization': authorization, 'c': self.client, 'id': cast(
+            user = await self.get({'authorization': authorization, 'id': cast(
                 types.User.id, authorization._user_id)})
             return user_schema.UserPrivate.model_validate(user)
 
@@ -80,11 +61,10 @@ class UserRouter(_Base):
         async def patch_user_me(
             user_update: user_schema.UserUpdate,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(raise_exceptions=True, c=self.client))]
+                auth_utils.make_get_auth_dependency(raise_exceptions=True))]
         ) -> user_schema.UserPrivate:
             user = await self.patch({
                 'authorization': authorization,
-                'c': self.client,
                 'id': cast(types.User.id, authorization._user_id),
                 'update_model': user_schema.UserAdminUpdate.model_validate(user_update),
             })
@@ -93,11 +73,10 @@ class UserRouter(_Base):
         @self.router.delete('/me/', status_code=status.HTTP_204_NO_CONTENT)
         async def delete_user_me(
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(raise_exceptions=True, c=self.client))]
+                auth_utils.make_get_auth_dependency(raise_exceptions=True))]
         ):
             await self.delete({
                 'authorization': authorization,
-                'c': self.client,
                 'id': cast(types.User.id, authorization._user_id),
             })
 
@@ -105,11 +84,11 @@ class UserRouter(_Base):
         # async def get_user_by_id(
         #     user_id: types.User.id,
         #     authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-        #         auth_utils.make_get_auth_dependency(raise_exceptions=False, c=self.client))]
+        #         auth_utils.make_get_auth_dependency(raise_exceptions=False))]
         # ) -> user_schema.UserPublic:
         #     user = await self.get({
         #         'authorization': authorization,
-        #         'c': self.client,
+        #
         #         'id': user_id,
         #     })
         #     return user_schema.UserPublic.model_validate(user)
@@ -118,7 +97,7 @@ class UserRouter(_Base):
                          responses={status.HTTP_409_CONFLICT: {
                              "description": 'Username already exists', 'model': api_schema.IsAvailableResponse}})
         async def get_user_username_available(username: types.User.username):
-            async with self.client.AsyncSession() as session:
+            async with config.ASYNC_SESSIONMAKER() as session:
                 return api_schema.IsAvailableResponse(
                     available=not await UserService.is_username_available(session, username))
 
@@ -131,7 +110,7 @@ class UserAdminRouter(_Base):
         @self.router.get('/')
         async def get_users_admin(
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))],
+                auth_utils.make_get_auth_dependency(required_scopes={'admin'}))],
             pagination: Annotated[pagination_schema.Pagination, Depends(
                 base.get_pagination())]
         ) -> list[user_schema.UserPrivate]:
@@ -139,7 +118,6 @@ class UserAdminRouter(_Base):
             return [
                 user_schema.UserPrivate.model_validate(user) for user in await self.get_many({
                     'authorization': authorization,
-                    'c': self.client,
                     'pagination': pagination,
                 })]
 
@@ -147,12 +125,11 @@ class UserAdminRouter(_Base):
         async def get_user_by_id(
             user_id: types.User.id,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))]
+                auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
         ) -> user_schema.UserPrivate:
             return user_schema.UserPrivate.model_validate(
                 await self.get({
                     'authorization': authorization,
-                    'c': self.client,
                     'id': user_id,
                 })
             )
@@ -161,12 +138,11 @@ class UserAdminRouter(_Base):
         async def post_user(
             user_create_admin: user_schema.UserAdminCreate,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))]
+                auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
         ) -> user_schema.UserPrivate:
 
             return user_schema.UserPrivate.model_validate(await self.post({
                 'authorization': authorization,
-                'c': self.client,
                 'create_model': user_create_admin,
             })
             )
@@ -176,11 +152,10 @@ class UserAdminRouter(_Base):
             user_id: types.User.id,
             user_update_admin: user_schema.UserAdminUpdate,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))]
+                auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
         ) -> user_schema.UserPrivate:
             return user_schema.UserPrivate.model_validate(await self.patch({
                 'authorization': authorization,
-                'c': self.client,
                 'id': user_id,
                 'update_model': user_update_admin,
             }))
@@ -189,10 +164,9 @@ class UserAdminRouter(_Base):
         async def delete_user(
             user_id: types.User.id,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))]
+                auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
         ):
             return await self.delete({
                 'authorization': authorization,
-                'c': self.client,
                 'id': user_id,
             })

@@ -1,7 +1,6 @@
 from pydantic import BaseModel
-from . import auth_credential as auth_credential_schema
-from .. import types
-from ..schemas import FromAttributes
+from src.gallery import types
+from src.gallery.schemas import FromAttributes
 
 
 class UserAccessTokenAdminUpdate(BaseModel):

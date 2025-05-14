@@ -1,14 +1,16 @@
+from sqlmodel.ext.asyncio.session import AsyncSession as SQLMAsyncSession
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, async_sessionmaker
 import json
 from pathlib import Path
 import os
 import typing
 import yaml
 from dotenv import dotenv_values
-from gallery import types
-from sqlmodel.ext.asyncio.session import AsyncSession as SQLMAsyncSession
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, async_sessionmaker
 import datetime as datetime_module
 import isodate
+
+from src.gallery import types
+
 
 SRC_DIR = Path(__file__).parent  # /gallery/backend/src/
 BACKEND_DIR = SRC_DIR.parent  # /gallery/backend/
@@ -38,22 +40,24 @@ if _shared_config_env_dir is None:
     SHARED_CONFIG_ENV_DIR = SHARED_CONFIG_DIR / _app_env
 else:
     SHARED_CONFIG_ENV_DIR = convert_env_path_to_absolute(
-        SRC_DIR, _shared_config_env_dir)
+        BACKEND_DIR, _shared_config_env_dir)
 
 _backend_config_env_dir = os.getenv('BACKEND_CONFIG_ENV_DIR')
 if _backend_config_env_dir is None:
     BACKEND_CONFIG_ENV_DIR = BACKEND_CONFIG_DIR / _app_env
 else:
     BACKEND_CONFIG_ENV_DIR = convert_env_path_to_absolute(
-        SRC_DIR, _backend_config_env_dir)
+        BACKEND_DIR, _backend_config_env_dir)
 
 
 # Shared config
 
 class SharedConfigEnv(typing.TypedDict):
+    BACKEND_URL: str
+    FRONTEND_URL: str
     AUTH_KEY: str
     HEADER_KEYS: dict[str, str]
-    FRONTEND_URLS: dict[str, str]
+    FRONTEND_ROUTES: dict[str, str]
     SCOPE_NAME_MAPPING: dict[types.Scope.name, types.Scope.id]
     VISIBILITY_LEVEL_NAME_MAPPING: dict[types.VisibilityLevel.name,
                                         types.VisibilityLevel.id]
@@ -72,9 +76,11 @@ with SHARED_CONFIG_ENV_PATH.open('r') as f:
     _SHARED_CONFIG_ENV: SharedConfigEnv = yaml.safe_load(f)
 
 # info from shared constants constants
+BACKEND_URL: str = _SHARED_CONFIG_ENV['BACKEND_URL']
+FRONTEND_URL: str = _SHARED_CONFIG_ENV['FRONTEND_URL']
 AUTH_KEY: str = _SHARED_CONFIG_ENV['AUTH_KEY']
 HEADER_KEYS: dict[str, str] = _SHARED_CONFIG_ENV['HEADER_KEYS']
-FRONTEND_URLS: dict[str, str] = _SHARED_CONFIG_ENV['FRONTEND_URLS']
+FRONTEND_ROUTES: dict[str, str] = _SHARED_CONFIG_ENV['FRONTEND_ROUTES']
 
 SCOPE_NAME_MAPPING: dict[types.Scope.name,
                          types.Scope.id] = _SHARED_CONFIG_ENV['SCOPE_NAME_MAPPING']
@@ -105,6 +111,7 @@ OPENAPI_SCHEMA_PATH = convert_env_path_to_absolute(
 GOOGLE_CLIENT_SECRET = json.loads(convert_env_path_to_absolute(
     SHARED_CONFIG_ENV_DIR, _SHARED_CONFIG_ENV['GOOGLE_CLIENT_SECRET_PATH']).read_text())
 
+OTP_LENGTH: int = _SHARED_CONFIG_ENV['OTP_LENGTH']
 
 # Backend Config
 
@@ -150,9 +157,6 @@ def resolve_db_url(db_url: str, config_dir: Path) -> str:
     return db_url
 
 
-db_url = _BACKEND_CONFIG_ENV['DB']['URL']
-db_url = resolve_db_url(db_url, BACKEND_CONFIG_ENV_DIR)
-
 DB_ASYNC_ENGINE = create_async_engine(_BACKEND_CONFIG_ENV['DB']['URL'])
 ASYNC_SESSIONMAKER = async_sessionmaker(
     bind=DB_ASYNC_ENGINE,
@@ -161,8 +165,9 @@ ASYNC_SESSIONMAKER = async_sessionmaker(
 )
 
 MEDIA_DIR = convert_env_path_to_absolute(
-    BACKEND_CONFIG_ENV_DIR, _BACKEND_CONFIG_ENV['MEDIA_DIR'])
+    BACKEND_DIR, _BACKEND_CONFIG_ENV['MEDIA_DIR'])
 
+GALLERIES_DIR = MEDIA_DIR / 'galleries'
 UVICORN = _BACKEND_CONFIG_ENV['UVICORN']
 
 

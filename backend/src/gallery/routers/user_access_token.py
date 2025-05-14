@@ -1,13 +1,14 @@
 from fastapi import Depends, status
 from sqlmodel import select, func
-from ..models.tables import UserAccessToken as UserAccessTokenTable
-from ..services.user_access_token import UserAccessToken as UserAccessTokenService
-from ..schemas import user_access_token as user_access_token_schema, pagination as pagination_schema, api as api_schema
-from ..routers import user as user_router
-from . import base
-from .. import types
 from typing import Annotated, cast, Literal
-from ..auth import utils as auth_utils
+
+from src import config
+from src.gallery import types
+from src.gallery.models.tables import UserAccessToken as UserAccessTokenTable
+from src.gallery.services.user_access_token import UserAccessToken as UserAccessTokenService
+from src.gallery.schemas import user_access_token as user_access_token_schema, pagination as pagination_schema, api as api_schema
+from src.gallery.routers import user as user_router, base
+from src.gallery.auth import utils as auth_utils
 
 
 def user_access_token_pagination(
@@ -41,7 +42,7 @@ class UserAccessTokenRouter(_Base):
         @self.router.get('/', tags=[user_router._Base._TAG])
         async def get_user_access_tokens(
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client))],
+                auth_utils.make_get_auth_dependency())],
             pagination: pagination_schema.Pagination = Depends(
                 user_access_token_pagination)
 
@@ -49,7 +50,6 @@ class UserAccessTokenRouter(_Base):
 
             return list(await self.get_many({
                 'authorization': authorization,
-                'c': self.client,
                 'pagination': pagination,
             }))
 
@@ -57,12 +57,11 @@ class UserAccessTokenRouter(_Base):
         async def get_user_access_token_by_id(
             user_access_token_id: types.UserAccessToken.id,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client))]
+                auth_utils.make_get_auth_dependency())]
         ) -> UserAccessTokenTable:
 
             return await self.get({
                 'authorization': authorization,
-                'c': self.client,
                 'id': user_access_token_id,
             })
 
@@ -70,20 +69,19 @@ class UserAccessTokenRouter(_Base):
         async def delete_user_access_token(
             user_access_token_id: types.UserAccessToken.id,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client))]
+                auth_utils.make_get_auth_dependency())]
         ):
             return await self.delete({
                 'authorization': authorization,
-                'c': self.client,
                 'id': user_access_token_id,
             })
 
         @self.router.get('/details/count/')
         async def get_user_access_tokens_count(
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client))],
+                auth_utils.make_get_auth_dependency())],
         ) -> int:
-            async with self.client.AsyncSession() as session:
+            async with config.ASYNC_SESSIONMAKER() as session:
                 query = select(func.count()).select_from(UserAccessTokenTable).where(
                     UserAccessTokenTable.user_id == authorization._user_id)
                 return (await session.exec(query)).one()
@@ -99,14 +97,13 @@ class UserAccessTokenAdminRouter(_Base):
         async def get_user_access_tokens_admin(
             user_id: types.User.id,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))],
+                auth_utils.make_get_auth_dependency(required_scopes={'admin'}))],
             pagination: pagination_schema.Pagination = Depends(
                 user_access_token_pagination)
         ) -> list[UserAccessTokenTable]:
 
             return list(await self.get_many({
                 'authorization': authorization,
-                'c': self.client,
                 'pagination': pagination,
                 'query': select(UserAccessTokenTable).where(
                     UserAccessTokenTable.user_id == user_id)
@@ -117,12 +114,11 @@ class UserAccessTokenAdminRouter(_Base):
         async def get_user_access_token_by_id_admin(
             user_access_token_id: types.UserAccessToken.id,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))]
+                auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
         ) -> UserAccessTokenTable:
 
             return await self.get({
                 'authorization': authorization,
-                'c': self.client,
                 'id': user_access_token_id,
             })
 
@@ -130,12 +126,11 @@ class UserAccessTokenAdminRouter(_Base):
         async def post_user_access_token_admin(
             user_access_token_create_admin: user_access_token_schema.UserAccessTokenAdminCreate,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))]
+                auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
         ) -> UserAccessTokenTable:
 
             return await self.post({
                 'authorization': authorization,
-                'c': self.client,
                 'create_model': user_access_token_create_admin,
             })
 
@@ -143,11 +138,10 @@ class UserAccessTokenAdminRouter(_Base):
         async def delete_user_access_token_admin(
             user_access_token_id: types.UserAccessToken.id,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(required_scopes={'admin'}, c=self.client))]
+                auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
         ):
 
             return await self.delete({
                 'authorization': authorization,
-                'c': self.client,
                 'id': user_access_token_id,
             })

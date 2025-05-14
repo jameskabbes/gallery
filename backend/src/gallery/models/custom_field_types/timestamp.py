@@ -3,7 +3,8 @@ from sqlalchemy.types import TypeDecorator, REAL, DateTime
 import datetime as datetime_module
 from pydantic import ValidationInfo
 import typing
-from ... import types
+
+from src.gallery import types
 
 """
 Developer's Note:

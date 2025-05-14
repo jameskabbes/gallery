@@ -1,8 +1,7 @@
 import typing
 from fastapi import Request, HTTPException, status, Response
-import datetime
-from .. import client, types, auth
-from ... import config
+from src.gallery import types, auth
+from src import config
 
 
 class StatusCodeAndDetail(typing.TypedDict):
@@ -13,7 +12,7 @@ class StatusCodeAndDetail(typing.TypedDict):
 def Base(status_code_and_detail: StatusCodeAndDetail, logout: bool = True) -> HTTPException:
     headers = {"WWW-Authenticate": "Bearer, Cookie"}
     if logout:
-        headers[config.SHARED_CONSTANTS['header_keys']
+        headers[config.HEADER_KEYS
                 ['auth_logout']] = 'true'
     return HTTPException(
         status_code=status_code_and_detail['status_code'],

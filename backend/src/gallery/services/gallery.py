@@ -5,12 +5,11 @@ import datetime as datetime_module
 import pathlib
 import shutil
 
-from ..models.tables import Gallery as GalleryTable
-from ..services.gallery_permission import GalleryPermission as GalleryPermissionService
-from . import base
-from .. import types, utils
-from ..schemas import gallery as gallery_schema
-from ...config import constants, settings
+from src import config
+from src.gallery import types, utils
+from src.gallery.models.tables import Gallery as GalleryTable
+from src.gallery.services.gallery_permission import GalleryPermission as GalleryPermissionService, base
+from src.gallery.schemas import gallery as gallery_schema
 
 
 class Gallery(
@@ -97,19 +96,19 @@ class Gallery(
                 )
 
                 # if the gallery is private and user has no access, pretend it doesn't exist
-                if gallery_permission is None and params['model_inst'].visibility_level == settings.VISIBILITY_LEVEL_NAME_MAPPING['private']:
+                if gallery_permission is None and params['model_inst'].visibility_level == config.VISIBILITY_LEVEL_NAME_MAPPING['private']:
                     raise base.NotFoundError(
                         GalleryTable, params['id'])
 
                 # either public or user has access
 
                 elif params['operation'] == 'get':
-                    if gallery_permission is None or (gallery_permission.permission_level < settings.PERMISSION_LEVEL_NAME_MAPPING['viewer']):
+                    if gallery_permission is None or (gallery_permission.permission_level < config.PERMISSION_LEVEL_NAME_MAPPING['viewer']):
                         raise base.UnauthorizedError(
                             'Unauthorized to {operation} this gallery'.format(operation=params['operation']))
 
                 elif params['operation'] == 'patch':
-                    if gallery_permission is None or (gallery_permission.permission_level < settings.PERMISSION_LEVEL_NAME_MAPPING['editor']):
+                    if gallery_permission is None or (gallery_permission.permission_level < config.PERMISSION_LEVEL_NAME_MAPPING['editor']):
                         raise base.UnauthorizedError(
                             'Unauthorized to {operation} this gallery'.format(operation=params['operation']))
 

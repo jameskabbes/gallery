@@ -1,13 +1,11 @@
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
-from ..models.tables import ApiKey as ApiKeyTable
-from . import base
-from .. import types
-
-from ..schemas import api_key as api_key_schema, auth_credential as auth_credential_schema
-from ..services import auth_credential as auth_credential_service
-from .. import utils, client
 import datetime as datetime_module
+
+from src.gallery import types, utils
+from src.gallery.models.tables import ApiKey as ApiKeyTable
+from src.gallery.schemas import api_key as api_key_schema, auth_credential as auth_credential_schema
+from src.gallery.services import auth_credential as auth_credential_service, base
 
 
 class ApiKey(
@@ -38,7 +36,7 @@ class ApiKey(
         )
 
     @classmethod
-    async def get_scope_ids(cls, session, c, inst):
+    async def get_scope_ids(cls, session, inst):
         return [api_key_scope.scope_id for api_key_scope in inst.api_key_scopes]
 
     @classmethod

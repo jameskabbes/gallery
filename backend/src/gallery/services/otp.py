@@ -4,13 +4,11 @@ import string
 import secrets
 import datetime as datetime_module
 
-from ..models.tables import OTP as OTPTable
-from ...config import settings
-from .. import utils, types
-from . import base
-
-from ..schemas import otp as otp_schema, auth_credential as auth_credential_schema
-from ..services import auth_credential as auth_credential_service
+from src import config
+from src.gallery import utils, types
+from src.gallery.models.tables import OTP as OTPTable
+from src.gallery.schemas import otp as otp_schema, auth_credential as auth_credential_schema
+from src.gallery.services import auth_credential as auth_credential_service, base
 
 
 class OTP(
@@ -42,7 +40,7 @@ class OTP(
     @classmethod
     def generate_code(cls) -> types.OTP.code:
         characters = string.digits
-        return ''.join(secrets.choice(characters) for _ in range(settings.OTP_LENGTH))
+        return ''.join(secrets.choice(characters) for _ in range(config.OTP_LENGTH))
 
     @classmethod
     def hash_code(cls, code: types.OTP.code) -> types.OTP.hashed_code:

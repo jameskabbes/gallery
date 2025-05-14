@@ -1,6 +1,6 @@
-from .. import types
 from pydantic import BaseModel
 from typing import Optional
+from src.gallery import types
 
 
 class FileExport(BaseModel):

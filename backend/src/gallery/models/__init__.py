@@ -1,9 +1,9 @@
 from sqlmodel import SQLModel
 from typing import Protocol, TypeVar, Generic
-from .. import types
+from src.gallery import types
 
-from .tables import User, UserAccessToken, OTP, ApiKey, ApiKeyScope, Gallery, GalleryPermission, File, ImageVersion, ImageFileMetadata
-from .models import SignUp
+from src.gallery.models.tables import User, UserAccessToken, OTP, ApiKey, ApiKeyScope, Gallery, GalleryPermission, File, ImageVersion, ImageFileMetadata
+from src.gallery.models.models import SignUp
 
 ModelSimple = User | UserAccessToken | OTP | ApiKey | Gallery | File | ImageVersion
 Model = ModelSimple | ApiKeyScope | GalleryPermission | ImageFileMetadata | SignUp

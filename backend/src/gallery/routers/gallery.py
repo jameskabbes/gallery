@@ -1,16 +1,16 @@
 from fastapi import Depends, status, UploadFile, HTTPException
 from sqlmodel import select
-from ..models.tables import Gallery as GalleryTable, GalleryPermission as GalleryPermissionTable
-from ..services.gallery import Gallery as GalleryService
-from ..services.gallery_permission import GalleryPermission as GalleryPermissionService
-from ..schemas import gallery as gallery_schema, pagination as pagination_schema, api as api_schema, gallery_permission as gallery_permission_schema
-from ..routers import user as user_router
-from . import base
-from .. import types
 from typing import Annotated, cast
-from ..auth import utils as auth_utils
-from ...config import settings
 import shutil
+
+from src import config
+from src.gallery import types
+from src.gallery.auth import utils as auth_utils
+from src.gallery.routers import base, user as user_router
+from src.gallery.models.tables import Gallery as GalleryTable, GalleryPermission as GalleryPermissionTable
+from src.gallery.services.gallery import Gallery as GalleryService
+from src.gallery.services.gallery_permission import GalleryPermission as GalleryPermissionService
+from src.gallery.schemas import gallery as gallery_schema, pagination as pagination_schema, api as api_schema, gallery_permission as gallery_permission_schema
 
 
 class _Base(
@@ -60,12 +60,11 @@ class GalleryRouter(_Base):
         async def get_gallery_by_id(
             gallery_id: types.Gallery.id,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client, raise_exceptions=False))]
+                auth_utils.make_get_auth_dependency(raise_exceptions=False))]
         ) -> gallery_schema.GalleryPublic:
 
             return gallery_schema.GalleryPublic.model_validate(await self.get({
                 'authorization': authorization,
-                'c': self.client,
                 'id': gallery_id,
             }))
 
@@ -73,12 +72,11 @@ class GalleryRouter(_Base):
         async def post_gallery(
             gallery_create: gallery_schema.GalleryCreate,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client))]
+                auth_utils.make_get_auth_dependency())]
         ) -> gallery_schema.GalleryPrivate:
 
             return gallery_schema.GalleryPrivate.model_validate(await self.post({
                 'authorization': authorization,
-                'c': self.client,
                 'create_model': gallery_schema.GalleryAdminCreate(
                     **gallery_create.model_dump(exclude_unset=True), user_id=cast(types.User.id, authorization._user_id)),
             }))
@@ -88,12 +86,11 @@ class GalleryRouter(_Base):
             gallery_id: types.Gallery.id,
             gallery_update: gallery_schema.GalleryUpdate,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client, ))]
+                auth_utils.make_get_auth_dependency())]
         ) -> gallery_schema.GalleryPrivate:
 
             return gallery_schema.GalleryPrivate.model_validate(await self.patch({
                 'authorization': authorization,
-                'c': self.client,
                 'id': gallery_id,
                 'update_model': gallery_schema.GalleryAdminUpdate(
                     **gallery_update.model_dump(exclude_unset=True)),
@@ -103,23 +100,22 @@ class GalleryRouter(_Base):
         async def delete_gallery(
             gallery_id: types.Gallery.id,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client, ))]
+                auth_utils.make_get_auth_dependency())]
         ):
 
             return await self.delete({
                 'authorization': authorization,
-                'c': self.client,
                 'id': gallery_id,
             })
 
         @self.router.get('/details/available/')
         async def get_gallery_available(
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client, ))],
+                auth_utils.make_get_auth_dependency())],
             gallery_available: gallery_schema.GalleryAvailable = Depends(),
         ):
 
-            async with self.client.AsyncSession() as session:
+            async with config.ASYNC_SESSIONMAKER() as session:
 
                 return api_schema.IsAvailableResponse(
                     available=await GalleryService.is_available(
@@ -151,11 +147,11 @@ class GalleryRouter(_Base):
         async def upload_file_to_gallery(
             gallery_id: types.Gallery.id,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client))],
+                auth_utils.make_get_auth_dependency())],
             file: UploadFile
         ):
 
-            async with self.client.AsyncSession() as session:
+            async with config.ASYNC_SESSIONMAKER() as session:
 
                 gallery = await GalleryService.fetch_by_id(session, gallery_id)
                 if not gallery:
@@ -168,18 +164,18 @@ class GalleryRouter(_Base):
                     )
 
                     if gallery_permission is None:
-                        if gallery.visibility_level == settings.VISIBILITY_LEVEL_NAME_MAPPING['private']:
+                        if gallery.visibility_level == config.VISIBILITY_LEVEL_NAME_MAPPING['private']:
                             raise base.NotFoundError(GalleryTable, gallery_id)
 
-                        if gallery.visibility_level == settings.VISIBILITY_LEVEL_NAME_MAPPING['public']:
+                        if gallery.visibility_level == config.VISIBILITY_LEVEL_NAME_MAPPING['public']:
                             raise HTTPException(
                                 status.HTTP_403_FORBIDDEN, detail='User lacks edit permission for this gallery')
                     else:
-                        if gallery_permission.permission_level < settings.PERMISSION_LEVEL_NAME_MAPPING['editor']:
+                        if gallery_permission.permission_level < config.PERMISSION_LEVEL_NAME_MAPPING['editor']:
                             raise HTTPException(
                                 status.HTTP_403_FORBIDDEN, detail='User does not have permission to add files to this gallery')
 
-                file_path = (await GalleryService.get_dir(session, gallery, self.client.galleries_dir)).joinpath(file.filename or 'test.jpg')
+                file_path = (await GalleryService.get_dir(session, gallery, config.GALLERIES_DIR)).joinpath(file.filename or 'test.jpg')
                 with open(file_path, "wb") as buffer:
                     shutil.copyfileobj(file.file, buffer)
 
@@ -193,11 +189,10 @@ class GalleryAdminRouter(_Base):
         async def get_gallery_by_id_admin(
             gallery_id: types.Gallery.id,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client, required_scopes={'admin'}))]
+                auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
         ) -> GalleryTable:
             return await self.get({
                 'authorization': authorization,
-                'c': self.client,
                 'id': gallery_id,
             })
 
@@ -205,11 +200,10 @@ class GalleryAdminRouter(_Base):
         async def post_gallery_admin(
             gallery_create_admin: gallery_schema.GalleryAdminCreate,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client, required_scopes={'admin'}))]
+                auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
         ) -> GalleryTable:
             return await self.post({
                 'authorization': authorization,
-                'c': self.client,
                 'create_model': gallery_create_admin
             })
 
@@ -218,12 +212,11 @@ class GalleryAdminRouter(_Base):
             gallery_id: types.Gallery.id,
             gallery_update_admin: gallery_schema.GalleryAdminUpdate,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client, required_scopes={'admin'}))]
+                auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
         ) -> GalleryTable:
 
             return await self.patch({
                 'authorization': authorization,
-                'c': self.client,
                 'id': gallery_id,
                 'update_model': gallery_update_admin
             })
@@ -232,23 +225,22 @@ class GalleryAdminRouter(_Base):
         async def delete_gallery_admin(
             gallery_id: types.Gallery.id,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client, required_scopes={'admin'}))]
+                auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
         ):
 
             return await self.delete({
                 'authorization': authorization,
-                'c': self.client,
                 'id': gallery_id,
             })
 
         @self.router.get('/details/available/')
         async def get_gallery_available_admin(
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client, required_scopes={'admin'}))],
+                auth_utils.make_get_auth_dependency(required_scopes={'admin'}))],
             gallery_available_admin: gallery_schema.GalleryAdminAvailable = Depends(),
         ):
 
-            async with self.client.AsyncSession() as session:
+            async with config.ASYNC_SESSIONMAKER() as session:
                 return api_schema.IsAvailableResponse(
                     available=await GalleryService.is_available(
                         session=session,
@@ -264,14 +256,13 @@ class GalleryAdminRouter(_Base):
         async def get_galleries_by_user_admin(
             user_id: types.User.id,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client, required_scopes={'admin'}))],
+                auth_utils.make_get_auth_dependency(required_scopes={'admin'}))],
             pagination: pagination_schema.Pagination = Depends(
                 galleries_pagination)
         ) -> list[GalleryTable]:
 
             return list(await self.get_many({
                 'authorization': authorization,
-                'c': self.client,
                 'query': select(GalleryTable).where(
                     GalleryTable.user_id == user_id),
                 'pagination': pagination
@@ -284,7 +275,7 @@ class GalleryAdminRouter(_Base):
         #         auth_utils.make_get_auth_dependency(c=self.client, ))]
         # ) -> api_schema.DetailOnlyResponse:
 
-        #     async with self.client.AsyncSession() as session:
+        #     async with config.ASYNC_SESSIONMAKER() as session:
         #         gallery = await GalleryTable.api_get(GalleryTable.GetParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id))
         #         dir = await gallery.get_dir(session, c.galleries_dir)
         #         await gallery.sync_with_local(session, c, dir)

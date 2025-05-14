@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional
-from .. import types
+from src.gallery import types
 
 
 class ImageVersionExport(BaseModel):

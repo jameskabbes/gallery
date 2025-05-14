@@ -1,11 +1,12 @@
 from sqlmodel import select, or_
 from sqlmodel.ext.asyncio.session import AsyncSession
 from pydantic import BaseModel
-from ..models.tables import User as UserTable
-from . import base
-from .. import types, utils
-from ..schemas import user as user_schema
 import pathlib
+
+from src.gallery import types, utils
+from src.gallery.models.tables import User as UserTable
+from src.gallery.schemas import user as user_schema
+from src.gallery.services import base
 
 
 class User(

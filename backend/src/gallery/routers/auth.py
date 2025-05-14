@@ -4,18 +4,16 @@ from pydantic import BaseModel
 from typing import Annotated, cast
 
 
-from . import base
-from .. import types
-from ..auth import utils as auth_utils, exceptions as auth_exceptions
-from ... import config
-
-from .. import utils
-from ..schemas import user_access_token as user_access_token_schema, user as user_schema, api as api_schema, sign_up as sign_up_schema
-from ..models.tables import User, UserAccessToken
-from ..models.models import SignUp
-from ..services.user import User as UserService
-from ..services.user_access_token import UserAccessToken as UserAccessTokenService
-from ..services import auth_credential as auth_credential_service
+from src import config
+from src.gallery import types, utils
+from src.gallery.auth import utils as auth_utils, exceptions as auth_exceptions
+from src.gallery.schemas import user_access_token as user_access_token_schema, user as user_schema, api as api_schema, sign_up as sign_up_schema
+from src.gallery.models.tables import User, UserAccessToken
+from src.gallery.models.models import SignUp
+from src.gallery.services import auth_credential as auth_credential_service
+from src.gallery.services.user import User as UserService
+from src.gallery.services.user_access_token import UserAccessToken as UserAccessTokenService
+from src.gallery.routers import base
 
 
 class PostTokenResponse(BaseModel):

@@ -1,11 +1,12 @@
-from .. import types
-from . import base
-from ..models.tables import ApiKeyScope as ApiKeyScopeTable
-from ..services.api_key_scope import ApiKeyScope as ApiKeyScopeService
-from ..schemas import api_key_scope as api_key_scope_schema
-from typing import Annotated
-from ..auth import utils as auth_utils
 from fastapi import Depends, status
+from typing import Annotated
+
+from src.gallery import types
+from src.gallery.routers import base
+from src.gallery.models.tables import ApiKeyScope as ApiKeyScopeTable
+from src.gallery.services.api_key_scope import ApiKeyScope as ApiKeyScopeService
+from src.gallery.schemas import api_key_scope as api_key_scope_schema
+from src.gallery.auth import utils as auth_utils
 
 
 class _Base(
@@ -32,11 +33,10 @@ class ApiKeyScopeRouter(_Base):
             api_key_id: types.ApiKey.id,
             scope_id: types.Scope.id,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client))]
+                auth_utils.make_get_auth_dependency())]
         ) -> None:
             api_key_scope = await self.post({
                 'authorization': authorization,
-                'c': self.client,
                 'create_model': api_key_scope_schema.ApiKeyScopeAdminCreate(
                     api_key_id=api_key_id, scope_id=scope_id),
             })
@@ -46,11 +46,10 @@ class ApiKeyScopeRouter(_Base):
             api_key_id: types.ApiKey.id,
             scope_id: types.Scope.id,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client))]
+                auth_utils.make_get_auth_dependency())]
         ) -> None:
             await self.delete({
                 'authorization': authorization,
-                'c': self.client,
                 'id': types.ApiKeyScope.id(
                     api_key_id=api_key_id, scope_id=scope_id),
             })
@@ -67,11 +66,10 @@ class ApiKeyScopeAdminRouter(_Base):
             api_key_id: types.ApiKey.id,
             scope_id: types.Scope.id,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client, required_scopes={'admin'}))]
+                auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
         ) -> None:
             api_key_scope = await self.post({
                 'authorization': authorization,
-                'c': self.client,
                 'create_model': api_key_scope_schema.ApiKeyScopeAdminCreate(
                     api_key_id=api_key_id, scope_id=scope_id),
             })
@@ -81,11 +79,10 @@ class ApiKeyScopeAdminRouter(_Base):
             api_key_id: types.ApiKey.id,
             scope_id: types.Scope.id,
             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client, required_scopes={'admin'}))]
+                auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
         ) -> None:
             await self.delete({
                 'authorization': authorization,
-                'c': self.client,
                 'id': types.ApiKeyScope.id(
                     api_key_id=api_key_id, scope_id=scope_id),
             })

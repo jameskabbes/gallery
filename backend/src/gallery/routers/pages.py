@@ -1,16 +1,15 @@
 from fastapi import Depends, status
 from sqlmodel import select, func
 from pydantic import BaseModel
-from ..models.tables import ApiKey as ApiKeyTable, UserAccessToken as UserAccessTokenTable
-from ..services.api_key import ApiKey as ApiKeyService
-from ..schemas import api_key as api_key_schema, pagination as pagination_schema, api as api_schema, order_by as order_by_schema, user as user_schema, user_access_token as user_access_token_schema, gallery as gallery_schema
-from ..routers import user as user_router, api_key as api_key_router, gallery as gallery_router
-from . import base
-from .. import types
-from typing import Annotated, cast
-from ..auth import utils as auth_utils
-
 from collections.abc import Sequence
+from typing import Annotated, cast
+
+from src.gallery import types
+from src.gallery.routers import user as user_router, api_key as api_key_router, gallery as gallery_router, base
+from src.gallery.schemas import api_key as api_key_schema, pagination as pagination_schema, api as api_schema, order_by as order_by_schema, user as user_schema, user_access_token as user_access_token_schema, gallery as gallery_schema
+from src.gallery.models.tables import ApiKey as ApiKeyTable, UserAccessToken as UserAccessTokenTable
+from src.gallery.services.api_key import ApiKey as ApiKeyService
+from src.gallery.auth import utils as auth_utils
 
 
 class GetProfilePageResponse(auth_utils.GetUserSessionInfoNestedReturn):
@@ -56,14 +55,14 @@ class PagesRouter(_Base):
     def _set_routes(self):
         @self.router.get('/profile/', tags=[user_router._Base._TAG])
         async def get_pages_profile(authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                auth_utils.make_get_auth_dependency(c=self.client))]) -> GetProfilePageResponse:
+                auth_utils.make_get_auth_dependency())]) -> GetProfilePageResponse:
 
             return GetProfilePageResponse(
                 **auth_utils.get_user_session_info(authorization).model_dump()
             )
 
         @self.router.get('/home/')
-        async def get_home_page(authorization: Annotated[auth_utils.GetAuthReturn, Depends(auth_utils.make_get_auth_dependency(c=self.client, raise_exceptions=False))]) -> GetHomePageResponse:
+        async def get_home_page(authorization: Annotated[auth_utils.GetAuthReturn, Depends(auth_utils.make_get_auth_dependency(raise_exceptions=False))]) -> GetHomePageResponse:
             return GetHomePageResponse(
                 **auth_utils.get_user_session_info(authorization).model_dump()
             )
@@ -71,7 +70,7 @@ class PagesRouter(_Base):
         @self.router.get('/settings/')
         async def get_settings_page(
                 authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-                    auth_utils.make_get_auth_dependency(c=self.client, raise_exceptions=False))]
+                    auth_utils.make_get_auth_dependency(raise_exceptions=False))]
         ) -> GetSettingsPageResponse:
             return GetSettingsPageResponse(
                 **auth_utils.get_user_session_info(authorization).model_dump()
@@ -79,7 +78,7 @@ class PagesRouter(_Base):
 
         # @self.router.get('/settings/api-keys/', tags=[api_key_router._Base._TAG])
         # async def get_settings_api_keys_page(
-        #     authorization: Annotated[auth_utils.GetAuthReturn, Depends(auth_utils.make_get_auth_dependency(c=self.client))],
+        #     authorization: Annotated[auth_utils.GetAuthReturn, Depends(auth_utils.make_get_auth_dependency())],
         #     pagination: pagination_schema.Pagination = Depends(
         #         api_key_router.api_key_pagination),
         #     order_by: order_by_schema.OrderBy[types.ApiKey.order_by] = Depends(api_key_router.ApiKeyRouter.order_by_depends
@@ -94,7 +93,7 @@ class PagesRouter(_Base):
 
         # @self.router.get('/settings/user-access-tokens/', tags=[tables.UserAccessToken._ROUTER_TAG])
         # async def get_settings_user_access_tokens_page(
-        #     authorization: Annotated[auth_utils.GetAuthReturn, Depends(auth_utils.make_get_auth_dependency(c=self.client))],
+        #     authorization: Annotated[auth_utils.GetAuthReturn, Depends(auth_utils.make_get_auth_dependency())],
         #     pagination: tables.Pagination = Depends(
         #         user_access_token_pagination)
         # ) -> GetSettingsUserAccessTokensPageResponse:
@@ -105,7 +104,7 @@ class PagesRouter(_Base):
         #     )
 
         # @self.router.get('/styles/')
-        # async def get_styles_page(authorization: Annotated[auth_utils.GetAuthReturn, Depends(auth_utils.make_get_auth_dependency(c=self.clientraise_exceptions=False))]) -> GetStylesPageResponse:
+        # async def get_styles_page(authorization: Annotated[auth_utils.GetAuthReturn, Depends(auth_utils.make_get_auth_dependency(raise_exceptions=False))]) -> GetStylesPageResponse:
         #     return GetStylesPageResponse(
         #         **auth_utils.get_user_session_info(authorization).model_dump()
         #     )
@@ -114,7 +113,7 @@ class PagesRouter(_Base):
         # async def get_gallery_page(
         #     gallery_id: tables.GalleryTypes.id,
         #     authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-        #         auth_utils.make_get_auth_dependency(c=self.clientraise_exceptions=False))],
+        #         auth_utils.make_get_auth_dependency(raise_exceptions=False))],
         #     root: bool = Query(False),
         # ) -> GetGalleryPageResponse:
 

@@ -1,17 +1,11 @@
-from pydantic import BaseModel, model_validator, field_serializer, field_validator, ValidationInfo
-from sqlmodel import Field, SQLModel
-from sqlmodel.sql.expression import SelectOfScalar
 import datetime as datetime_module
 from typing import Optional, TypedDict, ClassVar, cast, Self, Literal, Protocol
 from sqlmodel.ext.asyncio.session import AsyncSession
-from .. import types, client
-
 from typing import ClassVar, TypedDict, cast, TypeVar, Generic, Type
 
-from ..schemas import auth_credential as auth_credential_schema
-from ..models.tables import User
-from . import base
-from .. import utils, models, schemas
+from src.gallery import types, schemas
+from src.gallery.schemas import auth_credential as auth_credential_schema
+from src.gallery.services import base
 
 
 def lifespan_to_expiry(lifespan: datetime_module.timedelta) -> types.AuthCredential.expiry:
@@ -70,7 +64,6 @@ class Table(
     async def get_scope_ids(
             cls,
             session: AsyncSession,
-            c: client.Client,
             inst: TAuthCredentialTable,
     ) -> list[types.Scope.id]:
         return []

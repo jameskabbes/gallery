@@ -4,10 +4,11 @@ from sqlmodel.sql.expression import SelectOfScalar
 from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import Protocol, Unpack, TypeVar, TypedDict, Generic, NotRequired, Literal, Self, ClassVar, Type, Optional
 from pydantic import BaseModel
-from .. import types, models
-from ..schemas.pagination import Pagination
-from ..schemas.order_by import OrderBy
 from collections.abc import Sequence
+
+from src.gallery import types, models
+from src.gallery.schemas.pagination import Pagination
+from src.gallery.schemas.order_by import OrderBy
 
 TCreateModel = TypeVar(
     'TCreateModel', bound=BaseModel, default=BaseModel)

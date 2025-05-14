@@ -4,8 +4,8 @@ import uuid
 import jwt
 import secrets
 from . import types
-from .. import config
 from pathlib import Path
+from src import config
 
 
 def deep_merge_dicts(primary_dict: dict, secondary_dict: dict) -> dict:

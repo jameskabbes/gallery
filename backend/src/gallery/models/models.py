@@ -1,6 +1,7 @@
-from .bases.auth_credential import AuthCredentialBase
 from sqlmodel import Field
-from .. import types
+
+from src.gallery.models.bases.auth_credential import AuthCredentialBase
+from src.gallery import types
 
 
 class SignUp(AuthCredentialBase):

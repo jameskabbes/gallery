@@ -1,11 +1,11 @@
 from sqlmodel import select
-from ..models.tables import ImageFileMetadata as ImageFileMetadataTable
-from . import base
-from .. import types
-
-from ..schemas import image_file_metadata as image_file_metadata_schema
 from typing import ClassVar
 import re
+
+from src.gallery import types
+from src.gallery.services import base
+from src.gallery.models.tables import ImageFileMetadata as ImageFileMetadataTable
+from src.gallery.schemas import image_file_metadata as image_file_metadata_schema
 
 
 class ImageFileMetadata(
