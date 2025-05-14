@@ -1,7 +1,7 @@
 import pytest
-from ..src.gallery.models.bases import auth_credential
-from ..src.gallery.models import SignUp
-from ..src.gallery.services.sign_up import SignUp as SignUpService
+from ..src.arbor_imago.models.bases import auth_credential
+from ..src.arbor_imago.models import SignUp
+from ..src.arbor_imago.services.sign_up import SignUp as SignUpService
 import datetime as datetime_module
 
 

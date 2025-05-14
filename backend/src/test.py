@@ -1,5 +1,5 @@
 import asyncio
-from gallery import core_utils
+from arbor_imago import core_utils
 
 
 async def main():
