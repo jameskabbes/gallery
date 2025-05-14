@@ -7,7 +7,7 @@ from src import config
 from src.gallery import utils, types
 from src.gallery.models.tables import UserAccessToken as UserAccessTokenTable
 from src.gallery.schemas import user_access_token as user_access_token_schema, auth_credential as auth_credential_schema
-from src.gallery.services import auth_credential as auth_credential_service, base
+from src.gallery.services import auth_credential as auth_credential_service, base, user as user_service
 
 
 class UserAccessToken(
@@ -64,4 +64,8 @@ class UserAccessToken(
 
     @classmethod
     async def get_scope_ids(cls, session, inst):
-        return list(config.USER_ROLE_ID_SCOPE_IDS[inst.user.user_role_id])
+        return list(config.USER_ROLE_ID_SCOPE_IDS[(await user_service.User.fetch_by_id_with_exception(
+            session,
+            inst.user_id
+        )).user_role_id
+        ])
