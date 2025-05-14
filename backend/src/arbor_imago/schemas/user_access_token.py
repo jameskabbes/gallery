@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from gallery import types
+from arbor_imago import types
 from arbor_imago.schemas import FromAttributes
 
 

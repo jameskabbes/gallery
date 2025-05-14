@@ -4,7 +4,7 @@ import string
 import secrets
 import datetime as datetime_module
 
-from arbor_imago import config, utils, types
+from arbor_imago import config, core_utils, types
 from arbor_imago.models.tables import OTP as OTPTable
 from arbor_imago.schemas import otp as otp_schema, auth_credential as auth_credential_schema
 from arbor_imago.services import auth_credential as auth_credential_service, base
@@ -31,7 +31,7 @@ class OTP(
     def model_inst_from_create_model(cls, create_model):
 
         return cls._MODEL(
-            id=types.OTP.id(utils.generate_uuid()),
+            id=types.OTP.id(core_utils.generate_uuid()),
             issued=datetime_module.datetime.now().astimezone(datetime_module.UTC),
             **create_model.model_dump()
         )
@@ -43,14 +43,14 @@ class OTP(
 
     @classmethod
     def hash_code(cls, code: types.OTP.code) -> types.OTP.hashed_code:
-        return utils.hash_password(code)
+        return core_utils.hash_password(code)
 
     @classmethod
     def verify_code(cls, code: types.OTP.code, hashed_code: types.OTP.hashed_code) -> bool:
 
         import time
         start = time.time()
-        a = utils.verify_password(code, hashed_code)
+        a = core_utils.verify_password(code, hashed_code)
         end = time.time()
         print(end - start)
         return a

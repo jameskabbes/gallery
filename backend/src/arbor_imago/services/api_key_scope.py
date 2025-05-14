@@ -1,7 +1,7 @@
 from sqlmodel import Field, Relationship, select, SQLModel
 from typing import TYPE_CHECKING, TypedDict, Optional, ClassVar, Annotated, Type
 
-from gallery import types
+from arbor_imago import types
 from arbor_imago.models.tables import ApiKeyScope as ApiKeyScopeTable, ApiKey as ApiKeyTable
 from arbor_imago.services import api_key as api_key_service, base
 from arbor_imago.schemas import api_key_scope as api_key_scope_schema

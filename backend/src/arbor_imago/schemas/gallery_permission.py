@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
-from gallery import types
+from arbor_imago import types
 
 
 class GalleryPermissionExport(BaseModel):

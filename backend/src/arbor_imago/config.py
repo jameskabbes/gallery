@@ -12,20 +12,21 @@ from platformdirs import user_config_dir
 import warnings
 import secrets
 from arbor_imago import types, core_utils
+import arbor_imago
 
-GALLERY_DIR = Path(__file__).parent  # /gallery/backend/src/gallery/
-EXAMPLES_DIR = GALLERY_DIR / 'examples'  # /gallery/backend/examples/
-EXAMPLE_CONFIG_DIR = EXAMPLES_DIR / 'config'  # /gallery/backend/examples/config/
+ARBOR_IMAGO_DIR = Path(__file__).parent  # /gallery/backend/src/arbor_imago/
+EXAMPLES_DIR = ARBOR_IMAGO_DIR / 'examples'
+EXAMPLE_CONFIG_DIR = EXAMPLES_DIR / 'config'
 EXAMPLE_BACKEND_CONFIG_DIR = EXAMPLE_CONFIG_DIR / 'backend'
 EXAMPLE_SHARED_CONFIG_DIR = EXAMPLE_CONFIG_DIR / 'shared'
 EXAMPLE_BACKEND_CONFIG_YAML_PATH = EXAMPLE_BACKEND_CONFIG_DIR / 'config.yaml'
 EXAMPLE_BACKEND_SECRETS_ENV_PATH = EXAMPLE_BACKEND_CONFIG_DIR / 'secrets.env'
 EXAMPLE_SHARED_CONFIG_YAML_PATH = EXAMPLE_SHARED_CONFIG_DIR / 'config.yaml'
-SRC_DIR = GALLERY_DIR.parent  # /gallery/backend/src/
-BACKEND_DIR = SRC_DIR.parent  # /gallery/backend/
-REPO_DIR = BACKEND_DIR.parent  # /gallery/
+SRC_DIR = ARBOR_IMAGO_DIR.parent
+BACKEND_DIR = SRC_DIR.parent
+REPO_DIR = BACKEND_DIR.parent
 
-CONFIG_DIR = Path(user_config_dir('gallery', appauthor=False))
+CONFIG_DIR = Path(user_config_dir(arbor_imago.__name__, appauthor=False))
 if not CONFIG_DIR.exists():
     warnings.warn(
         'Config dir {} does not exist. Creating a new one.'.format(CONFIG_DIR))
