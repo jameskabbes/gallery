@@ -1,7 +1,6 @@
 import typing
 import jwt
-from . import types
-from backend.src.gallery import config
+from gallery import types, config
 
 
 def jwt_encode(payload: dict[str, typing.Any]) -> types.JwtEncodedStr:

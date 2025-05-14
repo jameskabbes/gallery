@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 from typing import Type, Literal, TypeVar
 
-from src.gallery.models.tables import UserAccessToken, ApiKey, OTP
-from src.gallery.models.models import SignUp
+from gallery.models.tables import UserAccessToken, ApiKey, OTP
+from gallery.models.models import SignUp
 
 
 class FromAttributes(BaseModel):

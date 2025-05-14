@@ -3,13 +3,13 @@ from sqlmodel import select
 from typing import Annotated, cast, Type
 from collections.abc import Sequence
 
-from backend.src.gallery import config
-from src.gallery import types
-from src.gallery.auth import utils as auth_utils
-from src.gallery.routers import base
-from src.gallery.models.tables import User as UserTable
-from src.gallery.services.user import User as UserService, base as base_service
-from src.gallery.schemas import user as user_schema, pagination as pagination_schema, api as api_schema, order_by as order_by_schema
+from gallery import config
+from gallery import types
+from gallery.auth import utils as auth_utils
+from gallery.routers import base
+from gallery.models.tables import User as UserTable
+from gallery.services.user import User as UserService, base as base_service
+from gallery.schemas import user as user_schema, pagination as pagination_schema, api as api_schema, order_by as order_by_schema
 
 
 PAGINATION_DEPENDS = base.get_pagination()

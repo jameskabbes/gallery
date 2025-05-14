@@ -1,12 +1,12 @@
 from fastapi import Depends, status
 from typing import Annotated
 
-from src.gallery import types
-from src.gallery.routers import base
-from src.gallery.models.tables import ApiKeyScope as ApiKeyScopeTable
-from src.gallery.services.api_key_scope import ApiKeyScope as ApiKeyScopeService
-from src.gallery.schemas import api_key_scope as api_key_scope_schema
-from src.gallery.auth import utils as auth_utils
+from gallery import types
+from gallery.routers import base
+from gallery.models.tables import ApiKeyScope as ApiKeyScopeTable
+from gallery.services.api_key_scope import ApiKeyScope as ApiKeyScopeService
+from gallery.schemas import api_key_scope as api_key_scope_schema
+from gallery.auth import utils as auth_utils
 
 
 class _Base(

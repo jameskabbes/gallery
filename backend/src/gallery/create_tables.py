@@ -1,7 +1,6 @@
 import asyncio
 from sqlmodel import SQLModel
-from src.gallery import models
-from backend.src.gallery import config
+from src.gallery import models, config
 
 
 async def main():

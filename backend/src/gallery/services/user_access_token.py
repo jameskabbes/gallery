@@ -3,11 +3,10 @@ from sqlmodel import select
 from pydantic import BaseModel
 import datetime as datetime_module
 
-from backend.src.gallery import config
-from src.gallery import utils, types
-from src.gallery.models.tables import UserAccessToken as UserAccessTokenTable
-from src.gallery.schemas import user_access_token as user_access_token_schema, auth_credential as auth_credential_schema
-from src.gallery.services import auth_credential as auth_credential_service, base, user as user_service
+from gallery import config, core_utils, types
+from gallery.models.tables import UserAccessToken as UserAccessTokenTable
+from gallery.schemas import user_access_token as user_access_token_schema, auth_credential as auth_credential_schema
+from gallery.services import auth_credential as auth_credential_service, base, user as user_service
 
 
 class UserAccessToken(
@@ -41,7 +40,7 @@ class UserAccessToken(
     def model_inst_from_create_model(cls, create_model):
 
         return cls._MODEL(
-            id=types.UserAccessToken.id(utils.generate_uuid()),
+            id=types.UserAccessToken.id(core_utils.generate_uuid()),
             issued=datetime_module.datetime.now().astimezone(datetime_module.UTC),
             **create_model.model_dump(exclude_unset=True, exclude_defaults=True, exclude_none=True)
         )

@@ -1,9 +1,9 @@
 from sqlmodel import select
 
-from src.gallery import types
-from src.gallery.services import base
-from src.gallery.models.tables import GalleryPermission as GalleryPermissionTable
-from src.gallery.schemas import gallery_permission as gallery_permission_schema
+from gallery import types
+from gallery.services import base
+from gallery.models.tables import GalleryPermission as GalleryPermissionTable
+from gallery.schemas import gallery_permission as gallery_permission_schema
 
 
 class GalleryPermission(

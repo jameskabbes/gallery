@@ -4,7 +4,7 @@ import datetime as datetime_module
 from pydantic import ValidationInfo
 import typing
 
-from src.gallery import types
+from gallery import types
 
 """
 Developer's Note:

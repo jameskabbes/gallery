@@ -2,13 +2,13 @@ from fastapi import Depends, status
 from sqlmodel import select, func
 from typing import Annotated, cast, Literal
 
-from backend.src.gallery import config
-from src.gallery import types
-from src.gallery.models.tables import UserAccessToken as UserAccessTokenTable
-from src.gallery.services.user_access_token import UserAccessToken as UserAccessTokenService
-from src.gallery.schemas import user_access_token as user_access_token_schema, pagination as pagination_schema, api as api_schema
-from src.gallery.routers import user as user_router, base
-from src.gallery.auth import utils as auth_utils
+from gallery import config
+from gallery import types
+from gallery.models.tables import UserAccessToken as UserAccessTokenTable
+from gallery.services.user_access_token import UserAccessToken as UserAccessTokenService
+from gallery.schemas import user_access_token as user_access_token_schema, pagination as pagination_schema, api as api_schema
+from gallery.routers import user as user_router, base
+from gallery.auth import utils as auth_utils
 
 
 def user_access_token_pagination(

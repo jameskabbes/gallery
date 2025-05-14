@@ -4,11 +4,11 @@ import string
 import secrets
 import datetime as datetime_module
 
-from backend.src.gallery import config
-from src.gallery import utils, types
-from src.gallery.models.tables import OTP as OTPTable
-from src.gallery.schemas import otp as otp_schema, auth_credential as auth_credential_schema
-from src.gallery.services import auth_credential as auth_credential_service, base
+from gallery import config
+from gallery import utils, types
+from gallery.models.tables import OTP as OTPTable
+from gallery.schemas import otp as otp_schema, auth_credential as auth_credential_schema
+from gallery.services import auth_credential as auth_credential_service, base
 
 
 class OTP(

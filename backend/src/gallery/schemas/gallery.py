@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 from typing import Optional
 
-from src.gallery import types
-from src.gallery.services import base as base_service
+from gallery import types
+from gallery.services import base as base_service
 
 
 class GalleryExport(BaseModel):

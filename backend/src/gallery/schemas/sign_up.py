@@ -1,6 +1,6 @@
 from sqlmodel import Field
 from pydantic import BaseModel
-from src.gallery import types
+from gallery import types
 
 
 class SignUpAdminCreate(BaseModel):

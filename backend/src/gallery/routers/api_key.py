@@ -3,13 +3,12 @@ from sqlmodel import select, func
 from pydantic import BaseModel
 from typing import Annotated, cast
 
-from backend.src.gallery import config
-from src.gallery import types, utils
-from src.gallery.models.tables import ApiKey as ApiKeyTable
-from src.gallery.services.api_key import ApiKey as ApiKeyService
-from src.gallery.schemas import api_key as api_key_schema, pagination as pagination_schema, api as api_schema, order_by as order_by_schema
-from src.gallery.routers import user as user_router, base
-from src.gallery.auth import utils as auth_utils
+from gallery import config, types, utils
+from gallery.models.tables import ApiKey as ApiKeyTable
+from gallery.services.api_key import ApiKey as ApiKeyService
+from gallery.schemas import api_key as api_key_schema, pagination as pagination_schema, api as api_schema, order_by as order_by_schema
+from gallery.routers import user as user_router, base
+from gallery.auth import utils as auth_utils
 
 
 class _Base(

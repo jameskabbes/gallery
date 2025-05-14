@@ -1,9 +1,9 @@
 from sqlmodel import select
 
-from src.gallery import types
-from src.gallery.models.tables import File as FileTable
-from src.gallery.schemas import file as file_schema
-from src.gallery.services import base
+from gallery import types
+from gallery.models.tables import File as FileTable
+from gallery.schemas import file as file_schema
+from gallery.services import base
 
 
 class File(

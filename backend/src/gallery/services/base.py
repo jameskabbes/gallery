@@ -6,9 +6,9 @@ from typing import Any, Protocol, Unpack, TypeVar, TypedDict, Generic, NotRequir
 from pydantic import BaseModel
 from collections.abc import Sequence
 
-from src.gallery import types, models
-from src.gallery.schemas.pagination import Pagination
-from src.gallery.schemas.order_by import OrderBy
+from gallery import types, models
+from gallery.schemas.pagination import Pagination
+from gallery.schemas.order_by import OrderBy
 
 TCreateModel = TypeVar(
     'TCreateModel', bound=BaseModel, default=BaseModel)

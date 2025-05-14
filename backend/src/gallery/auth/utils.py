@@ -12,20 +12,16 @@ from typing import Annotated, Generic
 from fastapi import Request, HTTPException, status, Response
 import datetime as datetime_module
 
-from src.gallery import types, auth, utils
-from src.gallery.auth import exceptions
-from backend.src.gallery import config
-
-from src.gallery.models import tables
-from src.gallery import models, schemas
-from src.gallery.schemas import user as user_schema, user_access_token as user_access_token_schema, sign_up as sign_up_schema, otp as otp_schema, auth_credential as auth_credential_schema
-from src.gallery.services.user import User as UserService
-from src.gallery.services.user_access_token import UserAccessToken as UserAccessTokenService
-from src.gallery.services.sign_up import SignUp as SignUpService
-from src.gallery.services.otp import OTP as OTPService
-from src.gallery.services.api_key import ApiKey as ApiKeyService
-from src.gallery.services import auth_credential as auth_credential_service
-from src.gallery import services
+from gallery import types, auth, utils, config, models, schemas, services
+from gallery.auth import exceptions
+from gallery.models import tables
+from gallery.schemas import user as user_schema, user_access_token as user_access_token_schema, sign_up as sign_up_schema, otp as otp_schema, auth_credential as auth_credential_schema
+from gallery.services.user import User as UserService
+from gallery.services.user_access_token import UserAccessToken as UserAccessTokenService
+from gallery.services.sign_up import SignUp as SignUpService
+from gallery.services.otp import OTP as OTPService
+from gallery.services.api_key import ApiKey as ApiKeyService
+from gallery.services import auth_credential as auth_credential_service
 
 
 def set_access_token_cookie(response: Response, access_token: types.JwtEncodedStr,  expiry: datetime_module.datetime | None = None):

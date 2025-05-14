@@ -3,9 +3,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 
-from backend.src.gallery import config
-from src.gallery.routers import user, auth, user_access_token, api_key_scope, gallery, api_key, pages
-from src.gallery.auth import utils as auth_utils
+from gallery import config
+from gallery.routers import user, auth, user_access_token, api_key_scope, gallery, api_key, pages
+from gallery.auth import utils as auth_utils
 
 
 @asynccontextmanager

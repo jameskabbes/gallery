@@ -3,14 +3,13 @@ from sqlmodel import select
 from typing import Annotated, cast
 import shutil
 
-from backend.src.gallery import config
-from src.gallery import types
-from src.gallery.auth import utils as auth_utils
-from src.gallery.routers import base, user as user_router
-from src.gallery.models.tables import Gallery as GalleryTable, GalleryPermission as GalleryPermissionTable
-from src.gallery.services.gallery import Gallery as GalleryService
-from src.gallery.services.gallery_permission import GalleryPermission as GalleryPermissionService
-from src.gallery.schemas import gallery as gallery_schema, pagination as pagination_schema, api as api_schema, gallery_permission as gallery_permission_schema
+from gallery import config, types
+from gallery.auth import utils as auth_utils
+from gallery.routers import base, user as user_router
+from gallery.models.tables import Gallery as GalleryTable, GalleryPermission as GalleryPermissionTable
+from gallery.services.gallery import Gallery as GalleryService
+from gallery.services.gallery_permission import GalleryPermission as GalleryPermissionService
+from gallery.schemas import gallery as gallery_schema, pagination as pagination_schema, api as api_schema, gallery_permission as gallery_permission_schema
 
 
 class _Base(

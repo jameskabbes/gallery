@@ -7,11 +7,10 @@ from enum import Enum
 from collections.abc import Sequence
 
 
-from backend.src.gallery import config
-from src.gallery import models, types
-from src.gallery.services import base as base_service
-from src.gallery.schemas import pagination as pagination_schema, order_by as order_by_schema
-from src.gallery.auth import utils as auth_utils
+from gallery import config, models, types
+from gallery.services import base as base_service
+from gallery.schemas import pagination as pagination_schema, order_by as order_by_schema
+from gallery.auth import utils as auth_utils
 
 
 def get_pagination(max_limit: int = 100, default_limit: int = 10):

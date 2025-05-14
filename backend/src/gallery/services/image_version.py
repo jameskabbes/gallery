@@ -1,9 +1,9 @@
 from sqlmodel import select
 
-from src.gallery import types
-from src.gallery.services import base
-from src.gallery.models.tables import ImageVersion as ImageVersionTable
-from src.gallery.schemas import file as file_schema
+from gallery import types
+from gallery.services import base
+from gallery.models.tables import ImageVersion as ImageVersionTable
+from gallery.schemas import file as file_schema
 
 
 class ImageVersion(

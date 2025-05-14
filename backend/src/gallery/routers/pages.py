@@ -4,14 +4,13 @@ from pydantic import BaseModel
 from collections.abc import Sequence
 from typing import Annotated, cast, Optional
 
-from backend.src.gallery import config
-from src.gallery import types
-from src.gallery.routers import user as user_router, api_key as api_key_router, gallery as gallery_router, base, user_access_token as user_access_token_router
-from src.gallery.schemas import api_key as api_key_schema, pagination as pagination_schema, api as api_schema, order_by as order_by_schema, user as user_schema, user_access_token as user_access_token_schema, gallery as gallery_schema
-from src.gallery.models.tables import ApiKey as ApiKeyTable, UserAccessToken as UserAccessTokenTable, Gallery as GalleryTable
-from src.gallery.services.api_key import ApiKey as ApiKeyService
-from src.gallery.services.gallery import Gallery as GalleryService
-from src.gallery.auth import utils as auth_utils
+from gallery import types
+from gallery.routers import user as user_router, api_key as api_key_router, gallery as gallery_router, base, user_access_token as user_access_token_router
+from gallery.schemas import api_key as api_key_schema, pagination as pagination_schema, api as api_schema, order_by as order_by_schema, user as user_schema, user_access_token as user_access_token_schema, gallery as gallery_schema
+from gallery.models.tables import ApiKey as ApiKeyTable, UserAccessToken as UserAccessTokenTable, Gallery as GalleryTable
+from gallery.services.api_key import ApiKey as ApiKeyService
+from gallery.services.gallery import Gallery as GalleryService
+from gallery.auth import utils as auth_utils
 
 
 class ProfilePageResponse(auth_utils.GetUserSessionInfoNestedReturn):

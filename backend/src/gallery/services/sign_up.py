@@ -1,9 +1,9 @@
 import datetime as datetime_module
 
-from src.gallery import types
-from src.gallery.models.models import SignUp as SignUpModel
-from src.gallery.schemas import sign_up as sign_up_schema, auth_credential as auth_credential_schema
-from src.gallery.services import auth_credential as auth_credential_service
+from gallery import types
+from gallery.models.models import SignUp as SignUpModel
+from gallery.schemas import sign_up as sign_up_schema, auth_credential as auth_credential_schema
+from gallery.services import auth_credential as auth_credential_service
 
 
 class SignUp(

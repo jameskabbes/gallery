@@ -1,7 +1,6 @@
 import typing
 from fastapi import Request, HTTPException, status, Response
-from src.gallery import types, auth
-from backend.src.gallery import config
+from gallery import types, auth, config
 
 
 class StatusCodeAndDetail(typing.TypedDict):

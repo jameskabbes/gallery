@@ -1,7 +1,7 @@
 from sqlmodel import Field
 
-from src.gallery.models.bases.auth_credential import AuthCredentialBase
-from src.gallery import types
+from gallery.models.bases.auth_credential import AuthCredentialBase
+from gallery import types
 
 
 class SignUp(AuthCredentialBase):

@@ -1,10 +1,10 @@
 from sqlmodel import Field, Relationship, select, SQLModel
 from typing import TYPE_CHECKING, TypedDict, Optional, ClassVar, Annotated, Type
 
-from src.gallery import types
-from src.gallery.models.tables import ApiKeyScope as ApiKeyScopeTable, ApiKey as ApiKeyTable
-from src.gallery.services import api_key as api_key_service, base
-from src.gallery.schemas import api_key_scope as api_key_scope_schema
+from gallery import types
+from gallery.models.tables import ApiKeyScope as ApiKeyScopeTable, ApiKey as ApiKeyTable
+from gallery.services import api_key as api_key_service, base
+from gallery.schemas import api_key_scope as api_key_scope_schema
 
 
 class ApiKeyScope(base.Service[

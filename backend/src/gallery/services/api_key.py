@@ -3,10 +3,10 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 import datetime as datetime_module
 from typing import cast
 
-from src.gallery import types, core_utils
-from src.gallery.models.tables import ApiKey as ApiKeyTable
-from src.gallery.schemas import api_key as api_key_schema, auth_credential as auth_credential_schema
-from src.gallery.services import auth_credential as auth_credential_service, base
+from gallery import types, core_utils
+from gallery.models.tables import ApiKey as ApiKeyTable
+from gallery.schemas import api_key as api_key_schema, auth_credential as auth_credential_schema
+from gallery.services import auth_credential as auth_credential_service, base
 
 
 class ApiKey(

@@ -3,10 +3,10 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from pydantic import BaseModel
 import pathlib
 
-from src.gallery import types, utils
-from src.gallery.models.tables import User as UserTable
-from src.gallery.schemas import user as user_schema
-from src.gallery.services import base
+from gallery import core_utils, types
+from gallery.models.tables import User as UserTable
+from gallery.schemas import user as user_schema
+from gallery.services import base
 
 
 class User(
@@ -48,7 +48,7 @@ class User(
             return None
         if user.hashed_password is None:
             return None
-        if not utils.verify_password(password, user.hashed_password):
+        if not core_utils.verify_password(password, user.hashed_password):
             return None
         return user
 
@@ -65,7 +65,7 @@ class User(
                     create_model.password)
 
         return cls._MODEL(
-            id=types.User.id(utils.generate_uuid()),
+            id=types.User.id(core_utils.generate_uuid()),
             ** d,
         )
 

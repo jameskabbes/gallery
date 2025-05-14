@@ -1,7 +1,7 @@
 from enum import Enum
 from sqlmodel import SQLModel
 from typing import TypedDict, Generic, TypeVar
-from src.gallery import types
+from gallery import types
 
 
 TSub = TypeVar('TSub')

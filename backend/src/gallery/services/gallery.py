@@ -5,11 +5,11 @@ import datetime as datetime_module
 import pathlib
 import shutil
 
-from backend.src.gallery import config
-from src.gallery import types, utils, core_utils
-from src.gallery.models.tables import Gallery as GalleryTable
-from src.gallery.services.gallery_permission import GalleryPermission as GalleryPermissionService, base
-from src.gallery.schemas import gallery as gallery_schema
+from gallery import config
+from gallery import types, utils, core_utils
+from gallery.models.tables import Gallery as GalleryTable
+from gallery.services.gallery_permission import GalleryPermission as GalleryPermissionService, base
+from gallery.schemas import gallery as gallery_schema
 
 
 class Gallery(

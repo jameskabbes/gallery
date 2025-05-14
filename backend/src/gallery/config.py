@@ -27,6 +27,8 @@ REPO_DIR = BACKEND_DIR.parent  # /gallery/
 
 CONFIG_DIR = Path(user_config_dir('gallery', appauthor=False))
 if not CONFIG_DIR.exists():
+    warnings.warn(
+        'Config dir {} does not exist. Creating a new one.'.format(CONFIG_DIR))
     CONFIG_DIR.mkdir()
 
 
@@ -52,6 +54,11 @@ else:
     CONFIG_ENV_DIR = CONFIG_DIR / 'dev'
     warnings.warn(
         'Environment variables APP_ENV and CONFIG_ENV_DIR are not set. Defaulting to builtin dev environment located at {}.'.format(CONFIG_ENV_DIR))
+
+if not CONFIG_ENV_DIR.exists():
+    CONFIG_ENV_DIR.mkdir()
+    warnings.warn(
+        'Config env dir {} does not exist. Creating a new one.'.format(CONFIG_ENV_DIR))
 
 BACKEND_CONFIG_ENV_DIR = CONFIG_ENV_DIR / 'backend'
 SHARED_CONFIG_ENV_DIR = CONFIG_ENV_DIR / 'shared'
@@ -148,10 +155,12 @@ USER_ROLE_ID_SCOPE_IDS: dict[types.UserRole.id,
 }
 
 OPENAPI_SCHEMA_PATH = convert_env_path_to_absolute(
-    SHARED_CONFIG_ENV_DIR, _SHARED_CONFIG_ENV['OPENAPI_SCHEMA_PATH'])
+    Path.cwd(), _SHARED_CONFIG_ENV['OPENAPI_SCHEMA_PATH'])
+
+print(f"OPENAPI_SCHEMA_PATH: {OPENAPI_SCHEMA_PATH}")
 
 GOOGLE_CLIENT_SECRET = json.loads(convert_env_path_to_absolute(
-    SHARED_CONFIG_ENV_DIR, _SHARED_CONFIG_ENV['GOOGLE_CLIENT_SECRET_PATH']).read_text())
+    Path.cwd(), _SHARED_CONFIG_ENV['GOOGLE_CLIENT_SECRET_PATH']).read_text())
 
 OTP_LENGTH: int = _SHARED_CONFIG_ENV['OTP_LENGTH']
 

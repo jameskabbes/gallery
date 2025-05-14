@@ -1,15 +1,15 @@
 from typing import Type, TypedDict, TypeVar
 
-from src.gallery.services.api_key_scope import ApiKeyScope as ApiKeyScopeService
-from src.gallery.services.api_key import ApiKey as ApiKeyService
-from src.gallery.services.file import File as FileService
-from src.gallery.services.gallery import Gallery as GalleryService
-from src.gallery.services.gallery_permission import GalleryPermission as GalleryPermissionService
-from src.gallery.services.image_version import ImageVersion as ImageVersionService
-from src.gallery.services.otp import OTP as OTPService
-from src.gallery.services.sign_up import SignUp as SignUpService
-from src.gallery.services.user_access_token import UserAccessToken as UserAccessTokenService
-from src.gallery.services.user import User as UserService
+from gallery.services.api_key_scope import ApiKeyScope as ApiKeyScopeService
+from gallery.services.api_key import ApiKey as ApiKeyService
+from gallery.services.file import File as FileService
+from gallery.services.gallery import Gallery as GalleryService
+from gallery.services.gallery_permission import GalleryPermission as GalleryPermissionService
+from gallery.services.image_version import ImageVersion as ImageVersionService
+from gallery.services.otp import OTP as OTPService
+from gallery.services.sign_up import SignUp as SignUpService
+from gallery.services.user_access_token import UserAccessToken as UserAccessTokenService
+from gallery.services.user import User as UserService
 
 AuthCredentialService = Type[UserAccessTokenService] | Type[ApiKeyService] | Type[OTPService] | Type[SignUpService]
 AuthCredentialJwtService = Type[UserAccessTokenService] | Type[ApiKeyService] | Type[SignUpService]

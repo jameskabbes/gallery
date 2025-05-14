@@ -3,9 +3,9 @@ from typing import Optional, TypedDict, ClassVar, cast, Self, Literal, Protocol
 from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import ClassVar, TypedDict, cast, TypeVar, Generic, Type
 
-from src.gallery import types, schemas
-from src.gallery.schemas import auth_credential as auth_credential_schema
-from src.gallery.services import base
+from gallery import types, schemas
+from gallery.schemas import auth_credential as auth_credential_schema
+from gallery.services import base
 
 
 def lifespan_to_expiry(lifespan: datetime_module.timedelta) -> types.AuthCredential.expiry:

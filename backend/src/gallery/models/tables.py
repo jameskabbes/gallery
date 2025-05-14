@@ -3,9 +3,9 @@ from pydantic import field_serializer, field_validator, ValidationInfo
 from typing import Optional, Protocol
 import datetime as datetime_module
 
-from src.gallery import types
-from src.gallery.models.custom_field_types import timestamp
-from src.gallery.models.bases.auth_credential import AuthCredentialBase
+from gallery import types
+from gallery.models.custom_field_types import timestamp
+from gallery.models.bases.auth_credential import AuthCredentialBase
 
 
 class User(SQLModel, table=True):

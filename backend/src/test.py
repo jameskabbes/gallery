@@ -1,9 +1,9 @@
 import asyncio
-from src.gallery import utils
+from gallery import core_utils
 
 
 async def main():
-    print(utils.hash_password('password'))
+    print(core_utils.hash_password('password'))
 
 
 if __name__ == '__main__':

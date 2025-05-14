@@ -2,8 +2,8 @@ from sqlmodel import SQLModel
 from pydantic import field_serializer, field_validator, ValidationInfo
 import datetime as datetime_module
 
-from src.gallery import types
-from src.gallery.models.custom_field_types import timestamp
+from gallery import types
+from gallery.models.custom_field_types import timestamp
 
 
 class AuthCredentialBase(SQLModel):

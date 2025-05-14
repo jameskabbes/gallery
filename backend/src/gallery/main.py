@@ -1,5 +1,5 @@
 import uvicorn
-from backend.src.gallery import config
+from gallery import config
 
 if __name__ == "__main__":
-    uvicorn.run("src.app:app", **config.UVICORN)
+    uvicorn.run("gallery.app:app", **config.UVICORN)
