@@ -99,12 +99,12 @@ class SharedConfigEnv(typing.TypedDict):
 # generate these files if they do not exist
 
 
-SHARED_CONFIG_ENV_PATH = SHARED_CONFIG_ENV_DIR / \
+SHARED_CONFIG_ENV_YAML_PATH = SHARED_CONFIG_ENV_DIR / \
     EXAMPLE_SHARED_CONFIG_YAML_PATH.name
-if not SHARED_CONFIG_ENV_PATH.exists():
+if not SHARED_CONFIG_ENV_YAML_PATH.exists():
     warnings.warn(
-        'Shared config file {} does not exist. Creating a new one.'.format(SHARED_CONFIG_ENV_PATH))
-    SHARED_CONFIG_ENV_PATH.write_text(
+        'Shared config file {} does not exist. Creating a new one.'.format(SHARED_CONFIG_ENV_YAML_PATH))
+    SHARED_CONFIG_ENV_YAML_PATH.write_text(
         EXAMPLE_SHARED_CONFIG_YAML_PATH.read_text())
 
 BACKEND_CONFIG_ENV_YAML_PATH = BACKEND_CONFIG_ENV_DIR / \
@@ -125,7 +125,7 @@ if not BACKEND_CONFIG_ENV_SECRETS_PATH.exists():
 
 # read in the shared config file
 
-with SHARED_CONFIG_ENV_PATH.open('r') as f:
+with SHARED_CONFIG_ENV_YAML_PATH.open('r') as f:
     _SHARED_CONFIG_ENV: SharedConfigEnv = yaml.safe_load(f)
 
 
