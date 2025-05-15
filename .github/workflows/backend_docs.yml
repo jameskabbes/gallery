@@ -61,7 +61,8 @@ jobs:
           cd backend/sphinx
           sphinx-apidoc -o . ../src/
           make html 
-          mv _build/html/* ../docs/
+          rm -rf ../docs/*
+          cp -r _build/html/* ../docs/
           cd ../..
 
       - name: Add .nojekyll file
