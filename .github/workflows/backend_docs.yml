@@ -88,6 +88,7 @@ jobs:
           # remove all files from the git tracking, then checkout
           git rm -rf .
           git checkout gh-pages
+          git rm -rf .
 
           # move the docs folder back to the root of the repository
           cp -r /tmp/docs/* .
