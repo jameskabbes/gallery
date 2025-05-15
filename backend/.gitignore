@@ -1,4 +1,5 @@
 data/
 venv/
+dist/
 __pycache__/
 test.ipynb

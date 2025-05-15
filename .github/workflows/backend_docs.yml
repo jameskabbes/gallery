@@ -1,0 +1,82 @@
+name: gh-pages documentation builder
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+
+      - name: Install pip and toml
+        run: |
+          python -m pip install --upgrade pip
+          pip install toml
+
+      - name: Read pyproject.toml
+        id: pyproject_toml
+        run: |
+          python -c "
+          import toml
+          import os
+
+          with open('backend/pyproject.toml', 'r') as f:
+            data = toml.load(f)
+
+          project = data.get('project', {})
+          name = project.get('name', '')
+          version = project.get('version', '')
+          dependencies = project.get('dependencies', [])
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+              print(f'project_name={name}', file=fh)
+              print(f'version={version}', file=fh)
+
+          with open('backend/requirements.txt', 'w') as req:
+              for dep in dependencies:
+                  req.write(dep + '\\n')
+          "
+
+      - name: Install dependencies from pyproject.toml
+        run: |
+          pip install sphinx sphinx-rtd-theme
+          pip install -r backend/requirements.txt
+
+      - name: Generate documentation
+        run: |
+          rm -rf backend/docs
+          mkdir backend/docs
+          cd backend/sphinx
+          sphinx-apidoc -o . ../src/
+          make html 
+          mv _build/html/* ../docs/
+          cd ../
+
+      - name: Add .nojekyll file
+        run: |
+          touch backend/docs/.nojekyll
+
+      - uses: actions/checkout@master
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git add docs
+          git commit -m "Auto-generated documentation for ${{ steps.pyproject_toml.outputs.project_name }} version ${{ steps.pyproject_toml.outputs.version }}"
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: gh-pages
+          force: true

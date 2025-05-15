@@ -30,7 +30,8 @@ dependencies = [
     "sqlmodel",
     "greenlet",
     "isodate",
-    "platformdirs"
+    "platformdirs",
+    "toml",
 ]
 
 
@@ -42,6 +43,14 @@ Repository = "https://github.com/jameskabbes/gallery"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.hatch.build.target.wheel]
-packages = ["src/arbor_imago"]
+[tool.hatch.build]
+sources = ['src']
 
+exclude = []
+
+
+[tool.hatch.build.target.wheel]
+packages = ["arbor_imago"]
+
+
+    
