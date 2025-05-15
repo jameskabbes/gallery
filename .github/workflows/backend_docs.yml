@@ -56,12 +56,14 @@ jobs:
 
       - name: Generate documentation
         run: |
+          # generate the documentation, put it in the docs folder
           rm -rf backend/docs
           mkdir backend/docs
           cd backend/sphinx
           sphinx-apidoc -o . ../src/
           make html 
-          mv _build/html/* ../docs/
+          mkdir /tmp/docs/
+          mv _build/html/* /tmp/docs/
           cd ../..
 
       - name: Add .nojekyll file
@@ -73,8 +75,8 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
 
-          mv backend/docs /tmp/docs
 
+          # check if gh-pages branch exists, if not create it
           git fetch origin gh-pages || {
             git checkout --orphan gh-pages
             git rm -rf .
@@ -83,13 +85,13 @@ jobs:
             git checkout master
           }
 
+          # remove all files from the git tracking, then checkout
+          git rm -rf .
           git checkout gh-pages
 
-          git rm -rf .
+          # move the docs folder back to the root of the repository
+          cp -r /tmp/docs/* .
 
-          mv /tmp/docs backend/docs
-
-          cp -r backend/docs/* .
           git add .
 
           if git status --porcelain | grep .; then
