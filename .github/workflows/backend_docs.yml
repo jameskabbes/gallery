@@ -62,21 +62,14 @@ jobs:
           cd backend/sphinx
           sphinx-apidoc -o . ../src/
           make html 
+          mkdir /tmp/docs/
+          mv _build/html/* /tmp/docs/
           cd ../..
-
-      - name: Add .nojekyll file
-        run: |
-          touch backend/docs/.nojekyll
 
       - name: Deploy to gh-pages
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
-
-          mkdir /tmp/docs/
-          mv backend/sphinx/_build/html/* /tmp/docs/
-
-          git rm -rf .
 
           # check if gh-pages branch exists, if not create it
           git fetch origin gh-pages || {
@@ -88,11 +81,17 @@ jobs:
           }
 
           # remove all files from the git tracking, then checkout
+          git clean -fdx
+
+          # checkout
           git checkout gh-pages
+
+          #remove all untracked files
           git rm -rf .
 
           # move the docs folder back to the root of the repository
           cp -r /tmp/docs/* .
+          touch .nojekyll
 
           git add .
 
