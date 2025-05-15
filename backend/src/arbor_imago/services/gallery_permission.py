@@ -1,6 +1,6 @@
 from sqlmodel import select
 
-from arbor_imago import types
+from arbor_imago import custom_types
 from arbor_imago.services import base
 from arbor_imago.models.tables import GalleryPermission as GalleryPermissionTable
 from arbor_imago.schemas import gallery_permission as gallery_permission_schema
@@ -9,16 +9,17 @@ from arbor_imago.schemas import gallery_permission as gallery_permission_schema
 class GalleryPermission(
         base.Service[
             GalleryPermissionTable,
-            types.GalleryPermission.id,
+            custom_types.GalleryPermission.id,
             gallery_permission_schema.GalleryPermissionAdminCreate,
             gallery_permission_schema.GalleryPermissionAdminUpdate,
+            str
         ]):
 
     _MODEL = GalleryPermissionTable
 
     @classmethod
     def model_id(cls, inst):
-        return types.GalleryPermissionId(
+        return custom_types.GalleryPermissionId(
             gallery_id=inst.gallery_id,
             user_id=inst.user_id,
         )
@@ -56,7 +57,7 @@ class GalleryPermission(
     @classmethod
     async def _check_validation_post(cls, params):
 
-        id = types.GalleryPermissionId(
+        id = custom_types.GalleryPermissionId(
             gallery_id=params['create_model'].gallery_id,
             user_id=params['create_model'].user_id
         )

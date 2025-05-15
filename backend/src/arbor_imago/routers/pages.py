@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from collections.abc import Sequence
 from typing import Annotated, cast, Optional
 
-from arbor_imago import types
+from arbor_imago import custom_types
 from arbor_imago.routers import user as user_router, api_key as api_key_router, gallery as gallery_router, base, user_access_token as user_access_token_router
 from arbor_imago.schemas import api_key as api_key_schema, pagination as pagination_schema, api as api_schema, order_by as order_by_schema, user as user_schema, user_access_token as user_access_token_schema, gallery as gallery_schema
 from arbor_imago.models.tables import ApiKey as ApiKeyTable, UserAccessToken as UserAccessTokenTable, Gallery as GalleryTable
@@ -89,7 +89,7 @@ class PagesRouter(_Base):
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(auth_utils.make_get_auth_dependency())],
         pagination: pagination_schema.Pagination = Depends(
             api_key_router.api_key_pagination),
-        order_by: list[order_by_schema.OrderBy[types.ApiKey.order_by]] = Depends(
+        order_by: list[order_by_schema.OrderBy[custom_types.ApiKey.order_by]] = Depends(
             base.order_by_depends)
     ) -> SettingsApiKeysPageResponse:
         return SettingsApiKeysPageResponse(

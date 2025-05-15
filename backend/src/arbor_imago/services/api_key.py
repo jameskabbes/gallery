@@ -3,7 +3,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 import datetime as datetime_module
 from typing import cast
 
-from arbor_imago import types, core_utils
+from arbor_imago import custom_types, core_utils
 from arbor_imago.models.tables import ApiKey as ApiKeyTable
 from arbor_imago.schemas import api_key as api_key_schema, auth_credential as auth_credential_schema
 from arbor_imago.services import auth_credential as auth_credential_service, base
@@ -12,16 +12,16 @@ from arbor_imago.services import auth_credential as auth_credential_service, bas
 class ApiKey(
         base.Service[
             ApiKeyTable,
-            types.ApiKey.id,
+            custom_types.ApiKey.id,
             api_key_schema.ApiKeyAdminCreate,
             api_key_schema.ApiKeyAdminUpdate,
-            types.ApiKey.order_by
+            custom_types.ApiKey.order_by
         ],
-        base.SimpleIdModelService[ApiKeyTable, types.ApiKey.id],
-        auth_credential_service.JwtIO[ApiKeyTable, types.ApiKey.id],
+        base.SimpleIdModelService[ApiKeyTable, custom_types.ApiKey.id],
+        auth_credential_service.JwtIO[ApiKeyTable, custom_types.ApiKey.id],
         auth_credential_service.Table[ApiKeyTable],
         auth_credential_service.JwtAndSimpleIdTable[ApiKeyTable,
-                                                    types.ApiKey.id],
+                                                    custom_types.ApiKey.id],
 ):
 
     auth_type = auth_credential_schema.Type.API_KEY
@@ -31,7 +31,7 @@ class ApiKey(
     def model_inst_from_create_model(cls, create_model):
 
         return cls._MODEL(
-            id=types.ApiKey.id(core_utils.generate_uuid()),
+            id=custom_types.ApiKey.id(core_utils.generate_uuid()),
             issued=datetime_module.datetime.now().astimezone(datetime_module.UTC),
             **create_model.model_dump()
         )
@@ -67,7 +67,7 @@ class ApiKey(
     @classmethod
     async def _check_validation_post(cls, params):
         if not await cls.is_available(params['session'], api_key_schema.ApiKeyAdminAvailable(
-            **params['create_model'].model_dump(exclude_unset=True), user_id=cast(types.User.id, params['authorized_user_id']),
+            **params['create_model'].model_dump(exclude_unset=True), user_id=cast(custom_types.User.id, params['authorized_user_id']),
         )):
             raise base.NotAvailableError(
                 'Cannot create API Key {} for user {}, not available'.format(
@@ -79,7 +79,7 @@ class ApiKey(
     async def _check_validation_patch(cls, params):
         if 'name' in params['update_model'].model_fields_set:
             if not await cls.is_available(params['session'], api_key_schema.ApiKeyAdminAvailable(
-                    name=cast(types.ApiKey.name, params['update_model'].name), user_id=cast(types.User.id, params['authorized_user_id']))):
+                    name=cast(custom_types.ApiKey.name, params['update_model'].name), user_id=cast(custom_types.User.id, params['authorized_user_id']))):
                 raise base.NotAvailableError(
                     'Cannot update API Key {} for user {}, not available'.format(
                         str(params['update_model']

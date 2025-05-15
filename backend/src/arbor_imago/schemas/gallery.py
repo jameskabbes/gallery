@@ -1,17 +1,17 @@
 from pydantic import BaseModel
 from typing import Optional
 
-from arbor_imago import types
+from arbor_imago import custom_types
 from arbor_imago.services import base as base_service
 
 
 class GalleryExport(BaseModel):
-    id: types.Gallery.id
-    user_id: types.Gallery.user_id
-    name: types.Gallery.name
-    parent_id: types.Gallery.parent_id | None
-    description: types.Gallery.description | None
-    date: types.Gallery.date | None
+    id: custom_types.Gallery.id
+    user_id: custom_types.Gallery.user_id
+    name: custom_types.Gallery.name
+    parent_id: custom_types.Gallery.parent_id | None
+    description: custom_types.Gallery.description | None
+    date: custom_types.Gallery.date | None
 
 
 class GalleryPublic(GalleryExport):
@@ -19,7 +19,7 @@ class GalleryPublic(GalleryExport):
 
 
 class GalleryPrivate(GalleryExport):
-    visibility_level: types.Gallery.visibility_level
+    visibility_level: custom_types.Gallery.visibility_level
 
 
 class GalleryImport(BaseModel):
@@ -27,12 +27,12 @@ class GalleryImport(BaseModel):
 
 
 class GalleryUpdate(GalleryImport):
-    name: Optional[types.Gallery.name] = None
-    user_id: Optional[types.Gallery.user_id] = None
-    visibility_level: Optional[types.Gallery.visibility_level] = None
-    parent_id: Optional[types.Gallery.parent_id] = None
-    description: Optional[types.Gallery.description] = None
-    date: Optional[types.Gallery.date] = None
+    name: Optional[custom_types.Gallery.name] = None
+    user_id: Optional[custom_types.Gallery.user_id] = None
+    visibility_level: Optional[custom_types.Gallery.visibility_level] = None
+    parent_id: Optional[custom_types.Gallery.parent_id] = None
+    description: Optional[custom_types.Gallery.description] = None
+    date: Optional[custom_types.Gallery.date] = None
 
 
 class GalleryAdminUpdate(GalleryUpdate):
@@ -40,26 +40,26 @@ class GalleryAdminUpdate(GalleryUpdate):
 
 
 class _CreateBase(GalleryImport):
-    name: types.Gallery.name
-    visibility_level: types.Gallery.visibility_level
-    description: Optional[types.Gallery.description] = None
-    date: Optional[types.Gallery.date] = None
+    name: custom_types.Gallery.name
+    visibility_level: custom_types.Gallery.visibility_level
+    description: Optional[custom_types.Gallery.description] = None
+    date: Optional[custom_types.Gallery.date] = None
 
 
 class GalleryCreate(_CreateBase):
-    parent_id: types.Gallery.parent_id
+    parent_id: custom_types.Gallery.parent_id
 
 
 class GalleryAdminCreate(_CreateBase):
-    user_id: types.Gallery.user_id
-    parent_id: Optional[types.Gallery.parent_id] = None
+    user_id: custom_types.Gallery.user_id
+    parent_id: Optional[custom_types.Gallery.parent_id] = None
 
 
 class GalleryAvailable(BaseModel):
-    name: types.Gallery.name
-    parent_id: Optional[types.Gallery.parent_id] = None
-    date: Optional[types.Gallery.date] = None
+    name: custom_types.Gallery.name
+    parent_id: Optional[custom_types.Gallery.parent_id] = None
+    date: Optional[custom_types.Gallery.date] = None
 
 
 class GalleryAdminAvailable(GalleryAvailable):
-    user_id: types.User.id
+    user_id: custom_types.User.id

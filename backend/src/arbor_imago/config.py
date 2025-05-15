@@ -11,7 +11,7 @@ import isodate
 from platformdirs import user_config_dir
 import warnings
 import secrets
-from arbor_imago import types, core_utils
+from arbor_imago import custom_types, core_utils
 import arbor_imago
 
 ARBOR_IMAGO_DIR = Path(__file__).parent  # /gallery/backend/src/arbor_imago/
@@ -80,13 +80,13 @@ class SharedConfigEnv(typing.TypedDict):
     AUTH_KEY: str
     HEADER_KEYS: dict[str, str]
     FRONTEND_ROUTES: dict[str, str]
-    SCOPE_NAME_MAPPING: dict[types.Scope.name, types.Scope.id]
-    VISIBILITY_LEVEL_NAME_MAPPING: dict[types.VisibilityLevel.name,
-                                        types.VisibilityLevel.id]
-    PERMISSION_LEVEL_NAME_MAPPING: dict[types.PermissionLevel.name,
-                                        types.PermissionLevel.id]
-    USER_ROLE_NAME_MAPPING: dict[types.UserRole.name, types.UserRole.id]
-    USER_ROLE_SCOPES: dict[types.UserRole.name, list[types.Scope.name]]
+    SCOPE_NAME_MAPPING: dict[custom_types.Scope.name, custom_types.Scope.id]
+    VISIBILITY_LEVEL_NAME_MAPPING: dict[custom_types.VisibilityLevel.name,
+                                        custom_types.VisibilityLevel.id]
+    PERMISSION_LEVEL_NAME_MAPPING: dict[custom_types.PermissionLevel.name,
+                                        custom_types.PermissionLevel.id]
+    USER_ROLE_NAME_MAPPING: dict[custom_types.UserRole.name, custom_types.UserRole.id]
+    USER_ROLE_SCOPES: dict[custom_types.UserRole.name, list[custom_types.Scope.name]]
     OPENAPI_SCHEMA_PATH: str
     OTP_LENGTH: int
     GOOGLE_CLIENT_SECRET_PATH: str
@@ -132,24 +132,24 @@ AUTH_KEY: str = _SHARED_CONFIG_ENV['AUTH_KEY']
 HEADER_KEYS: dict[str, str] = _SHARED_CONFIG_ENV['HEADER_KEYS']
 FRONTEND_ROUTES: dict[str, str] = _SHARED_CONFIG_ENV['FRONTEND_ROUTES']
 
-SCOPE_NAME_MAPPING: dict[types.Scope.name,
-                         types.Scope.id] = _SHARED_CONFIG_ENV['SCOPE_NAME_MAPPING']
-SCOPE_ID_MAPPING: dict[types.Scope.id, types.Scope.name] = {
+SCOPE_NAME_MAPPING: dict[custom_types.Scope.name,
+                         custom_types.Scope.id] = _SHARED_CONFIG_ENV['SCOPE_NAME_MAPPING']
+SCOPE_ID_MAPPING: dict[custom_types.Scope.id, custom_types.Scope.name] = {
     SCOPE_NAME_MAPPING[scope_name]: scope_name for scope_name in SCOPE_NAME_MAPPING
 }
 
-VISIBILITY_LEVEL_NAME_MAPPING: dict[types.VisibilityLevel.name,
-                                    types.VisibilityLevel.id] = _SHARED_CONFIG_ENV['VISIBILITY_LEVEL_NAME_MAPPING']
+VISIBILITY_LEVEL_NAME_MAPPING: dict[custom_types.VisibilityLevel.name,
+                                    custom_types.VisibilityLevel.id] = _SHARED_CONFIG_ENV['VISIBILITY_LEVEL_NAME_MAPPING']
 
 
-PERMISSION_LEVEL_NAME_MAPPING: dict[types.PermissionLevel.name,
-                                    types.PermissionLevel.id] = _SHARED_CONFIG_ENV['PERMISSION_LEVEL_NAME_MAPPING']
+PERMISSION_LEVEL_NAME_MAPPING: dict[custom_types.PermissionLevel.name,
+                                    custom_types.PermissionLevel.id] = _SHARED_CONFIG_ENV['PERMISSION_LEVEL_NAME_MAPPING']
 
-USER_ROLE_NAME_MAPPING: dict[types.UserRole.name,
-                             types.UserRole.id] = _SHARED_CONFIG_ENV['USER_ROLE_NAME_MAPPING']
+USER_ROLE_NAME_MAPPING: dict[custom_types.UserRole.name,
+                             custom_types.UserRole.id] = _SHARED_CONFIG_ENV['USER_ROLE_NAME_MAPPING']
 
-USER_ROLE_ID_SCOPE_IDS: dict[types.UserRole.id,
-                             set[types.Scope.id]] = {
+USER_ROLE_ID_SCOPE_IDS: dict[custom_types.UserRole.id,
+                             set[custom_types.Scope.id]] = {
     USER_ROLE_NAME_MAPPING[user_role_name]: set([
         SCOPE_NAME_MAPPING[scope_name] for scope_name in _SHARED_CONFIG_ENV['USER_ROLE_SCOPES'][user_role_name]
     ]) for user_role_name in USER_ROLE_NAME_MAPPING
@@ -157,8 +157,6 @@ USER_ROLE_ID_SCOPE_IDS: dict[types.UserRole.id,
 
 OPENAPI_SCHEMA_PATH = convert_env_path_to_absolute(
     Path.cwd(), _SHARED_CONFIG_ENV['OPENAPI_SCHEMA_PATH'])
-
-print(f"OPENAPI_SCHEMA_PATH: {OPENAPI_SCHEMA_PATH}")
 
 GOOGLE_CLIENT_SECRET = json.loads(convert_env_path_to_absolute(
     Path.cwd(), _SHARED_CONFIG_ENV['GOOGLE_CLIENT_SECRET_PATH']).read_text())
@@ -177,7 +175,7 @@ CredentialNames = typing.Literal['access_token',
 
 
 class AuthEnv(typing.TypedDict):
-    credential_lifespans: dict[CredentialNames, types.ISO8601DurationStr]
+    credential_lifespans: dict[CredentialNames, custom_types.ISO8601DurationStr]
 
 
 class BackendConfigEnv(typing.TypedDict):

@@ -12,7 +12,7 @@ from typing import Annotated, Generic
 from fastapi import Request, HTTPException, status, Response
 import datetime as datetime_module
 
-from arbor_imago import types, auth, utils, config, models, schemas, services
+from arbor_imago import custom_types, auth, utils, config, models, schemas, services
 from arbor_imago.auth import exceptions
 from arbor_imago.models import tables
 from arbor_imago.schemas import user as user_schema, user_access_token as user_access_token_schema, sign_up as sign_up_schema, otp as otp_schema, auth_credential as auth_credential_schema
@@ -24,7 +24,7 @@ from arbor_imago.services.api_key import ApiKey as ApiKeyService
 from arbor_imago.services import auth_credential as auth_credential_service
 
 
-def set_access_token_cookie(response: Response, access_token: types.JwtEncodedStr,  expiry: datetime_module.datetime | None = None):
+def set_access_token_cookie(response: Response, access_token: custom_types.JwtEncodedStr,  expiry: datetime_module.datetime | None = None):
 
     kwargs = {}
     if expiry:
@@ -51,9 +51,9 @@ class OAuth2PasswordBearerMultiSource(OAuth2):
     ):
         super().__init__(flows=flows, auto_error=False)
 
-    async def __call__(self, request: Request) -> types.JwtEncodedStr | None:
+    async def __call__(self, request: Request) -> custom_types.JwtEncodedStr | None:
 
-        tokens: set[types.JwtEncodedStr] = set()
+        tokens: set[custom_types.JwtEncodedStr] = set()
         provided_auth_types = set()
 
         # Authorization: bearer <token>
@@ -61,13 +61,13 @@ class OAuth2PasswordBearerMultiSource(OAuth2):
         if authorization:
             scheme, param = get_authorization_scheme_param(authorization)
             if scheme.lower() == "bearer":
-                tokens.add(typing.cast(types.JwtEncodedStr, param))
+                tokens.add(typing.cast(custom_types.JwtEncodedStr, param))
                 provided_auth_types.add("bearer")
 
         # HTTP-only Cookie
         cookie_access_token = request.cookies.get(auth.ACCESS_TOKEN_COOKIE_KEY)
         if cookie_access_token:
-            tokens.add(typing.cast(types.JwtEncodedStr, cookie_access_token))
+            tokens.add(typing.cast(custom_types.JwtEncodedStr, cookie_access_token))
             provided_auth_types.add("cookie")
 
         if len(tokens) > 1:
@@ -91,11 +91,11 @@ class GetAuthReturn(BaseModel, Generic[schemas.TAuthCredentialInstance_co]):
     isAuthorized: bool = False
     exception: typing.Optional[exceptions.StatusCodeAndDetail] = None
     user: typing.Optional[user_schema.UserPrivate] = None
-    scope_ids: typing.Optional[set[types.Scope.id]] = None
+    scope_ids: typing.Optional[set[custom_types.Scope.id]] = None
     auth_credential: typing.Optional[schemas.TAuthCredentialInstance_co] = None
 
     @property
-    def _user_id(self) -> types.User.id | None:
+    def _user_id(self) -> custom_types.User.id | None:
         if self.user:
             return self.user.id
         else:
@@ -103,7 +103,7 @@ class GetAuthReturn(BaseModel, Generic[schemas.TAuthCredentialInstance_co]):
 
 
 class _WithRequiredScopes(typing.TypedDict):
-    required_scopes: typing.NotRequired[set[types.Scope.name]]
+    required_scopes: typing.NotRequired[set[custom_types.Scope.name]]
 
 
 class _WithOverrideLifetime(typing.TypedDict):
@@ -138,7 +138,7 @@ class GetAuthFromJwtKwargs(
         _WithRequiredScopes,
         _WithOverrideLifetime,
         _WithPermittedTypes):
-    token: typing.Optional[types.JwtEncodedStr]
+    token: typing.Optional[custom_types.JwtEncodedStr]
 
 
 def is_valid_time_bounds(
@@ -316,7 +316,7 @@ def make_get_auth_dependency(**kwargs: typing.Unpack[MakeGetAuthDepedencyKwargs]
     raise_exceptions = kwargs.get('raise_exceptions', True)
     logout_on_exception = kwargs.get('logout_on_exception', True)
 
-    async def get_authorization_dependency(response: Response, auth_token: typing.Annotated[types.JwtEncodedStr | None, Depends(oauth2_scheme)]) -> GetAuthReturn:
+    async def get_authorization_dependency(response: Response, auth_token: typing.Annotated[custom_types.JwtEncodedStr | None, Depends(oauth2_scheme)]) -> GetAuthReturn:
         get_authorization_return = await get_auth_from_auth_credential_jwt(token=auth_token, **kwargs)
         if get_authorization_return.exception:
             if raise_exceptions:
@@ -329,7 +329,7 @@ def make_get_auth_dependency(**kwargs: typing.Unpack[MakeGetAuthDepedencyKwargs]
 
 class GetUserSessionInfoReturn(BaseModel):
     user: typing.Optional[user_schema.UserPrivate]
-    scope_ids: typing.Optional[set[types.Scope.id]]
+    scope_ids: typing.Optional[set[custom_types.Scope.id]]
     access_token: typing.Optional[user_access_token_schema.UserAccessTokenPublic]
 
 
@@ -371,7 +371,7 @@ def make_authenticate_user_with_username_and_password_dependency():
     return authenticate_user_with_username_and_password
 
 
-async def send_signup_link(session: AsyncSession, user: tables.User | None, email: types.User.email):
+async def send_signup_link(session: AsyncSession, user: tables.User | None, email: custom_types.User.email):
 
     # existing user, send email to existing user
     if user:
@@ -413,7 +413,7 @@ class PostLoginWithOTPResponse(GetUserSessionInfoNestedReturn):
     pass
 
 
-async def post_login_otp(session: AsyncSession, user: tables.User | None, response: Response, code: types.OTP.code) -> PostLoginWithOTPResponse:
+async def post_login_otp(session: AsyncSession, user: tables.User | None, response: Response, code: custom_types.OTP.code) -> PostLoginWithOTPResponse:
 
     if user is None:
         raise exceptions.Base(exceptions.invalid_otp())
@@ -467,7 +467,7 @@ async def post_login_otp(session: AsyncSession, user: tables.User | None, respon
     )
 
 
-async def send_magic_link(session: AsyncSession, user: tables.User, email: typing.Optional[types.User.email] = None, phone_number: typing.Optional[types.User.phone_number] = None):
+async def send_magic_link(session: AsyncSession, user: tables.User, email: typing.Optional[custom_types.User.email] = None, phone_number: typing.Optional[custom_types.User.phone_number] = None):
 
     user_access_token = await UserAccessTokenService.create(
         {
@@ -489,7 +489,7 @@ async def send_magic_link(session: AsyncSession, user: tables.User, email: typin
             utils.send_sms(user.phone_number, 'Click to login: {}'.format(url))
 
 
-async def send_otp(session: AsyncSession, user: tables.User, email: typing.Optional[types.User.email] = None, phone_number: typing.Optional[types.User.phone_number] = None):
+async def send_otp(session: AsyncSession, user: tables.User, email: typing.Optional[custom_types.User.email] = None, phone_number: typing.Optional[custom_types.User.phone_number] = None):
 
     code = OTPService.generate_code()
     otp = await OTPService.create({

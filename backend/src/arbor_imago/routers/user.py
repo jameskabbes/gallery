@@ -3,7 +3,7 @@ from sqlmodel import select
 from typing import Annotated, cast, Type
 from collections.abc import Sequence
 
-from arbor_imago import config, types
+from arbor_imago import config, custom_types
 from arbor_imago.auth import utils as auth_utils
 from arbor_imago.routers import base
 from arbor_imago.models.tables import User as UserTable
@@ -17,9 +17,10 @@ PAGINATION_DEPENDS = base.get_pagination()
 class _Base(
     base.Router[
         UserTable,
-        types.User.id,
+        custom_types.User.id,
         user_schema.UserAdminCreate,
         user_schema.UserAdminUpdate,
+        str
     ],
 ):
     _PREFIX = '/users'
@@ -54,7 +55,7 @@ class UserRouter(_Base):
             auth_utils.make_get_auth_dependency(raise_exceptions=True))]
     ) -> user_schema.UserPrivate:
         user = await cls._get({'authorization': authorization, 'id': cast(
-            types.User.id, authorization._user_id)})
+            custom_types.User.id, authorization._user_id)})
         return user_schema.UserPrivate.model_validate(user)
 
     @classmethod
@@ -66,7 +67,7 @@ class UserRouter(_Base):
     ) -> user_schema.UserPrivate:
         user = await cls._patch({
             'authorization': authorization,
-            'id': cast(types.User.id, authorization._user_id),
+            'id': cast(custom_types.User.id, authorization._user_id),
             'update_model': user_schema.UserAdminUpdate(**user_update.model_dump(exclude_unset=True)),
         })
         return user_schema.UserPrivate.model_validate(user)
@@ -74,7 +75,7 @@ class UserRouter(_Base):
     @classmethod
     async def by_id(
         cls,
-        user_id: types.User.id,
+        user_id: custom_types.User.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency(raise_exceptions=False))]
     ) -> user_schema.UserPublic:
@@ -92,11 +93,11 @@ class UserRouter(_Base):
     ):
         await cls._delete({
             'authorization': authorization,
-            'id': cast(types.User.id, authorization._user_id),
+            'id': cast(custom_types.User.id, authorization._user_id),
         })
 
     @classmethod
-    async def check_username_availability(cls, username: types.User.username):
+    async def check_username_availability(cls, username: custom_types.User.username):
         async with config.ASYNC_SESSIONMAKER() as session:
             return api_schema.IsAvailableResponse(
                 available=not await UserService.is_username_available(session, username))
@@ -135,7 +136,7 @@ class UserAdminRouter(_Base):
     @classmethod
     async def by_id(
         cls,
-        user_id: types.User.id,
+        user_id: custom_types.User.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
     ) -> user_schema.UserPrivate:
@@ -163,7 +164,7 @@ class UserAdminRouter(_Base):
     @classmethod
     async def update(
         cls,
-        user_id: types.User.id,
+        user_id: custom_types.User.id,
         user_update_admin: user_schema.UserAdminUpdate,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
@@ -178,7 +179,7 @@ class UserAdminRouter(_Base):
     @classmethod
     async def delete(
         cls,
-        user_id: types.User.id,
+        user_id: custom_types.User.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
     ):

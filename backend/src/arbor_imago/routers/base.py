@@ -7,7 +7,7 @@ from enum import Enum
 from collections.abc import Sequence
 
 
-from arbor_imago import config, models, types
+from arbor_imago import config, custom_types, models
 from arbor_imago.services import base as base_service
 from arbor_imago.schemas import pagination as pagination_schema, order_by as order_by_schema
 from arbor_imago.auth import utils as auth_utils
@@ -41,7 +41,7 @@ def order_by_depends(
 
 
 class NotFoundError(HTTPException, base_service.NotFoundError):
-    def __init__(self, model: Type[models.Model], id: types.Id):
+    def __init__(self, model: Type[models.Model], id: custom_types.Id):
         self.status_code = status.HTTP_404_NOT_FOUND
         self.detail = base_service.NotFoundError.not_found_message(model, id)
 
@@ -54,11 +54,11 @@ class RouterVerbParams(TypedDict):
     authorization: auth_utils.GetAuthReturn
 
 
-class WithId(Generic[types.TId], TypedDict):
-    id: types.TId
+class WithId(Generic[custom_types.TId], TypedDict):
+    id: custom_types.TId
 
 
-class GetParams(Generic[types.TId], RouterVerbParams, WithId[types.TId]):
+class GetParams(Generic[custom_types.TId], RouterVerbParams, WithId[custom_types.TId]):
     pass
 
 
@@ -70,22 +70,12 @@ class PostParams(Generic[base_service.TCreateModel], RouterVerbParams):
     create_model: base_service.TCreateModel
 
 
-class PatchParams(Generic[types.TId, base_service.TUpdateModelService], RouterVerbParams, WithId[types.TId]):
-    update_model: base_service.TUpdateModelService
+class PatchParams(Generic[custom_types.TId, base_service.TUpdateModel], RouterVerbParams, WithId[custom_types.TId]):
+    update_model: base_service.TUpdateModel
 
 
-class DeleteParams(Generic[types.TId], RouterVerbParams, WithId[types.TId]):
+class DeleteParams(Generic[custom_types.TId], RouterVerbParams, WithId[custom_types.TId]):
     pass
-
-
-TGetManyResponse = TypeVar(
-    'TGetManyResponse', bound=Type[BaseModel], default=Type[BaseModel])
-TGetResponse = TypeVar(
-    'TGetResponse', bound=Type[BaseModel], default=Type[BaseModel])
-TPostResponse = TypeVar(
-    'TPostResponse', bound=Type[BaseModel], default=Type[BaseModel])
-TUpdateResponse = TypeVar(
-    'TUpdateResponse', bound=Type[BaseModel], default=Type[BaseModel])
 
 
 class HasPrefix(Protocol):
@@ -102,52 +92,35 @@ class HasTag(Protocol):
 
 class HasService(
     Generic[models.TModel,
-            types.TId,
+            custom_types.TId,
             base_service.TCreateModel,
-            base_service.TUpdateModelService,
+            base_service.TUpdateModel,
             base_service.TOrderBy_co]):
 
     _SERVICE: Type[base_service.Service[
         models.TModel,
-        types.TId,
+        custom_types.TId,
         base_service.TCreateModel,
-        base_service.TUpdateModelService,
+        base_service.TUpdateModel,
         base_service.TOrderBy_co,
     ]]
 
 
 class Router(Generic[
     models.TModel,
-    types.TId,
-    # TGetManyResponse,
-    # TGetResponse,
-    # TPostResponse,
-    # TUpdateResponse,
+    custom_types.TId,
     base_service.TCreateModel,
-    base_service.TUpdateModelService,
+    base_service.TUpdateModel,
     base_service.TOrderBy_co,
 ], HasService[
     models.TModel,
-    types.TId,
+    custom_types.TId,
     base_service.TCreateModel,
-    base_service.TUpdateModelService,
+    base_service.TUpdateModel,
     base_service.TOrderBy_co
 
 ], HasPrefix, HasAdmin, HasTag):
 
-    # get_many_endpoint: Callable
-    # get_endpoint: Callable
-    # post_endpoint: Callable
-    # patch_endpoint: Callable
-    # delete_endpoint: Callable
-
-    # get_many_response_model: Type[TGetManyResponse]
-    # get_response_model: Type[TGetResponse]
-    # post_response_model: Type[TPostResponse]
-    # patch_response_model: Type[TUpdateResponse]
-
-    # _ENDPOINTS_TO_GENERATE: ClassVar[set[Literal['get_many', 'get', 'post', 'patch', 'delete']]] = {
-    #     'get_many', 'get', 'post', 'patch', 'delete'}
 
     def __init__(self):
 
@@ -165,10 +138,6 @@ class Router(Generic[
     def _set_routes(self):
         pass
 
-    # def set_generated_endpoints(self):
-
-    #     if 'get_many' in self._ENDPOINTS_TO_GENERATE:
-    #         self.router.get('/')(self.get_many_endpoint)
 
     # def make_get_many_endpoint(
     #         self,
@@ -253,7 +222,7 @@ class Router(Generic[
     # ) -> Callable:
 
     #     async def endpoint(
-    #             item: base_service.TUpdateModelService,
+    #             item: base_service.TUpdateModel,
     #             authorization: Annotated[auth_utils.GetAuthReturn, Depends(
     #                 auth_utils.make_get_auth_dependency(
     #                     c=self.client, **get_auth_kwargs))],
@@ -272,7 +241,7 @@ class Router(Generic[
     #     return endpoint
 
     @classmethod
-    async def _get(cls, params: GetParams[types.TId]) -> models.TModel:
+    async def _get(cls, params: GetParams[custom_types.TId]) -> models.TModel:
 
         async with config.ASYNC_SESSIONMAKER() as session:
             try:
@@ -337,7 +306,7 @@ class Router(Generic[
             return model_inst
 
     @classmethod
-    async def _patch(cls, params: PatchParams[types.TId, base_service.TUpdateModelService]) -> models.TModel:
+    async def _patch(cls, params: PatchParams[custom_types.TId, base_service.TUpdateModel]) -> models.TModel:
         async with config.ASYNC_SESSIONMAKER() as session:
             try:
                 model_inst = await cls._SERVICE.update({
@@ -355,7 +324,7 @@ class Router(Generic[
             return model_inst
 
     @classmethod
-    async def _delete(cls, params: DeleteParams[types.TId]) -> None:
+    async def _delete(cls, params: DeleteParams[custom_types.TId]) -> None:
         async with config.ASYNC_SESSIONMAKER() as session:
             try:
                 await cls._SERVICE.delete({

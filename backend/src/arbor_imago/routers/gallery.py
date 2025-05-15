@@ -3,7 +3,7 @@ from sqlmodel import select
 from typing import Annotated, cast
 import shutil
 
-from arbor_imago import config, types
+from arbor_imago import config, custom_types
 from arbor_imago.auth import utils as auth_utils
 from arbor_imago.routers import base, user as user_router
 from arbor_imago.models.tables import Gallery as GalleryTable, GalleryPermission as GalleryPermissionTable
@@ -15,9 +15,10 @@ from arbor_imago.schemas import gallery as gallery_schema, pagination as paginat
 class _Base(
     base.Router[
         GalleryTable,
-        types.User.id,
+        custom_types.User.id,
         gallery_schema.GalleryAdminCreate,
         gallery_schema.GalleryAdminUpdate,
+        str
     ],
 ):
     _PREFIX = '/galleries'
@@ -55,7 +56,7 @@ class GalleryRouter(_Base):
     @classmethod
     async def by_id(
         cls,
-        gallery_id: types.Gallery.id,
+        gallery_id: custom_types.Gallery.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency(raise_exceptions=False))]
     ) -> gallery_schema.GalleryPublic:
@@ -76,13 +77,13 @@ class GalleryRouter(_Base):
         return gallery_schema.GalleryPrivate.model_validate(await cls._post({
             'authorization': authorization,
             'create_model': gallery_schema.GalleryAdminCreate(
-                **gallery_create.model_dump(exclude_unset=True), user_id=cast(types.User.id, authorization._user_id)),
+                **gallery_create.model_dump(exclude_unset=True), user_id=cast(custom_types.User.id, authorization._user_id)),
         }))
 
     @classmethod
     async def update(
         cls,
-        gallery_id: types.Gallery.id,
+        gallery_id: custom_types.Gallery.id,
         gallery_update: gallery_schema.GalleryUpdate,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency())]
@@ -98,7 +99,7 @@ class GalleryRouter(_Base):
     @classmethod
     async def delete(
         cls,
-        gallery_id: types.Gallery.id,
+        gallery_id: custom_types.Gallery.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency())]
     ):
@@ -123,7 +124,7 @@ class GalleryRouter(_Base):
                     session=session,
                     gallery_available_admin=gallery_schema.GalleryAdminAvailable(
                         **gallery_available.model_dump(exclude_unset=True),
-                        user_id=cast(types.User.id, authorization._user_id)
+                        user_id=cast(custom_types.User.id, authorization._user_id)
                     )
 
                 )
@@ -146,7 +147,7 @@ class GalleryRouter(_Base):
     @classmethod
     async def upload_file(
         cls,
-        gallery_id: types.Gallery.id,
+        gallery_id: custom_types.Gallery.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency())],
         file: UploadFile
@@ -160,8 +161,8 @@ class GalleryRouter(_Base):
 
             if gallery.user.id != authorization._user_id:
                 gallery_permission = await GalleryPermissionService.fetch_by_id(
-                    session, types.GalleryPermission.id(
-                        gallery_id, cast(types.User.id, authorization._user_id))
+                    session, custom_types.GalleryPermission.id(
+                        gallery_id, cast(custom_types.User.id, authorization._user_id))
                 )
 
                 if gallery_permission is None:
@@ -203,7 +204,7 @@ class GalleryAdminRouter(_Base):
     @classmethod
     async def by_id(
         cls,
-        gallery_id: types.Gallery.id,
+        gallery_id: custom_types.Gallery.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
     ) -> gallery_schema.GalleryPrivate:
@@ -231,7 +232,7 @@ class GalleryAdminRouter(_Base):
     @classmethod
     async def update(
         cls,
-        gallery_id: types.Gallery.id,
+        gallery_id: custom_types.Gallery.id,
         gallery_update_admin: gallery_schema.GalleryAdminUpdate,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
@@ -248,7 +249,7 @@ class GalleryAdminRouter(_Base):
     @classmethod
     async def delete(
         cls,
-        gallery_id: types.Gallery.id,
+        gallery_id: custom_types.Gallery.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
     ):
@@ -271,7 +272,7 @@ class GalleryAdminRouter(_Base):
                     session=session,
                     gallery_available_admin=gallery_schema.GalleryAdminAvailable(
                         **gallery_available_admin.model_dump(exclude_unset=True),
-                        user_id=cast(types.User.id, authorization._user_id)
+                        user_id=cast(custom_types.User.id, authorization._user_id)
                     )
                 )
             )
@@ -279,7 +280,7 @@ class GalleryAdminRouter(_Base):
     @classmethod
     async def list_by_user(
         cls,
-        user_id: types.User.id,
+        user_id: custom_types.User.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency(required_scopes={'admin'}))],
         pagination: pagination_schema.Pagination = Depends(

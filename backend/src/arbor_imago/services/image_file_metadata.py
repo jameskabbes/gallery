@@ -2,7 +2,7 @@ from sqlmodel import select
 from typing import ClassVar
 import re
 
-from arbor_imago import types
+from arbor_imago import custom_types
 from arbor_imago.services import base
 from arbor_imago.models.tables import ImageFileMetadata as ImageFileMetadataTable
 from arbor_imago.schemas import image_file_metadata as image_file_metadata_schema
@@ -11,9 +11,10 @@ from arbor_imago.schemas import image_file_metadata as image_file_metadata_schem
 class ImageFileMetadata(
         base.Service[
             ImageFileMetadataTable,
-            types.ImageFileMetadata.file_id,
+            custom_types.ImageFileMetadata.file_id,
             image_file_metadata_schema.ImageFileMetadataAdminCreate,
-            image_file_metadata_schema.ImageFileMetadataAdminUpdate
+            image_file_metadata_schema.ImageFileMetadataAdminUpdate,
+            str
         ]):
 
     _MODEL = ImageFileMetadataTable
@@ -30,7 +31,7 @@ class ImageFileMetadata(
         return select(cls._MODEL).where(cls._MODEL.file_id == id)
 
     @classmethod
-    def parse_file_stem(cls, file_stem: str) -> tuple[types.ImageVersion.base_name, types.ImageVersion.version | None, types.ImageFileMetadata.scale | None]:
+    def parse_file_stem(cls, file_stem: str) -> tuple[custom_types.ImageVersion.base_name, custom_types.ImageVersion.version | None, custom_types.ImageFileMetadata.scale | None]:
 
         scale = None
         if match := re.search(r'_(\d{2})$', file_stem):

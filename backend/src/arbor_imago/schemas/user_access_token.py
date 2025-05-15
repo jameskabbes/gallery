@@ -1,15 +1,15 @@
 from pydantic import BaseModel
-from arbor_imago import types
+from arbor_imago import custom_types
 from arbor_imago.schemas import FromAttributes
 
 
 class UserAccessTokenAdminUpdate(BaseModel):
-    expiry: types.AuthCredential.expiry
+    expiry: custom_types.AuthCredential.expiry
 
 
 class UserAccessTokenAdminCreate(BaseModel):
-    expiry: types.AuthCredential.expiry
-    user_id: types.User.id
+    expiry: custom_types.AuthCredential.expiry
+    user_id: custom_types.User.id
 
 
 class UserAccessTokenExport(FromAttributes):
@@ -17,11 +17,11 @@ class UserAccessTokenExport(FromAttributes):
 
 
 class UserAccessTokenPublic(UserAccessTokenExport):
-    id: types.UserAccessToken.id
-    expiry: types.AuthCredential.expiry
+    id: custom_types.UserAccessToken.id
+    expiry: custom_types.AuthCredential.expiry
 
 
 class UserAccessTokenPrivate(UserAccessTokenExport):
-    id: types.UserAccessToken.id
-    expiry: types.AuthCredential.expiry
-    user_id: types.User.id
+    id: custom_types.UserAccessToken.id
+    expiry: custom_types.AuthCredential.expiry
+    user_id: custom_types.User.id

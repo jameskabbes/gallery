@@ -2,7 +2,7 @@ from fastapi import Depends, status
 from sqlmodel import select, func
 from typing import Annotated, cast, Literal
 
-from arbor_imago import config, types
+from arbor_imago import config, custom_types
 from arbor_imago.models.tables import UserAccessToken as UserAccessTokenTable
 from arbor_imago.services.user_access_token import UserAccessToken as UserAccessTokenService
 from arbor_imago.schemas import user_access_token as user_access_token_schema, pagination as pagination_schema, api as api_schema
@@ -20,7 +20,7 @@ def user_access_token_pagination(
 class _Base(
     base.Router[
         UserAccessTokenTable,
-        types.UserAccessToken.id,
+        custom_types.UserAccessToken.id,
         user_access_token_schema.UserAccessTokenAdminCreate,
         user_access_token_schema.UserAccessTokenAdminUpdate,
         str
@@ -56,7 +56,7 @@ class UserAccessTokenRouter(_Base):
     @classmethod
     async def by_id(
         cls,
-        user_access_token_id: types.UserAccessToken.id,
+        user_access_token_id: custom_types.UserAccessToken.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency())]
     ) -> UserAccessTokenTable:
@@ -69,7 +69,7 @@ class UserAccessTokenRouter(_Base):
     @classmethod
     async def delete(
         cls,
-        user_access_token_id: types.UserAccessToken.id,
+        user_access_token_id: custom_types.UserAccessToken.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency())]
     ):
@@ -105,7 +105,7 @@ class UserAccessTokenAdminRouter(_Base):
     @classmethod
     async def list_by_user(
         cls,
-        user_id: types.User.id,
+        user_id: custom_types.User.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency(required_scopes={'admin'}))],
         pagination: pagination_schema.Pagination = Depends(
@@ -123,7 +123,7 @@ class UserAccessTokenAdminRouter(_Base):
     @classmethod
     async def by_id(
         cls,
-        user_access_token_id: types.UserAccessToken.id,
+        user_access_token_id: custom_types.UserAccessToken.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
     ) -> UserAccessTokenTable:
@@ -149,7 +149,7 @@ class UserAccessTokenAdminRouter(_Base):
     @classmethod
     async def delete(
         cls,
-        user_access_token_id: types.UserAccessToken.id,
+        user_access_token_id: custom_types.UserAccessToken.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
     ):

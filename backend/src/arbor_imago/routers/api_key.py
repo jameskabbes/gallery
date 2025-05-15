@@ -3,7 +3,7 @@ from sqlmodel import select, func
 from pydantic import BaseModel
 from typing import Annotated, cast
 
-from arbor_imago import config, types, utils
+from arbor_imago import config, custom_types, utils
 from arbor_imago.models.tables import ApiKey as ApiKeyTable
 from arbor_imago.services.api_key import ApiKey as ApiKeyService
 from arbor_imago.schemas import api_key as api_key_schema, pagination as pagination_schema, api as api_schema, order_by as order_by_schema
@@ -14,10 +14,10 @@ from arbor_imago.auth import utils as auth_utils
 class _Base(
     base.Router[
         ApiKeyTable,
-        types.User.id,
+        custom_types.User.id,
         api_key_schema.ApiKeyAdminCreate,
         api_key_schema.ApiKeyAdminUpdate,
-        types.ApiKey.order_by,
+        custom_types.ApiKey.order_by,
     ],
 ):
     _PREFIX = '/api_keys'
@@ -29,7 +29,7 @@ api_key_pagination = base.get_pagination()
 
 
 class ApiKeyJWTResponse(BaseModel):
-    jwt: types.JwtEncodedStr
+    jwt: custom_types.JwtEncodedStr
 
 
 class ApiKeyRouter(_Base):
@@ -42,7 +42,7 @@ class ApiKeyRouter(_Base):
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency())],
         pagination: Annotated[pagination_schema.Pagination, Depends(api_key_pagination)],
-        order_bys: Annotated[list[order_by_schema.OrderBy[types.ApiKey.order_by]], Depends(
+        order_bys: Annotated[list[order_by_schema.OrderBy[custom_types.ApiKey.order_by]], Depends(
             base.order_by_depends)]
     ) -> list[api_key_schema.ApiKeyPrivate]:
 
@@ -56,7 +56,7 @@ class ApiKeyRouter(_Base):
     @classmethod
     async def by_id(
         cls,
-        api_key_id: types.ApiKey.id,
+        api_key_id: custom_types.ApiKey.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency())]
     ) -> api_key_schema.ApiKeyPrivate:
@@ -82,7 +82,7 @@ class ApiKeyRouter(_Base):
                 'create_model': api_key_schema.ApiKeyAdminCreate(
                     **api_key_create.model_dump(
                         exclude_unset=True),
-                    user_id=cast(types.User.id, authorization._user_id)
+                    user_id=cast(custom_types.User.id, authorization._user_id)
                 )
             })
         )
@@ -90,7 +90,7 @@ class ApiKeyRouter(_Base):
     @classmethod
     async def update(
         cls,
-        api_key_id: types.ApiKey.id,
+        api_key_id: custom_types.ApiKey.id,
         api_key_update: api_key_schema.ApiKeyUpdate,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency())]
@@ -108,7 +108,7 @@ class ApiKeyRouter(_Base):
     @classmethod
     async def delete(
         cls,
-        api_key_id: types.ApiKey.id,
+        api_key_id: custom_types.ApiKey.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency())]
     ):
@@ -121,7 +121,7 @@ class ApiKeyRouter(_Base):
     @classmethod
     async def jwt(
         cls,
-        api_key_id: types.ApiKey.id,
+        api_key_id: custom_types.ApiKey.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency())]
     ) -> ApiKeyJWTResponse:
@@ -148,7 +148,7 @@ class ApiKeyRouter(_Base):
                 available=await ApiKeyService.is_available(
                     session, api_key_schema.ApiKeyAdminAvailable(
                         **api_key_available.model_dump(exclude_unset=True),
-                        user_id=cast(types.User.id, authorization._user_id)
+                        user_id=cast(custom_types.User.id, authorization._user_id)
                     )
                 )
             )
@@ -184,11 +184,11 @@ class ApiKeyAdminRouter(_Base):
     @classmethod
     async def list_by_user(
         cls,
-        user_id: types.User.id,
+        user_id: custom_types.User.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency(required_scopes={'admin'}))],
         pagination: Annotated[pagination_schema.Pagination, Depends(api_key_pagination)],
-        order_bys: Annotated[list[order_by_schema.OrderBy[types.ApiKey.order_by]], Depends(
+        order_bys: Annotated[list[order_by_schema.OrderBy[custom_types.ApiKey.order_by]], Depends(
             base.order_by_depends)]
 
     ) -> list[api_key_schema.ApiKeyPrivate]:
@@ -203,7 +203,7 @@ class ApiKeyAdminRouter(_Base):
     @classmethod
     async def by_id(
         cls,
-        api_key_id: types.ApiKey.id,
+        api_key_id: custom_types.ApiKey.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
     ) -> api_key_schema.ApiKeyPrivate:
@@ -233,7 +233,7 @@ class ApiKeyAdminRouter(_Base):
     @classmethod
     async def update(
         cls,
-        api_key_id: types.ApiKey.id,
+        api_key_id: custom_types.ApiKey.id,
         api_key_update_admin: api_key_schema.ApiKeyAdminUpdate,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
@@ -251,7 +251,7 @@ class ApiKeyAdminRouter(_Base):
     @classmethod
     async def delete(
         cls,
-        api_key_id: types.ApiKey.id,
+        api_key_id: custom_types.ApiKey.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
     ):

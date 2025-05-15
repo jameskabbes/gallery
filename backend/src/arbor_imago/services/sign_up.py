@@ -1,6 +1,6 @@
 import datetime as datetime_module
 
-from arbor_imago import types
+from arbor_imago import custom_types
 from arbor_imago.models.models import SignUp as SignUpModel
 from arbor_imago.schemas import sign_up as sign_up_schema, auth_credential as auth_credential_schema
 from arbor_imago.services import auth_credential as auth_credential_service
@@ -8,9 +8,9 @@ from arbor_imago.services import auth_credential as auth_credential_service
 
 class SignUp(
     auth_credential_service.JwtIO[
-        SignUpModel, types.SignUp.email],
+        SignUpModel, custom_types.SignUp.email],
     auth_credential_service.JwtNotTable[
-        SignUpModel, types.SignUp.email, sign_up_schema.SignUpAdminCreate],
+        SignUpModel, custom_types.SignUp.email, sign_up_schema.SignUpAdminCreate],
 ):
 
     auth_type = auth_credential_schema.Type.SIGN_UP

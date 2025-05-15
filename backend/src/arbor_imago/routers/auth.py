@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import Annotated, cast
 
 
-from arbor_imago import config, types, utils
+from arbor_imago import config, custom_types, utils
 from arbor_imago.auth import utils as auth_utils, exceptions as auth_exceptions
 from arbor_imago.schemas import user_access_token as user_access_token_schema, user as user_schema, api as api_schema, sign_up as sign_up_schema
 from arbor_imago.models.tables import User, UserAccessToken
@@ -16,7 +16,7 @@ from arbor_imago.routers import base
 
 
 class TokenResponse(BaseModel):
-    access_token: types.JwtEncodedStr
+    access_token: custom_types.JwtEncodedStr
     token_type: str
 
 
@@ -25,7 +25,7 @@ class LoginWithPasswordResponse(auth_utils.GetUserSessionInfoNestedReturn):
 
 
 class LoginWithMagicLinkRequest(BaseModel):
-    token: types.JwtEncodedStr
+    token: custom_types.JwtEncodedStr
 
 
 class LoginWithMagicLinkResponse(auth_utils.GetUserSessionInfoNestedReturn):
@@ -33,8 +33,8 @@ class LoginWithMagicLinkResponse(auth_utils.GetUserSessionInfoNestedReturn):
 
 
 class LoginWithOTPEmailRequest(BaseModel):
-    code: types.OTP.code
-    email: types.User.email
+    code: custom_types.OTP.code
+    email: custom_types.User.email
 
 
 class LoginWithGoogleRequest(BaseModel):
@@ -46,12 +46,12 @@ class LoginWithGoogleResponse(auth_utils.GetUserSessionInfoNestedReturn):
 
 
 class LoginWithOTPPhoneNumberRequest(BaseModel):
-    code: types.OTP.code
-    phone_number: types.User.phone_number
+    code: custom_types.OTP.code
+    phone_number: custom_types.User.phone_number
 
 
 class SignUpRequest(BaseModel):
-    token: types.JwtEncodedStr
+    token: custom_types.JwtEncodedStr
 
 
 class SignUpResponse(auth_utils.GetUserSessionInfoNestedReturn):
@@ -59,27 +59,27 @@ class SignUpResponse(auth_utils.GetUserSessionInfoNestedReturn):
 
 
 class RequestSignUpEmailRequest(BaseModel):
-    email: types.User.email
+    email: custom_types.User.email
 
 
 class RequestSignUpSMSRequest(BaseModel):
-    phone_number: types.User.phone_number
+    phone_number: custom_types.User.phone_number
 
 
 class RequestMagicLinkEmailRequest(BaseModel):
-    email: types.User.email
+    email: custom_types.User.email
 
 
 class RequestMagicLinkSMSRequest(BaseModel):
-    phone_number: types.User.phone_number
+    phone_number: custom_types.User.phone_number
 
 
 class RequestOTPEmailRequest(BaseModel):
-    email: types.User.email
+    email: custom_types.User.email
 
 
 class RequestOTPSMSRequest(BaseModel):
-    phone_number: types.User.phone_number
+    phone_number: custom_types.User.phone_number
 
 
 class AuthRouter(base.Router):
@@ -411,7 +411,7 @@ class AuthRouter(base.Router):
                 await UserAccessTokenService.delete({
                     'session': session,
                     'admin': False,
-                    'authorized_user_id': cast(types.User.id, authorization._user_id),
+                    'authorized_user_id': cast(custom_types.User.id, authorization._user_id),
                     'id': UserAccessTokenService.model_id(cast(UserAccessToken, authorization.auth_credential))
                 })
 
