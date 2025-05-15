@@ -1,8 +1,7 @@
-src
-===
+arbor_imago
+===========
 
 .. toctree::
    :maxdepth: 4
 
    arbor_imago
-   test
