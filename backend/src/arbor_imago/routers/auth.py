@@ -1,8 +1,11 @@
-from fastapi import Depends, Request, Response, Form, status, BackgroundTasks
+import httpx
+from fastapi import Depends, Request, Response, Form, status, BackgroundTasks, HTTPException
 from sqlmodel import select
 from pydantic import BaseModel
 from typing import Annotated, cast
 
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 from arbor_imago import config, custom_types, utils
 from arbor_imago.auth import utils as auth_utils, exceptions as auth_exceptions
@@ -38,7 +41,7 @@ class LoginWithOTPEmailRequest(BaseModel):
 
 
 class LoginWithGoogleRequest(BaseModel):
-    access_token: str
+    id_token: str
 
 
 class LoginWithGoogleResponse(auth_utils.GetUserSessionInfoNestedReturn):
@@ -267,8 +270,7 @@ class AuthRouter(base.Router):
             user = await UserService.create({
                 'admin': True,
                 'session': session,
-                'create_model': user_schema.UserAdminCreate(
-                    email=sign_up.email, user_role_id=config.USER_ROLE_NAME_MAPPING['user']),
+                'create_model': user_schema.UserAdminCreate(email=sign_up.email),
                 'authorized_user_id': authorization._user_id,
             })
 
@@ -301,48 +303,69 @@ class AuthRouter(base.Router):
             )
         )
 
-    # @classmethod
-    # async def login_google(cls, request_token: LoginWithGoogleRequest, response: Response) -> LoginWithGoogleResponse:
+    @classmethod
+    async def login_google(cls, request_token: LoginWithGoogleRequest, response: Response) -> LoginWithGoogleResponse:
 
-    #     async with httpx.AsyncClient() as client:
-    #         res = await client.get('https://www.googleapis.com/oauth2/v3/userinfo?access_token={}'.format(request_token.access_token))
-    #         res.raise_for_status()
-    #         user_info = res.json()
+        # Verify the ID token
+        try:
+            idinfo = id_token.verify_oauth2_token(
+                request_token.id_token,  # <-- Make sure your frontend sends the ID token!
+                google_requests.Request(),
+                config.GOOGLE_CLIENT_ID
+            )
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid Google ID token"
+            )
 
-    #     # fields: sub, name, given_name, family_name, picture, email, email_verified
-    #     email = user_info.get('email')
-    #     if not email:
-    #         raise HTTPException(status.HTTP_400_BAD_REQUEST,
-    #                             detail='Invalid token')
-    #     async with config.ASYNC_SESSIONMAKER() as session:
+        # fields: sub, name, given_name, family_name, picture, email, email_verified
+        email = idinfo.get('email')
+        if not email:
+            raise auth_exceptions.Base(status_code_and_detail=auth_exceptions.StatusCodeAndDetail(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Google account did not return an email'
+            ))
 
-    #         user = session.exec(select(models.User).where(
-    #             models.User.email == email)).one_or_none()
-    #         if not user:
-    #             user = await models.User.api_post(models.User.PostParams.model_construct(
-    #                 session=session, c=c, authorized_user_id=None, admin=True, create_model=models.UserAdminCreate(email=email, user_role_id=settings.USER_ROLE_NAME_MAPPING['user'])
-    #             ))
+        async with config.ASYNC_SESSIONMAKER() as session:
 
-    #     ken_lifespan = config.AUTH['credential_lifespans']['access_token']
+            user = await UserService.fetch_by_email(session=session, email=email)
 
-    #         user_access_token = await UserAccessTokenService.create({
+            if user is None:
+                user = await UserService.create({
+                    'session': session,
+                    'authorized_user_id': None,
+                    'create_model': user_schema.UserAdminCreate(email=email),
+                    'admin': True,
+                })
 
-    # models.UserAccessToken.PostParams.model_construct(session=session, c=c,  authorized_user_id=user._id, create_model=models.UserAccessTokenAdminCreate(
-    #             user_id=user.id, lifespan=token_lifespan
-    #         )))
+            user_access_token = await UserAccessTokenService.create({
+                'authorized_user_id': user.id,
+                'create_model': user_access_token_schema.UserAccessTokenAdminCreate(
+                    user_id=user.id,
+                    expiry=auth_credential_service.lifespan_to_expiry(
+                        config.AUTH['credential_lifespans']['access_token'])
+                ),
+                'admin': False,
+                'session': session
+            })
 
-    #         auth.set_access_token_cookie(response, c.jwt_encode(
-    #             user_access_token.to_payload()), token_lifespan)
+            auth_utils.set_access_token_cookie(
+                response,
+                utils.jwt_encode(
+                    cast(dict, UserAccessTokenService.to_jwt_payload(user_access_token))),
+            )
 
-    #         return LoginWithGoogleResponse(
-    #             auth=GetAuthBaseReturn(
-    #                 user=models.UserPrivate.model_validate(user),
-    #                 scope_ids=set(
-    #                     settings.USER_ROLE_ID_SCOPE_IDS[user.user_role_id]),
-    #                 auth_credential=AuthCredentialIdTypeAndExpiry(
-    #                     id=user_access_token.id, type='access_token', expiry=user_access_token.expiry)
-    #             )
-    #         )
+            return LoginWithGoogleResponse(
+                auth=auth_utils.GetUserSessionInfoReturn(
+                    user=user_schema.UserPrivate.model_validate(
+                        user),
+                    scope_ids=config.USER_ROLE_ID_SCOPE_IDS[user.user_role_id],
+                    access_token=user_access_token_schema.UserAccessTokenPublic.model_validate(
+                        user_access_token
+                    )
+                )
+            )
 
     @classmethod
     async def request_sign_up_email(

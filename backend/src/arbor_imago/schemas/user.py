@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional
-from arbor_imago import custom_types
+from arbor_imago import custom_types, config
 from arbor_imago.schemas import FromAttributes
 
 
@@ -23,7 +23,7 @@ class UserCreate(UserImport):
 
 
 class UserAdminCreate(UserCreate):
-    user_role_id: custom_types.User.user_role_id
+    user_role_id: custom_types.User.user_role_id = config.USER_ROLE_NAME_MAPPING['user']
 
 
 class UserExport(FromAttributes):

@@ -61,6 +61,8 @@ if not CONFIG_ENV_DIR.exists():
     warnings.warn(
         'Config env dir {} does not exist. Creating a new one.'.format(CONFIG_ENV_DIR))
 
+print('Environment Configuration Directory: {}'.format(CONFIG_ENV_DIR))
+
 BACKEND_CONFIG_ENV_DIR = CONFIG_ENV_DIR / 'backend'
 SHARED_CONFIG_ENV_DIR = CONFIG_ENV_DIR / 'shared'
 
@@ -85,11 +87,13 @@ class SharedConfigEnv(typing.TypedDict):
                                         custom_types.VisibilityLevel.id]
     PERMISSION_LEVEL_NAME_MAPPING: dict[custom_types.PermissionLevel.name,
                                         custom_types.PermissionLevel.id]
-    USER_ROLE_NAME_MAPPING: dict[custom_types.UserRole.name, custom_types.UserRole.id]
-    USER_ROLE_SCOPES: dict[custom_types.UserRole.name, list[custom_types.Scope.name]]
+    USER_ROLE_NAME_MAPPING: dict[custom_types.UserRole.name,
+                                 custom_types.UserRole.id]
+    USER_ROLE_SCOPES: dict[custom_types.UserRole.name,
+                           list[custom_types.Scope.name]]
     OPENAPI_SCHEMA_PATH: str
     OTP_LENGTH: int
-    GOOGLE_CLIENT_SECRET_PATH: str
+    GOOGLE_CLIENT_ID: str
 
 
 # generate these files if they do not exist
@@ -157,10 +161,7 @@ USER_ROLE_ID_SCOPE_IDS: dict[custom_types.UserRole.id,
 
 OPENAPI_SCHEMA_PATH = convert_env_path_to_absolute(
     Path.cwd(), _SHARED_CONFIG_ENV['OPENAPI_SCHEMA_PATH'])
-
-GOOGLE_CLIENT_SECRET = json.loads(convert_env_path_to_absolute(
-    Path.cwd(), _SHARED_CONFIG_ENV['GOOGLE_CLIENT_SECRET_PATH']).read_text())
-
+GOOGLE_CLIENT_ID = _SHARED_CONFIG_ENV['GOOGLE_CLIENT_ID']
 OTP_LENGTH: int = _SHARED_CONFIG_ENV['OTP_LENGTH']
 
 # Backend Config
@@ -175,7 +176,8 @@ CredentialNames = typing.Literal['access_token',
 
 
 class AuthEnv(typing.TypedDict):
-    credential_lifespans: dict[CredentialNames, custom_types.ISO8601DurationStr]
+    credential_lifespans: dict[CredentialNames,
+                               custom_types.ISO8601DurationStr]
 
 
 class BackendConfigEnv(typing.TypedDict):

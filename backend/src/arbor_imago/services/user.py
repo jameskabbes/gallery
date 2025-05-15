@@ -38,12 +38,29 @@ class User(
             return root / str(inst.id)
 
     @classmethod
-    async def authenticate(cls, session: AsyncSession, username_or_email: custom_types.User.email | custom_types.User.username, password: custom_types.User.password) -> UserTable | None:
+    async def fetch_by_email(cls, session: AsyncSession, email: custom_types.User.email) -> UserTable | None:
+
+        query = select(cls._MODEL).where(cls._MODEL.email == email)
+        return (await session.exec(query)).one_or_none()
+
+    @classmethod
+    async def fetch_by_username(cls, session: AsyncSession, username: custom_types.User.username) -> UserTable | None:
+
+        query = select(cls._MODEL).where(cls._MODEL.username == username)
+        return (await session.exec(query)).one_or_none()
+
+    @classmethod
+    async def fetch_by_email_or_username(cls, session: AsyncSession, username_or_email: custom_types.User.email | custom_types.User.username) -> UserTable | None:
 
         query = select(cls._MODEL).where(
             or_(cls._MODEL.username == username_or_email, cls._MODEL.email == username_or_email))
 
-        user = (await session.exec(query)).one_or_none()
+        return (await session.exec(query)).one_or_none()
+
+    @classmethod
+    async def authenticate(cls, session: AsyncSession, username_or_email: custom_types.User.email | custom_types.User.username, password: custom_types.User.password) -> UserTable | None:
+
+        user = await cls.fetch_by_email_or_username(session, username_or_email)
 
         if not user:
             return None
@@ -126,6 +143,12 @@ class User(
         if 'email' in params['update_model'].model_fields_set:
             if params['update_model'].email is not None:
                 await cls.is_email_available(params['session'], params['update_model'].email)
+
+    @classmethod
+    async def _check_authorization_new(cls, params: base.CheckAuthorizationNewParams[user_schema.UserAdminCreate]) -> None:
+
+        if not params['admin']:
+            raise base.UnauthorizedError('Unauthorized to create a new user.')
 
     @classmethod
     def hash_password(cls, password: custom_types.User.password) -> custom_types.User.hashed_password:
