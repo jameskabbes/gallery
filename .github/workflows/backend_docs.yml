@@ -60,7 +60,7 @@ jobs:
           rm -rf backend/docs
           mkdir backend/docs
           cd backend/sphinx
-          sphinx-apidoc -o . ../src/
+          sphinx-apidoc -o . ../src/arbor_imago/
           make html 
           mkdir /tmp/docs/
           mv _build/html/* /tmp/docs/
