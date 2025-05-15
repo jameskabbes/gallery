@@ -1,6 +1,6 @@
 import asyncio
 from sqlmodel import SQLModel
-from src.arbor_imago import models, config
+from arbor_imago import models, config
 
 
 async def main():

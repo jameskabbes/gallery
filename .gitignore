@@ -1,4 +1,2 @@
 .DS_Store
-.config/**/config.yaml
-.config/**/secrets.env
-.config/**/google_client_secret.json
+data/

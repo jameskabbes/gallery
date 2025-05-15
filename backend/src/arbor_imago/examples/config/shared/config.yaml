@@ -32,4 +32,4 @@ USER_ROLE_SCOPES:
     - user.write
 OPENAPI_SCHEMA_PATH: ../../openapi_schema.json
 OTP_LENGTH: 6
-GOOGLE_CLIENT_SECRET_PATH: ../data/google_client_secret.json
+GOOGLE_CLIENT_SECRET_PATH: ../../data/google_client_secret.json
