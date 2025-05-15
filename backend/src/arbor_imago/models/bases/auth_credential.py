@@ -11,9 +11,11 @@ class AuthCredentialBase(SQLModel):
     expiry: custom_types.AuthCredential.expiry
 
     @field_validator('expiry', 'issued')
+    @classmethod
     def validate_datetime(cls, v: custom_types.AuthCredential.expiry | custom_types.AuthCredential.issued, info: ValidationInfo) -> custom_types.AuthCredential.expiry | custom_types.AuthCredential.issued:
         return timestamp.validate_and_normalize_datetime(v, info)
 
     @field_serializer('expiry', 'issued')
-    def serialize_datetime(cls, v: custom_types.AuthCredential.expiry_timestamp | custom_types.AuthCredential.issued_timestamp) -> custom_types.AuthCredential.expiry | custom_types.AuthCredential.issued:
-        return datetime_module.datetime.fromtimestamp(v).astimezone(datetime_module.timezone.utc)
+    @classmethod
+    def serialize_datetime(cls, v: custom_types.AuthCredential.expiry | custom_types.AuthCredential.issued) -> custom_types.AuthCredential.expiry | custom_types.AuthCredential.issued:
+        return v.astimezone(datetime_module.timezone.utc)
