@@ -176,12 +176,12 @@
 <span class="c1"># generate these files if they do not exist</span>
 
 
-<span class="n">SHARED_CONFIG_ENV_PATH</span> <span class="o">=</span> <span class="n">SHARED_CONFIG_ENV_DIR</span> <span class="o">/</span> \
+<span class="n">SHARED_CONFIG_ENV_YAML_PATH</span> <span class="o">=</span> <span class="n">SHARED_CONFIG_ENV_DIR</span> <span class="o">/</span> \
     <span class="n">EXAMPLE_SHARED_CONFIG_YAML_PATH</span><span class="o">.</span><span class="n">name</span>
-<span class="k">if</span> <span class="ow">not</span> <span class="n">SHARED_CONFIG_ENV_PATH</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">SHARED_CONFIG_ENV_YAML_PATH</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
     <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-        <span class="s1">&#39;Shared config file </span><span class="si">{}</span><span class="s1"> does not exist. Creating a new one.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">SHARED_CONFIG_ENV_PATH</span><span class="p">))</span>
-    <span class="n">SHARED_CONFIG_ENV_PATH</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span>
+        <span class="s1">&#39;Shared config file </span><span class="si">{}</span><span class="s1"> does not exist. Creating a new one.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">SHARED_CONFIG_ENV_YAML_PATH</span><span class="p">))</span>
+    <span class="n">SHARED_CONFIG_ENV_YAML_PATH</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span>
         <span class="n">EXAMPLE_SHARED_CONFIG_YAML_PATH</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
 
 <span class="n">BACKEND_CONFIG_ENV_YAML_PATH</span> <span class="o">=</span> <span class="n">BACKEND_CONFIG_ENV_DIR</span> <span class="o">/</span> \
@@ -202,7 +202,7 @@
 
 <span class="c1"># read in the shared config file</span>
 
-<span class="k">with</span> <span class="n">SHARED_CONFIG_ENV_PATH</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="k">with</span> <span class="n">SHARED_CONFIG_ENV_YAML_PATH</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
     <span class="n">_SHARED_CONFIG_ENV</span><span class="p">:</span> <span class="n">SharedConfigEnv</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 
 
