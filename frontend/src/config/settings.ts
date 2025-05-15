@@ -1,6 +1,4 @@
-// Import the static JSON file
-import settings from '../../../settings.json';
-import constants from '../../../constants.json';
+import { sharedConfig } from './sharedConfig';
 
 const zIndex = {
   modalOverlay: 100,
@@ -16,7 +14,8 @@ const pagination = {
   debounceTimeoutLength: 100,
 };
 
-const scopeNameMapping: Record<string, number> = constants.scope_name_mapping;
+const scopeNameMapping: Record<string, number> =
+  sharedConfig.SCOPE_NAME_MAPPING;
 const scopeIdMapping: Record<string, number> = Object.entries(
   scopeNameMapping
 ).reduce((acc, [key, value]) => {
@@ -25,7 +24,7 @@ const scopeIdMapping: Record<string, number> = Object.entries(
 }, {} as {});
 
 const visibilityLevelNameMapping: Record<string, number> =
-  constants.visibility_level_name_mapping;
+  sharedConfig.VISIBILITY_LEVEL_NAME_MAPPING;
 
 const visibilityLevelIdMapping: Record<number, string> = Object.entries(
   visibilityLevelNameMapping
@@ -35,7 +34,7 @@ const visibilityLevelIdMapping: Record<number, string> = Object.entries(
 }, {} as {});
 
 const permissionLevelNameMapping: Record<string, number> =
-  constants.permission_level_name_mapping;
+  sharedConfig.PERMISSION_LEVEL_NAME_MAPPING;
 
 const permissionLevelIdMapping: Record<number, string> = Object.entries(
   permissionLevelNameMapping
@@ -45,10 +44,10 @@ const permissionLevelIdMapping: Record<number, string> = Object.entries(
 }, {} as {});
 
 const userRoleNameMapping: Record<string, number> =
-  constants.user_role_name_mapping;
+  sharedConfig.USER_ROLE_NAME_MAPPING;
 
 const userRoleIdMapping: Record<number, string> = Object.entries(
-  constants.user_role_name_mapping
+  sharedConfig.USER_ROLE_NAME_MAPPING
 ).reduce((acc, [key, value]) => {
   acc[value] = key;
   return acc;
@@ -62,5 +61,6 @@ export {
   scopeIdMapping,
   visibilityLevelIdMapping,
   permissionLevelIdMapping,
+  userRoleNameMapping,
   userRoleIdMapping,
 };

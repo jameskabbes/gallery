@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { apiClient } from './apiClient';
 import { CallApiOptions, UseApiCallReturn } from '../types';
-import constants from '../../../constants.json';
 import { paths, operations, components } from '../openapi_schema';
 import openapi_schema from '../../../openapi_schema.json';
+import { sharedConfig } from '../config/sharedConfig';
 
 async function callApi<TResponseData, TRequestData = any>({
   url,
@@ -22,7 +22,10 @@ async function callApi<TResponseData, TRequestData = any>({
     console.log(method, url);
     const response = await apiClient.request<TResponseData>(requestConfig);
 
-    if (authContext && response.headers[constants.header_keys['auth_logout']]) {
+    if (
+      authContext &&
+      response.headers[sharedConfig['HEADER_KEYS']['auth_logout']]
+    ) {
       authContext.logOut();
     }
     if (authContext) {
