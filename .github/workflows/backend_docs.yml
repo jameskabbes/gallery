@@ -61,8 +61,7 @@ jobs:
           cd backend/sphinx
           sphinx-apidoc -o . ../src/
           make html 
-          rm -rf ../docs/*
-          cp -r _build/html/* ../docs/
+          mv _build/html/* ../docs/
           cd ../..
 
       - name: Add .nojekyll file
@@ -73,6 +72,8 @@ jobs:
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
+
+          mv backend/docs /tmp/docs
 
           git fetch origin gh-pages || {
             git checkout --orphan gh-pages
@@ -85,6 +86,9 @@ jobs:
           git checkout gh-pages
 
           git rm -rf .
+
+          mv /tmp/docs backend/docs
+
           cp -r backend/docs/* .
           git add .
 
