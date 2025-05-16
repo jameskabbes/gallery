@@ -48,13 +48,7 @@ class OTP(
 
     @classmethod
     def verify_code(cls, code: custom_types.OTP.code, hashed_code: custom_types.OTP.hashed_code) -> bool:
-
-        import time
-        start = time.time()
-        a = core_utils.verify_password(code, hashed_code)
-        end = time.time()
-        print(end - start)
-        return a
+        return core_utils.verify_password(code, hashed_code)
 
     @classmethod
     def _build_select_by_id(cls, id):

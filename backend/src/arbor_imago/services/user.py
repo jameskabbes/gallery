@@ -3,7 +3,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from pydantic import BaseModel
 import pathlib
 
-from arbor_imago import core_utils, custom_types
+from arbor_imago import core_utils, custom_types, config
 from arbor_imago.models.tables import User as UserTable
 from arbor_imago.schemas import user as user_schema
 from arbor_imago.services import base
@@ -24,6 +24,7 @@ class User(
 ):
 
     _MODEL = UserTable
+    DEFAULT_ROLE_ID = config.USER_ROLE_NAME_MAPPING['user']
 
     @classmethod
     def is_inst_public(cls, inst: UserTable) -> bool:

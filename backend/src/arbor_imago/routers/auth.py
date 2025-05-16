@@ -226,24 +226,24 @@ class AuthRouter(base.Router):
         cls,
         model: LoginWithOTPEmailRequest,
         response: Response
-    ) -> auth_utils.PostLoginWithOTPResponse:
+    ) -> auth_utils.LoginWithOTPResponse:
 
         async with config.ASYNC_SESSIONMAKER() as session:
             user = (await session.exec(select(User).where(
                 User.email == model.email))).one_or_none()
-            return await auth_utils.post_login_otp(session, user, response, model.code)
+            return await auth_utils.login_otp(session, user, response, model.code)
 
     @classmethod
     async def login_otp_phone_number(
         cls,
         model: LoginWithOTPPhoneNumberRequest,
         response: Response
-    ) -> auth_utils.PostLoginWithOTPResponse:
+    ) -> auth_utils.LoginWithOTPResponse:
 
         async with config.ASYNC_SESSIONMAKER() as session:
             user = (await session.exec(select(User).where(
                 User.phone_number == model.phone_number))).one_or_none()
-            return await auth_utils.post_login_otp(session, user, response, model.code)
+            return await auth_utils.login_otp(session, user, response, model.code)
 
     @classmethod
     async def signup(cls, response: Response, model: SignUpRequest) -> SignUpResponse:
@@ -270,7 +270,7 @@ class AuthRouter(base.Router):
             user = await UserService.create({
                 'admin': True,
                 'session': session,
-                'create_model': user_schema.UserAdminCreate(email=sign_up.email),
+                'create_model': user_schema.UserAdminCreate(email=sign_up.email, user_role_id=UserService.DEFAULT_ROLE_ID),
                 'authorized_user_id': authorization._user_id,
             })
 
@@ -335,7 +335,7 @@ class AuthRouter(base.Router):
                 user = await UserService.create({
                     'session': session,
                     'authorized_user_id': None,
-                    'create_model': user_schema.UserAdminCreate(email=email),
+                    'create_model': user_schema.UserAdminCreate(email=email, user_role_id=UserService.DEFAULT_ROLE_ID),
                     'admin': True,
                 })
 
@@ -388,8 +388,10 @@ class AuthRouter(base.Router):
             user = (await session.exec(select(User).where(
                 User.email == model.email))).one_or_none()
             if user:
+                magic_link = await auth_utils.create_magic_link(
+                    session, user, email=model.email)
                 background_tasks.add_task(
-                    auth_utils.send_magic_link, session, user, email=model.email)
+                    auth_utils.send_magic_link, magic_link, user, email=model.email)
         return Response()
 
     @classmethod
@@ -397,9 +399,12 @@ class AuthRouter(base.Router):
         async with config.ASYNC_SESSIONMAKER() as session:
             user = (await session.exec(select(User).where(
                 User.phone_number == model.phone_number))).one_or_none()
-            if user:
+
+            if user is not None:
+                magic_link = await auth_utils.create_magic_link(
+                    session, user, phone_number=model.phone_number)
                 background_tasks.add_task(
-                    auth_utils.send_magic_link, session, user, phone_number=model.phone_number)
+                    auth_utils.send_magic_link, magic_link, user, phone_number=model.phone_number)
         return Response()
 
     @classmethod
@@ -410,8 +415,10 @@ class AuthRouter(base.Router):
                 User.email == model.email))).one_or_none()
 
             if user:
+                code = await auth_utils.create_otp(
+                    session, user, email=model.email)
                 background_tasks.add_task(
-                    auth_utils.send_otp, session, user, email=model.email)
+                    auth_utils.send_otp, code, user, email=model.email)
         return Response()
 
     @classmethod
@@ -421,8 +428,10 @@ class AuthRouter(base.Router):
             user = (await session.exec(select(User).where(
                 User.phone_number == model.phone_number))).one_or_none()
             if user:
+                code = await auth_utils.create_otp(
+                    session, user, phone_number=model.phone_number)
                 background_tasks.add_task(
-                    auth_utils.send_otp, session, user, phone_number=model.phone_number)
+                    auth_utils.send_otp, code, user, phone_number=model.phone_number)
         return Response()
 
     @classmethod

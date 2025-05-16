@@ -126,8 +126,8 @@ function LogIn() {
                 maxLength={Math.max(
                   openapi_schema.components.schemas.UserAdminCreate.properties
                     .email.maxLength,
-                  openapi_schema.components.schemas.User.properties.username
-                    .maxLength
+                  openapi_schema.components.schemas.UserPrivate.properties
+                    .username.anyOf[0].maxLength
                 )}
                 type="text"
                 checkValidity={true}

@@ -11,11 +11,13 @@ from arbor_imago.schemas.pagination import Pagination
 from arbor_imago.schemas.order_by import OrderBy
 
 TCreateModel = TypeVar('TCreateModel', bound=BaseModel)
-TCreateModel_contra = TypeVar('TCreateModel_contra', bound=BaseModel, contravariant=True)
+TCreateModel_contra = TypeVar(
+    'TCreateModel_contra', bound=BaseModel, contravariant=True)
 TCreateModel_co = TypeVar('TCreateModel_co', bound=BaseModel, covariant=True)
 
 TUpdateModel = TypeVar('TUpdateModel', bound=BaseModel)
-TUpdateModel_contra = TypeVar('TUpdateModel_contra', bound=BaseModel, contravariant=True)
+TUpdateModel_contra = TypeVar(
+    'TUpdateModel_contra', bound=BaseModel, contravariant=True)
 TUpdateModel_co = TypeVar('TUpdateModel_co', bound=BaseModel, covariant=True)
 
 TOrderBy_co = TypeVar('TOrderBy_co', bound=str, covariant=True)
@@ -178,8 +180,24 @@ class Service(
 ):
 
     @classmethod
+    async def fetch_one(cls, session: AsyncSession, query: SelectOfScalar[models.TModel]) -> models.TModel | None:
+        return (await session.exec(query)).one_or_none()
+
+    @classmethod
+    async def fetch_many(cls, session: AsyncSession, pagination: Pagination, order_bys: list[OrderBy[TOrderBy_co]] = [], query: SelectOfScalar[models.TModel] | None = None) -> Sequence[models.TModel]:
+
+        if query is None:
+            query = select(cls._MODEL)
+
+        query = cls.build_order_by(query, order_bys)
+        query = query.offset(pagination.offset).limit(pagination.limit)
+
+        return (await session.exec(query)).all()
+
+    @classmethod
     async def fetch_by_id(cls, session: AsyncSession, id: custom_types.TId) -> models.TModel | None:
-        return (await session.exec(cls._build_select_by_id(id))).one_or_none()
+        query = cls._build_select_by_id(id)
+        return await cls.fetch_one(session, query)
 
     @classmethod
     async def fetch_by_id_with_exception(cls, session: AsyncSession, id: custom_types.TId) -> models.TModel:
@@ -198,17 +216,6 @@ class Service(
                 query = query.order_by(field.desc())
 
         return query
-
-    @classmethod
-    async def fetch_many(cls, session: AsyncSession, pagination: Pagination, order_bys: list[OrderBy[TOrderBy_co]] = [], query: SelectOfScalar[models.TModel] | None = None) -> Sequence[models.TModel]:
-
-        if query is None:
-            query = select(cls._MODEL)
-
-        query = cls.build_order_by(query, order_bys)
-        query = query.offset(pagination.offset).limit(pagination.limit)
-
-        return (await session.exec(query)).all()
 
     @classmethod
     async def _check_authorization_existing(cls, params: CheckAuthorizationExistingParams[models.TModel, custom_types.TId]) -> None:

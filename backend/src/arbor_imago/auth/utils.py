@@ -4,6 +4,7 @@ from fastapi.openapi.models import OAuthFlowPassword
 from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from fastapi.security.utils import get_authorization_scheme_param
 from fastapi.responses import JSONResponse
+from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from pydantic import BaseModel
@@ -26,6 +27,8 @@ from arbor_imago.services import auth_credential as auth_credential_service
 
 def set_access_token_cookie(response: Response, access_token: custom_types.JwtEncodedStr,  expiry: datetime_module.datetime | None = None):
 
+    print('setting access token cookie', access_token)
+
     kwargs = {}
     if expiry:
         kwargs['expires'] = expiry
@@ -34,10 +37,12 @@ def set_access_token_cookie(response: Response, access_token: custom_types.JwtEn
         key=auth.ACCESS_TOKEN_COOKIE_KEY,
         value=access_token,
         httponly=True,
-        secure=True,
+        secure=False,
         samesite="lax",
         **kwargs
     )
+
+    print(response)
 
 
 def delete_access_token_cookie(response: Response):
@@ -67,7 +72,8 @@ class OAuth2PasswordBearerMultiSource(OAuth2):
         # HTTP-only Cookie
         cookie_access_token = request.cookies.get(auth.ACCESS_TOKEN_COOKIE_KEY)
         if cookie_access_token:
-            tokens.add(typing.cast(custom_types.JwtEncodedStr, cookie_access_token))
+            tokens.add(typing.cast(
+                custom_types.JwtEncodedStr, cookie_access_token))
             provided_auth_types.add("cookie")
 
         if len(tokens) > 1:
@@ -401,7 +407,7 @@ async def send_signup_link(session: AsyncSession, user: tables.User | None, emai
         sign_up_jwt = utils.jwt_encode(typing.cast(
             dict, SignUpService.to_jwt_payload(sign_up)))
 
-        url = '{}{}/?token={}'.format(config.BACKEND_URL,
+        url = '{}{}/?token={}'.format(config.FRONTEND_URL,
                                       config.FRONTEND_ROUTES['verify_signup'], sign_up_jwt)
 
         if email:
@@ -409,21 +415,24 @@ async def send_signup_link(session: AsyncSession, user: tables.User | None, emai
                              'Click here to sign up: {}'.format(url))
 
 
-class PostLoginWithOTPResponse(GetUserSessionInfoNestedReturn):
+class LoginWithOTPResponse(GetUserSessionInfoNestedReturn):
     pass
 
 
-async def post_login_otp(session: AsyncSession, user: tables.User | None, response: Response, code: custom_types.OTP.code) -> PostLoginWithOTPResponse:
+async def login_otp(session: AsyncSession, user: tables.User | None, response: Response, code: custom_types.OTP.code) -> LoginWithOTPResponse:
 
     if user is None:
         raise exceptions.Base(exceptions.invalid_otp())
 
-    user_otp = user.otp
-    if user_otp is None or OTPService.verify_code(code, user_otp.hashed_code) is False:
+    query = select(OTPService._MODEL).where(
+        OTPService._MODEL.user_id == user.id)
+    otp = await OTPService.fetch_one(session, query)
+
+    if otp is None or OTPService.verify_code(code, otp.hashed_code) is False:
         raise exceptions.Base(exceptions.invalid_otp())
 
     get_auth = await get_auth_from_auth_credential_table_inst(
-        user_otp,
+        otp,
         session=session,
         auth_credential_service=OTPService,
         override_lifetime=config.AUTH['credential_lifespans']['access_token']
@@ -451,13 +460,13 @@ async def post_login_otp(session: AsyncSession, user: tables.User | None, respon
     await OTPService.delete(
         {
             'session': session,
-            'id': user_otp.id,
+            'id': otp.id,
             'authorized_user_id': user.id,
             'admin': False
         }
     )
 
-    return PostLoginWithOTPResponse(
+    return LoginWithOTPResponse(
         auth=GetUserSessionInfoReturn(
             user=user_schema.UserPrivate.model_validate(user),
             scope_ids=set(await UserAccessTokenService.get_scope_ids(session, user_access_token)),
@@ -467,7 +476,7 @@ async def post_login_otp(session: AsyncSession, user: tables.User | None, respon
     )
 
 
-async def send_magic_link(session: AsyncSession, user: tables.User, email: typing.Optional[custom_types.User.email] = None, phone_number: typing.Optional[custom_types.User.phone_number] = None):
+async def create_magic_link(session: AsyncSession, user: tables.User, email: typing.Optional[custom_types.User.email] = None, phone_number: typing.Optional[custom_types.User.phone_number] = None) -> str:
 
     user_access_token = await UserAccessTokenService.create(
         {
@@ -478,8 +487,13 @@ async def send_magic_link(session: AsyncSession, user: tables.User, email: typin
         }
     )
 
-    url = '{}{}/?token={}'.format(config.BACKEND_URL,
+    url = '{}{}/?token={}'.format(config.FRONTEND_URL,
                                   config.FRONTEND_ROUTES['verify_magic_link'], utils.jwt_encode(typing.cast(dict, UserAccessTokenService.to_jwt_payload(user_access_token))))
+
+    return url
+
+
+async def send_magic_link(url: str, user: tables.User, email: typing.Optional[custom_types.User.email] = None, phone_number: typing.Optional[custom_types.User.phone_number] = None):
 
     if email:
         utils.send_email(email, 'Magic Link',
@@ -489,9 +503,24 @@ async def send_magic_link(session: AsyncSession, user: tables.User, email: typin
             utils.send_sms(user.phone_number, 'Click to login: {}'.format(url))
 
 
-async def send_otp(session: AsyncSession, user: tables.User, email: typing.Optional[custom_types.User.email] = None, phone_number: typing.Optional[custom_types.User.phone_number] = None):
+async def create_otp(session: AsyncSession, user: tables.User, email: typing.Optional[custom_types.User.email] = None, phone_number: typing.Optional[custom_types.User.phone_number] = None) -> custom_types.OTP.code:
 
     code = OTPService.generate_code()
+
+    # if there is an existing OTP, delete it
+    query = select(OTPService._MODEL).where(
+        OTPService._MODEL.user_id == user.id)
+    existing_otp = await OTPService.fetch_one(session, query)
+
+    if existing_otp is not None:
+        await OTPService.delete({
+            'id': existing_otp.id,
+            'session': session,
+            'authorized_user_id': user.id,
+            'admin': False
+        })
+
+    # create a new OTP, return it
     otp = await OTPService.create({
         'authorized_user_id': user.id,
         'session': session,
@@ -500,6 +529,11 @@ async def send_otp(session: AsyncSession, user: tables.User, email: typing.Optio
             user_id=user.id, hashed_code=OTPService.hash_code(code), expiry=auth_credential_service.lifespan_to_expiry(config.AUTH['credential_lifespans']['otp'])
         )
     })
+
+    return code
+
+
+async def send_otp(code: custom_types.OTP.code, user: tables.User, email: typing.Optional[custom_types.User.email] = None, phone_number: typing.Optional[custom_types.User.phone_number] = None):
 
     if email:
         utils.send_email(email, 'OTP', 'Your OTP is: {}'.format(code))

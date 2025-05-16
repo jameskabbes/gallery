@@ -94,12 +94,12 @@ function RequestOTP() {
                   setState={requestOTPContext.setEmail}
                   id="request-otp-email"
                   minLength={
-                    openapi_schema.components.schemas
-                      .PostLoginWithOTPEmailRequest.properties.email.minLength
+                    openapi_schema.components.schemas.LoginWithOTPEmailRequest
+                      .properties.email.minLength
                   }
                   maxLength={
-                    openapi_schema.components.schemas
-                      .PostLoginWithOTPEmailRequest.properties.email.maxLength
+                    openapi_schema.components.schemas.LoginWithOTPEmailRequest
+                      .properties.email.maxLength
                   }
                   type="email"
                   checkValidity={true}
@@ -173,12 +173,12 @@ function VerifyOTP() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const pattern = new RegExp(
-    openapi_schema.components.schemas.PostLoginWithOTPEmailRequest.properties.code.pattern
+    openapi_schema.components.schemas.LoginWithOTPEmailRequest.properties.code.pattern
   );
 
   const nCharacters =
-    openapi_schema.components.schemas.PostLoginWithOTPEmailRequest.properties
-      .code.maxLength;
+    openapi_schema.components.schemas.LoginWithOTPEmailRequest.properties.code
+      .maxLength;
 
   function setControlledCursorIndex(index: number, codeValueLength: number) {
     if (index < 0) {
@@ -198,8 +198,8 @@ function VerifyOTP() {
     minLength: nCharacters,
     maxLength: nCharacters,
     pattern:
-      openapi_schema.components.schemas.PostLoginWithOTPEmailRequest.properties
-        .code.pattern,
+      openapi_schema.components.schemas.LoginWithOTPEmailRequest.properties.code
+        .pattern,
   });
 
   useEffect(() => {
