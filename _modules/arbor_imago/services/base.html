@@ -82,11 +82,13 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">arbor_imago.schemas.order_by</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderBy</span>
 
 <span class="n">TCreateModel</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;TCreateModel&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">BaseModel</span><span class="p">)</span>
-<span class="n">TCreateModel_contra</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;TCreateModel_contra&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">contravariant</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">TCreateModel_contra</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span>
+    <span class="s1">&#39;TCreateModel_contra&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">contravariant</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">TCreateModel_co</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;TCreateModel_co&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">covariant</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="n">TUpdateModel</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;TUpdateModel&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">BaseModel</span><span class="p">)</span>
-<span class="n">TUpdateModel_contra</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;TUpdateModel_contra&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">contravariant</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">TUpdateModel_contra</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span>
+    <span class="s1">&#39;TUpdateModel_contra&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">contravariant</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">TUpdateModel_co</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;TUpdateModel_co&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">covariant</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="n">TOrderBy_co</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;TOrderBy_co&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">covariant</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -337,11 +339,33 @@
 
 <span class="p">):</span>
 
+<div class="viewcode-block" id="Service.fetch_one">
+<a class="viewcode-back" href="../../../arbor_imago.services.html#arbor_imago.services.base.Service.fetch_one">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">fetch_one</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="n">SelectOfScalar</span><span class="p">[</span><span class="n">models</span><span class="o">.</span><span class="n">TModel</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">models</span><span class="o">.</span><span class="n">TModel</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">exec</span><span class="p">(</span><span class="n">query</span><span class="p">))</span><span class="o">.</span><span class="n">one_or_none</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Service.fetch_many">
+<a class="viewcode-back" href="../../../arbor_imago.services.html#arbor_imago.services.base.Service.fetch_many">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">fetch_many</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">,</span> <span class="n">pagination</span><span class="p">:</span> <span class="n">Pagination</span><span class="p">,</span> <span class="n">order_bys</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">OrderBy</span><span class="p">[</span><span class="n">TOrderBy_co</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[],</span> <span class="n">query</span><span class="p">:</span> <span class="n">SelectOfScalar</span><span class="p">[</span><span class="n">models</span><span class="o">.</span><span class="n">TModel</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">models</span><span class="o">.</span><span class="n">TModel</span><span class="p">]:</span>
+
+        <span class="k">if</span> <span class="n">query</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="n">select</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_MODEL</span><span class="p">)</span>
+
+        <span class="n">query</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">build_order_by</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">order_bys</span><span class="p">)</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="n">pagination</span><span class="o">.</span><span class="n">offset</span><span class="p">)</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="n">pagination</span><span class="o">.</span><span class="n">limit</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">exec</span><span class="p">(</span><span class="n">query</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">()</span></div>
+
+
 <div class="viewcode-block" id="Service.fetch_by_id">
 <a class="viewcode-back" href="../../../arbor_imago.services.html#arbor_imago.services.base.Service.fetch_by_id">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">fetch_by_id</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="n">custom_types</span><span class="o">.</span><span class="n">TId</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">models</span><span class="o">.</span><span class="n">TModel</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">(</span><span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">exec</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_build_select_by_id</span><span class="p">(</span><span class="nb">id</span><span class="p">)))</span><span class="o">.</span><span class="n">one_or_none</span><span class="p">()</span></div>
+        <span class="n">query</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_build_select_by_id</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="bp">cls</span><span class="o">.</span><span class="n">fetch_one</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Service.fetch_by_id_with_exception">
@@ -366,20 +390,6 @@
                 <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">field</span><span class="o">.</span><span class="n">desc</span><span class="p">())</span>
 
         <span class="k">return</span> <span class="n">query</span></div>
-
-
-<div class="viewcode-block" id="Service.fetch_many">
-<a class="viewcode-back" href="../../../arbor_imago.services.html#arbor_imago.services.base.Service.fetch_many">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">fetch_many</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">,</span> <span class="n">pagination</span><span class="p">:</span> <span class="n">Pagination</span><span class="p">,</span> <span class="n">order_bys</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">OrderBy</span><span class="p">[</span><span class="n">TOrderBy_co</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[],</span> <span class="n">query</span><span class="p">:</span> <span class="n">SelectOfScalar</span><span class="p">[</span><span class="n">models</span><span class="o">.</span><span class="n">TModel</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">models</span><span class="o">.</span><span class="n">TModel</span><span class="p">]:</span>
-
-        <span class="k">if</span> <span class="n">query</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">query</span> <span class="o">=</span> <span class="n">select</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_MODEL</span><span class="p">)</span>
-
-        <span class="n">query</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">build_order_by</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">order_bys</span><span class="p">)</span>
-        <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="n">pagination</span><span class="o">.</span><span class="n">offset</span><span class="p">)</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="n">pagination</span><span class="o">.</span><span class="n">limit</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="p">(</span><span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">exec</span><span class="p">(</span><span class="n">query</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">()</span></div>
 
 
     <span class="nd">@classmethod</span>
