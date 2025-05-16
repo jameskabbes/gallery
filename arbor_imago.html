@@ -55,9 +55,29 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#arbor-imago-app-module">arbor_imago.app module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#arbor-imago-cli-module">arbor_imago.cli module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#arbor-imago-config-module">arbor_imago.config module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-arbor_imago.app">arbor_imago.app module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#arbor_imago.app.custom_http_exception_handler"><code class="docutils literal notranslate"><span class="pre">custom_http_exception_handler()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#arbor_imago.app.lifespan"><code class="docutils literal notranslate"><span class="pre">lifespan()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-arbor_imago.cli">arbor_imago.cli module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#arbor_imago.cli.create_tables"><code class="docutils literal notranslate"><span class="pre">create_tables()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#arbor_imago.cli.export_openapi"><code class="docutils literal notranslate"><span class="pre">export_openapi()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#arbor_imago.cli.runserver"><code class="docutils literal notranslate"><span class="pre">runserver()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-arbor_imago.config">arbor_imago.config module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#arbor_imago.config.AuthConfig"><code class="docutils literal notranslate"><span class="pre">AuthConfig</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#arbor_imago.config.AuthEnv"><code class="docutils literal notranslate"><span class="pre">AuthEnv</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#arbor_imago.config.BackendConfig"><code class="docutils literal notranslate"><span class="pre">BackendConfig</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#arbor_imago.config.BackendSecrets"><code class="docutils literal notranslate"><span class="pre">BackendSecrets</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#arbor_imago.config.DbEnv"><code class="docutils literal notranslate"><span class="pre">DbEnv</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#arbor_imago.config.SharedConfig"><code class="docutils literal notranslate"><span class="pre">SharedConfig</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#arbor_imago.config.convert_env_path_to_absolute"><code class="docutils literal notranslate"><span class="pre">convert_env_path_to_absolute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#arbor_imago.config.process_explicit_config_path"><code class="docutils literal notranslate"><span class="pre">process_explicit_config_path()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#arbor_imago.config.resolve_db_url"><code class="docutils literal notranslate"><span class="pre">resolve_db_url()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#module-arbor_imago.core_utils">arbor_imago.core_utils module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#arbor_imago.core_utils.deep_merge_dicts"><code class="docutils literal notranslate"><span class="pre">deep_merge_dicts()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#arbor_imago.core_utils.generate_jwt_secret_key"><code class="docutils literal notranslate"><span class="pre">generate_jwt_secret_key()</span></code></a></li>
@@ -89,7 +109,13 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#module-arbor_imago.main">arbor_imago.main module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#arbor-imago-utils-module">arbor_imago.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-arbor_imago.utils">arbor_imago.utils module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#arbor_imago.utils.jwt_decode"><code class="docutils literal notranslate"><span class="pre">jwt_decode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#arbor_imago.utils.jwt_encode"><code class="docutils literal notranslate"><span class="pre">jwt_encode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#arbor_imago.utils.send_email"><code class="docutils literal notranslate"><span class="pre">send_email()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#arbor_imago.utils.send_sms"><code class="docutils literal notranslate"><span class="pre">send_sms()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#module-arbor_imago">Module contents</a></li>
 </ul>
 </li>
@@ -130,8 +156,108 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="arbor_imago.auth.html">arbor_imago.auth package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arbor_imago.auth.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arbor_imago.auth.html#arbor-imago-auth-exceptions-module">arbor_imago.auth.exceptions module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arbor_imago.auth.html#arbor-imago-auth-utils-module">arbor_imago.auth.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arbor_imago.auth.html#module-arbor_imago.auth.exceptions">arbor_imago.auth.exceptions module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.exceptions.Base"><code class="docutils literal notranslate"><span class="pre">Base()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.exceptions.StatusCodeAndDetail"><code class="docutils literal notranslate"><span class="pre">StatusCodeAndDetail</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.exceptions.StatusCodeAndDetail.detail"><code class="docutils literal notranslate"><span class="pre">StatusCodeAndDetail.detail</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.exceptions.StatusCodeAndDetail.status_code"><code class="docutils literal notranslate"><span class="pre">StatusCodeAndDetail.status_code</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.exceptions.authorization_expired"><code class="docutils literal notranslate"><span class="pre">authorization_expired()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.exceptions.authorization_type_not_permitted"><code class="docutils literal notranslate"><span class="pre">authorization_type_not_permitted()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.exceptions.credentials"><code class="docutils literal notranslate"><span class="pre">credentials()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.exceptions.different_tokens_provided"><code class="docutils literal notranslate"><span class="pre">different_tokens_provided()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.exceptions.improper_format"><code class="docutils literal notranslate"><span class="pre">improper_format()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.exceptions.invalid_otp"><code class="docutils literal notranslate"><span class="pre">invalid_otp()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.exceptions.missing_authorization"><code class="docutils literal notranslate"><span class="pre">missing_authorization()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.exceptions.missing_required_claims"><code class="docutils literal notranslate"><span class="pre">missing_required_claims()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.exceptions.not_permitted"><code class="docutils literal notranslate"><span class="pre">not_permitted()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.exceptions.user_not_found"><code class="docutils literal notranslate"><span class="pre">user_not_found()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="arbor_imago.auth.html#module-arbor_imago.auth.utils">arbor_imago.auth.utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetAuthFromJwtKwargs"><code class="docutils literal notranslate"><span class="pre">GetAuthFromJwtKwargs</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetAuthFromJwtKwargs.override_lifetime"><code class="docutils literal notranslate"><span class="pre">GetAuthFromJwtKwargs.override_lifetime</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetAuthFromJwtKwargs.permitted_types"><code class="docutils literal notranslate"><span class="pre">GetAuthFromJwtKwargs.permitted_types</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetAuthFromJwtKwargs.required_scopes"><code class="docutils literal notranslate"><span class="pre">GetAuthFromJwtKwargs.required_scopes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetAuthFromJwtKwargs.token"><code class="docutils literal notranslate"><span class="pre">GetAuthFromJwtKwargs.token</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetAuthFromTableKwargs"><code class="docutils literal notranslate"><span class="pre">GetAuthFromTableKwargs</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetAuthFromTableKwargs.auth_credential_service"><code class="docutils literal notranslate"><span class="pre">GetAuthFromTableKwargs.auth_credential_service</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetAuthFromTableKwargs.dt_now"><code class="docutils literal notranslate"><span class="pre">GetAuthFromTableKwargs.dt_now</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetAuthFromTableKwargs.override_lifetime"><code class="docutils literal notranslate"><span class="pre">GetAuthFromTableKwargs.override_lifetime</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetAuthFromTableKwargs.required_scopes"><code class="docutils literal notranslate"><span class="pre">GetAuthFromTableKwargs.required_scopes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetAuthFromTableKwargs.session"><code class="docutils literal notranslate"><span class="pre">GetAuthFromTableKwargs.session</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetAuthReturn"><code class="docutils literal notranslate"><span class="pre">GetAuthReturn</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetAuthReturn.auth_credential"><code class="docutils literal notranslate"><span class="pre">GetAuthReturn.auth_credential</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetAuthReturn.exception"><code class="docutils literal notranslate"><span class="pre">GetAuthReturn.exception</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetAuthReturn.isAuthorized"><code class="docutils literal notranslate"><span class="pre">GetAuthReturn.isAuthorized</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetAuthReturn.model_config"><code class="docutils literal notranslate"><span class="pre">GetAuthReturn.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetAuthReturn.scope_ids"><code class="docutils literal notranslate"><span class="pre">GetAuthReturn.scope_ids</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetAuthReturn.user"><code class="docutils literal notranslate"><span class="pre">GetAuthReturn.user</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#id0"><code class="docutils literal notranslate"><span class="pre">GetAuthReturn</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#id1"><code class="docutils literal notranslate"><span class="pre">GetAuthReturn.auth_credential</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#id2"><code class="docutils literal notranslate"><span class="pre">GetAuthReturn.exception</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#id3"><code class="docutils literal notranslate"><span class="pre">GetAuthReturn.isAuthorized</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#id4"><code class="docutils literal notranslate"><span class="pre">GetAuthReturn.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#id5"><code class="docutils literal notranslate"><span class="pre">GetAuthReturn.scope_ids</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#id6"><code class="docutils literal notranslate"><span class="pre">GetAuthReturn.user</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#id7"><code class="docutils literal notranslate"><span class="pre">GetAuthReturn</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#id8"><code class="docutils literal notranslate"><span class="pre">GetAuthReturn.auth_credential</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#id9"><code class="docutils literal notranslate"><span class="pre">GetAuthReturn.exception</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#id10"><code class="docutils literal notranslate"><span class="pre">GetAuthReturn.isAuthorized</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#id11"><code class="docutils literal notranslate"><span class="pre">GetAuthReturn.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#id12"><code class="docutils literal notranslate"><span class="pre">GetAuthReturn.scope_ids</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#id13"><code class="docutils literal notranslate"><span class="pre">GetAuthReturn.user</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetUserSessionInfoNestedReturn"><code class="docutils literal notranslate"><span class="pre">GetUserSessionInfoNestedReturn</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetUserSessionInfoNestedReturn.auth"><code class="docutils literal notranslate"><span class="pre">GetUserSessionInfoNestedReturn.auth</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetUserSessionInfoNestedReturn.model_config"><code class="docutils literal notranslate"><span class="pre">GetUserSessionInfoNestedReturn.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetUserSessionInfoReturn"><code class="docutils literal notranslate"><span class="pre">GetUserSessionInfoReturn</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetUserSessionInfoReturn.access_token"><code class="docutils literal notranslate"><span class="pre">GetUserSessionInfoReturn.access_token</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetUserSessionInfoReturn.model_config"><code class="docutils literal notranslate"><span class="pre">GetUserSessionInfoReturn.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetUserSessionInfoReturn.scope_ids"><code class="docutils literal notranslate"><span class="pre">GetUserSessionInfoReturn.scope_ids</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.GetUserSessionInfoReturn.user"><code class="docutils literal notranslate"><span class="pre">GetUserSessionInfoReturn.user</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.LoginWithOTPResponse"><code class="docutils literal notranslate"><span class="pre">LoginWithOTPResponse</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.LoginWithOTPResponse.model_config"><code class="docutils literal notranslate"><span class="pre">LoginWithOTPResponse.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.MakeGetAuthDepedencyKwargs"><code class="docutils literal notranslate"><span class="pre">MakeGetAuthDepedencyKwargs</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.MakeGetAuthDepedencyKwargs.override_lifetime"><code class="docutils literal notranslate"><span class="pre">MakeGetAuthDepedencyKwargs.override_lifetime</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.MakeGetAuthDepedencyKwargs.permitted_types"><code class="docutils literal notranslate"><span class="pre">MakeGetAuthDepedencyKwargs.permitted_types</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.MakeGetAuthDepedencyKwargs.raise_exceptions"><code class="docutils literal notranslate"><span class="pre">MakeGetAuthDepedencyKwargs.raise_exceptions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.MakeGetAuthDepedencyKwargs.required_scopes"><code class="docutils literal notranslate"><span class="pre">MakeGetAuthDepedencyKwargs.required_scopes</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.OAuth2PasswordBearerMultiSource"><code class="docutils literal notranslate"><span class="pre">OAuth2PasswordBearerMultiSource</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.create_magic_link"><code class="docutils literal notranslate"><span class="pre">create_magic_link()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.create_otp"><code class="docutils literal notranslate"><span class="pre">create_otp()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.delete_access_token_cookie"><code class="docutils literal notranslate"><span class="pre">delete_access_token_cookie()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.get_auth_from_auth_credential_jwt"><code class="docutils literal notranslate"><span class="pre">get_auth_from_auth_credential_jwt()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.get_auth_from_auth_credential_table_inst"><code class="docutils literal notranslate"><span class="pre">get_auth_from_auth_credential_table_inst()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.get_user_session_info"><code class="docutils literal notranslate"><span class="pre">get_user_session_info()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.is_valid_time_bounds"><code class="docutils literal notranslate"><span class="pre">is_valid_time_bounds()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.login_otp"><code class="docutils literal notranslate"><span class="pre">login_otp()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.make_authenticate_user_with_username_and_password_dependency"><code class="docutils literal notranslate"><span class="pre">make_authenticate_user_with_username_and_password_dependency()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.make_get_auth_dependency"><code class="docutils literal notranslate"><span class="pre">make_get_auth_dependency()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.send_magic_link"><code class="docutils literal notranslate"><span class="pre">send_magic_link()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.send_otp"><code class="docutils literal notranslate"><span class="pre">send_otp()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.send_signup_link"><code class="docutils literal notranslate"><span class="pre">send_signup_link()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.auth.html#arbor_imago.auth.utils.set_access_token_cookie"><code class="docutils literal notranslate"><span class="pre">set_access_token_cookie()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="arbor_imago.auth.html#module-arbor_imago.auth">Module contents</a></li>
 </ul>
 </li>
@@ -284,14 +410,310 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arbor_imago.routers.html">arbor_imago.routers package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arbor_imago.routers.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arbor_imago.routers.html#arbor-imago-routers-api-key-module">arbor_imago.routers.api_key module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arbor_imago.routers.html#arbor-imago-routers-api-key-scope-module">arbor_imago.routers.api_key_scope module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arbor_imago.routers.html#arbor-imago-routers-auth-module">arbor_imago.routers.auth module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arbor_imago.routers.html#arbor-imago-routers-base-module">arbor_imago.routers.base module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arbor_imago.routers.html#arbor-imago-routers-gallery-module">arbor_imago.routers.gallery module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arbor_imago.routers.html#arbor-imago-routers-pages-module">arbor_imago.routers.pages module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arbor_imago.routers.html#arbor-imago-routers-user-module">arbor_imago.routers.user module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arbor_imago.routers.html#arbor-imago-routers-user-access-token-module">arbor_imago.routers.user_access_token module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arbor_imago.routers.html#module-arbor_imago.routers.api_key">arbor_imago.routers.api_key module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key.ApiKeyAdminRouter"><code class="docutils literal notranslate"><span class="pre">ApiKeyAdminRouter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key.ApiKeyAdminRouter.by_id"><code class="docutils literal notranslate"><span class="pre">ApiKeyAdminRouter.by_id()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key.ApiKeyAdminRouter.check_availability"><code class="docutils literal notranslate"><span class="pre">ApiKeyAdminRouter.check_availability()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key.ApiKeyAdminRouter.create"><code class="docutils literal notranslate"><span class="pre">ApiKeyAdminRouter.create()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key.ApiKeyAdminRouter.delete"><code class="docutils literal notranslate"><span class="pre">ApiKeyAdminRouter.delete()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key.ApiKeyAdminRouter.list_by_user"><code class="docutils literal notranslate"><span class="pre">ApiKeyAdminRouter.list_by_user()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key.ApiKeyAdminRouter.update"><code class="docutils literal notranslate"><span class="pre">ApiKeyAdminRouter.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key.ApiKeyJWTResponse"><code class="docutils literal notranslate"><span class="pre">ApiKeyJWTResponse</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key.ApiKeyJWTResponse.jwt"><code class="docutils literal notranslate"><span class="pre">ApiKeyJWTResponse.jwt</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key.ApiKeyJWTResponse.model_config"><code class="docutils literal notranslate"><span class="pre">ApiKeyJWTResponse.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key.ApiKeyRouter"><code class="docutils literal notranslate"><span class="pre">ApiKeyRouter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key.ApiKeyRouter.by_id"><code class="docutils literal notranslate"><span class="pre">ApiKeyRouter.by_id()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key.ApiKeyRouter.check_availability"><code class="docutils literal notranslate"><span class="pre">ApiKeyRouter.check_availability()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key.ApiKeyRouter.count"><code class="docutils literal notranslate"><span class="pre">ApiKeyRouter.count()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key.ApiKeyRouter.create"><code class="docutils literal notranslate"><span class="pre">ApiKeyRouter.create()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key.ApiKeyRouter.delete"><code class="docutils literal notranslate"><span class="pre">ApiKeyRouter.delete()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key.ApiKeyRouter.jwt"><code class="docutils literal notranslate"><span class="pre">ApiKeyRouter.jwt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key.ApiKeyRouter.list"><code class="docutils literal notranslate"><span class="pre">ApiKeyRouter.list()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key.ApiKeyRouter.update"><code class="docutils literal notranslate"><span class="pre">ApiKeyRouter.update()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="arbor_imago.routers.html#module-arbor_imago.routers.api_key_scope">arbor_imago.routers.api_key_scope module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key_scope.ApiKeyScopeAdminRouter"><code class="docutils literal notranslate"><span class="pre">ApiKeyScopeAdminRouter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key_scope.ApiKeyScopeAdminRouter.add_scope_to_api_key"><code class="docutils literal notranslate"><span class="pre">ApiKeyScopeAdminRouter.add_scope_to_api_key()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key_scope.ApiKeyScopeAdminRouter.remove_scope_from_api_key"><code class="docutils literal notranslate"><span class="pre">ApiKeyScopeAdminRouter.remove_scope_from_api_key()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key_scope.ApiKeyScopeRouter"><code class="docutils literal notranslate"><span class="pre">ApiKeyScopeRouter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key_scope.ApiKeyScopeRouter.add_scope_to_api_key"><code class="docutils literal notranslate"><span class="pre">ApiKeyScopeRouter.add_scope_to_api_key()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.api_key_scope.ApiKeyScopeRouter.remove_scope_from_api_key"><code class="docutils literal notranslate"><span class="pre">ApiKeyScopeRouter.remove_scope_from_api_key()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="arbor_imago.routers.html#module-arbor_imago.routers.auth">arbor_imago.routers.auth module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.AuthRouter"><code class="docutils literal notranslate"><span class="pre">AuthRouter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.AuthRouter.auth_root"><code class="docutils literal notranslate"><span class="pre">AuthRouter.auth_root()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.AuthRouter.login_google"><code class="docutils literal notranslate"><span class="pre">AuthRouter.login_google()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.AuthRouter.login_magic_link"><code class="docutils literal notranslate"><span class="pre">AuthRouter.login_magic_link()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.AuthRouter.login_otp_email"><code class="docutils literal notranslate"><span class="pre">AuthRouter.login_otp_email()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.AuthRouter.login_otp_phone_number"><code class="docutils literal notranslate"><span class="pre">AuthRouter.login_otp_phone_number()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.AuthRouter.login_password"><code class="docutils literal notranslate"><span class="pre">AuthRouter.login_password()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.AuthRouter.logout"><code class="docutils literal notranslate"><span class="pre">AuthRouter.logout()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.AuthRouter.request_magic_link_email"><code class="docutils literal notranslate"><span class="pre">AuthRouter.request_magic_link_email()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.AuthRouter.request_magic_link_sms"><code class="docutils literal notranslate"><span class="pre">AuthRouter.request_magic_link_sms()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.AuthRouter.request_otp_email"><code class="docutils literal notranslate"><span class="pre">AuthRouter.request_otp_email()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.AuthRouter.request_otp_sms"><code class="docutils literal notranslate"><span class="pre">AuthRouter.request_otp_sms()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.AuthRouter.request_sign_up_email"><code class="docutils literal notranslate"><span class="pre">AuthRouter.request_sign_up_email()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.AuthRouter.signup"><code class="docutils literal notranslate"><span class="pre">AuthRouter.signup()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.AuthRouter.token"><code class="docutils literal notranslate"><span class="pre">AuthRouter.token()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.LoginWithGoogleRequest"><code class="docutils literal notranslate"><span class="pre">LoginWithGoogleRequest</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.LoginWithGoogleRequest.id_token"><code class="docutils literal notranslate"><span class="pre">LoginWithGoogleRequest.id_token</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.LoginWithGoogleRequest.model_config"><code class="docutils literal notranslate"><span class="pre">LoginWithGoogleRequest.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.LoginWithGoogleResponse"><code class="docutils literal notranslate"><span class="pre">LoginWithGoogleResponse</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.LoginWithGoogleResponse.model_config"><code class="docutils literal notranslate"><span class="pre">LoginWithGoogleResponse.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.LoginWithMagicLinkRequest"><code class="docutils literal notranslate"><span class="pre">LoginWithMagicLinkRequest</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.LoginWithMagicLinkRequest.model_config"><code class="docutils literal notranslate"><span class="pre">LoginWithMagicLinkRequest.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.LoginWithMagicLinkRequest.token"><code class="docutils literal notranslate"><span class="pre">LoginWithMagicLinkRequest.token</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.LoginWithMagicLinkResponse"><code class="docutils literal notranslate"><span class="pre">LoginWithMagicLinkResponse</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.LoginWithMagicLinkResponse.model_config"><code class="docutils literal notranslate"><span class="pre">LoginWithMagicLinkResponse.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.LoginWithOTPEmailRequest"><code class="docutils literal notranslate"><span class="pre">LoginWithOTPEmailRequest</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.LoginWithOTPEmailRequest.code"><code class="docutils literal notranslate"><span class="pre">LoginWithOTPEmailRequest.code</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.LoginWithOTPEmailRequest.email"><code class="docutils literal notranslate"><span class="pre">LoginWithOTPEmailRequest.email</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.LoginWithOTPEmailRequest.model_config"><code class="docutils literal notranslate"><span class="pre">LoginWithOTPEmailRequest.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.LoginWithOTPPhoneNumberRequest"><code class="docutils literal notranslate"><span class="pre">LoginWithOTPPhoneNumberRequest</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.LoginWithOTPPhoneNumberRequest.code"><code class="docutils literal notranslate"><span class="pre">LoginWithOTPPhoneNumberRequest.code</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.LoginWithOTPPhoneNumberRequest.model_config"><code class="docutils literal notranslate"><span class="pre">LoginWithOTPPhoneNumberRequest.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.LoginWithOTPPhoneNumberRequest.phone_number"><code class="docutils literal notranslate"><span class="pre">LoginWithOTPPhoneNumberRequest.phone_number</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.LoginWithPasswordResponse"><code class="docutils literal notranslate"><span class="pre">LoginWithPasswordResponse</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.LoginWithPasswordResponse.model_config"><code class="docutils literal notranslate"><span class="pre">LoginWithPasswordResponse.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.RequestMagicLinkEmailRequest"><code class="docutils literal notranslate"><span class="pre">RequestMagicLinkEmailRequest</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.RequestMagicLinkEmailRequest.email"><code class="docutils literal notranslate"><span class="pre">RequestMagicLinkEmailRequest.email</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.RequestMagicLinkEmailRequest.model_config"><code class="docutils literal notranslate"><span class="pre">RequestMagicLinkEmailRequest.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.RequestMagicLinkSMSRequest"><code class="docutils literal notranslate"><span class="pre">RequestMagicLinkSMSRequest</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.RequestMagicLinkSMSRequest.model_config"><code class="docutils literal notranslate"><span class="pre">RequestMagicLinkSMSRequest.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.RequestMagicLinkSMSRequest.phone_number"><code class="docutils literal notranslate"><span class="pre">RequestMagicLinkSMSRequest.phone_number</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.RequestOTPEmailRequest"><code class="docutils literal notranslate"><span class="pre">RequestOTPEmailRequest</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.RequestOTPEmailRequest.email"><code class="docutils literal notranslate"><span class="pre">RequestOTPEmailRequest.email</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.RequestOTPEmailRequest.model_config"><code class="docutils literal notranslate"><span class="pre">RequestOTPEmailRequest.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.RequestOTPSMSRequest"><code class="docutils literal notranslate"><span class="pre">RequestOTPSMSRequest</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.RequestOTPSMSRequest.model_config"><code class="docutils literal notranslate"><span class="pre">RequestOTPSMSRequest.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.RequestOTPSMSRequest.phone_number"><code class="docutils literal notranslate"><span class="pre">RequestOTPSMSRequest.phone_number</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.RequestSignUpEmailRequest"><code class="docutils literal notranslate"><span class="pre">RequestSignUpEmailRequest</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.RequestSignUpEmailRequest.email"><code class="docutils literal notranslate"><span class="pre">RequestSignUpEmailRequest.email</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.RequestSignUpEmailRequest.model_config"><code class="docutils literal notranslate"><span class="pre">RequestSignUpEmailRequest.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.RequestSignUpSMSRequest"><code class="docutils literal notranslate"><span class="pre">RequestSignUpSMSRequest</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.RequestSignUpSMSRequest.model_config"><code class="docutils literal notranslate"><span class="pre">RequestSignUpSMSRequest.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.RequestSignUpSMSRequest.phone_number"><code class="docutils literal notranslate"><span class="pre">RequestSignUpSMSRequest.phone_number</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.SignUpRequest"><code class="docutils literal notranslate"><span class="pre">SignUpRequest</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.SignUpRequest.model_config"><code class="docutils literal notranslate"><span class="pre">SignUpRequest.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.SignUpRequest.token"><code class="docutils literal notranslate"><span class="pre">SignUpRequest.token</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.SignUpResponse"><code class="docutils literal notranslate"><span class="pre">SignUpResponse</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.SignUpResponse.model_config"><code class="docutils literal notranslate"><span class="pre">SignUpResponse.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.TokenResponse"><code class="docutils literal notranslate"><span class="pre">TokenResponse</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.TokenResponse.access_token"><code class="docutils literal notranslate"><span class="pre">TokenResponse.access_token</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.TokenResponse.model_config"><code class="docutils literal notranslate"><span class="pre">TokenResponse.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.auth.TokenResponse.token_type"><code class="docutils literal notranslate"><span class="pre">TokenResponse.token_type</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="arbor_imago.routers.html#module-arbor_imago.routers.base">arbor_imago.routers.base module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.DeleteParams"><code class="docutils literal notranslate"><span class="pre">DeleteParams</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.DeleteParams.authorization"><code class="docutils literal notranslate"><span class="pre">DeleteParams.authorization</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.DeleteParams.id"><code class="docutils literal notranslate"><span class="pre">DeleteParams.id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.GetManyParams"><code class="docutils literal notranslate"><span class="pre">GetManyParams</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.GetManyParams.authorization"><code class="docutils literal notranslate"><span class="pre">GetManyParams.authorization</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.GetManyParams.order_bys"><code class="docutils literal notranslate"><span class="pre">GetManyParams.order_bys</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.GetManyParams.pagination"><code class="docutils literal notranslate"><span class="pre">GetManyParams.pagination</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.GetManyParams.query"><code class="docutils literal notranslate"><span class="pre">GetManyParams.query</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.GetParams"><code class="docutils literal notranslate"><span class="pre">GetParams</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.GetParams.authorization"><code class="docutils literal notranslate"><span class="pre">GetParams.authorization</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.GetParams.id"><code class="docutils literal notranslate"><span class="pre">GetParams.id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.HasAdmin"><code class="docutils literal notranslate"><span class="pre">HasAdmin</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.HasPrefix"><code class="docutils literal notranslate"><span class="pre">HasPrefix</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.HasService"><code class="docutils literal notranslate"><span class="pre">HasService</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.HasTag"><code class="docutils literal notranslate"><span class="pre">HasTag</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.NotFoundError"><code class="docutils literal notranslate"><span class="pre">NotFoundError</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.PatchParams"><code class="docutils literal notranslate"><span class="pre">PatchParams</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.PatchParams.authorization"><code class="docutils literal notranslate"><span class="pre">PatchParams.authorization</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.PatchParams.id"><code class="docutils literal notranslate"><span class="pre">PatchParams.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.PatchParams.update_model"><code class="docutils literal notranslate"><span class="pre">PatchParams.update_model</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.PostParams"><code class="docutils literal notranslate"><span class="pre">PostParams</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.PostParams.authorization"><code class="docutils literal notranslate"><span class="pre">PostParams.authorization</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.PostParams.create_model"><code class="docutils literal notranslate"><span class="pre">PostParams.create_model</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.Router"><code class="docutils literal notranslate"><span class="pre">Router</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.Router.delete_responses"><code class="docutils literal notranslate"><span class="pre">Router.delete_responses()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.Router.get_responses"><code class="docutils literal notranslate"><span class="pre">Router.get_responses()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.Router.patch_responses"><code class="docutils literal notranslate"><span class="pre">Router.patch_responses()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.Router.post_responses"><code class="docutils literal notranslate"><span class="pre">Router.post_responses()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.RouterVerbParams"><code class="docutils literal notranslate"><span class="pre">RouterVerbParams</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.RouterVerbParams.authorization"><code class="docutils literal notranslate"><span class="pre">RouterVerbParams.authorization</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.WithId"><code class="docutils literal notranslate"><span class="pre">WithId</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.WithId.id"><code class="docutils literal notranslate"><span class="pre">WithId.id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.get_pagination"><code class="docutils literal notranslate"><span class="pre">get_pagination()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.order_by_depends"><code class="docutils literal notranslate"><span class="pre">order_by_depends()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="arbor_imago.routers.html#module-arbor_imago.routers.gallery">arbor_imago.routers.gallery module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.gallery.GalleryAdminRouter"><code class="docutils literal notranslate"><span class="pre">GalleryAdminRouter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.gallery.GalleryAdminRouter.by_id"><code class="docutils literal notranslate"><span class="pre">GalleryAdminRouter.by_id()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.gallery.GalleryAdminRouter.check_availability"><code class="docutils literal notranslate"><span class="pre">GalleryAdminRouter.check_availability()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.gallery.GalleryAdminRouter.create"><code class="docutils literal notranslate"><span class="pre">GalleryAdminRouter.create()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.gallery.GalleryAdminRouter.delete"><code class="docutils literal notranslate"><span class="pre">GalleryAdminRouter.delete()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.gallery.GalleryAdminRouter.list_by_user"><code class="docutils literal notranslate"><span class="pre">GalleryAdminRouter.list_by_user()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.gallery.GalleryAdminRouter.update"><code class="docutils literal notranslate"><span class="pre">GalleryAdminRouter.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.gallery.GalleryRouter"><code class="docutils literal notranslate"><span class="pre">GalleryRouter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.gallery.GalleryRouter.by_id"><code class="docutils literal notranslate"><span class="pre">GalleryRouter.by_id()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.gallery.GalleryRouter.check_availability"><code class="docutils literal notranslate"><span class="pre">GalleryRouter.check_availability()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.gallery.GalleryRouter.create"><code class="docutils literal notranslate"><span class="pre">GalleryRouter.create()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.gallery.GalleryRouter.delete"><code class="docutils literal notranslate"><span class="pre">GalleryRouter.delete()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.gallery.GalleryRouter.list"><code class="docutils literal notranslate"><span class="pre">GalleryRouter.list()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.gallery.GalleryRouter.sync"><code class="docutils literal notranslate"><span class="pre">GalleryRouter.sync()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.gallery.GalleryRouter.update"><code class="docutils literal notranslate"><span class="pre">GalleryRouter.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.gallery.GalleryRouter.upload_file"><code class="docutils literal notranslate"><span class="pre">GalleryRouter.upload_file()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="arbor_imago.routers.html#module-arbor_imago.routers.pages">arbor_imago.routers.pages module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.GalleryPageResponse"><code class="docutils literal notranslate"><span class="pre">GalleryPageResponse</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.GalleryPageResponse.children"><code class="docutils literal notranslate"><span class="pre">GalleryPageResponse.children</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.GalleryPageResponse.gallery"><code class="docutils literal notranslate"><span class="pre">GalleryPageResponse.gallery</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.GalleryPageResponse.model_config"><code class="docutils literal notranslate"><span class="pre">GalleryPageResponse.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.GalleryPageResponse.parents"><code class="docutils literal notranslate"><span class="pre">GalleryPageResponse.parents</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.HomePageResponse"><code class="docutils literal notranslate"><span class="pre">HomePageResponse</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.HomePageResponse.model_config"><code class="docutils literal notranslate"><span class="pre">HomePageResponse.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.PagesAdminRouter"><code class="docutils literal notranslate"><span class="pre">PagesAdminRouter</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.PagesRouter"><code class="docutils literal notranslate"><span class="pre">PagesRouter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.PagesRouter.gallery"><code class="docutils literal notranslate"><span class="pre">PagesRouter.gallery()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.PagesRouter.home"><code class="docutils literal notranslate"><span class="pre">PagesRouter.home()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.PagesRouter.profile"><code class="docutils literal notranslate"><span class="pre">PagesRouter.profile()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.PagesRouter.settings"><code class="docutils literal notranslate"><span class="pre">PagesRouter.settings()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.PagesRouter.settings_api_keys"><code class="docutils literal notranslate"><span class="pre">PagesRouter.settings_api_keys()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.PagesRouter.settings_user_access_tokens"><code class="docutils literal notranslate"><span class="pre">PagesRouter.settings_user_access_tokens()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.PagesRouter.styles"><code class="docutils literal notranslate"><span class="pre">PagesRouter.styles()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.ProfilePageResponse"><code class="docutils literal notranslate"><span class="pre">ProfilePageResponse</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.ProfilePageResponse.model_config"><code class="docutils literal notranslate"><span class="pre">ProfilePageResponse.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.ProfilePageResponse.user"><code class="docutils literal notranslate"><span class="pre">ProfilePageResponse.user</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.SettingsApiKeysPageResponse"><code class="docutils literal notranslate"><span class="pre">SettingsApiKeysPageResponse</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.SettingsApiKeysPageResponse.api_key_count"><code class="docutils literal notranslate"><span class="pre">SettingsApiKeysPageResponse.api_key_count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.SettingsApiKeysPageResponse.api_keys"><code class="docutils literal notranslate"><span class="pre">SettingsApiKeysPageResponse.api_keys</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.SettingsApiKeysPageResponse.model_config"><code class="docutils literal notranslate"><span class="pre">SettingsApiKeysPageResponse.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.SettingsPageResponse"><code class="docutils literal notranslate"><span class="pre">SettingsPageResponse</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.SettingsPageResponse.model_config"><code class="docutils literal notranslate"><span class="pre">SettingsPageResponse.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.SettingsUserAccessTokensPageResponse"><code class="docutils literal notranslate"><span class="pre">SettingsUserAccessTokensPageResponse</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.SettingsUserAccessTokensPageResponse.model_config"><code class="docutils literal notranslate"><span class="pre">SettingsUserAccessTokensPageResponse.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.SettingsUserAccessTokensPageResponse.user_access_token_count"><code class="docutils literal notranslate"><span class="pre">SettingsUserAccessTokensPageResponse.user_access_token_count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.SettingsUserAccessTokensPageResponse.user_access_tokens"><code class="docutils literal notranslate"><span class="pre">SettingsUserAccessTokensPageResponse.user_access_tokens</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.StylesPageResponse"><code class="docutils literal notranslate"><span class="pre">StylesPageResponse</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.pages.StylesPageResponse.model_config"><code class="docutils literal notranslate"><span class="pre">StylesPageResponse.model_config</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="arbor_imago.routers.html#module-arbor_imago.routers.user">arbor_imago.routers.user module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user.UserAdminRouter"><code class="docutils literal notranslate"><span class="pre">UserAdminRouter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user.UserAdminRouter.by_id"><code class="docutils literal notranslate"><span class="pre">UserAdminRouter.by_id()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user.UserAdminRouter.create"><code class="docutils literal notranslate"><span class="pre">UserAdminRouter.create()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user.UserAdminRouter.delete"><code class="docutils literal notranslate"><span class="pre">UserAdminRouter.delete()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user.UserAdminRouter.list"><code class="docutils literal notranslate"><span class="pre">UserAdminRouter.list()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user.UserAdminRouter.update"><code class="docutils literal notranslate"><span class="pre">UserAdminRouter.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user.UserRouter"><code class="docutils literal notranslate"><span class="pre">UserRouter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user.UserRouter.by_id"><code class="docutils literal notranslate"><span class="pre">UserRouter.by_id()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user.UserRouter.check_username_availability"><code class="docutils literal notranslate"><span class="pre">UserRouter.check_username_availability()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user.UserRouter.delete_me"><code class="docutils literal notranslate"><span class="pre">UserRouter.delete_me()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user.UserRouter.get_me"><code class="docutils literal notranslate"><span class="pre">UserRouter.get_me()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user.UserRouter.list"><code class="docutils literal notranslate"><span class="pre">UserRouter.list()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user.UserRouter.update_me"><code class="docutils literal notranslate"><span class="pre">UserRouter.update_me()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="arbor_imago.routers.html#module-arbor_imago.routers.user_access_token">arbor_imago.routers.user_access_token module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user_access_token.UserAccessTokenAdminRouter"><code class="docutils literal notranslate"><span class="pre">UserAccessTokenAdminRouter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user_access_token.UserAccessTokenAdminRouter.by_id"><code class="docutils literal notranslate"><span class="pre">UserAccessTokenAdminRouter.by_id()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user_access_token.UserAccessTokenAdminRouter.create"><code class="docutils literal notranslate"><span class="pre">UserAccessTokenAdminRouter.create()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user_access_token.UserAccessTokenAdminRouter.delete"><code class="docutils literal notranslate"><span class="pre">UserAccessTokenAdminRouter.delete()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user_access_token.UserAccessTokenAdminRouter.list_by_user"><code class="docutils literal notranslate"><span class="pre">UserAccessTokenAdminRouter.list_by_user()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user_access_token.UserAccessTokenRouter"><code class="docutils literal notranslate"><span class="pre">UserAccessTokenRouter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user_access_token.UserAccessTokenRouter.by_id"><code class="docutils literal notranslate"><span class="pre">UserAccessTokenRouter.by_id()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user_access_token.UserAccessTokenRouter.count"><code class="docutils literal notranslate"><span class="pre">UserAccessTokenRouter.count()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user_access_token.UserAccessTokenRouter.delete"><code class="docutils literal notranslate"><span class="pre">UserAccessTokenRouter.delete()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user_access_token.UserAccessTokenRouter.list"><code class="docutils literal notranslate"><span class="pre">UserAccessTokenRouter.list()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.user_access_token.user_access_token_pagination"><code class="docutils literal notranslate"><span class="pre">user_access_token_pagination()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="arbor_imago.routers.html#module-arbor_imago.routers">Module contents</a></li>
 </ul>
 </li>
@@ -436,7 +858,69 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="arbor_imago.schemas.html#arbor-imago-schemas-gallery-module">arbor_imago.schemas.gallery module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arbor_imago.schemas.html#module-arbor_imago.schemas.gallery">arbor_imago.schemas.gallery module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryAdminAvailable"><code class="docutils literal notranslate"><span class="pre">GalleryAdminAvailable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryAdminAvailable.model_config"><code class="docutils literal notranslate"><span class="pre">GalleryAdminAvailable.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryAdminAvailable.user_id"><code class="docutils literal notranslate"><span class="pre">GalleryAdminAvailable.user_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryAdminCreate"><code class="docutils literal notranslate"><span class="pre">GalleryAdminCreate</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryAdminCreate.model_config"><code class="docutils literal notranslate"><span class="pre">GalleryAdminCreate.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryAdminCreate.parent_id"><code class="docutils literal notranslate"><span class="pre">GalleryAdminCreate.parent_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryAdminCreate.user_id"><code class="docutils literal notranslate"><span class="pre">GalleryAdminCreate.user_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryAdminUpdate"><code class="docutils literal notranslate"><span class="pre">GalleryAdminUpdate</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryAdminUpdate.model_config"><code class="docutils literal notranslate"><span class="pre">GalleryAdminUpdate.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryAvailable"><code class="docutils literal notranslate"><span class="pre">GalleryAvailable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryAvailable.date"><code class="docutils literal notranslate"><span class="pre">GalleryAvailable.date</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryAvailable.model_config"><code class="docutils literal notranslate"><span class="pre">GalleryAvailable.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryAvailable.name"><code class="docutils literal notranslate"><span class="pre">GalleryAvailable.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryAvailable.parent_id"><code class="docutils literal notranslate"><span class="pre">GalleryAvailable.parent_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryCreate"><code class="docutils literal notranslate"><span class="pre">GalleryCreate</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryCreate.model_config"><code class="docutils literal notranslate"><span class="pre">GalleryCreate.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryCreate.parent_id"><code class="docutils literal notranslate"><span class="pre">GalleryCreate.parent_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryExport"><code class="docutils literal notranslate"><span class="pre">GalleryExport</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryExport.date"><code class="docutils literal notranslate"><span class="pre">GalleryExport.date</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryExport.description"><code class="docutils literal notranslate"><span class="pre">GalleryExport.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryExport.id"><code class="docutils literal notranslate"><span class="pre">GalleryExport.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryExport.model_config"><code class="docutils literal notranslate"><span class="pre">GalleryExport.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryExport.name"><code class="docutils literal notranslate"><span class="pre">GalleryExport.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryExport.parent_id"><code class="docutils literal notranslate"><span class="pre">GalleryExport.parent_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryExport.user_id"><code class="docutils literal notranslate"><span class="pre">GalleryExport.user_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryImport"><code class="docutils literal notranslate"><span class="pre">GalleryImport</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryImport.model_config"><code class="docutils literal notranslate"><span class="pre">GalleryImport.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryPrivate"><code class="docutils literal notranslate"><span class="pre">GalleryPrivate</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryPrivate.model_config"><code class="docutils literal notranslate"><span class="pre">GalleryPrivate.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryPrivate.visibility_level"><code class="docutils literal notranslate"><span class="pre">GalleryPrivate.visibility_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryPublic"><code class="docutils literal notranslate"><span class="pre">GalleryPublic</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryPublic.model_config"><code class="docutils literal notranslate"><span class="pre">GalleryPublic.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryUpdate"><code class="docutils literal notranslate"><span class="pre">GalleryUpdate</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryUpdate.date"><code class="docutils literal notranslate"><span class="pre">GalleryUpdate.date</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryUpdate.description"><code class="docutils literal notranslate"><span class="pre">GalleryUpdate.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryUpdate.model_config"><code class="docutils literal notranslate"><span class="pre">GalleryUpdate.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryUpdate.name"><code class="docutils literal notranslate"><span class="pre">GalleryUpdate.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryUpdate.parent_id"><code class="docutils literal notranslate"><span class="pre">GalleryUpdate.parent_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryUpdate.user_id"><code class="docutils literal notranslate"><span class="pre">GalleryUpdate.user_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery.GalleryUpdate.visibility_level"><code class="docutils literal notranslate"><span class="pre">GalleryUpdate.visibility_level</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="arbor_imago.schemas.html#module-arbor_imago.schemas.gallery_permission">arbor_imago.schemas.gallery_permission module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery_permission.GalleryPermissionAdminCreate"><code class="docutils literal notranslate"><span class="pre">GalleryPermissionAdminCreate</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.gallery_permission.GalleryPermissionAdminCreate.gallery_id"><code class="docutils literal notranslate"><span class="pre">GalleryPermissionAdminCreate.gallery_id</span></code></a></li>
@@ -589,7 +1073,52 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="arbor_imago.schemas.html#arbor-imago-schemas-user-module">arbor_imago.schemas.user module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arbor_imago.schemas.html#module-arbor_imago.schemas.user">arbor_imago.schemas.user module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserAdminCreate"><code class="docutils literal notranslate"><span class="pre">UserAdminCreate</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserAdminCreate.model_config"><code class="docutils literal notranslate"><span class="pre">UserAdminCreate.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserAdminCreate.user_role_id"><code class="docutils literal notranslate"><span class="pre">UserAdminCreate.user_role_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserAdminUpdate"><code class="docutils literal notranslate"><span class="pre">UserAdminUpdate</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserAdminUpdate.model_config"><code class="docutils literal notranslate"><span class="pre">UserAdminUpdate.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserAdminUpdate.user_role_id"><code class="docutils literal notranslate"><span class="pre">UserAdminUpdate.user_role_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserCreate"><code class="docutils literal notranslate"><span class="pre">UserCreate</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserCreate.email"><code class="docutils literal notranslate"><span class="pre">UserCreate.email</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserCreate.model_config"><code class="docutils literal notranslate"><span class="pre">UserCreate.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserExport"><code class="docutils literal notranslate"><span class="pre">UserExport</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserExport.id"><code class="docutils literal notranslate"><span class="pre">UserExport.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserExport.model_config"><code class="docutils literal notranslate"><span class="pre">UserExport.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserExport.username"><code class="docutils literal notranslate"><span class="pre">UserExport.username</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserImport"><code class="docutils literal notranslate"><span class="pre">UserImport</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserImport.model_config"><code class="docutils literal notranslate"><span class="pre">UserImport.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserImport.password"><code class="docutils literal notranslate"><span class="pre">UserImport.password</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserImport.phone_number"><code class="docutils literal notranslate"><span class="pre">UserImport.phone_number</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserImport.username"><code class="docutils literal notranslate"><span class="pre">UserImport.username</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserPrivate"><code class="docutils literal notranslate"><span class="pre">UserPrivate</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserPrivate.email"><code class="docutils literal notranslate"><span class="pre">UserPrivate.email</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserPrivate.model_config"><code class="docutils literal notranslate"><span class="pre">UserPrivate.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserPrivate.user_role_id"><code class="docutils literal notranslate"><span class="pre">UserPrivate.user_role_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserPublic"><code class="docutils literal notranslate"><span class="pre">UserPublic</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserPublic.model_config"><code class="docutils literal notranslate"><span class="pre">UserPublic.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserUpdate"><code class="docutils literal notranslate"><span class="pre">UserUpdate</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserUpdate.email"><code class="docutils literal notranslate"><span class="pre">UserUpdate.email</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user.UserUpdate.model_config"><code class="docutils literal notranslate"><span class="pre">UserUpdate.model_config</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="arbor_imago.schemas.html#module-arbor_imago.schemas.user_access_token">arbor_imago.schemas.user_access_token module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user_access_token.UserAccessTokenAdminCreate"><code class="docutils literal notranslate"><span class="pre">UserAccessTokenAdminCreate</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arbor_imago.schemas.html#arbor_imago.schemas.user_access_token.UserAccessTokenAdminCreate.expiry"><code class="docutils literal notranslate"><span class="pre">UserAccessTokenAdminCreate.expiry</span></code></a></li>
@@ -830,15 +1359,95 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="arbor_imago.services.html#arbor-imago-services-gallery-module">arbor_imago.services.gallery module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arbor_imago.services.html#arbor-imago-services-gallery-permission-module">arbor_imago.services.gallery_permission module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arbor_imago.services.html#arbor-imago-services-image-file-metadata-module">arbor_imago.services.image_file_metadata module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arbor_imago.services.html#arbor-imago-services-image-version-module">arbor_imago.services.image_version module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arbor_imago.services.html#arbor-imago-services-otp-module">arbor_imago.services.otp module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arbor_imago.services.html#arbor-imago-services-sign-up-module">arbor_imago.services.sign_up module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arbor_imago.services.html#arbor-imago-services-user-module">arbor_imago.services.user module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arbor_imago.services.html#arbor-imago-services-user-access-token-module">arbor_imago.services.user_access_token module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arbor_imago.services.html#module-contents">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arbor_imago.services.html#module-arbor_imago.services.gallery">arbor_imago.services.gallery module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.gallery.Gallery"><code class="docutils literal notranslate"><span class="pre">Gallery</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.gallery.Gallery.get_date_and_name_from_folder_name"><code class="docutils literal notranslate"><span class="pre">Gallery.get_date_and_name_from_folder_name()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.gallery.Gallery.get_dir"><code class="docutils literal notranslate"><span class="pre">Gallery.get_dir()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.gallery.Gallery.get_parents"><code class="docutils literal notranslate"><span class="pre">Gallery.get_parents()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.gallery.Gallery.get_root_gallery"><code class="docutils literal notranslate"><span class="pre">Gallery.get_root_gallery()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.gallery.Gallery.is_available"><code class="docutils literal notranslate"><span class="pre">Gallery.is_available()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.gallery.Gallery.model_folder_name"><code class="docutils literal notranslate"><span class="pre">Gallery.model_folder_name()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.gallery.Gallery.model_inst_from_create_model"><code class="docutils literal notranslate"><span class="pre">Gallery.model_inst_from_create_model()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="arbor_imago.services.html#module-arbor_imago.services.gallery_permission">arbor_imago.services.gallery_permission module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.gallery_permission.GalleryPermission"><code class="docutils literal notranslate"><span class="pre">GalleryPermission</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.gallery_permission.GalleryPermission.model_id"><code class="docutils literal notranslate"><span class="pre">GalleryPermission.model_id()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="arbor_imago.services.html#module-arbor_imago.services.image_file_metadata">arbor_imago.services.image_file_metadata module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.image_file_metadata.ImageFileMetadata"><code class="docutils literal notranslate"><span class="pre">ImageFileMetadata</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.image_file_metadata.ImageFileMetadata.SUFFIXES"><code class="docutils literal notranslate"><span class="pre">ImageFileMetadata.SUFFIXES</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.image_file_metadata.ImageFileMetadata.model_id"><code class="docutils literal notranslate"><span class="pre">ImageFileMetadata.model_id()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.image_file_metadata.ImageFileMetadata.parse_file_stem"><code class="docutils literal notranslate"><span class="pre">ImageFileMetadata.parse_file_stem()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="arbor_imago.services.html#module-arbor_imago.services.image_version">arbor_imago.services.image_version module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.image_version.ImageVersion"><code class="docutils literal notranslate"><span class="pre">ImageVersion</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="arbor_imago.services.html#module-arbor_imago.services.otp">arbor_imago.services.otp module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.otp.OTP"><code class="docutils literal notranslate"><span class="pre">OTP</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.otp.OTP.auth_type"><code class="docutils literal notranslate"><span class="pre">OTP.auth_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.otp.OTP.generate_code"><code class="docutils literal notranslate"><span class="pre">OTP.generate_code()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.otp.OTP.hash_code"><code class="docutils literal notranslate"><span class="pre">OTP.hash_code()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.otp.OTP.model_inst_from_create_model"><code class="docutils literal notranslate"><span class="pre">OTP.model_inst_from_create_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.otp.OTP.verify_code"><code class="docutils literal notranslate"><span class="pre">OTP.verify_code()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="arbor_imago.services.html#module-arbor_imago.services.sign_up">arbor_imago.services.sign_up module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.sign_up.SignUp"><code class="docutils literal notranslate"><span class="pre">SignUp</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.sign_up.SignUp.auth_type"><code class="docutils literal notranslate"><span class="pre">SignUp.auth_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.sign_up.SignUp.model_inst_from_create_model"><code class="docutils literal notranslate"><span class="pre">SignUp.model_inst_from_create_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.sign_up.SignUp.model_inst_from_jwt_payload"><code class="docutils literal notranslate"><span class="pre">SignUp.model_inst_from_jwt_payload()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="arbor_imago.services.html#module-arbor_imago.services.user">arbor_imago.services.user module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.user.User"><code class="docutils literal notranslate"><span class="pre">User</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.user.User.DEFAULT_ROLE_ID"><code class="docutils literal notranslate"><span class="pre">User.DEFAULT_ROLE_ID</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.user.User.authenticate"><code class="docutils literal notranslate"><span class="pre">User.authenticate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.user.User.fetch_by_email"><code class="docutils literal notranslate"><span class="pre">User.fetch_by_email()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.user.User.fetch_by_email_or_username"><code class="docutils literal notranslate"><span class="pre">User.fetch_by_email_or_username()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.user.User.fetch_by_username"><code class="docutils literal notranslate"><span class="pre">User.fetch_by_username()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.user.User.get_inst_dir"><code class="docutils literal notranslate"><span class="pre">User.get_inst_dir()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.user.User.hash_password"><code class="docutils literal notranslate"><span class="pre">User.hash_password()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.user.User.is_email_available"><code class="docutils literal notranslate"><span class="pre">User.is_email_available()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.user.User.is_inst_public"><code class="docutils literal notranslate"><span class="pre">User.is_inst_public()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.user.User.is_username_available"><code class="docutils literal notranslate"><span class="pre">User.is_username_available()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.user.User.model_inst_from_create_model"><code class="docutils literal notranslate"><span class="pre">User.model_inst_from_create_model()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="arbor_imago.services.html#module-arbor_imago.services.user_access_token">arbor_imago.services.user_access_token module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.user_access_token.UserAccessToken"><code class="docutils literal notranslate"><span class="pre">UserAccessToken</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.user_access_token.UserAccessToken.auth_type"><code class="docutils literal notranslate"><span class="pre">UserAccessToken.auth_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.user_access_token.UserAccessToken.get_scope_ids"><code class="docutils literal notranslate"><span class="pre">UserAccessToken.get_scope_ids()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.user_access_token.UserAccessToken.model_inst_from_create_model"><code class="docutils literal notranslate"><span class="pre">UserAccessToken.model_inst_from_create_model()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="arbor_imago.services.html#module-arbor_imago.services">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.AuthCredentialTypeToService"><code class="docutils literal notranslate"><span class="pre">AuthCredentialTypeToService</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.AuthCredentialTypeToService.access_token"><code class="docutils literal notranslate"><span class="pre">AuthCredentialTypeToService.access_token</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.AuthCredentialTypeToService.api_key"><code class="docutils literal notranslate"><span class="pre">AuthCredentialTypeToService.api_key</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.AuthCredentialTypeToService.otp"><code class="docutils literal notranslate"><span class="pre">AuthCredentialTypeToService.otp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.services.html#arbor_imago.services.AuthCredentialTypeToService.sign_up"><code class="docutils literal notranslate"><span class="pre">AuthCredentialTypeToService.sign_up</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -847,14 +1456,214 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 </section>
-<section id="arbor-imago-app-module">
-<h2>arbor_imago.app module<a class="headerlink" href="#arbor-imago-app-module" title="Link to this heading"></a></h2>
+<section id="module-arbor_imago.app">
+<span id="arbor-imago-app-module"></span><h2>arbor_imago.app module<a class="headerlink" href="#module-arbor_imago.app" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="arbor_imago.app.custom_http_exception_handler">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arbor_imago.app.</span></span><span class="sig-name descname"><span class="pre">custom_http_exception_handler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">HTTPException</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/arbor_imago/app.html#custom_http_exception_handler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.app.custom_http_exception_handler" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="arbor_imago.app.lifespan">
+<span class="sig-prename descclassname"><span class="pre">arbor_imago.app.</span></span><span class="sig-name descname"><span class="pre">lifespan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">FastAPI</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/arbor_imago/app.html#lifespan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.app.lifespan" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 </section>
-<section id="arbor-imago-cli-module">
-<h2>arbor_imago.cli module<a class="headerlink" href="#arbor-imago-cli-module" title="Link to this heading"></a></h2>
+<section id="module-arbor_imago.cli">
+<span id="arbor-imago-cli-module"></span><h2>arbor_imago.cli module<a class="headerlink" href="#module-arbor_imago.cli" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="arbor_imago.cli.create_tables">
+<span class="sig-prename descclassname"><span class="pre">arbor_imago.cli.</span></span><span class="sig-name descname"><span class="pre">create_tables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/arbor_imago/cli.html#create_tables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.cli.create_tables" title="Link to this definition"></a></dt>
+<dd><p>Create all database tables.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="arbor_imago.cli.export_openapi">
+<span class="sig-prename descclassname"><span class="pre">arbor_imago.cli.</span></span><span class="sig-name descname"><span class="pre">export_openapi</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/arbor_imago/cli.html#export_openapi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.cli.export_openapi" title="Link to this definition"></a></dt>
+<dd><p>Export OpenAPI schema to file.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="arbor_imago.cli.runserver">
+<span class="sig-prename descclassname"><span class="pre">arbor_imago.cli.</span></span><span class="sig-name descname"><span class="pre">runserver</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/arbor_imago/cli.html#runserver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.cli.runserver" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 </section>
-<section id="arbor-imago-config-module">
-<h2>arbor_imago.config module<a class="headerlink" href="#arbor-imago-config-module" title="Link to this heading"></a></h2>
+<section id="module-arbor_imago.config">
+<span id="arbor-imago-config-module"></span><h2>arbor_imago.config module<a class="headerlink" href="#module-arbor_imago.config" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="arbor_imago.config.AuthConfig">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arbor_imago.config.</span></span><span class="sig-name descname"><span class="pre">AuthConfig</span></span><a class="reference internal" href="_modules/arbor_imago/config.html#AuthConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.config.AuthConfig" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TypedDict</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.AuthConfig.credential_lifespans">
+<span class="sig-name descname"><span class="pre">credential_lifespans</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'access_token'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'magic_link'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'request_sign_up'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'otp'</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">timedelta</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arbor_imago.config.AuthConfig.credential_lifespans" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="arbor_imago.config.AuthEnv">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arbor_imago.config.</span></span><span class="sig-name descname"><span class="pre">AuthEnv</span></span><a class="reference internal" href="_modules/arbor_imago/config.html#AuthEnv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.config.AuthEnv" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TypedDict</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.AuthEnv.credential_lifespans">
+<span class="sig-name descname"><span class="pre">credential_lifespans</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'access_token'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'magic_link'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'request_sign_up'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'otp'</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'ISO</span> <span class="pre">8601</span> <span class="pre">duration</span> <span class="pre">string'</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arbor_imago.config.AuthEnv.credential_lifespans" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="arbor_imago.config.BackendConfig">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arbor_imago.config.</span></span><span class="sig-name descname"><span class="pre">BackendConfig</span></span><a class="reference internal" href="_modules/arbor_imago/config.html#BackendConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.config.BackendConfig" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TypedDict</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.BackendConfig.AUTH">
+<span class="sig-name descname"><span class="pre">AUTH</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#arbor_imago.config.AuthEnv" title="arbor_imago.config.AuthEnv"><span class="pre">AuthEnv</span></a></em><a class="headerlink" href="#arbor_imago.config.BackendConfig.AUTH" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.BackendConfig.DB">
+<span class="sig-name descname"><span class="pre">DB</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#arbor_imago.config.DbEnv" title="arbor_imago.config.DbEnv"><span class="pre">DbEnv</span></a></em><a class="headerlink" href="#arbor_imago.config.BackendConfig.DB" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.BackendConfig.GOOGLE_CLIENT_PATH">
+<span class="sig-name descname"><span class="pre">GOOGLE_CLIENT_PATH</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#arbor_imago.config.BackendConfig.GOOGLE_CLIENT_PATH" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.BackendConfig.MEDIA_DIR">
+<span class="sig-name descname"><span class="pre">MEDIA_DIR</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#arbor_imago.config.BackendConfig.MEDIA_DIR" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.BackendConfig.OPENAPI_SCHEMA_PATH">
+<span class="sig-name descname"><span class="pre">OPENAPI_SCHEMA_PATH</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#arbor_imago.config.BackendConfig.OPENAPI_SCHEMA_PATH" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.BackendConfig.URL">
+<span class="sig-name descname"><span class="pre">URL</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#arbor_imago.config.BackendConfig.URL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.BackendConfig.UVICORN">
+<span class="sig-name descname"><span class="pre">UVICORN</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><a class="headerlink" href="#arbor_imago.config.BackendConfig.UVICORN" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="arbor_imago.config.BackendSecrets">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arbor_imago.config.</span></span><span class="sig-name descname"><span class="pre">BackendSecrets</span></span><a class="reference internal" href="_modules/arbor_imago/config.html#BackendSecrets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.config.BackendSecrets" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TypedDict</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.BackendSecrets.JWT_ALGORITHM">
+<span class="sig-name descname"><span class="pre">JWT_ALGORITHM</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#arbor_imago.config.BackendSecrets.JWT_ALGORITHM" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.BackendSecrets.JWT_SECRET_KEY">
+<span class="sig-name descname"><span class="pre">JWT_SECRET_KEY</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#arbor_imago.config.BackendSecrets.JWT_SECRET_KEY" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="arbor_imago.config.DbEnv">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arbor_imago.config.</span></span><span class="sig-name descname"><span class="pre">DbEnv</span></span><a class="reference internal" href="_modules/arbor_imago/config.html#DbEnv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.config.DbEnv" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TypedDict</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.DbEnv.URL">
+<span class="sig-name descname"><span class="pre">URL</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#arbor_imago.config.DbEnv.URL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="arbor_imago.config.SharedConfig">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arbor_imago.config.</span></span><span class="sig-name descname"><span class="pre">SharedConfig</span></span><a class="reference internal" href="_modules/arbor_imago/config.html#SharedConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.config.SharedConfig" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TypedDict</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.SharedConfig.AUTH_KEY">
+<span class="sig-name descname"><span class="pre">AUTH_KEY</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#arbor_imago.config.SharedConfig.AUTH_KEY" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.SharedConfig.BACKEND_URL">
+<span class="sig-name descname"><span class="pre">BACKEND_URL</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#arbor_imago.config.SharedConfig.BACKEND_URL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.SharedConfig.FRONTEND_ROUTES">
+<span class="sig-name descname"><span class="pre">FRONTEND_ROUTES</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arbor_imago.config.SharedConfig.FRONTEND_ROUTES" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.SharedConfig.FRONTEND_URL">
+<span class="sig-name descname"><span class="pre">FRONTEND_URL</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#arbor_imago.config.SharedConfig.FRONTEND_URL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.SharedConfig.GOOGLE_CLIENT_ID">
+<span class="sig-name descname"><span class="pre">GOOGLE_CLIENT_ID</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#arbor_imago.config.SharedConfig.GOOGLE_CLIENT_ID" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.SharedConfig.HEADER_KEYS">
+<span class="sig-name descname"><span class="pre">HEADER_KEYS</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arbor_imago.config.SharedConfig.HEADER_KEYS" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.SharedConfig.OTP_LENGTH">
+<span class="sig-name descname"><span class="pre">OTP_LENGTH</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#arbor_imago.config.SharedConfig.OTP_LENGTH" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.SharedConfig.PERMISSION_LEVEL_NAME_MAPPING">
+<span class="sig-name descname"><span class="pre">PERMISSION_LEVEL_NAME_MAPPING</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'editor'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'viewer'</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arbor_imago.config.SharedConfig.PERMISSION_LEVEL_NAME_MAPPING" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.SharedConfig.SCOPE_NAME_MAPPING">
+<span class="sig-name descname"><span class="pre">SCOPE_NAME_MAPPING</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'admin'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'users.read'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'users.write'</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arbor_imago.config.SharedConfig.SCOPE_NAME_MAPPING" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.SharedConfig.USER_ROLE_NAME_MAPPING">
+<span class="sig-name descname"><span class="pre">USER_ROLE_NAME_MAPPING</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'admin'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'user'</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arbor_imago.config.SharedConfig.USER_ROLE_NAME_MAPPING" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.SharedConfig.USER_ROLE_SCOPES">
+<span class="sig-name descname"><span class="pre">USER_ROLE_SCOPES</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'admin'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'user'</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'admin'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'users.read'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'users.write'</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arbor_imago.config.SharedConfig.USER_ROLE_SCOPES" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.SharedConfig.VISIBILITY_LEVEL_NAME_MAPPING">
+<span class="sig-name descname"><span class="pre">VISIBILITY_LEVEL_NAME_MAPPING</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'public'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'private'</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arbor_imago.config.SharedConfig.VISIBILITY_LEVEL_NAME_MAPPING" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="arbor_imago.config.convert_env_path_to_absolute">
+<span class="sig-prename descclassname"><span class="pre">arbor_imago.config.</span></span><span class="sig-name descname"><span class="pre">convert_env_path_to_absolute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Path</span></span></span><a class="reference internal" href="_modules/arbor_imago/config.html#convert_env_path_to_absolute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.config.convert_env_path_to_absolute" title="Link to this definition"></a></dt>
+<dd><p>process a relative path sent to an environment variable</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="arbor_imago.config.process_explicit_config_path">
+<span class="sig-prename descclassname"><span class="pre">arbor_imago.config.</span></span><span class="sig-name descname"><span class="pre">process_explicit_config_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/arbor_imago/config.html#process_explicit_config_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.config.process_explicit_config_path" title="Link to this definition"></a></dt>
+<dd><p>process an explicit config path sent to an environment variable</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="arbor_imago.config.resolve_db_url">
+<span class="sig-prename descclassname"><span class="pre">arbor_imago.config.</span></span><span class="sig-name descname"><span class="pre">resolve_db_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/arbor_imago/config.html#resolve_db_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.config.resolve_db_url" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 </section>
 <section id="module-arbor_imago.core_utils">
 <span id="arbor-imago-core-utils-module"></span><h2>arbor_imago.core_utils module<a class="headerlink" href="#module-arbor_imago.core_utils" title="Link to this heading"></a></h2>
@@ -1675,8 +2484,28 @@ of the time to include. Valid options are ‘auto’, ‘hours’, ‘minutes’
 <section id="module-arbor_imago.main">
 <span id="arbor-imago-main-module"></span><h2>arbor_imago.main module<a class="headerlink" href="#module-arbor_imago.main" title="Link to this heading"></a></h2>
 </section>
-<section id="arbor-imago-utils-module">
-<h2>arbor_imago.utils module<a class="headerlink" href="#arbor-imago-utils-module" title="Link to this heading"></a></h2>
+<section id="module-arbor_imago.utils">
+<span id="arbor-imago-utils-module"></span><h2>arbor_imago.utils module<a class="headerlink" href="#module-arbor_imago.utils" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="arbor_imago.utils.jwt_decode">
+<span class="sig-prename descclassname"><span class="pre">arbor_imago.utils.</span></span><span class="sig-name descname"><span class="pre">jwt_decode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/arbor_imago/utils.html#jwt_decode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.utils.jwt_decode" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="arbor_imago.utils.jwt_encode">
+<span class="sig-prename descclassname"><span class="pre">arbor_imago.utils.</span></span><span class="sig-name descname"><span class="pre">jwt_encode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">payload</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/arbor_imago/utils.html#jwt_encode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.utils.jwt_encode" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="arbor_imago.utils.send_email">
+<span class="sig-prename descclassname"><span class="pre">arbor_imago.utils.</span></span><span class="sig-name descname"><span class="pre">send_email</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recipient</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">EmailStr</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">StringConstraints</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">strip_whitespace</span></span><span class="o"><span class="pre">=</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">to_upper</span></span><span class="o"><span class="pre">=</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">to_lower</span></span><span class="o"><span class="pre">=</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">strict</span></span><span class="o"><span class="pre">=</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">min_length</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">max_length</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">254</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">pattern</span></span><span class="o"><span class="pre">=</span></span><span class="pre">None</span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">body</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/arbor_imago/utils.html#send_email"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.utils.send_email" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="arbor_imago.utils.send_sms">
+<span class="sig-prename descclassname"><span class="pre">arbor_imago.utils.</span></span><span class="sig-name descname"><span class="pre">send_sms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recipient</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/arbor_imago/utils.html#send_sms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.utils.send_sms" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 </section>
 <section id="module-arbor_imago">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-arbor_imago" title="Link to this heading"></a></h2>
