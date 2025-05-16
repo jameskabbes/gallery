@@ -20,7 +20,7 @@ class _Base(
         custom_types.ApiKey.order_by,
     ],
 ):
-    _PREFIX = '/api_keys'
+    _PREFIX = '/api-keys'
     _TAG = 'API Key'
     _SERVICE = ApiKeyService
 
@@ -148,7 +148,8 @@ class ApiKeyRouter(_Base):
                 available=await ApiKeyService.is_available(
                     session, api_key_schema.ApiKeyAdminAvailable(
                         **api_key_available.model_dump(exclude_unset=True),
-                        user_id=cast(custom_types.User.id, authorization._user_id)
+                        user_id=cast(custom_types.User.id,
+                                     authorization._user_id)
                     )
                 )
             )

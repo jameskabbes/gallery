@@ -18,7 +18,7 @@ class _Base(
         str
     ],
 ):
-    _PREFIX = '/api_key_scopes'
+    _PREFIX = '/api-key-scopes'
     _TAG = 'API Key Scope'
     _SERVICE = ApiKeyScopeService
 
@@ -58,8 +58,8 @@ class ApiKeyScopeRouter(_Base):
     def _set_routes(self):
 
         self.router.post(
-            '/{api_key_id}/{scope_id}/')(self.add_scope_to_api_key)
-        self.router.delete('/{api_key_id}/{scope_id}/',
+            '/api-keys/{api_key_id}/scopes/{scope_id}/')(self.add_scope_to_api_key)
+        self.router.delete('/api-keys/{api_key_id}/scopes/{scope_id}/',
                            status_code=status.HTTP_204_NO_CONTENT)(self.remove_scope_from_api_key)
 
 
@@ -98,6 +98,6 @@ class ApiKeyScopeAdminRouter(_Base):
     def _set_routes(self):
 
         self.router.post(
-            '/{api_key_id}/{scope_id}/')(self.add_scope_to_api_key)
-        self.router.delete('/{api_key_id}/{scope_id}/',
+            '/api-keys/{api_key_id}/scopes/{scope_id}/')(self.add_scope_to_api_key)
+        self.router.delete('/api-keys/{api_key_id}/scopes/{scope_id}/',
                            status_code=status.HTTP_204_NO_CONTENT)(self.remove_scope_from_api_key)

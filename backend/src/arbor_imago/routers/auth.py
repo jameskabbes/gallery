@@ -453,7 +453,8 @@ class AuthRouter(base.Router):
         self.router.post(
             '/login/otp/phone_number/')(self.login_otp_phone_number)
         self.router.post('/signup/')(self.signup)
-        # self.router.post("/login/google/", responses={status.HTTP_400_BAD_REQUEST: {'description': 'Invalid token', 'model': DetailOnlyResponse}})(self.login_google)
+        self.router.post("/login/google/", responses={status.HTTP_400_BAD_REQUEST: {
+                         'description': 'Invalid token', 'model': api_schema.DetailOnlyResponse}})(self.login_google)
         self.router.post('/request/signup/')(self.request_sign_up_email)
         self.router.post(
             '/request/magic-link/email/')(self.request_magic_link_email)

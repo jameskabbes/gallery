@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from collections.abc import Sequence
 from typing import Annotated, cast, Optional
 
-from arbor_imago import custom_types
+from arbor_imago import custom_types, config
 from arbor_imago.routers import user as user_router, api_key as api_key_router, gallery as gallery_router, base, user_access_token as user_access_token_router
 from arbor_imago.schemas import api_key as api_key_schema, pagination as pagination_schema, api as api_schema, order_by as order_by_schema, user as user_schema, user_access_token as user_access_token_schema, gallery as gallery_schema
 from arbor_imago.models.tables import ApiKey as ApiKeyTable, UserAccessToken as UserAccessTokenTable, Gallery as GalleryTable
@@ -121,52 +121,51 @@ class PagesRouter(_Base):
             **auth_utils.get_user_session_info(authorization).model_dump()
         )
 
-    # @classmethod
-    # async def gallery(
-    #     cls,
-    #     gallery_id: types.Gallery.id | None,
-    #     authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-    #         auth_utils.make_get_auth_dependency(raise_exceptions=False))],
-    #     root: bool = Query(False),
-    # ) -> GalleryPageResponse:
-    #     async with config.ASYNC_SESSIONMAKER() as session:
-    #         if root:
-    #             if not authorization.isAuthorized:
-    #                 raise HTTPException(
-    #                     status_code=status.HTTP_404_NOT_FOUND,
-    #                     detail='Root gallery does not exist for this user',
-    #                 )
+    @classmethod
+    async def gallery(
+        cls,
+        gallery_id: custom_types.Gallery.id | None,
+        authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+            auth_utils.make_get_auth_dependency(raise_exceptions=False))],
+        root: bool = Query(False),
+    ) -> GalleryPageResponse:
 
-    #             gallery = await GalleryService.get_root_gallery(session, cast(types.User.id, authorization._user_id))
+        if root:
+            async with config.ASYNC_SESSIONMAKER() as session:
+                if not authorization.isAuthorized:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail='Root gallery does not exist for this user',
+                    )
 
-    #             if gallery is None:
-    #                 pass
-    #             else:
-    #                 gallery_id = GalleryService.model_id(gallery)
-    #         else:
-    #             if gallery_id is None:
-    #                 raise HTTPException(
-    #                     status_code=status.HTTP_400_BAD_REQUEST,
-    #                     detail='Must provide a gallery_id or set root=True',
-    #                 )
-    #             else:
-    #                 gallery = await GalleryService.read({
-    #                     'session': session,
-    #                     'authorized_user_id': cast(types.User.id, authorization._user_id),
-    #                     'id': gallery_id,
-    #                     'admin': False
-    #                 })
+                gallery = await GalleryService.get_root_gallery(session, cast(custom_types.User.id, authorization._user_id))
 
-    #         gallery
+                if gallery is None:
+                    pass
+                else:
+                    gallery_id = GalleryService.model_id(gallery)
+        else:
+            if gallery_id is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail='Must provide a gallery_id or set root=True',
+                )
 
-    #         return GalleryPageResponse(
-    #             **auth_utils.get_user_session_info(authorization).model_dump(),
-    #             gallery=gallery_schema.GalleryPublic.model_validate(gallery),
-    #             parents=[gallery_schema.GalleryPublic.model_validate(
-    #                 parent) for parent in await GalleryService.get_parents(session, gallery)],
-    #             children=[gallery_schema.GalleryPublic.model_validate(
-    #                 child) for child in gallery.children]
-    #         )
+            gallery = gallery_router.GalleryRouter.by_id(
+                gallery_id=gallery_id,
+                authorization=authorization,
+            )
+
+        return GalleryPageResponse(
+            **auth_utils.get_user_session_info(authorization).model_dump(),
+            gallery=gallery_schema.GalleryPublic.model_validate(gallery),
+            parents=[],
+            children=[]
+            # parents=[gallery_schema.GalleryPublic.model_validate(
+            #     parent) for parent in await GalleryService.get_parents(session, gallery)],
+            # children=[gallery_schema.GalleryPublic.model_validate(
+            #     child) for child in gallery.children]
+        )
 
     def _set_routes(self):
         self.router.get(
@@ -178,8 +177,8 @@ class PagesRouter(_Base):
         self.router.get('/settings/user-access-tokens/',
                         tags=[user_access_token_router._Base._TAG])(self.settings_user_access_tokens)
         self.router.get('/styles/')(self.styles)
-        # self.router.get('/galleries/{gallery_id}/',
-        #                 tags=[gallery_router._Base._TAG])(self.gallery)
+        self.router.get('/galleries/{gallery_id}/',
+                        tags=[gallery_router._Base._TAG])(self.gallery)
 
 
 class PagesAdminRouter(_Base):

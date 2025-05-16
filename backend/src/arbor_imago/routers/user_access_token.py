@@ -27,7 +27,7 @@ class _Base(
     ]
 ):
 
-    _PREFIX = '/user_access_tokens'
+    _PREFIX = '/user-access-tokens'
     _TAG = 'User Access Token'
     _SERVICE = UserAccessTokenService
 

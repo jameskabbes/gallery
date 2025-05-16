@@ -124,7 +124,8 @@ class GalleryRouter(_Base):
                     session=session,
                     gallery_available_admin=gallery_schema.GalleryAdminAvailable(
                         **gallery_available.model_dump(exclude_unset=True),
-                        user_id=cast(custom_types.User.id, authorization._user_id)
+                        user_id=cast(custom_types.User.id,
+                                     authorization._user_id)
                     )
 
                 )
@@ -181,6 +182,24 @@ class GalleryRouter(_Base):
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
 
+    @classmethod
+    async def sync(
+        cls,
+        gallery_id: custom_types.Gallery.id,
+        authorization: Annotated[auth_utils.GetAuthReturn, Depends(
+            auth_utils.make_get_auth_dependency())]
+    ) -> api_schema.DetailOnlyResponse:
+        async with config.ASYNC_SESSIONMAKER() as session:
+
+            gallery = await cls._get({
+                'authorization': authorization,
+                'id': gallery_id,
+            })
+            dir = await GalleryService.get_dir(session, gallery, config.GALLERIES_DIR)
+
+            # await gallery.sync_with_local(session, c, dir)
+            return api_schema.DetailOnlyResponse(detail='Synced gallery')
+
     def _set_routes(self):
 
         self.router.get('/', tags=[user_router._Base._TAG])(self.list)
@@ -196,6 +215,7 @@ class GalleryRouter(_Base):
 
         self.router.post("/{gallery_id}/upload/",
                          status_code=status.HTTP_201_CREATED)(self.upload_file)
+        self.router.post('/{gallery_id}/sync/')(self.sync)
 
 
 class GalleryAdminRouter(_Base):
@@ -272,7 +292,8 @@ class GalleryAdminRouter(_Base):
                     session=session,
                     gallery_available_admin=gallery_schema.GalleryAdminAvailable(
                         **gallery_available_admin.model_dump(exclude_unset=True),
-                        user_id=cast(custom_types.User.id, authorization._user_id)
+                        user_id=cast(custom_types.User.id,
+                                     authorization._user_id)
                     )
                 )
             )
@@ -295,19 +316,6 @@ class GalleryAdminRouter(_Base):
                     'pagination': pagination
                 })]
 
-    # @classmethod
-    # async def sync(
-        # cls,
-    #     gallery_id: types.Gallery.id,
-    #     authorization: Annotated[auth_utils.GetAuthReturn, Depends(
-    #         auth_utils.make_get_auth_dependency(c=self.client, ))]
-    # ) -> api_schema.DetailOnlyResponse:
-    #     async with config.ASYNC_SESSIONMAKER() as session:
-    #         gallery = await GalleryTable.api_get(GalleryTable.GetParams.model_construct(session=session, c=c, authorized_user_id=authorization._user_id, id=gallery_id))
-    #         dir = await gallery.get_dir(session, c.galleries_dir)
-    #         await gallery.sync_with_local(session, c, dir)
-    #         return api_schema.DetailOnlyResponse(detail='Synced gallery')
-
     def _set_routes(self):
 
         self.router.get('/{gallery_id}/')(self.by_id)
@@ -317,5 +325,3 @@ class GalleryAdminRouter(_Base):
             '/{gallery_id}/', status_code=status.HTTP_204_NO_CONTENT)(self.delete)
         self.router.get('/details/available/')(self.check_availability)
         self.router.get('/users/{user_id}')(self.list_by_user)
-
-        # self.router.post('/{gallery_id}/sync/')(self.sync)
