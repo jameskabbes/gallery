@@ -12,8 +12,9 @@ import { Surface } from './components/Utils/Surface';
 import { VerifySignUp } from './components/Auth/SignUp';
 import { Styles } from './pages/Styles';
 // import { LogInWithMagicLink } from './components/Auth/MagicLink';
-import constants from '../../constants.json';
-import config from '../../config.json';
+
+import { frontendRoutes } from './config/config';
+
 import { VerifyMagicLink } from './components/Auth/MagicLink';
 
 function App(): JSX.Element {
@@ -29,20 +30,20 @@ function App(): JSX.Element {
               <Route path="/" element={<Home />} />
               {/* /galleries */}
               <Route
-                path={`${constants.frontend_urls.galleries}`}
+                path={`${frontendRoutes.galleries}`}
                 element={<Gallery root={true} />}
               />
               {/* /galleries/galleryId */}
               <Route
-                path={`${constants.frontend_urls.galleries}/:galleryId`}
+                path={`${frontendRoutes.galleries}/:galleryId`}
                 element={<Gallery root={false} />}
               />
               <Route
-                path={`${constants.frontend_urls.verify_signup}`}
+                path={`${frontendRoutes.verify_signup}`}
                 element={<VerifySignUp />}
               />
               <Route
-                path={`${constants.frontend_urls.verify_magic_link}`}
+                path={`${frontendRoutes.verify_magic_link}`}
                 element={<VerifyMagicLink />}
               />
 

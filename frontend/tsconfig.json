@@ -8,5 +8,6 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "downlevelIteration": true
-  }
+  },
+  "ts-node": { "esm": true }
 }

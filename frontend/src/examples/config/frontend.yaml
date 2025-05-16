@@ -1,0 +1,5 @@
+VITE:
+  server:
+    port: 3000
+    host: true
+OPENAPI_SCHEMA_PATH: ../openapi_schema.json

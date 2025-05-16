@@ -33,8 +33,12 @@ import { ValidatedInputDatetimeLocal } from '../Form/ValidatedInputDatetimeLocal
 import { Button1, Button2, ButtonSubmit } from '../Utils/Button';
 import { Card1, CardButton } from '../Utils/Card';
 import { Toggle1 } from '../Utils/Toggle';
-import { scopeIdMapping, userRoleIdMapping } from '../../config/constants';
-import constants from '../../../../constants.json';
+import {
+  scopeIdMapping,
+  scopeNameMapping,
+  userRoleIdMapping,
+  userRoleScopes,
+} from '../../config/config';
 import { useValidatedInput } from '../../utils/useValidatedInput';
 import { CheckOrX } from '../Form/CheckOrX';
 import { IoCaretUp, IoCaretDown } from 'react-icons/io5';
@@ -726,10 +730,10 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
   useEffect(() => {
     if (authContext.state.user !== null) {
       setAvailableScopeIds(
-        constants['user_role_scopes'][
+        userRoleScopes[
           userRoleIdMapping[authContext.state.user.user_role_id]
         ].map((user_role_scope: string) => {
-          return constants['scope_name_mapping'][user_role_scope];
+          return scopeNameMapping[user_role_scope];
         })
       );
     }
