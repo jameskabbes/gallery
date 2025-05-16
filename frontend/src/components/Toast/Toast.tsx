@@ -11,7 +11,7 @@ import { ToastType } from '../../types';
 import tailwindConfig from '../../../tailwind.config';
 import { Card1 } from '../Utils/Card';
 import { Loader1, Loader2 } from '../Utils/Loader';
-import { zIndex } from '../../config/settings';
+import { zIndex } from '../../config/constants';
 
 const IconMapping: Map<ToastType['type'], React.ReactNode> = new Map([
   ['success', <IoCheckmark />],

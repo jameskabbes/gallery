@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { IoArrowBackSharp, IoArrowForwardSharp } from 'react-icons/io5';
 import { Loader1, Loader2 } from './Loader';
-import { pagination } from '../../config/settings';
+import { pagination } from '../../config/constants';
 
 interface PaginationProps {
   loading: boolean;

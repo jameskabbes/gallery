@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { ModalsContext } from '../../contexts/Modals';
-import { zIndex } from '../../config/settings';
+import { zIndex } from '../../config/constants';
 import './Modal.css';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import { IoClose } from 'react-icons/io5';

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { ValidatedInputState } from '../types';
-import { validatedInput } from '../config/settings';
+import { validatedInput } from '../config/constants';
 
 interface ValidatedInputCheckValidityReturn {
   valid: boolean;

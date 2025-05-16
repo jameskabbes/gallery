@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { DarkModeToggle } from './DarkModeToggle';
 import { Surface } from './Utils/Surface';
 import { DeviceContext } from '../contexts/Device';
-import { zIndex } from '../config/settings';
+import { zIndex } from '../config/constants';
 
 function Header(): JSX.Element {
   const deviceContext = useContext(DeviceContext);
