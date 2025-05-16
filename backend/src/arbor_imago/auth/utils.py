@@ -37,7 +37,7 @@ def set_access_token_cookie(response: Response, access_token: custom_types.JwtEn
         key=auth.ACCESS_TOKEN_COOKIE_KEY,
         value=access_token,
         httponly=True,
-        secure=False,
+        secure=True,
         samesite="lax",
         **kwargs
     )
