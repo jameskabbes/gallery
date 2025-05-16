@@ -33,6 +33,10 @@ export interface paths {
     /** Signup */
     post: operations["signup_auth_signup__post"];
   };
+  "/auth/login/google/": {
+    /** Login Google */
+    post: operations["login_google_auth_login_google__post"];
+  };
   "/auth/request/signup/": {
     /** Request Sign Up Email */
     post: operations["request_sign_up_email_auth_request_signup__post"];
@@ -99,27 +103,31 @@ export interface paths {
     /** Upload File */
     post: operations["upload_file_galleries__gallery_id__upload__post"];
   };
-  "/user_access_tokens/": {
+  "/galleries/{gallery_id}/sync/": {
+    /** Sync */
+    post: operations["sync_galleries__gallery_id__sync__post"];
+  };
+  "/user-access-tokens/": {
     /** List */
     get: operations["list_user_access_tokens__get"];
   };
-  "/user_access_tokens/{user_access_token_id}/": {
+  "/user-access-tokens/{user_access_token_id}/": {
     /** By Id */
     get: operations["by_id_user_access_tokens__user_access_token_id___get"];
     /** Delete */
     delete: operations["delete_user_access_tokens__user_access_token_id___delete"];
   };
-  "/user_access_tokens/details/count/": {
+  "/user-access-tokens/details/count/": {
     /** Count */
     get: operations["count_user_access_tokens_details_count__get"];
   };
-  "/api_keys/": {
+  "/api-keys/": {
     /** List */
     get: operations["list_api_keys__get"];
     /** Create */
     post: operations["create_api_keys__post"];
   };
-  "/api_keys/{api_key_id}/": {
+  "/api-keys/{api_key_id}/": {
     /** By Id */
     get: operations["by_id_api_keys__api_key_id___get"];
     /** Delete */
@@ -127,23 +135,23 @@ export interface paths {
     /** Update */
     patch: operations["update_api_keys__api_key_id___patch"];
   };
-  "/api_keys/{api_key_id}/generate-jwt/": {
+  "/api-keys/{api_key_id}/generate-jwt/": {
     /** Jwt */
     get: operations["jwt_api_keys__api_key_id__generate_jwt__get"];
   };
-  "/api_keys/details/available/": {
+  "/api-keys/details/available/": {
     /** Check Availability */
     get: operations["check_availability_api_keys_details_available__get"];
   };
-  "/api_keys/details/count/": {
+  "/api-keys/details/count/": {
     /** Count */
     get: operations["count_api_keys_details_count__get"];
   };
-  "/api_key_scopes/{api_key_id}/{scope_id}/": {
+  "/api-key-scopes/api-keys/{api_key_id}/scopes/{scope_id}/": {
     /** Add Scope To Api Key */
-    post: operations["add_scope_to_api_key_api_key_scopes__api_key_id___scope_id___post"];
+    post: operations["add_scope_to_api_key_api_key_scopes_api_keys__api_key_id__scopes__scope_id___post"];
     /** Remove Scope From Api Key */
-    delete: operations["remove_scope_from_api_key_api_key_scopes__api_key_id___scope_id___delete"];
+    delete: operations["remove_scope_from_api_key_api_key_scopes_api_keys__api_key_id__scopes__scope_id___delete"];
   };
   "/pages/profile/": {
     /** Profile */
@@ -168,6 +176,10 @@ export interface paths {
   "/pages/styles/": {
     /** Styles */
     get: operations["styles_pages_styles__get"];
+  };
+  "/pages/galleries/{gallery_id}/": {
+    /** Gallery */
+    get: operations["gallery_pages_galleries__gallery_id___get"];
   };
   "/admin/users/": {
     /** List */
@@ -203,25 +215,25 @@ export interface paths {
     /** List By User */
     get: operations["list_by_user_admin_galleries_users__user_id__get"];
   };
-  "/admin/user_access_tokens/users/{user_id}/": {
+  "/admin/user-access-tokens/users/{user_id}/": {
     /** List By User */
     get: operations["list_by_user_admin_user_access_tokens_users__user_id___get"];
   };
-  "/admin/user_access_tokens/{user_access_token_id}/": {
+  "/admin/user-access-tokens/{user_access_token_id}/": {
     /** By Id */
     get: operations["by_id_admin_user_access_tokens__user_access_token_id___get"];
     /** Delete */
     delete: operations["delete_admin_user_access_tokens__user_access_token_id___delete"];
   };
-  "/admin/user_access_tokens/": {
+  "/admin/user-access-tokens/": {
     /** Create */
     post: operations["create_admin_user_access_tokens__post"];
   };
-  "/admin/api_keys/users/{user_id}/": {
+  "/admin/api-keys/users/{user_id}/": {
     /** List By User */
     get: operations["list_by_user_admin_api_keys_users__user_id___get"];
   };
-  "/admin/api_keys/{api_key_id}/": {
+  "/admin/api-keys/{api_key_id}/": {
     /** By Id */
     get: operations["by_id_admin_api_keys__api_key_id___get"];
     /** Delete */
@@ -229,19 +241,19 @@ export interface paths {
     /** Update */
     patch: operations["update_admin_api_keys__api_key_id___patch"];
   };
-  "/admin/api_keys/": {
+  "/admin/api-keys/": {
     /** Create */
     post: operations["create_admin_api_keys__post"];
   };
-  "/admin/api_keys/details/available/": {
+  "/admin/api-keys/details/available/": {
     /** Check Availability */
     get: operations["check_availability_admin_api_keys_details_available__get"];
   };
-  "/admin/api_key_scopes/{api_key_id}/{scope_id}/": {
+  "/admin/api-key-scopes/api-keys/{api_key_id}/scopes/{scope_id}/": {
     /** Add Scope To Api Key */
-    post: operations["add_scope_to_api_key_admin_api_key_scopes__api_key_id___scope_id___post"];
+    post: operations["add_scope_to_api_key_admin_api_key_scopes_api_keys__api_key_id__scopes__scope_id___post"];
     /** Remove Scope From Api Key */
-    delete: operations["remove_scope_from_api_key_admin_api_key_scopes__api_key_id___scope_id___delete"];
+    delete: operations["remove_scope_from_api_key_admin_api_key_scopes_api_keys__api_key_id__scopes__scope_id___delete"];
   };
 }
 
@@ -411,6 +423,15 @@ export interface components {
       /** Parent Id */
       parent_id: string;
     };
+    /** GalleryPageResponse */
+    GalleryPageResponse: {
+      auth: components["schemas"]["GetUserSessionInfoReturn"];
+      gallery: components["schemas"]["GalleryPublic"];
+      /** Parents */
+      parents: components["schemas"]["GalleryPublic"][];
+      /** Children */
+      children: components["schemas"]["GalleryPublic"][];
+    };
     /** GalleryPrivate */
     GalleryPrivate: {
       /** Id */
@@ -482,6 +503,15 @@ export interface components {
     IsAvailableResponse: {
       /** Available */
       available: boolean;
+    };
+    /** LoginWithGoogleRequest */
+    LoginWithGoogleRequest: {
+      /** Id Token */
+      id_token: string;
+    };
+    /** LoginWithGoogleResponse */
+    LoginWithGoogleResponse: {
+      auth: components["schemas"]["GetUserSessionInfoReturn"];
     };
     /** LoginWithMagicLinkRequest */
     LoginWithMagicLinkRequest: {
@@ -865,6 +895,34 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["SignUpResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Login Google */
+  login_google_auth_login_google__post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LoginWithGoogleRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["LoginWithGoogleResponse"];
+        };
+      };
+      /** @description Invalid token */
+      400: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
         };
       };
       /** @description Validation Error */
@@ -1274,6 +1332,28 @@ export interface operations {
       };
     };
   };
+  /** Sync */
+  sync_galleries__gallery_id__sync__post: {
+    parameters: {
+      path: {
+        gallery_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["DetailOnlyResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   /** List */
   list_user_access_tokens__get: {
     parameters: {
@@ -1528,7 +1608,7 @@ export interface operations {
     };
   };
   /** Add Scope To Api Key */
-  add_scope_to_api_key_api_key_scopes__api_key_id___scope_id___post: {
+  add_scope_to_api_key_api_key_scopes_api_keys__api_key_id__scopes__scope_id___post: {
     parameters: {
       path: {
         api_key_id: string;
@@ -1551,7 +1631,7 @@ export interface operations {
     };
   };
   /** Remove Scope From Api Key */
-  remove_scope_from_api_key_api_key_scopes__api_key_id___scope_id___delete: {
+  remove_scope_from_api_key_api_key_scopes_api_keys__api_key_id__scopes__scope_id___delete: {
     parameters: {
       path: {
         api_key_id: string;
@@ -1665,6 +1745,31 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["StylesPageResponse"];
+        };
+      };
+    };
+  };
+  /** Gallery */
+  gallery_pages_galleries__gallery_id___get: {
+    parameters: {
+      query?: {
+        root?: boolean;
+      };
+      path: {
+        gallery_id: string | null;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["GalleryPageResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -2168,7 +2273,7 @@ export interface operations {
     };
   };
   /** Add Scope To Api Key */
-  add_scope_to_api_key_admin_api_key_scopes__api_key_id___scope_id___post: {
+  add_scope_to_api_key_admin_api_key_scopes_api_keys__api_key_id__scopes__scope_id___post: {
     parameters: {
       path: {
         api_key_id: string;
@@ -2191,7 +2296,7 @@ export interface operations {
     };
   };
   /** Remove Scope From Api Key */
-  remove_scope_from_api_key_admin_api_key_scopes__api_key_id___scope_id___delete: {
+  remove_scope_from_api_key_admin_api_key_scopes_api_keys__api_key_id__scopes__scope_id___delete: {
     parameters: {
       path: {
         api_key_id: string;

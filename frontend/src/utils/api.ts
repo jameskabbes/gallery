@@ -4,7 +4,7 @@ import { apiClient } from './apiClient';
 import { CallApiOptions, UseApiCallReturn } from '../types';
 import { paths, operations, components } from '../openapi_schema';
 import openapi_schema from '../../../openapi_schema.json';
-import { sharedConfig } from '../../generateConfig';
+import { config } from '../config';
 
 async function callApi<TResponseData, TRequestData = any>({
   url,
@@ -22,10 +22,7 @@ async function callApi<TResponseData, TRequestData = any>({
     console.log(method, url);
     const response = await apiClient.request<TResponseData>(requestConfig);
 
-    if (
-      authContext &&
-      response.headers[sharedConfig['HEADER_KEYS']['auth_logout']]
-    ) {
+    if (authContext && response.headers[config.headerKeys['auth_logout']]) {
       authContext.logOut();
     }
     if (authContext) {

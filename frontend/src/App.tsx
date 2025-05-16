@@ -13,7 +13,7 @@ import { VerifySignUp } from './components/Auth/SignUp';
 import { Styles } from './pages/Styles';
 // import { LogInWithMagicLink } from './components/Auth/MagicLink';
 
-import { frontendRoutes } from '../generateConfig';
+import { config } from './config';
 
 import { VerifyMagicLink } from './components/Auth/MagicLink';
 
@@ -30,20 +30,20 @@ function App(): JSX.Element {
               <Route path="/" element={<Home />} />
               {/* /galleries */}
               <Route
-                path={`${frontendRoutes.galleries}`}
+                path={`${config.frontendRoutes.galleries}`}
                 element={<Gallery root={true} />}
               />
               {/* /galleries/galleryId */}
               <Route
-                path={`${frontendRoutes.galleries}/:galleryId`}
+                path={`${config.frontendRoutes.galleries}/:galleryId`}
                 element={<Gallery root={false} />}
               />
               <Route
-                path={`${frontendRoutes.verify_signup}`}
+                path={`${config.frontendRoutes.verify_signup}`}
                 element={<VerifySignUp />}
               />
               <Route
-                path={`${frontendRoutes.verify_magic_link}`}
+                path={`${config.frontendRoutes.verify_magic_link}`}
                 element={<VerifyMagicLink />}
               />
 

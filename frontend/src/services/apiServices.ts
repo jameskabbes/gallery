@@ -48,8 +48,8 @@ export const postRequestOTPSMS = createApiService(
   'post'
 );
 
-export const postRequestSignUpEmail = createApiService(
-  '/auth/request/signup/email/',
+export const postRequestSignUp = createApiService(
+  '/auth/request/signup/',
   'post'
 );
 

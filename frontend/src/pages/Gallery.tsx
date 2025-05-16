@@ -19,7 +19,7 @@ import { setAddGalleryModal } from '../components/Gallery/AddGallery';
 import { getGalleryLink } from '../components/Gallery/getLink';
 import { Link } from 'react-router-dom';
 import { ToastContext } from '../contexts/Toast';
-import { frontendRoutes } from '../../generateConfig';
+import { config } from '../config';
 
 interface Props {
   root?: boolean;
@@ -93,7 +93,7 @@ function Gallery({ root = false }: Props) {
         message: 'Gallery deleted',
         type: 'success',
       });
-      navigate(frontendRoutes.galleries);
+      navigate(config.frontendRoutes.galleries);
     } else {
       toastContext.update(toastId, {
         message: 'Error deleting gallery',

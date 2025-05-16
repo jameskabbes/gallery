@@ -217,7 +217,7 @@ interface ToastContextType {
   update: (id: ToastId, toast: Partial<ToastType>) => void;
 }
 
-type AuthContextState = components['schemas']['GetAuthBaseReturn'];
+type AuthContextState = components['schemas']['GetUserSessionInfoReturn'];
 
 interface AuthContextType {
   state: AuthContextState;

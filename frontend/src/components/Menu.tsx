@@ -10,7 +10,7 @@ import { AuthContext } from '../contexts/Auth';
 import { logOut } from './Auth/logOut';
 import { Surface } from './Utils/Surface';
 import { useConfirmationModal } from '../utils/useConfirmationModal';
-import { frontendRoutes } from '../../generateConfig';
+import { config } from '../config';
 
 function Menu() {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
@@ -35,7 +35,7 @@ function Menu() {
   const menuItems: MenuItem[] = [
     {
       key: 'galleries',
-      element: <Link to={frontendRoutes.galleries}>Galleries</Link>,
+      element: <Link to={config.frontendRoutes.galleries}>Galleries</Link>,
       onClick: () => {},
       viewMode: 'logged-in',
     },

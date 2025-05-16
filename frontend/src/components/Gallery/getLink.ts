@@ -1,13 +1,13 @@
 import { paths, operations, components } from '../../openapi_schema';
-import { frontendRoutes } from '../../../generateConfig';
+import { config } from '../../config';
 
 function getGalleryLink(
-  galleryId: components['schemas']['Gallery']['id'] | null
+  galleryId: components['schemas']['GalleryPublic']['id'] | null
 ): string {
   if (!galleryId) {
-    return frontendRoutes.galleries;
+    return config.frontendRoutes.galleries;
   } else {
-    return `${frontendRoutes.galleries}/${galleryId}`;
+    return `${config.frontendRoutes.galleries}/${galleryId}`;
   }
 }
 

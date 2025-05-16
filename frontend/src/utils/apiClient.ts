@@ -1,9 +1,9 @@
 import axios from 'axios';
 import qs from 'qs';
-import { sharedConfig } from '../../generateConfig';
+import { config } from '../config';
 
 const apiClient = axios.create({
-  baseURL: sharedConfig.BACKEND_URL,
+  baseURL: config.backendUrl,
   timeout: 10000, // 10 seconds timeout, adjust as needed,
   paramsSerializer: (params) => qs.stringify(params, { arrayFormat: 'repeat' }), // Ensure consistent array serialization
 });

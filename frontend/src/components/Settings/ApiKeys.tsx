@@ -33,12 +33,7 @@ import { ValidatedInputDatetimeLocal } from '../Form/ValidatedInputDatetimeLocal
 import { Button1, Button2, ButtonSubmit } from '../Utils/Button';
 import { Card1, CardButton } from '../Utils/Card';
 import { Toggle1 } from '../Utils/Toggle';
-import {
-  scopeIdMapping,
-  scopeNameMapping,
-  userRoleIdMapping,
-  userRoleScopes,
-} from '../../../generateConfig';
+import { config } from '../../config';
 import { useValidatedInput } from '../../utils/useValidatedInput';
 import { CheckOrX } from '../Form/CheckOrX';
 import { IoCaretUp, IoCaretDown } from 'react-icons/io5';
@@ -730,10 +725,10 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
   useEffect(() => {
     if (authContext.state.user !== null) {
       setAvailableScopeIds(
-        userRoleScopes[
-          userRoleIdMapping[authContext.state.user.user_role_id]
+        config.userRoleScopes[
+          config.userRoleIdMapping[authContext.state.user.user_role_id]
         ].map((user_role_scope: string) => {
-          return scopeNameMapping[user_role_scope];
+          return config.scopeNameMapping[user_role_scope];
         })
       );
     }
@@ -832,7 +827,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
     apiKey,
     scopeId
   ) => {
-    const scopeName = scopeIdMapping[scopeId];
+    const scopeName = config.scopeIdMapping[scopeId];
 
     setApiKeyScopeIds((prev) => {
       const updatedSet = new Set(prev[apiKey.id]);
@@ -1165,7 +1160,7 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
                     </th>
                   ))}
                   {availableScopeIds.map((scopeId) => (
-                    <th key={scopeId}>{scopeIdMapping[scopeId]}</th>
+                    <th key={scopeId}>{config.scopeIdMapping[scopeId]}</th>
                   ))}
                 </tr>
               </thead>

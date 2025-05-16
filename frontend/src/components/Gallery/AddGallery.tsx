@@ -15,12 +15,12 @@ import openapi_schema from '../../../../openapi_schema.json';
 import { RadioButton1 } from '../Utils/RadioButton';
 import { useValidatedInput } from '../../utils/useValidatedInput';
 import { CheckOrX } from '../Form/CheckOrX';
-import { visibilityLevelNameMapping } from '../../../generateConfig';
+import { config } from '../../config';
 
 interface AddGalleryProps {
   onSuccess: (gallery: (typeof postGallery.responses)['200']) => void;
   modalsContext: ModalsContextType;
-  parentGalleryId: components['schemas']['Gallery']['id'];
+  parentGalleryId: components['schemas']['GalleryPublic']['id'];
 }
 
 const addGalleryModalKey = 'modal-add-gallery';
@@ -113,7 +113,8 @@ function AddGallery({
       data: {
         name: name.value,
         parent_id: parentGalleryId,
-        visibility_level: visibilityLevelNameMapping[visibilityLevelName.value],
+        visibility_level:
+          config.visibilityLevelNameMapping[visibilityLevelName.value],
         ...(date.value !== '' && { date: date.value }),
       },
     });
@@ -175,37 +176,41 @@ function AddGallery({
               <legend>Visibility</legend>
             </label>
             <fieldset className="flex flex-row justify-around">
-              {Object.keys(visibilityLevelNameMapping).map((levelName) => (
-                <div
-                  key={levelName}
-                  className="flex flex-row items-center space-x-1"
-                  onClick={() => {
-                    setVisibilityLevelName((prev) => ({
-                      ...prev,
-                      value: levelName,
-                    }));
-                  }}
-                >
-                  <RadioButton1 state={visibilityLevelName.value == levelName}>
-                    <input
-                      id={`gallery-visibility-level-${levelName}`}
-                      type="radio"
-                      name="gallery-visibility-level"
-                      className="opacity-0 absolute h-0 w-0 inset-0"
-                      value={levelName}
-                      onChange={() =>
-                        setVisibilityLevelName({
-                          ...visibilityLevelName,
-                          value: levelName,
-                        })
-                      }
-                    />
-                  </RadioButton1>
-                  <label htmlFor={`gallery-visibility-level-${levelName}`}>
-                    {levelName}
-                  </label>
-                </div>
-              ))}
+              {Object.keys(config.visibilityLevelNameMapping).map(
+                (levelName) => (
+                  <div
+                    key={levelName}
+                    className="flex flex-row items-center space-x-1"
+                    onClick={() => {
+                      setVisibilityLevelName((prev) => ({
+                        ...prev,
+                        value: levelName,
+                      }));
+                    }}
+                  >
+                    <RadioButton1
+                      state={visibilityLevelName.value == levelName}
+                    >
+                      <input
+                        id={`gallery-visibility-level-${levelName}`}
+                        type="radio"
+                        name="gallery-visibility-level"
+                        className="opacity-0 absolute h-0 w-0 inset-0"
+                        value={levelName}
+                        onChange={() =>
+                          setVisibilityLevelName({
+                            ...visibilityLevelName,
+                            value: levelName,
+                          })
+                        }
+                      />
+                    </RadioButton1>
+                    <label htmlFor={`gallery-visibility-level-${levelName}`}>
+                      {levelName}
+                    </label>
+                  </div>
+                )
+              )}
             </fieldset>
           </section>
         </fieldset>
