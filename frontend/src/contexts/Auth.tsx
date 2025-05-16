@@ -3,7 +3,7 @@ import { AuthContextState, AuthContextType, ToastId } from '../types';
 import { paths, operations, components } from '../openapi_schema';
 import { ToastContext } from './Toast';
 import isEqual from 'lodash.isequal';
-import { authKey } from '../config/config';
+import { authKey } from '../../generateConfig';
 
 const defaultState: AuthContextState = {
   user: null,

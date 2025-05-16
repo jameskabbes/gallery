@@ -1,5 +1,5 @@
 import { paths, operations, components } from '../../openapi_schema';
-import { frontendRoutes } from '../../config/config';
+import { frontendRoutes } from '../../../generateConfig';
 
 function getGalleryLink(
   galleryId: components['schemas']['Gallery']['id'] | null

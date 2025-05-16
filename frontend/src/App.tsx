@@ -13,7 +13,7 @@ import { VerifySignUp } from './components/Auth/SignUp';
 import { Styles } from './pages/Styles';
 // import { LogInWithMagicLink } from './components/Auth/MagicLink';
 
-import { frontendRoutes } from './config/config';
+import { frontendRoutes } from '../generateConfig';
 
 import { VerifyMagicLink } from './components/Auth/MagicLink';
 

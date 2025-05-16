@@ -38,7 +38,7 @@ import {
   scopeNameMapping,
   userRoleIdMapping,
   userRoleScopes,
-} from '../../config/config';
+} from '../../../generateConfig';
 import { useValidatedInput } from '../../utils/useValidatedInput';
 import { CheckOrX } from '../Form/CheckOrX';
 import { IoCaretUp, IoCaretDown } from 'react-icons/io5';

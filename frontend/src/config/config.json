@@ -1,0 +1,67 @@
+{
+  "backendUrl": "http://localhost:8080",
+  "frontendUrl": "http://localhost:3000",
+  "authKey": "auth",
+  "headerKeys": {
+    "auth_logout": "x-auth-logout"
+  },
+  "frontendRoutes": {
+    "verify_signup": "/welcome",
+    "verify_magic_link": "/verify-magic-link",
+    "galleries": "/galleries"
+  },
+  "scopeNameMapping": {
+    "admin": 1,
+    "user.read": 2,
+    "user.write": 3
+  },
+  "scopeIdMapping": {
+    "1": "admin",
+    "2": "user.read",
+    "3": "user.write"
+  },
+  "visibilityLevelNameMapping": {
+    "public": 1,
+    "private": 2
+  },
+  "visibilityLevelIdMapping": {
+    "1": "public",
+    "2": "private"
+  },
+  "permissionLevelNameMapping": {
+    "editor": 2,
+    "viewer": 1
+  },
+  "permissionLevelIdMapping": {
+    "1": "viewer",
+    "2": "editor"
+  },
+  "userRoleNameMapping": {
+    "admin": 2,
+    "user": 1
+  },
+  "userRoleIdMapping": {
+    "1": "user",
+    "2": "admin"
+  },
+  "userRoleScopes": {
+    "admin": [
+      "admin",
+      "user.read",
+      "user.write"
+    ],
+    "user": [
+      "user.read",
+      "user.write"
+    ]
+  },
+  "otpLength": 6,
+  "googleClientId": "1855778612-f8jc05eb675d4226q50kqea1vp354ra0.apps.googleusercontent.com",
+  "vite": {
+    "server": {
+      "port": 3000,
+      "host": true
+    }
+  },
+  "openapiSchemaPath": "C:\\Users\\dx8hu5r\\Documents\\Repos\\jameskabbes\\gallery\\openapi_schema.json"
+}

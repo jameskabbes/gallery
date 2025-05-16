@@ -19,7 +19,7 @@ import { setAddGalleryModal } from '../components/Gallery/AddGallery';
 import { getGalleryLink } from '../components/Gallery/getLink';
 import { Link } from 'react-router-dom';
 import { ToastContext } from '../contexts/Toast';
-import { frontendRoutes } from '../config/config';
+import { frontendRoutes } from '../../generateConfig';
 
 interface Props {
   root?: boolean;

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import qs from 'qs';
-import { sharedConfig } from '../config/config';
+import { sharedConfig } from '../../generateConfig';
 
 const apiClient = axios.create({
   baseURL: sharedConfig.BACKEND_URL,

@@ -10,7 +10,7 @@ import { AuthContext } from '../contexts/Auth';
 import { logOut } from './Auth/logOut';
 import { Surface } from './Utils/Surface';
 import { useConfirmationModal } from '../utils/useConfirmationModal';
-import { frontendRoutes } from '../config/config';
+import { frontendRoutes } from '../../generateConfig';
 
 function Menu() {
   const [isMenuVisible, setIsMenuVisible] = useState(false);

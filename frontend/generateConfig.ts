@@ -4,6 +4,7 @@ import path from 'path';
 import yaml from 'js-yaml';
 import os from 'os';
 import { warn } from 'console';
+import { Config } from './src/config/config';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -133,52 +134,6 @@ function loadSharedConfig(): SharedConfig {
 
 const sharedConfig = loadSharedConfig();
 
-const backendUrl = sharedConfig.BACKEND_URL;
-const frontendUrl = sharedConfig.FRONTEND_URL;
-const authKey = sharedConfig.AUTH_KEY;
-const headerKeys = sharedConfig.HEADER_KEYS;
-const frontendRoutes = sharedConfig.FRONTEND_ROUTES;
-
-const scopeNameMapping = sharedConfig.SCOPE_NAME_MAPPING;
-const scopeIdMapping: Record<number, string> = Object.entries(
-  scopeNameMapping
-).reduce((acc, [key, value]) => {
-  acc[value] = key;
-  return acc;
-}, {} as {});
-
-const visibilityLevelNameMapping = sharedConfig.VISIBILITY_LEVEL_NAME_MAPPING;
-
-const visibilityLevelIdMapping: Record<number, string> = Object.entries(
-  visibilityLevelNameMapping
-).reduce((acc, [key, value]) => {
-  acc[value] = key;
-  return acc;
-}, {} as {});
-
-const permissionLevelNameMapping = sharedConfig.PERMISSION_LEVEL_NAME_MAPPING;
-
-const permissionLevelIdMapping: Record<number, string> = Object.entries(
-  permissionLevelNameMapping
-).reduce((acc, [key, value]) => {
-  acc[value] = key;
-  return acc;
-}, {} as {});
-
-const userRoleNameMapping = sharedConfig.USER_ROLE_NAME_MAPPING;
-
-const userRoleIdMapping: Record<number, string> = Object.entries(
-  sharedConfig.USER_ROLE_NAME_MAPPING
-).reduce((acc, [key, value]) => {
-  acc[value] = key;
-  return acc;
-}, {} as {});
-
-const userRoleScopes = sharedConfig.USER_ROLE_SCOPES;
-
-const otpLength = sharedConfig.OTP_LENGTH;
-const googleClientId = sharedConfig.GOOGLE_CLIENT_ID;
-
 interface FrontendConfig {
   VITE: {
     server: {
@@ -196,31 +151,53 @@ function loadFrontendConfig(): FrontendConfig {
 
 const frontendConfig = loadFrontendConfig();
 
-const vite = frontendConfig.VITE;
-const openapiSchemaPath = convertEnvPathToAbsolute(
-  process.cwd(),
-  frontendConfig.OPENAPI_SCHEMA_PATH
-);
-
-// Export the reverse mapping
-export {
-  backendUrl,
-  frontendUrl,
-  authKey,
-  headerKeys,
-  frontendRoutes,
-  sharedConfig,
-  scopeIdMapping,
-  scopeNameMapping,
-  visibilityLevelIdMapping,
-  visibilityLevelNameMapping,
-  permissionLevelIdMapping,
-  permissionLevelNameMapping,
-  userRoleIdMapping,
-  userRoleNameMapping,
-  userRoleScopes,
-  otpLength,
-  googleClientId,
-  vite,
-  openapiSchemaPath,
+let config: Config = {
+  backendUrl: sharedConfig.BACKEND_URL,
+  frontendUrl: sharedConfig.FRONTEND_URL,
+  authKey: sharedConfig.AUTH_KEY,
+  headerKeys: sharedConfig.HEADER_KEYS,
+  frontendRoutes: sharedConfig.FRONTEND_ROUTES,
+  scopeNameMapping: sharedConfig.SCOPE_NAME_MAPPING,
+  scopeIdMapping: Object.entries(sharedConfig.SCOPE_NAME_MAPPING).reduce(
+    (acc, [key, value]) => {
+      acc[value] = key;
+      return acc;
+    },
+    {} as {}
+  ),
+  visibilityLevelNameMapping: sharedConfig.VISIBILITY_LEVEL_NAME_MAPPING,
+  visibilityLevelIdMapping: Object.entries(
+    sharedConfig.VISIBILITY_LEVEL_NAME_MAPPING
+  ).reduce((acc, [key, value]) => {
+    acc[value] = key;
+    return acc;
+  }, {} as {}),
+  permissionLevelNameMapping: sharedConfig.PERMISSION_LEVEL_NAME_MAPPING,
+  permissionLevelIdMapping: Object.entries(
+    sharedConfig.PERMISSION_LEVEL_NAME_MAPPING
+  ).reduce((acc, [key, value]) => {
+    acc[value] = key;
+    return acc;
+  }, {} as {}),
+  userRoleNameMapping: sharedConfig.USER_ROLE_NAME_MAPPING,
+  userRoleIdMapping: Object.entries(sharedConfig.USER_ROLE_NAME_MAPPING).reduce(
+    (acc, [key, value]) => {
+      acc[value] = key;
+      return acc;
+    },
+    {} as {}
+  ),
+  userRoleScopes: sharedConfig.USER_ROLE_SCOPES,
+  otpLength: sharedConfig.OTP_LENGTH,
+  googleClientId: sharedConfig.GOOGLE_CLIENT_ID,
+  vite: frontendConfig.VITE,
+  openapiSchemaPath: convertEnvPathToAbsolute(
+    process.cwd(),
+    frontendConfig.OPENAPI_SCHEMA_PATH
+  ),
 };
+
+const outputPath = path.join(__dirname, 'src', 'config', 'config.json');
+
+console.log(`writing config to ${outputPath}`);
+fs.writeFileSync(outputPath, JSON.stringify(config, null, 2), 'utf8');

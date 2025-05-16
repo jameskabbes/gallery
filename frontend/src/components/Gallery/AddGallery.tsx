@@ -15,7 +15,7 @@ import openapi_schema from '../../../../openapi_schema.json';
 import { RadioButton1 } from '../Utils/RadioButton';
 import { useValidatedInput } from '../../utils/useValidatedInput';
 import { CheckOrX } from '../Form/CheckOrX';
-import { visibilityLevelNameMapping } from '../../config/config';
+import { visibilityLevelNameMapping } from '../../../generateConfig';
 
 interface AddGalleryProps {
   onSuccess: (gallery: (typeof postGallery.responses)['200']) => void;

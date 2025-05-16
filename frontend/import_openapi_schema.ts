@@ -1,11 +1,11 @@
 import { execFileSync } from 'child_process';
-import { openapiSchemaPath } from './src/config/config';
+import { config } from './src/config';
 import os from 'os';
 import path from 'path';
 
 const relativeOpenapiSchemaPath = path.relative(
   process.cwd(),
-  openapiSchemaPath
+  config.openapiSchemaPath
 );
 
 const cliSchemaPath = relativeOpenapiSchemaPath.split(path.sep).join('/');

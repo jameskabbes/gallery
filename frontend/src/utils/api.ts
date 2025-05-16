@@ -4,7 +4,7 @@ import { apiClient } from './apiClient';
 import { CallApiOptions, UseApiCallReturn } from '../types';
 import { paths, operations, components } from '../openapi_schema';
 import openapi_schema from '../../../openapi_schema.json';
-import { sharedConfig } from '../config/config';
+import { sharedConfig } from '../../generateConfig';
 
 async function callApi<TResponseData, TRequestData = any>({
   url,
