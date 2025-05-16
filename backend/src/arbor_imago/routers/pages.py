@@ -106,9 +106,10 @@ class PagesRouter(_Base):
             user_access_token_router.user_access_token_pagination)
     ) -> SettingsUserAccessTokensPageResponse:
         return SettingsUserAccessTokensPageResponse(
-            **auth_utils.get_user_session_info(authorization).model_dump()
-            # user_access_token_count=await get_user_access_tokens_count(authorization),
-            # user_access_tokens=await get_user_access_tokens(authorization, pagination)
+            **auth_utils.get_user_session_info(authorization).model_dump(),
+            user_access_token_count=await user_access_token_router.UserAccessTokenRouter.count(authorization),
+            user_access_tokens=await user_access_token_router.UserAccessTokenRouter.list(
+                authorization, pagination)
         )
 
     @classmethod

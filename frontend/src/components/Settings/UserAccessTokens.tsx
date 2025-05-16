@@ -182,10 +182,7 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
         return newUserAccessTokens;
       });
 
-      if (
-        authContext.state.auth_credential?.id === sessionId &&
-        authContext.state.auth_credential?.type === 'access_token'
-      ) {
+      if (authContext.state.access_token?.id === sessionId) {
         authContext.logOut();
       }
     } else {
@@ -239,14 +236,13 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
                   })}
                 </p>
                 <p>
-                  {authContext.state.auth_credential?.id ===
+                  {authContext.state.access_token?.id ===
                     userAccessToken.id && <span>Current Session</span>}
                 </p>
                 <Button1
                   onClick={() => {
                     if (
-                      authContext.state.auth_credential?.id ===
-                      userAccessToken.id
+                      authContext.state.access_token?.id === userAccessToken.id
                     ) {
                       activateButtonConfirmation({
                         componentProps: {
