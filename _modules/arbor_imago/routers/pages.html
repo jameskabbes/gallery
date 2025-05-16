@@ -214,9 +214,10 @@
             <span class="n">user_access_token_router</span><span class="o">.</span><span class="n">user_access_token_pagination</span><span class="p">)</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SettingsUserAccessTokensPageResponse</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">SettingsUserAccessTokensPageResponse</span><span class="p">(</span>
-            <span class="o">**</span><span class="n">auth_utils</span><span class="o">.</span><span class="n">get_user_session_info</span><span class="p">(</span><span class="n">authorization</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span>
-            <span class="c1"># user_access_token_count=await get_user_access_tokens_count(authorization),</span>
-            <span class="c1"># user_access_tokens=await get_user_access_tokens(authorization, pagination)</span>
+            <span class="o">**</span><span class="n">auth_utils</span><span class="o">.</span><span class="n">get_user_session_info</span><span class="p">(</span><span class="n">authorization</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(),</span>
+            <span class="n">user_access_token_count</span><span class="o">=</span><span class="k">await</span> <span class="n">user_access_token_router</span><span class="o">.</span><span class="n">UserAccessTokenRouter</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">authorization</span><span class="p">),</span>
+            <span class="n">user_access_tokens</span><span class="o">=</span><span class="k">await</span> <span class="n">user_access_token_router</span><span class="o">.</span><span class="n">UserAccessTokenRouter</span><span class="o">.</span><span class="n">list</span><span class="p">(</span>
+                <span class="n">authorization</span><span class="p">,</span> <span class="n">pagination</span><span class="p">)</span>
         <span class="p">)</span></div>
 
 
