@@ -107,11 +107,8 @@
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;expires&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">expiry</span>
 
     <span class="n">response</span><span class="o">.</span><span class="n">set_cookie</span><span class="p">(</span>
-        <span class="n">key</span><span class="o">=</span><span class="n">auth</span><span class="o">.</span><span class="n">ACCESS_TOKEN_COOKIE_KEY</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">ACCESS_TOKEN_COOKIE</span><span class="p">,</span>
         <span class="n">value</span><span class="o">=</span><span class="n">access_token</span><span class="p">,</span>
-        <span class="n">httponly</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">secure</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">samesite</span><span class="o">=</span><span class="s2">&quot;lax&quot;</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span>
 
@@ -122,7 +119,7 @@
 <div class="viewcode-block" id="delete_access_token_cookie">
 <a class="viewcode-back" href="../../../arbor_imago.auth.html#arbor_imago.auth.utils.delete_access_token_cookie">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">delete_access_token_cookie</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="n">Response</span><span class="p">):</span>
-    <span class="n">response</span><span class="o">.</span><span class="n">delete_cookie</span><span class="p">(</span><span class="n">auth</span><span class="o">.</span><span class="n">ACCESS_TOKEN_COOKIE_KEY</span><span class="p">)</span></div>
+    <span class="n">response</span><span class="o">.</span><span class="n">delete_cookie</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">ACCESS_TOKEN_COOKIE</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">])</span></div>
 
 
 
@@ -149,7 +146,8 @@
                 <span class="n">provided_auth_types</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;bearer&quot;</span><span class="p">)</span>
 
         <span class="c1"># HTTP-only Cookie</span>
-        <span class="n">cookie_access_token</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">cookies</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">auth</span><span class="o">.</span><span class="n">ACCESS_TOKEN_COOKIE_KEY</span><span class="p">)</span>
+        <span class="n">cookie_access_token</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">cookies</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">ACCESS_TOKEN_COOKIE</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">cookie_access_token</span><span class="p">:</span>
             <span class="n">tokens</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">typing</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span>
                 <span class="n">custom_types</span><span class="o">.</span><span class="n">JwtEncodedStr</span><span class="p">,</span> <span class="n">cookie_access_token</span><span class="p">))</span>

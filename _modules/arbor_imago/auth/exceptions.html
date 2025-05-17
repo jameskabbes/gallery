@@ -112,7 +112,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">missing_authorization</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">StatusCodeAndDetail</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">StatusCodeAndDetail</span><span class="p">(</span>
         <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_401_UNAUTHORIZED</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Missing Authorization header or </span><span class="si">{}</span><span class="s2"> cookie&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-            <span class="n">auth</span><span class="o">.</span><span class="n">ACCESS_TOKEN_COOKIE_KEY</span><span class="p">)</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">ACCESS_TOKEN_COOKIE</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">])</span>
     <span class="p">)</span></div>
 
 

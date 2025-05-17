@@ -67,6 +67,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#module-arbor_imago.config">arbor_imago.config module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#arbor_imago.config.AccessTokenCookie"><code class="docutils literal notranslate"><span class="pre">AccessTokenCookie</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#arbor_imago.config.AuthConfig"><code class="docutils literal notranslate"><span class="pre">AuthConfig</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#arbor_imago.config.AuthEnv"><code class="docutils literal notranslate"><span class="pre">AuthEnv</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#arbor_imago.config.BackendConfig"><code class="docutils literal notranslate"><span class="pre">BackendConfig</span></code></a></li>
@@ -1492,6 +1493,32 @@
 <section id="module-arbor_imago.config">
 <span id="arbor-imago-config-module"></span><h2>arbor_imago.config module<a class="headerlink" href="#module-arbor_imago.config" title="Link to this heading"></a></h2>
 <dl class="py class">
+<dt class="sig sig-object py" id="arbor_imago.config.AccessTokenCookie">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arbor_imago.config.</span></span><span class="sig-name descname"><span class="pre">AccessTokenCookie</span></span><a class="reference internal" href="_modules/arbor_imago/config.html#AccessTokenCookie"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.config.AccessTokenCookie" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TypedDict</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.AccessTokenCookie.httponly">
+<span class="sig-name descname"><span class="pre">httponly</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">NotRequired</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arbor_imago.config.AccessTokenCookie.httponly" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.AccessTokenCookie.key">
+<span class="sig-name descname"><span class="pre">key</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#arbor_imago.config.AccessTokenCookie.key" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.AccessTokenCookie.samesite">
+<span class="sig-name descname"><span class="pre">samesite</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">NotRequired</span><span class="p"><span class="pre">[</span></span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'lax'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'strict'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'none'</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arbor_imago.config.AccessTokenCookie.samesite" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.AccessTokenCookie.secure">
+<span class="sig-name descname"><span class="pre">secure</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">NotRequired</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arbor_imago.config.AccessTokenCookie.secure" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="arbor_imago.config.AuthConfig">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arbor_imago.config.</span></span><span class="sig-name descname"><span class="pre">AuthConfig</span></span><a class="reference internal" href="_modules/arbor_imago/config.html#AuthConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.config.AuthConfig" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TypedDict</span></code></p>
@@ -1517,6 +1544,11 @@
 <dt class="sig sig-object py" id="arbor_imago.config.BackendConfig">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arbor_imago.config.</span></span><span class="sig-name descname"><span class="pre">BackendConfig</span></span><a class="reference internal" href="_modules/arbor_imago/config.html#BackendConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.config.BackendConfig" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TypedDict</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arbor_imago.config.BackendConfig.ACCESS_TOKEN_COOKIE">
+<span class="sig-name descname"><span class="pre">ACCESS_TOKEN_COOKIE</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#arbor_imago.config.AccessTokenCookie" title="arbor_imago.config.AccessTokenCookie"><span class="pre">AccessTokenCookie</span></a></em><a class="headerlink" href="#arbor_imago.config.BackendConfig.ACCESS_TOKEN_COOKIE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="arbor_imago.config.BackendConfig.AUTH">
 <span class="sig-name descname"><span class="pre">AUTH</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#arbor_imago.config.AuthEnv" title="arbor_imago.config.AuthEnv"><span class="pre">AuthEnv</span></a></em><a class="headerlink" href="#arbor_imago.config.BackendConfig.AUTH" title="Link to this definition"></a></dt>
