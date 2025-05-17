@@ -600,7 +600,7 @@ function ApiKeyView({
                   addApiKeyScopeFunc={addApiKeyScopeFunc}
                   deleteApiKeyScopeFunc={deleteApiKeyScopeFunc}
                 />
-                <span>{scopeIdMapping[scopeId]}</span>
+                <span>{config.scopeIdMapping[scopeId]}</span>
               </div>
             ))}
           </>

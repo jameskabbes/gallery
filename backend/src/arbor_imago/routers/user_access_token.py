@@ -1,4 +1,4 @@
-from fastapi import Depends, status
+from fastapi import Depends, status, Response
 from sqlmodel import select, func
 from typing import Annotated, cast, Literal
 
@@ -69,10 +69,16 @@ class UserAccessTokenRouter(_Base):
     @classmethod
     async def delete(
         cls,
+        response: Response,
         user_access_token_id: custom_types.UserAccessToken.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency())]
     ):
+
+        if isinstance(authorization.auth_credential, UserAccessTokenTable):
+            if authorization.auth_credential.id == user_access_token_id:
+                auth_utils.delete_access_token_cookie(response)
+
         return await cls._delete({
             'authorization': authorization,
             'id': user_access_token_id,

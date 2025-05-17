@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
 
 const exampleFrontendConfigPath = path.join(
   __dirname,
-  '..',
+  'src',
   'examples',
   'config',
   'frontend.yaml'

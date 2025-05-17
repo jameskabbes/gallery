@@ -31,7 +31,7 @@ function Gallery({ root = false }: Props) {
   const toastContext = useContext(ToastContext);
   const navigate = useNavigate();
 
-  const galleryId: components['schemas']['Gallery']['id'] =
+  const galleryId: components['schemas']['GalleryPrivate']['id'] =
     useParams().galleryId;
 
   const { data, loading, status, refetch } = useApiCall(

@@ -8,7 +8,7 @@ import { config } from '../config';
 const defaultState: AuthContextState = {
   user: null,
   scope_ids: [],
-  auth_credential: null,
+  access_token: null,
 };
 
 const AuthContext = createContext<AuthContextType>({

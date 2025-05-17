@@ -181,10 +181,6 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
         delete newUserAccessTokens[sessionId];
         return newUserAccessTokens;
       });
-
-      if (authContext.state.access_token?.id === sessionId) {
-        authContext.logOut();
-      }
     } else {
       toastContext.update(toastId, {
         message: 'Could not delete session',

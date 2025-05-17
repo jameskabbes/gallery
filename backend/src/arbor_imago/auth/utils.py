@@ -34,11 +34,8 @@ def set_access_token_cookie(response: Response, access_token: custom_types.JwtEn
         kwargs['expires'] = expiry
 
     response.set_cookie(
-        key=auth.ACCESS_TOKEN_COOKIE_KEY,
+        **config.ACCESS_TOKEN_COOKIE,
         value=access_token,
-        httponly=True,
-        secure=True,
-        samesite="lax",
         **kwargs
     )
 
@@ -46,7 +43,7 @@ def set_access_token_cookie(response: Response, access_token: custom_types.JwtEn
 
 
 def delete_access_token_cookie(response: Response):
-    response.delete_cookie(auth.ACCESS_TOKEN_COOKIE_KEY)
+    response.delete_cookie(config.ACCESS_TOKEN_COOKIE['key'])
 
 
 class OAuth2PasswordBearerMultiSource(OAuth2):
@@ -70,7 +67,8 @@ class OAuth2PasswordBearerMultiSource(OAuth2):
                 provided_auth_types.add("bearer")
 
         # HTTP-only Cookie
-        cookie_access_token = request.cookies.get(auth.ACCESS_TOKEN_COOKIE_KEY)
+        cookie_access_token = request.cookies.get(
+            config.ACCESS_TOKEN_COOKIE['key'])
         if cookie_access_token:
             tokens.add(typing.cast(
                 custom_types.JwtEncodedStr, cookie_access_token))

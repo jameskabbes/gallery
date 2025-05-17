@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useReducer, createContext } from 'react';
 import {
-  Toast,
+  ToastType,
   ToastId,
   ToastNoType,
   ToastContextType,
@@ -9,7 +9,7 @@ import {
 } from '../types';
 
 const toastReducerDefaultState: ToastContextState = {
-  toasts: new Map<string, Toast>(),
+  toasts: new Map<string, ToastType>(),
 };
 
 function toastReducer(state: ToastContextState, action: ToastReducerAction) {
@@ -54,7 +54,7 @@ const ToastContext = createContext<ToastContextType>({
 function ToastContextProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(toastReducer, toastReducerDefaultState);
 
-  function make(toast: Toast): ToastId {
+  function make(toast: ToastType): ToastId {
     const id = Math.random().toString(12);
     dispatch({ type: 'ADD', payload: { id, toast } });
     return id;
@@ -63,7 +63,7 @@ function ToastContextProvider({ children }: { children: React.ReactNode }) {
     return make({ ...toast, type: 'pending' });
   }
 
-  function update(id: ToastId, toast: Partial<Toast>) {
+  function update(id: ToastId, toast: Partial<ToastType>) {
     dispatch({ type: 'UPDATE', payload: { id, toast } });
   }
 

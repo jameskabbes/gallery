@@ -22,6 +22,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=list(config.HEADER_KEYS.values()),
 )
 
 
@@ -30,6 +31,9 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
 
     response = JSONResponse(status_code=exc.status_code,
                             content={"detail": exc.detail}, headers=exc.headers)
+
+    print('in custom_http_exception_handler')
+    print(response.headers)
 
     # in get_auhorization, a special header 'X-Auth-Logout' is set, signaling the user should be logged out
     if exc.headers and exc.headers.get(config.HEADER_KEYS['auth_logout']) is not None:

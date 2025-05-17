@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import os
 import typing
+from typing import TypedDict, NotRequired, Literal
 import yaml
 from dotenv import dotenv_values
 import datetime as datetime_module
@@ -128,7 +129,7 @@ if BACKEND_SECRETS_CONFIG_PATH is None or BACKEND_CONFIG_PATH is None or SHARED_
 
 # Shared config
 
-class SharedConfig(typing.TypedDict):
+class SharedConfig(TypedDict):
     BACKEND_URL: str
     FRONTEND_URL: str
     AUTH_KEY: str
@@ -191,7 +192,7 @@ OTP_LENGTH: int = _SHARED_CONFIG['OTP_LENGTH']
 # Backend Config
 
 
-class DbEnv(typing.TypedDict):
+class DbEnv(TypedDict):
     URL: str
 
 
@@ -199,12 +200,19 @@ CredentialNames = typing.Literal['access_token',
                                  'magic_link', 'request_sign_up', 'otp']
 
 
-class AuthEnv(typing.TypedDict):
+class AuthEnv(TypedDict):
     credential_lifespans: dict[CredentialNames,
                                custom_types.ISO8601DurationStr]
 
 
-class BackendConfig(typing.TypedDict):
+class AccessTokenCookie(TypedDict):
+    key: str
+    secure: NotRequired[bool]
+    httponly: NotRequired[bool]
+    samesite: NotRequired[Literal['lax', 'strict', 'none']]
+
+
+class BackendConfig(TypedDict):
     URL: str
     UVICORN: dict
     DB: DbEnv
@@ -212,6 +220,7 @@ class BackendConfig(typing.TypedDict):
     GOOGLE_CLIENT_PATH: str
     AUTH: AuthEnv
     OPENAPI_SCHEMA_PATH: str
+    ACCESS_TOKEN_COOKIE: AccessTokenCookie
 
 
 with BACKEND_CONFIG_PATH.open('r') as f:
@@ -244,7 +253,7 @@ GALLERIES_DIR = MEDIA_DIR / 'galleries'
 UVICORN = _BACKEND_CONFIG['UVICORN']
 
 
-class AuthConfig(typing.TypedDict):
+class AuthConfig(TypedDict):
     credential_lifespans: dict[CredentialNames, datetime_module.timedelta]
 
 
@@ -257,8 +266,10 @@ AUTH: AuthConfig = {
 OPENAPI_SCHEMA_PATH = convert_env_path_to_absolute(
     Path.cwd(), _BACKEND_CONFIG['OPENAPI_SCHEMA_PATH'])
 
+ACCESS_TOKEN_COOKIE: AccessTokenCookie = _BACKEND_CONFIG['ACCESS_TOKEN_COOKIE']
 
-class BackendSecrets(typing.TypedDict):
+
+class BackendSecrets(TypedDict):
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str
 

@@ -5,7 +5,7 @@ import { paths, operations, components } from '../../openapi_schema';
 import { getGalleryLink } from './getLink';
 
 interface Props {
-  gallery: components['schemas']['Gallery'];
+  gallery: components['schemas']['GalleryPublic'];
 }
 
 function GalleryCardButton({ gallery }: Props) {

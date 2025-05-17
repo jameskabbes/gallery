@@ -22,6 +22,8 @@ async function callApi<TResponseData, TRequestData = any>({
     console.log(method, url);
     const response = await apiClient.request<TResponseData>(requestConfig);
 
+    console.log('Response headers:', response.headers);
+
     if (authContext && response.headers[config.headerKeys['auth_logout']]) {
       authContext.logOut();
     }

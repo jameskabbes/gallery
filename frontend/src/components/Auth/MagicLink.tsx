@@ -102,13 +102,11 @@ function RequestMagicLink() {
                     id="request-magic-link-email"
                     minLength={
                       openapi_schema.components.schemas
-                        .PostRequestMagicLinkEmailRequest.properties.email
-                        .minLength
+                        .RequestMagicLinkEmailRequest.properties.email.minLength
                     }
                     maxLength={
                       openapi_schema.components.schemas
-                        .PostRequestMagicLinkEmailRequest.properties.email
-                        .maxLength
+                        .RequestMagicLinkEmailRequest.properties.email.maxLength
                     }
                     type="email"
                     checkValidity={true}

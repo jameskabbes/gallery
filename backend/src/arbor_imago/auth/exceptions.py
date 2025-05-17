@@ -30,7 +30,7 @@ def different_tokens_provided(types: set[str], n: int) -> StatusCodeAndDetail:
 def missing_authorization() -> StatusCodeAndDetail:
     return StatusCodeAndDetail(
         status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing Authorization header or {} cookie".format(
-            auth.ACCESS_TOKEN_COOKIE_KEY)
+            config.ACCESS_TOKEN_COOKIE['key'])
     )
 
 

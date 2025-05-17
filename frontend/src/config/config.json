@@ -56,12 +56,12 @@
     ]
   },
   "otpLength": 6,
-  "googleClientId": "1855778612-f8jc05eb675d4226q50kqea1vp354ra0.apps.googleusercontent.com",
+  "googleClientId": "abcdef.apps.googleusercontent.com",
   "vite": {
     "server": {
       "port": 3000,
       "host": true
     }
   },
-  "openapiSchemaPath": "C:\\Users\\dx8hu5r\\Documents\\Repos\\jameskabbes\\gallery\\openapi_schema.json"
+  "openapiSchemaPath": "/Users/james/Documents/Repos/gallery/openapi_schema.json"
 }
