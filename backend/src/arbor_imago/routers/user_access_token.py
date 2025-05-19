@@ -156,10 +156,16 @@ class UserAccessTokenAdminRouter(_Base):
     @classmethod
     async def delete(
         cls,
+        response: Response,
         user_access_token_id: custom_types.UserAccessToken.id,
         authorization: Annotated[auth_utils.GetAuthReturn, Depends(
             auth_utils.make_get_auth_dependency(required_scopes={'admin'}))]
     ):
+
+        if isinstance(authorization.auth_credential, UserAccessTokenTable):
+            if authorization.auth_credential.id == user_access_token_id:
+                response.headers[config.HEADER_KEYS['auth_logout']] = 'true'
+                auth_utils.delete_access_token_cookie(response)
 
         return await cls._delete({
             'authorization': authorization,
