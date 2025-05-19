@@ -87,8 +87,8 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">Base</span><span class="p">(</span><span class="n">status_code_and_detail</span><span class="p">:</span> <span class="n">StatusCodeAndDetail</span><span class="p">,</span> <span class="n">logout</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HTTPException</span><span class="p">:</span>
     <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;WWW-Authenticate&quot;</span><span class="p">:</span> <span class="s2">&quot;Bearer, Cookie&quot;</span><span class="p">}</span>
     <span class="k">if</span> <span class="n">logout</span><span class="p">:</span>
-        <span class="n">headers</span><span class="p">[</span><span class="n">config</span><span class="o">.</span><span class="n">HEADER_KEYS</span>
-                <span class="p">[</span><span class="s1">&#39;auth_logout&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="s1">&#39;true&#39;</span>
+        <span class="n">headers</span><span class="p">[</span><span class="n">config</span><span class="o">.</span><span class="n">HEADER_KEYS</span><span class="p">[</span><span class="s1">&#39;auth_logout&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="s1">&#39;true&#39;</span>
+
     <span class="k">return</span> <span class="n">HTTPException</span><span class="p">(</span>
         <span class="n">status_code</span><span class="o">=</span><span class="n">status_code_and_detail</span><span class="p">[</span><span class="s1">&#39;status_code&#39;</span><span class="p">],</span>
         <span class="n">detail</span><span class="o">=</span><span class="n">status_code_and_detail</span><span class="p">[</span><span class="s1">&#39;detail&#39;</span><span class="p">],</span>

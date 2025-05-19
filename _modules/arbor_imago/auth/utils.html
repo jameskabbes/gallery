@@ -100,8 +100,6 @@
 <a class="viewcode-back" href="../../../arbor_imago.auth.html#arbor_imago.auth.utils.set_access_token_cookie">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_access_token_cookie</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="n">Response</span><span class="p">,</span> <span class="n">access_token</span><span class="p">:</span> <span class="n">custom_types</span><span class="o">.</span><span class="n">JwtEncodedStr</span><span class="p">,</span>  <span class="n">expiry</span><span class="p">:</span> <span class="n">datetime_module</span><span class="o">.</span><span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;setting access token cookie&#39;</span><span class="p">,</span> <span class="n">access_token</span><span class="p">)</span>
-
     <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">if</span> <span class="n">expiry</span><span class="p">:</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;expires&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">expiry</span>
@@ -110,9 +108,7 @@
         <span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">ACCESS_TOKEN_COOKIE</span><span class="p">,</span>
         <span class="n">value</span><span class="o">=</span><span class="n">access_token</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">)</span>
-
-    <span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div>
+    <span class="p">)</span></div>
 
 
 
@@ -205,13 +201,18 @@
     <span class="n">raise_exceptions</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">NotRequired</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span>
 
 
+<span class="k">class</span><span class="w"> </span><span class="nc">_WithLogoutOnException</span><span class="p">(</span><span class="n">typing</span><span class="o">.</span><span class="n">TypedDict</span><span class="p">):</span>
+    <span class="n">logout_on_exception</span><span class="p">:</span> <span class="nb">bool</span>
+
+
 <div class="viewcode-block" id="MakeGetAuthDepedencyKwargs">
 <a class="viewcode-back" href="../../../arbor_imago.auth.html#arbor_imago.auth.utils.MakeGetAuthDepedencyKwargs">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MakeGetAuthDepedencyKwargs</span><span class="p">(</span>
         <span class="n">_WithRequiredScopes</span><span class="p">,</span>
         <span class="n">_WithOverrideLifetime</span><span class="p">,</span>
         <span class="n">_WithPermittedTypes</span><span class="p">,</span>
-        <span class="n">_WithRaiseExceptions</span><span class="p">):</span>
+        <span class="n">_WithRaiseExceptions</span><span class="p">,</span>
+<span class="p">):</span>
     <span class="k">pass</span></div>
 
 
@@ -419,6 +420,8 @@
 <div class="viewcode-block" id="make_get_auth_dependency">
 <a class="viewcode-back" href="../../../arbor_imago.auth.html#arbor_imago.auth.utils.make_get_auth_dependency">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">make_get_auth_dependency</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Unpack</span><span class="p">[</span><span class="n">MakeGetAuthDepedencyKwargs</span><span class="p">]):</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;make get auth depends kwargs: &#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">))</span>
 
     <span class="n">raise_exceptions</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;raise_exceptions&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
     <span class="n">logout_on_exception</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;logout_on_exception&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>

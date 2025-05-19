@@ -161,6 +161,7 @@
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">authorization</span><span class="o">.</span><span class="n">auth_credential</span><span class="p">,</span> <span class="n">UserAccessTokenTable</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">authorization</span><span class="o">.</span><span class="n">auth_credential</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">user_access_token_id</span><span class="p">:</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="n">config</span><span class="o">.</span><span class="n">HEADER_KEYS</span><span class="p">[</span><span class="s1">&#39;auth_logout&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="s1">&#39;true&#39;</span>
                 <span class="n">auth_utils</span><span class="o">.</span><span class="n">delete_access_token_cookie</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="k">await</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_delete</span><span class="p">({</span>
