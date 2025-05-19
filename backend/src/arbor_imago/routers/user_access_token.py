@@ -77,6 +77,7 @@ class UserAccessTokenRouter(_Base):
 
         if isinstance(authorization.auth_credential, UserAccessTokenTable):
             if authorization.auth_credential.id == user_access_token_id:
+                response.headers[config.HEADER_KEYS['auth_logout']] = 'true'
                 auth_utils.delete_access_token_cookie(response)
 
         return await cls._delete({

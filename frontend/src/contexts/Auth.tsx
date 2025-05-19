@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useContext, createContext } from 'react';
 import { AuthContextState, AuthContextType, ToastId } from '../types';
-import { paths, operations, components } from '../openapi_schema';
 import { ToastContext } from './Toast';
 import isEqual from 'lodash.isequal';
 import { config } from '../config';

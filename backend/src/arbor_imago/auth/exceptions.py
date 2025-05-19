@@ -11,8 +11,8 @@ class StatusCodeAndDetail(typing.TypedDict):
 def Base(status_code_and_detail: StatusCodeAndDetail, logout: bool = True) -> HTTPException:
     headers = {"WWW-Authenticate": "Bearer, Cookie"}
     if logout:
-        headers[config.HEADER_KEYS
-                ['auth_logout']] = 'true'
+        headers[config.HEADER_KEYS['auth_logout']] = 'true'
+
     return HTTPException(
         status_code=status_code_and_detail['status_code'],
         detail=status_code_and_detail['detail'],

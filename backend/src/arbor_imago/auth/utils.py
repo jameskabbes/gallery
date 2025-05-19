@@ -27,8 +27,6 @@ from arbor_imago.services import auth_credential as auth_credential_service
 
 def set_access_token_cookie(response: Response, access_token: custom_types.JwtEncodedStr,  expiry: datetime_module.datetime | None = None):
 
-    print('setting access token cookie', access_token)
-
     kwargs = {}
     if expiry:
         kwargs['expires'] = expiry
@@ -38,8 +36,6 @@ def set_access_token_cookie(response: Response, access_token: custom_types.JwtEn
         value=access_token,
         **kwargs
     )
-
-    print(response)
 
 
 def delete_access_token_cookie(response: Response):
@@ -122,11 +118,16 @@ class _WithRaiseExceptions(typing.TypedDict):
     raise_exceptions: typing.NotRequired[bool]
 
 
+class _WithLogoutOnException(typing.TypedDict):
+    logout_on_exception: bool
+
+
 class MakeGetAuthDepedencyKwargs(
         _WithRequiredScopes,
         _WithOverrideLifetime,
         _WithPermittedTypes,
-        _WithRaiseExceptions):
+        _WithRaiseExceptions,
+):
     pass
 
 
@@ -316,6 +317,8 @@ async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJ
 
 
 def make_get_auth_dependency(**kwargs: typing.Unpack[MakeGetAuthDepedencyKwargs]):
+
+    print('make get auth depends kwargs: ', str(kwargs))
 
     raise_exceptions = kwargs.get('raise_exceptions', True)
     logout_on_exception = kwargs.get('logout_on_exception', True)
