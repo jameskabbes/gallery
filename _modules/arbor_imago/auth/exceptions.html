@@ -74,24 +74,16 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">arbor_imago</span><span class="w"> </span><span class="kn">import</span> <span class="n">custom_types</span><span class="p">,</span> <span class="n">auth</span><span class="p">,</span> <span class="n">config</span>
 
 
-<div class="viewcode-block" id="StatusCodeAndDetail">
-<a class="viewcode-back" href="../../../arbor_imago.auth.html#arbor_imago.auth.exceptions.StatusCodeAndDetail">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">StatusCodeAndDetail</span><span class="p">(</span><span class="n">typing</span><span class="o">.</span><span class="n">TypedDict</span><span class="p">):</span>
-    <span class="n">status_code</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">detail</span><span class="p">:</span> <span class="nb">str</span></div>
-
-
-
 <div class="viewcode-block" id="Base">
 <a class="viewcode-back" href="../../../arbor_imago.auth.html#arbor_imago.auth.exceptions.Base">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">Base</span><span class="p">(</span><span class="n">status_code_and_detail</span><span class="p">:</span> <span class="n">StatusCodeAndDetail</span><span class="p">,</span> <span class="n">logout</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HTTPException</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">Base</span><span class="p">(</span><span class="n">status_code</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">detail</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">logout</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HTTPException</span><span class="p">:</span>
     <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;WWW-Authenticate&quot;</span><span class="p">:</span> <span class="s2">&quot;Bearer, Cookie&quot;</span><span class="p">}</span>
     <span class="k">if</span> <span class="n">logout</span><span class="p">:</span>
         <span class="n">headers</span><span class="p">[</span><span class="n">config</span><span class="o">.</span><span class="n">HEADER_KEYS</span><span class="p">[</span><span class="s1">&#39;auth_logout&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="s1">&#39;true&#39;</span>
 
     <span class="k">return</span> <span class="n">HTTPException</span><span class="p">(</span>
-        <span class="n">status_code</span><span class="o">=</span><span class="n">status_code_and_detail</span><span class="p">[</span><span class="s1">&#39;status_code&#39;</span><span class="p">],</span>
-        <span class="n">detail</span><span class="o">=</span><span class="n">status_code_and_detail</span><span class="p">[</span><span class="s1">&#39;detail&#39;</span><span class="p">],</span>
+        <span class="n">status_code</span><span class="o">=</span><span class="n">status_code</span><span class="p">,</span>
+        <span class="n">detail</span><span class="o">=</span><span class="n">detail</span><span class="p">,</span>
         <span class="n">headers</span><span class="o">=</span><span class="n">headers</span>
     <span class="p">)</span></div>
 
@@ -99,94 +91,114 @@
 
 <div class="viewcode-block" id="different_tokens_provided">
 <a class="viewcode-back" href="../../../arbor_imago.auth.html#arbor_imago.auth.exceptions.different_tokens_provided">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">different_tokens_provided</span><span class="p">(</span><span class="n">types</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StatusCodeAndDetail</span><span class="p">:</span>
-    <span class="k">return</span> <span class="n">StatusCodeAndDetail</span><span class="p">(</span>
-        <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{n}</span><span class="s2"> different tokens provided from the following sources: </span><span class="si">{}</span><span class="s2">. Only one unique token may be provided&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-            <span class="n">n</span><span class="p">,</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">types</span><span class="p">))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">different_tokens_provided</span><span class="p">(</span><span class="n">types</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HTTPException</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">Base</span><span class="p">(</span>
+        <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">,</span>
+        <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{n}</span><span class="s2"> different tokens provided from the following sources: </span><span class="si">{}</span><span class="s2">. Only one unique token may be provided&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">n</span><span class="p">,</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">types</span><span class="p">)),</span>
+        <span class="n">logout</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="missing_authorization">
 <a class="viewcode-back" href="../../../arbor_imago.auth.html#arbor_imago.auth.exceptions.missing_authorization">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">missing_authorization</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">StatusCodeAndDetail</span><span class="p">:</span>
-    <span class="k">return</span> <span class="n">StatusCodeAndDetail</span><span class="p">(</span>
-        <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_401_UNAUTHORIZED</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Missing Authorization header or </span><span class="si">{}</span><span class="s2"> cookie&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-            <span class="n">config</span><span class="o">.</span><span class="n">ACCESS_TOKEN_COOKIE</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">missing_authorization</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">HTTPException</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">Base</span><span class="p">(</span>
+        <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_401_UNAUTHORIZED</span><span class="p">,</span>
+        <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Missing Authorization header or </span><span class="si">{}</span><span class="s2"> cookie&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">ACCESS_TOKEN_COOKIE</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]),</span>
+        <span class="n">logout</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="improper_format">
 <a class="viewcode-back" href="../../../arbor_imago.auth.html#arbor_imago.auth.exceptions.improper_format">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">improper_format</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">StatusCodeAndDetail</span><span class="p">:</span>
-    <span class="k">return</span> <span class="n">StatusCodeAndDetail</span><span class="p">(</span>
-        <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Improper format for authorization token&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">improper_format</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">HTTPException</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">Base</span><span class="p">(</span>
+        <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">,</span>
+        <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Improper format for authorization token&quot;</span><span class="p">,</span>
+        <span class="n">logout</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="missing_required_claims">
 <a class="viewcode-back" href="../../../arbor_imago.auth.html#arbor_imago.auth.exceptions.missing_required_claims">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">missing_required_claims</span><span class="p">(</span><span class="n">claims</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">StatusCodeAndDetail</span><span class="p">:</span>
-    <span class="k">return</span> <span class="n">StatusCodeAndDetail</span><span class="p">(</span>
-        <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Missing required claims: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-            <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">claims</span><span class="p">))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">missing_required_claims</span><span class="p">(</span><span class="n">claims</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">HTTPException</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">Base</span><span class="p">(</span>
+        <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">,</span>
+        <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Missing required claims: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">claims</span><span class="p">)),</span>
+        <span class="n">logout</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="authorization_expired">
 <a class="viewcode-back" href="../../../arbor_imago.auth.html#arbor_imago.auth.exceptions.authorization_expired">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">authorization_expired</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">StatusCodeAndDetail</span><span class="p">:</span>
-    <span class="k">return</span> <span class="n">StatusCodeAndDetail</span><span class="p">(</span>
-        <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_401_UNAUTHORIZED</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Authorization expired&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">authorization_expired</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">HTTPException</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">Base</span><span class="p">(</span>
+        <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_401_UNAUTHORIZED</span><span class="p">,</span>
+        <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Authorization expired&quot;</span><span class="p">,</span>
+        <span class="n">logout</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="user_not_found">
 <a class="viewcode-back" href="../../../arbor_imago.auth.html#arbor_imago.auth.exceptions.user_not_found">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">user_not_found</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">StatusCodeAndDetail</span><span class="p">:</span>
-    <span class="k">return</span> <span class="n">StatusCodeAndDetail</span><span class="p">(</span>
-        <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_401_UNAUTHORIZED</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;User not found&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">user_not_found</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">HTTPException</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">Base</span><span class="p">(</span>
+        <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_401_UNAUTHORIZED</span><span class="p">,</span>
+        <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;User not found&quot;</span><span class="p">,</span>
+        <span class="n">logout</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="not_permitted">
 <a class="viewcode-back" href="../../../arbor_imago.auth.html#arbor_imago.auth.exceptions.not_permitted">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">not_permitted</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">StatusCodeAndDetail</span><span class="p">:</span>
-    <span class="k">return</span> <span class="n">StatusCodeAndDetail</span><span class="p">(</span>
-        <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_403_FORBIDDEN</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Not permitted&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">not_permitted</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">HTTPException</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">Base</span><span class="p">(</span>
+        <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_403_FORBIDDEN</span><span class="p">,</span>
+        <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Not permitted&quot;</span><span class="p">,</span>
+        <span class="n">logout</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="credentials">
 <a class="viewcode-back" href="../../../arbor_imago.auth.html#arbor_imago.auth.exceptions.credentials">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">credentials</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">StatusCodeAndDetail</span><span class="p">:</span>
-    <span class="k">return</span> <span class="n">StatusCodeAndDetail</span><span class="p">(</span>
-        <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_401_UNAUTHORIZED</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Could not validate credentials&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">credentials</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">HTTPException</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">Base</span><span class="p">(</span>
+        <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_401_UNAUTHORIZED</span><span class="p">,</span>
+        <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Could not validate credentials&quot;</span><span class="p">,</span>
+        <span class="n">logout</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="invalid_otp">
 <a class="viewcode-back" href="../../../arbor_imago.auth.html#arbor_imago.auth.exceptions.invalid_otp">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">invalid_otp</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">StatusCodeAndDetail</span><span class="p">:</span>
-    <span class="k">return</span> <span class="n">StatusCodeAndDetail</span><span class="p">(</span>
-        <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_401_UNAUTHORIZED</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Invalid OTP&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">invalid_otp</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">HTTPException</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">Base</span><span class="p">(</span>
+        <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_401_UNAUTHORIZED</span><span class="p">,</span>
+        <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Invalid OTP&quot;</span><span class="p">,</span>
+        <span class="n">logout</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="authorization_type_not_permitted">
 <a class="viewcode-back" href="../../../arbor_imago.auth.html#arbor_imago.auth.exceptions.authorization_type_not_permitted">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">authorization_type_not_permitted</span><span class="p">(</span><span class="nb">type</span><span class="p">:</span> <span class="n">custom_types</span><span class="o">.</span><span class="n">AuthCredential</span><span class="o">.</span><span class="n">type</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StatusCodeAndDetail</span><span class="p">:</span>
-    <span class="k">return</span> <span class="n">StatusCodeAndDetail</span><span class="p">(</span>
-        <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Authorization type &#39;</span><span class="si">{}</span><span class="s2">&#39; not permitted for this endpoint&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-            <span class="nb">type</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">authorization_type_not_permitted</span><span class="p">(</span><span class="nb">type</span><span class="p">:</span> <span class="n">custom_types</span><span class="o">.</span><span class="n">AuthCredential</span><span class="o">.</span><span class="n">type</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HTTPException</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">Base</span><span class="p">(</span>
+        <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">,</span>
+        <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Authorization type &#39;</span><span class="si">{}</span><span class="s2">&#39; not permitted for this endpoint&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="nb">type</span><span class="p">),</span>
+        <span class="n">logout</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">)</span></div>
 
 </pre></div>

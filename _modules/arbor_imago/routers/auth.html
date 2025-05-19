@@ -314,7 +314,7 @@
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">authorization</span><span class="o">.</span><span class="n">exception</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">auth_exceptions</span><span class="o">.</span><span class="n">Base</span><span class="p">(</span><span class="n">authorization</span><span class="o">.</span><span class="n">exception</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">authorization</span><span class="o">.</span><span class="n">exception</span>
 
         <span class="n">auth_credential</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
             <span class="n">UserAccessToken</span><span class="p">,</span> <span class="n">authorization</span><span class="o">.</span><span class="n">auth_credential</span><span class="p">)</span>
@@ -399,10 +399,11 @@
 
             <span class="k">if</span> <span class="p">(</span><span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">exec</span><span class="p">(</span><span class="n">select</span><span class="p">(</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
                     <span class="n">User</span><span class="o">.</span><span class="n">email</span> <span class="o">==</span> <span class="n">cast</span><span class="p">(</span><span class="n">SignUp</span><span class="p">,</span> <span class="n">authorization</span><span class="o">.</span><span class="n">auth_credential</span><span class="p">)</span><span class="o">.</span><span class="n">email</span><span class="p">)))</span><span class="o">.</span><span class="n">one_or_none</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">auth_exceptions</span><span class="o">.</span><span class="n">Base</span><span class="p">({</span>
-                    <span class="s1">&#39;status_code&#39;</span><span class="p">:</span> <span class="n">status</span><span class="o">.</span><span class="n">HTTP_409_CONFLICT</span><span class="p">,</span>
-                    <span class="s1">&#39;detail&#39;</span><span class="p">:</span> <span class="s1">&#39;User already exists&#39;</span>
-                <span class="p">})</span>
+                <span class="k">raise</span> <span class="n">auth_exceptions</span><span class="o">.</span><span class="n">Base</span><span class="p">(</span>
+                    <span class="n">status</span><span class="o">.</span><span class="n">HTTP_409_CONFLICT</span><span class="p">,</span>
+                    <span class="s1">&#39;User already exists&#39;</span><span class="p">,</span>
+                    <span class="n">logout</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
 
         <span class="k">async</span> <span class="k">with</span> <span class="n">config</span><span class="o">.</span><span class="n">ASYNC_SESSIONMAKER</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
             <span class="n">sign_up</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">SignUp</span><span class="p">,</span>
@@ -466,10 +467,11 @@
         <span class="c1"># fields: sub, name, given_name, family_name, picture, email, email_verified</span>
         <span class="n">email</span> <span class="o">=</span> <span class="n">idinfo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;email&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">email</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">auth_exceptions</span><span class="o">.</span><span class="n">Base</span><span class="p">(</span><span class="n">status_code_and_detail</span><span class="o">=</span><span class="n">auth_exceptions</span><span class="o">.</span><span class="n">StatusCodeAndDetail</span><span class="p">(</span>
+            <span class="k">raise</span> <span class="n">auth_exceptions</span><span class="o">.</span><span class="n">Base</span><span class="p">(</span>
                 <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">,</span>
-                <span class="n">detail</span><span class="o">=</span><span class="s1">&#39;Google account did not return an email&#39;</span>
-            <span class="p">))</span>
+                <span class="n">detail</span><span class="o">=</span><span class="s1">&#39;Google account did not return an email&#39;</span><span class="p">,</span>
+                <span class="n">logout</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
 
         <span class="k">async</span> <span class="k">with</span> <span class="n">config</span><span class="o">.</span><span class="n">ASYNC_SESSIONMAKER</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
 

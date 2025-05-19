@@ -150,10 +150,9 @@
             <span class="n">provided_auth_types</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;cookie&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">Base</span><span class="p">(</span>
-                <span class="n">exceptions</span><span class="o">.</span><span class="n">different_tokens_provided</span><span class="p">(</span>
-                    <span class="n">provided_auth_types</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span>
-                <span class="p">),</span> <span class="n">logout</span><span class="o">=</span><span class="kc">False</span>
+
+            <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">different_tokens_provided</span><span class="p">(</span>
+                <span class="n">provided_auth_types</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span>
             <span class="p">)</span>
 
         <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -171,10 +170,16 @@
 <a class="viewcode-back" href="../../../arbor_imago.auth.html#arbor_imago.auth.utils.GetAuthReturn">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">GetAuthReturn</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">schemas</span><span class="o">.</span><span class="n">TAuthCredentialInstance_co</span><span class="p">]):</span>
     <span class="n">isAuthorized</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="n">exception</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">exceptions</span><span class="o">.</span><span class="n">StatusCodeAndDetail</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">exception</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">HTTPException</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">user</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">user_schema</span><span class="o">.</span><span class="n">UserPrivate</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">scope_ids</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">set</span><span class="p">[</span><span class="n">custom_types</span><span class="o">.</span><span class="n">Scope</span><span class="o">.</span><span class="n">id</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">auth_credential</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">schemas</span><span class="o">.</span><span class="n">TAuthCredentialInstance_co</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="GetAuthReturn.Config">
+<a class="viewcode-back" href="../../../arbor_imago.auth.html#arbor_imago.auth.utils.GetAuthReturn.Config">[docs]</a>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
+        <span class="n">arbitrary_types_allowed</span> <span class="o">=</span> <span class="kc">True</span></div>
+
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_user_id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">custom_types</span><span class="o">.</span><span class="n">User</span><span class="o">.</span><span class="n">id</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
@@ -199,10 +204,6 @@
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_WithRaiseExceptions</span><span class="p">(</span><span class="n">typing</span><span class="o">.</span><span class="n">TypedDict</span><span class="p">):</span>
     <span class="n">raise_exceptions</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">NotRequired</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">_WithLogoutOnException</span><span class="p">(</span><span class="n">typing</span><span class="o">.</span><span class="n">TypedDict</span><span class="p">):</span>
-    <span class="n">logout_on_exception</span><span class="p">:</span> <span class="nb">bool</span>
 
 
 <div class="viewcode-block" id="MakeGetAuthDepedencyKwargs">
@@ -420,19 +421,13 @@
 <div class="viewcode-block" id="make_get_auth_dependency">
 <a class="viewcode-back" href="../../../arbor_imago.auth.html#arbor_imago.auth.utils.make_get_auth_dependency">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">make_get_auth_dependency</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Unpack</span><span class="p">[</span><span class="n">MakeGetAuthDepedencyKwargs</span><span class="p">]):</span>
-
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;make get auth depends kwargs: &#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">))</span>
-
     <span class="n">raise_exceptions</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;raise_exceptions&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
-    <span class="n">logout_on_exception</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;logout_on_exception&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_authorization_dependency</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="n">Response</span><span class="p">,</span> <span class="n">auth_token</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Annotated</span><span class="p">[</span><span class="n">custom_types</span><span class="o">.</span><span class="n">JwtEncodedStr</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">Depends</span><span class="p">(</span><span class="n">oauth2_scheme</span><span class="p">)])</span> <span class="o">-&gt;</span> <span class="n">GetAuthReturn</span><span class="p">:</span>
         <span class="n">get_authorization_return</span> <span class="o">=</span> <span class="k">await</span> <span class="n">get_auth_from_auth_credential_jwt</span><span class="p">(</span><span class="n">token</span><span class="o">=</span><span class="n">auth_token</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">get_authorization_return</span><span class="o">.</span><span class="n">exception</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">raise_exceptions</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">Base</span><span class="p">(</span>
-                    <span class="n">get_authorization_return</span><span class="o">.</span><span class="n">exception</span><span class="p">,</span> <span class="n">logout</span><span class="o">=</span><span class="n">logout_on_exception</span>
-                <span class="p">)</span>
+                <span class="k">raise</span> <span class="n">get_authorization_return</span><span class="o">.</span><span class="n">exception</span>
         <span class="k">return</span> <span class="n">get_authorization_return</span>
     <span class="k">return</span> <span class="n">get_authorization_dependency</span></div>
 
@@ -487,7 +482,7 @@
                 <span class="n">session</span><span class="p">,</span> <span class="n">form_data</span><span class="o">.</span><span class="n">username</span><span class="p">,</span> <span class="n">form_data</span><span class="o">.</span><span class="n">password</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">user</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">Base</span><span class="p">(</span><span class="n">exceptions</span><span class="o">.</span><span class="n">credentials</span><span class="p">())</span>
+                <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">credentials</span><span class="p">()</span>
             <span class="k">return</span> <span class="n">user</span>
 
     <span class="k">return</span> <span class="n">authenticate_user_with_username_and_password</span></div>
@@ -547,14 +542,14 @@
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">login_otp</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">,</span> <span class="n">user</span><span class="p">:</span> <span class="n">tables</span><span class="o">.</span><span class="n">User</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">Response</span><span class="p">,</span> <span class="n">code</span><span class="p">:</span> <span class="n">custom_types</span><span class="o">.</span><span class="n">OTP</span><span class="o">.</span><span class="n">code</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LoginWithOTPResponse</span><span class="p">:</span>
 
     <span class="k">if</span> <span class="n">user</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">Base</span><span class="p">(</span><span class="n">exceptions</span><span class="o">.</span><span class="n">invalid_otp</span><span class="p">())</span>
+        <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">invalid_otp</span><span class="p">()</span>
 
     <span class="n">query</span> <span class="o">=</span> <span class="n">select</span><span class="p">(</span><span class="n">OTPService</span><span class="o">.</span><span class="n">_MODEL</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
         <span class="n">OTPService</span><span class="o">.</span><span class="n">_MODEL</span><span class="o">.</span><span class="n">user_id</span> <span class="o">==</span> <span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
     <span class="n">otp</span> <span class="o">=</span> <span class="k">await</span> <span class="n">OTPService</span><span class="o">.</span><span class="n">fetch_one</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">otp</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">OTPService</span><span class="o">.</span><span class="n">verify_code</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">otp</span><span class="o">.</span><span class="n">hashed_code</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">Base</span><span class="p">(</span><span class="n">exceptions</span><span class="o">.</span><span class="n">invalid_otp</span><span class="p">())</span>
+        <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">invalid_otp</span><span class="p">()</span>
 
     <span class="n">get_auth</span> <span class="o">=</span> <span class="k">await</span> <span class="n">get_auth_from_auth_credential_table_inst</span><span class="p">(</span>
         <span class="n">otp</span><span class="p">,</span>
@@ -564,7 +559,7 @@
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">get_auth</span><span class="o">.</span><span class="n">exception</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">Base</span><span class="p">(</span><span class="n">get_auth</span><span class="o">.</span><span class="n">exception</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">get_auth</span><span class="o">.</span><span class="n">exception</span>
 
     <span class="c1"># if the code is active and correct, create a new access token</span>
     <span class="n">user_access_token</span> <span class="o">=</span> <span class="k">await</span> <span class="n">UserAccessTokenService</span><span class="o">.</span><span class="n">create</span><span class="p">({</span>
