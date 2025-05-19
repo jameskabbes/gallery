@@ -258,10 +258,16 @@
     <span class="nd">@classmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">response</span><span class="p">:</span> <span class="n">Response</span><span class="p">,</span>
         <span class="n">user_access_token_id</span><span class="p">:</span> <span class="n">custom_types</span><span class="o">.</span><span class="n">UserAccessToken</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
         <span class="n">authorization</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">auth_utils</span><span class="o">.</span><span class="n">GetAuthReturn</span><span class="p">,</span> <span class="n">Depends</span><span class="p">(</span>
             <span class="n">auth_utils</span><span class="o">.</span><span class="n">make_get_auth_dependency</span><span class="p">(</span><span class="n">required_scopes</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;admin&#39;</span><span class="p">}))]</span>
     <span class="p">):</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">authorization</span><span class="o">.</span><span class="n">auth_credential</span><span class="p">,</span> <span class="n">UserAccessTokenTable</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">authorization</span><span class="o">.</span><span class="n">auth_credential</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">user_access_token_id</span><span class="p">:</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="n">config</span><span class="o">.</span><span class="n">HEADER_KEYS</span><span class="p">[</span><span class="s1">&#39;auth_logout&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="s1">&#39;true&#39;</span>
+                <span class="n">auth_utils</span><span class="o">.</span><span class="n">delete_access_token_cookie</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="k">await</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_delete</span><span class="p">({</span>
             <span class="s1">&#39;authorization&#39;</span><span class="p">:</span> <span class="n">authorization</span><span class="p">,</span>
