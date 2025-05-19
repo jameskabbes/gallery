@@ -1,10 +1,23 @@
 import { useState, useEffect } from 'react';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { apiClient } from './apiClient';
-import { CallApiOptions, UseApiCallReturn } from '../types';
+import { AuthContextType, CallApiOptions, UseApiCallReturn } from '../types';
 import { paths, operations, components } from '../openapi_schema';
 import openapi_schema from '../../../openapi_schema.json';
 import { config } from '../config';
+
+function handleAuthContext<T>(
+  authContext: AuthContextType,
+  headers: AxiosResponse['headers'],
+  data: T
+) {
+  if (authContext && headers[config.headerKeys['auth_logout']]) {
+    authContext.logOut();
+  }
+  if (authContext) {
+    authContext.updateFromApiResponse(data);
+  }
+}
 
 async function callApi<TResponseData, TRequestData = any>({
   url,
@@ -21,19 +34,22 @@ async function callApi<TResponseData, TRequestData = any>({
 
     console.log(method, url);
     const response = await apiClient.request<TResponseData>(requestConfig);
-
     console.log('Response headers:', response.headers);
 
-    if (authContext && response.headers[config.headerKeys['auth_logout']]) {
-      authContext.logOut();
-    }
-    if (authContext) {
-      authContext.updateFromApiResponse(response.data);
-    }
+    handleAuthContext<TResponseData>(
+      authContext,
+      response.headers,
+      response.data
+    );
 
     return response;
   } catch (error) {
     console.log(error);
+    handleAuthContext<TResponseData>(
+      authContext,
+      error.response?.headers,
+      error.response?.data
+    );
     return error.response;
   }
 }

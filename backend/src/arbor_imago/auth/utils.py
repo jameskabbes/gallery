@@ -71,10 +71,9 @@ class OAuth2PasswordBearerMultiSource(OAuth2):
             provided_auth_types.add("cookie")
 
         if len(tokens) > 1:
-            raise exceptions.Base(
-                exceptions.different_tokens_provided(
-                    provided_auth_types, len(tokens)
-                ), logout=False
+
+            raise exceptions.different_tokens_provided(
+                provided_auth_types, len(tokens)
             )
 
         elif len(tokens) == 1:
@@ -89,10 +88,13 @@ oauth2_scheme = OAuth2PasswordBearerMultiSource(
 
 class GetAuthReturn(BaseModel, Generic[schemas.TAuthCredentialInstance_co]):
     isAuthorized: bool = False
-    exception: typing.Optional[exceptions.StatusCodeAndDetail] = None
+    exception: typing.Optional[HTTPException] = None
     user: typing.Optional[user_schema.UserPrivate] = None
     scope_ids: typing.Optional[set[custom_types.Scope.id]] = None
     auth_credential: typing.Optional[schemas.TAuthCredentialInstance_co] = None
+
+    class Config:
+        arbitrary_types_allowed = True
 
     @property
     def _user_id(self) -> custom_types.User.id | None:
@@ -116,10 +118,6 @@ class _WithPermittedTypes(typing.TypedDict):
 
 class _WithRaiseExceptions(typing.TypedDict):
     raise_exceptions: typing.NotRequired[bool]
-
-
-class _WithLogoutOnException(typing.TypedDict):
-    logout_on_exception: bool
 
 
 class MakeGetAuthDepedencyKwargs(
@@ -317,19 +315,13 @@ async def get_auth_from_auth_credential_jwt(**kwargs: typing.Unpack[GetAuthFromJ
 
 
 def make_get_auth_dependency(**kwargs: typing.Unpack[MakeGetAuthDepedencyKwargs]):
-
-    print('make get auth depends kwargs: ', str(kwargs))
-
     raise_exceptions = kwargs.get('raise_exceptions', True)
-    logout_on_exception = kwargs.get('logout_on_exception', True)
 
     async def get_authorization_dependency(response: Response, auth_token: typing.Annotated[custom_types.JwtEncodedStr | None, Depends(oauth2_scheme)]) -> GetAuthReturn:
         get_authorization_return = await get_auth_from_auth_credential_jwt(token=auth_token, **kwargs)
         if get_authorization_return.exception:
             if raise_exceptions:
-                raise exceptions.Base(
-                    get_authorization_return.exception, logout=logout_on_exception
-                )
+                raise get_authorization_return.exception
         return get_authorization_return
     return get_authorization_dependency
 
@@ -372,7 +364,7 @@ def make_authenticate_user_with_username_and_password_dependency():
                 session, form_data.username, form_data.password)
 
             if user is None:
-                raise exceptions.Base(exceptions.credentials())
+                raise exceptions.credentials()
             return user
 
     return authenticate_user_with_username_and_password
@@ -423,14 +415,14 @@ class LoginWithOTPResponse(GetUserSessionInfoNestedReturn):
 async def login_otp(session: AsyncSession, user: tables.User | None, response: Response, code: custom_types.OTP.code) -> LoginWithOTPResponse:
 
     if user is None:
-        raise exceptions.Base(exceptions.invalid_otp())
+        raise exceptions.invalid_otp()
 
     query = select(OTPService._MODEL).where(
         OTPService._MODEL.user_id == user.id)
     otp = await OTPService.fetch_one(session, query)
 
     if otp is None or OTPService.verify_code(code, otp.hashed_code) is False:
-        raise exceptions.Base(exceptions.invalid_otp())
+        raise exceptions.invalid_otp()
 
     get_auth = await get_auth_from_auth_credential_table_inst(
         otp,
@@ -440,7 +432,7 @@ async def login_otp(session: AsyncSession, user: tables.User | None, response: R
     )
 
     if get_auth.exception:
-        raise exceptions.Base(get_auth.exception)
+        raise get_auth.exception
 
     # if the code is active and correct, create a new access token
     user_access_token = await UserAccessTokenService.create({

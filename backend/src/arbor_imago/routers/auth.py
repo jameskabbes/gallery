@@ -182,7 +182,7 @@ class AuthRouter(base.Router):
         )
 
         if authorization.exception:
-            raise auth_exceptions.Base(authorization.exception)
+            raise authorization.exception
 
         auth_credential = cast(
             UserAccessToken, authorization.auth_credential)
@@ -258,10 +258,11 @@ class AuthRouter(base.Router):
 
             if (await session.exec(select(User).where(
                     User.email == cast(SignUp, authorization.auth_credential).email))).one_or_none() is not None:
-                raise auth_exceptions.Base({
-                    'status_code': status.HTTP_409_CONFLICT,
-                    'detail': 'User already exists'
-                })
+                raise auth_exceptions.Base(
+                    status.HTTP_409_CONFLICT,
+                    'User already exists',
+                    logout=False
+                )
 
         async with config.ASYNC_SESSIONMAKER() as session:
             sign_up = cast(SignUp,
@@ -322,10 +323,11 @@ class AuthRouter(base.Router):
         # fields: sub, name, given_name, family_name, picture, email, email_verified
         email = idinfo.get('email')
         if not email:
-            raise auth_exceptions.Base(status_code_and_detail=auth_exceptions.StatusCodeAndDetail(
+            raise auth_exceptions.Base(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail='Google account did not return an email'
-            ))
+                detail='Google account did not return an email',
+                logout=False
+            )
 
         async with config.ASYNC_SESSIONMAKER() as session:
 
