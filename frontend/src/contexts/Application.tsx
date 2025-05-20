@@ -12,7 +12,7 @@ import { ToastContextProvider } from './Toast';
 import { LogInWithGoogleProvider } from './LogInWithGoogle';
 import { LogInContextProvider } from './LogIn';
 
-const ApplicationContextProvider = ({ children }) => {
+export const ApplicationContextProvider = ({ children }) => {
   return (
     <ToastContextProvider>
       <EscapeKeyContextProvider>
@@ -41,5 +41,3 @@ const ApplicationContextProvider = ({ children }) => {
     </ToastContextProvider>
   );
 };
-
-export { ApplicationContextProvider };

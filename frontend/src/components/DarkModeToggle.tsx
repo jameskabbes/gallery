@@ -3,7 +3,7 @@ import { IoMoon } from 'react-icons/io5';
 import { IoMoonOutline } from 'react-icons/io5';
 import { DarkModeContext } from '../contexts/DarkMode';
 
-function DarkModeToggle() {
+export function DarkModeToggle() {
   const darkModeContext = useContext(DarkModeContext);
 
   return (
@@ -21,5 +21,3 @@ function DarkModeToggle() {
     </button>
   );
 }
-
-export { DarkModeToggle };

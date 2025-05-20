@@ -1,7 +1,7 @@
 import { paths, operations, components } from '../../openapi_schema';
-import { config } from '../../config';
+import { config } from '../../config/config';
 
-function getGalleryLink(
+export function getGalleryLink(
   galleryId: components['schemas']['GalleryPublic']['id'] | null
 ): string {
   if (!galleryId) {
@@ -10,5 +10,3 @@ function getGalleryLink(
     return `${config.frontendRoutes.galleries}/${galleryId}`;
   }
 }
-
-export { getGalleryLink };

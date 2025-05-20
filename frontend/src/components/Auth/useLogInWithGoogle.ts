@@ -5,7 +5,7 @@ import { ToastContext } from '../../contexts/Toast';
 import { AuthContext } from '../../contexts/Auth';
 import { AuthModalsContext } from '../../contexts/AuthModals';
 
-function useLogInWithGoogle() {
+export function useLogInWithGoogle() {
   const toastContext = useContext(ToastContext);
   const authContext = useContext(AuthContext);
   const authModalsContext = useContext(AuthModalsContext);
@@ -39,5 +39,3 @@ function useLogInWithGoogle() {
     },
   });
 }
-
-export { useLogInWithGoogle };

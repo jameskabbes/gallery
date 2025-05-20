@@ -11,7 +11,7 @@ import { Link } from 'react-router-dom';
 import { getHomePage } from '../services/apiServices';
 import { AuthContext } from '../contexts/Auth';
 
-function Home() {
+export function Home() {
   const authModalsContext = useContext(AuthModalsContext);
   const authContext = useContext(AuthContext);
 
@@ -26,5 +26,3 @@ function Home() {
     </>
   );
 }
-
-export { Home };

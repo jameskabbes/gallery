@@ -6,7 +6,7 @@ type Action =
 
 type v = number | null;
 
-function reducer(value: v, action: Action): v {
+export function reducer(value: v, action: Action): v {
   switch (action.type) {
     case 'SET_VALUE':
       return action.value;
@@ -35,5 +35,3 @@ function reducer(value: v, action: Action): v {
       return value;
   }
 }
-
-export { reducer };

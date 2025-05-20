@@ -115,7 +115,7 @@ interface FileUploaderProps {
   gallery: components['schemas']['GalleryPublic'];
 }
 
-function FileUploader({ gallery }: FileUploaderProps) {
+export function FileUploader({ gallery }: FileUploaderProps) {
   const authContext = useContext(AuthContext);
   const modalsContext = useContext(ModalsContext);
 
@@ -204,7 +204,7 @@ function FileUploader({ gallery }: FileUploaderProps) {
   );
 }
 
-function setFileUploaderModal(
+export function setFileUploaderModal(
   modalsContext: ModalsContextType,
   gallery: components['schemas']['GalleryPublic']
 ) {
@@ -217,5 +217,3 @@ function setFileUploaderModal(
     },
   ]);
 }
-
-export { FileUploader, setFileUploaderModal };

@@ -2,12 +2,12 @@ import { useContext, useEffect, useRef, RefObject, useMemo } from 'react';
 import { SurfaceContextType } from '../types';
 import { SurfaceContext } from '../contexts/Surface';
 
-interface OverrideParentSurfaceProps {
+export interface OverrideParentSurfaceProps {
   overrideMode?: SurfaceContextType['mode'] | null;
   keepParentMode?: boolean;
 }
 
-function getNextSurface(
+export function getNextSurface(
   surface: SurfaceContextType,
   overrideParentSurfaceProps: OverrideParentSurfaceProps
 ): SurfaceContextType {
@@ -27,7 +27,7 @@ function getNextSurface(
   };
 }
 
-function useSurface<T extends HTMLElement>(
+export function useSurface<T extends HTMLElement>(
   surface: SurfaceContextType
 ): RefObject<T> {
   const ref = useRef<T>(null);
@@ -43,7 +43,7 @@ function useSurface<T extends HTMLElement>(
   return ref;
 }
 
-function useSurfaceProvider<T extends HTMLElement>(
+export function useSurfaceProvider<T extends HTMLElement>(
   overrideParentSurfaceProps: OverrideParentSurfaceProps
 ) {
   const parentSurface = useContext(SurfaceContext);
@@ -60,10 +60,3 @@ function useSurfaceProvider<T extends HTMLElement>(
     surfaceRef,
   };
 }
-
-export {
-  useSurface,
-  useSurfaceProvider,
-  getNextSurface,
-  OverrideParentSurfaceProps,
-};

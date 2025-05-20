@@ -2,12 +2,12 @@ import { useEffect, useRef } from 'react';
 import { ValidatedInputState } from '../types';
 import { validatedInput } from '../config/constants';
 
-interface ValidatedInputCheckValidityReturn {
+export interface ValidatedInputCheckValidityReturn {
   valid: boolean;
   message?: string;
 }
 
-interface UseValidatedInputProps<T> {
+export interface UseValidatedInputProps<T> {
   state: ValidatedInputState<T>;
   setState: React.Dispatch<
     React.SetStateAction<UseValidatedInputProps<T>['state']>
@@ -22,7 +22,7 @@ interface UseValidatedInputProps<T> {
   ) => Promise<boolean>;
 }
 
-function useValidatedInput<T>({
+export function useValidatedInput<T>({
   state,
   setState,
   checkValidity = false,
@@ -80,13 +80,14 @@ function useValidatedInput<T>({
   }, [state.value]);
 }
 
-interface UseValidatedInputStringProps extends UseValidatedInputProps<string> {
+export interface UseValidatedInputStringProps
+  extends UseValidatedInputProps<string> {
   minLength?: React.InputHTMLAttributes<HTMLInputElement>['minLength'];
   maxLength?: React.InputHTMLAttributes<HTMLInputElement>['minLength'];
   pattern?: React.InputHTMLAttributes<HTMLInputElement>['pattern'];
 }
 
-function useValidatedInputString({
+export function useValidatedInputString({
   isValid = (value) => ({ valid: true }),
   minLength,
   maxLength,
@@ -119,11 +120,3 @@ function useValidatedInputString({
 
   return useValidatedInput<string>({ isValid: isValidWrapper, ...rest });
 }
-
-export {
-  ValidatedInputCheckValidityReturn,
-  useValidatedInput,
-  UseValidatedInputProps,
-  useValidatedInputString,
-  UseValidatedInputStringProps,
-};

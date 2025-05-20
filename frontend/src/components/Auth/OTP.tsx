@@ -25,7 +25,7 @@ import { useValidatedInputString } from '../../utils/useValidatedInput';
 import { Loader1 } from '../Utils/Loader';
 import { IoLogInOutline, IoWarning } from 'react-icons/io5';
 
-function RequestOTP() {
+export function RequestOTP() {
   const authContext = useContext(AuthContext);
   const requestOTPContext = useContext(RequestOTPContext);
   const authModalsContext = useContext(AuthModalsContext);
@@ -159,7 +159,7 @@ function RequestOTP() {
   );
 }
 
-function VerifyOTP() {
+export function VerifyOTP() {
   const authModalsContext = useContext(AuthModalsContext);
   const authContext = useContext(AuthContext);
   const requestOTPContext = useContext(RequestOTPContext);
@@ -349,5 +349,3 @@ function VerifyOTP() {
     </form>
   );
 }
-
-export { RequestOTP, VerifyOTP };

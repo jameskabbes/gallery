@@ -9,13 +9,13 @@ import { Surface } from '../Utils/Surface';
 
 type T = string;
 
-interface ValidatedInputStringProps
+export interface ValidatedInputStringProps
   extends UseValidatedInputStringProps,
     InputTextBaseInputProps {
   showStatus?: boolean;
 }
 
-function ValidatedInputString({
+export function ValidatedInputString({
   state,
   setState,
   checkAvailability,
@@ -61,5 +61,3 @@ function ValidatedInputString({
     </Surface>
   );
 }
-
-export { ValidatedInputString, ValidatedInputStringProps };

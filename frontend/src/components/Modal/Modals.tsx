@@ -14,7 +14,7 @@ const timeouts = {
   exit: 200,
 };
 
-function Modals() {
+export function Modals() {
   const { activeModal, deleteModals } = useContext(ModalsContext);
   const {
     key = null,
@@ -83,5 +83,3 @@ function Modals() {
     </CSSTransition>
   );
 }
-
-export { Modals };

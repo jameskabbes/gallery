@@ -1,7 +1,7 @@
 import React from 'react';
 import { Photo } from '../../types';
 
-function Image({
+export function Image({
   photo,
   className = '',
 }: {
@@ -10,5 +10,3 @@ function Image({
 }): JSX.Element {
   return <img className={className} src={photo.src.large} alt={photo.alt} />;
 }
-
-export { Image };

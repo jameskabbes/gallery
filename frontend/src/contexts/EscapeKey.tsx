@@ -8,12 +8,16 @@ import React, {
 
 import { EscapeKeyContextType } from '../types';
 
-const EscapeKeyContext = createContext<EscapeKeyContextType>({
+export const EscapeKeyContext = createContext<EscapeKeyContextType>({
   addCallback: () => {},
   removeCallback: () => {},
 });
 
-function EscapeKeyContextProvider({ children }: { children: React.ReactNode }) {
+export function EscapeKeyContextProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const callbacks = useRef<Set<() => void>>(new Set());
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
@@ -44,7 +48,7 @@ function EscapeKeyContextProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-function useEscapeKey(callback: () => void) {
+export function useEscapeKey(callback: () => void) {
   const context = useContext(EscapeKeyContext);
   useEffect(() => {
     context.addCallback(callback);
@@ -53,5 +57,3 @@ function useEscapeKey(callback: () => void) {
     };
   }, [callback, context]);
 }
-
-export { EscapeKeyContext, EscapeKeyContextProvider, useEscapeKey };

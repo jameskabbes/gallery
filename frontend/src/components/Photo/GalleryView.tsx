@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Photo } from '../../types';
 import { Image } from './Image';
 
-function GalleryView({
+export function GalleryView({
   photo,
   index,
   imagePreviewIndexDispatch,
@@ -34,5 +34,3 @@ function GalleryView({
     </div>
   );
 }
-
-export { GalleryView };

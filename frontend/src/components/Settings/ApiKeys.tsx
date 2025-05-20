@@ -33,7 +33,7 @@ import { ValidatedInputDatetimeLocal } from '../Form/ValidatedInputDatetimeLocal
 import { Button1, Button2, ButtonSubmit } from '../Utils/Button';
 import { Card1, CardButton } from '../Utils/Card';
 import { Toggle1 } from '../Utils/Toggle';
-import { config } from '../../config';
+import { config } from '../../config/config';
 import { useValidatedInput } from '../../utils/useValidatedInput';
 import { CheckOrX } from '../Form/CheckOrX';
 import { IoCaretUp, IoCaretDown } from 'react-icons/io5';
@@ -621,7 +621,10 @@ interface ApiKeysProps {
   toastContext: ToastContextType;
 }
 
-function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
+export function ApiKeys({
+  authContext,
+  toastContext,
+}: ApiKeysProps): JSX.Element {
   const modalsContext = useContext(ModalsContext);
   const { activateButtonConfirmation } = useConfirmationModal();
 
@@ -1204,5 +1207,3 @@ function ApiKeys({ authContext, toastContext }: ApiKeysProps): JSX.Element {
     );
   }
 }
-
-export { ApiKeys };

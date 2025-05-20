@@ -12,13 +12,13 @@ import {
 
 type T = boolean;
 
-interface ValidatedInputCheckboxProps
+export interface ValidatedInputCheckboxProps
   extends UseValidatedInputProps<T>,
     InputCheckboxBaseInputProps {
   showStatus?: boolean;
 }
 
-function ValidatedInputCheckbox({
+export function ValidatedInputCheckbox({
   state,
   setState,
   checkAvailability,
@@ -58,5 +58,3 @@ function ValidatedInputCheckbox({
     </div>
   );
 }
-
-export { ValidatedInputCheckbox, ValidatedInputCheckboxProps };

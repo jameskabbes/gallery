@@ -5,12 +5,12 @@ type InputTextBaseInputProps = Omit<
   'onChange'
 >;
 
-interface InputTextBaseProps extends InputTextBaseInputProps {
+export interface InputTextBaseProps extends InputTextBaseInputProps {
   value: InputTextBaseInputProps['value'];
   setValue: (value: InputTextBaseInputProps['value']) => void;
 }
 
-function InputTextBase({ setValue, ...rest }: InputTextBaseProps) {
+export function InputTextBase({ setValue, ...rest }: InputTextBaseProps) {
   return (
     <input
       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -20,5 +20,3 @@ function InputTextBase({ setValue, ...rest }: InputTextBaseProps) {
     />
   );
 }
-
-export { InputTextBase, InputTextBaseInputProps };

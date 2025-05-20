@@ -22,7 +22,10 @@ interface Props {
 type TUserAccessToken = components['schemas']['UserAccessToken'];
 type TUserAccessTokens = Record<TUserAccessToken['id'], TUserAccessToken>;
 
-function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
+export function UserAccessTokens({
+  authContext,
+  toastContext,
+}: Props): JSX.Element {
   const { activateButtonConfirmation } = useConfirmationModal();
 
   const navigate = useNavigate();
@@ -264,5 +267,3 @@ function UserAccessTokens({ authContext, toastContext }: Props): JSX.Element {
     );
   }
 }
-
-export { UserAccessTokens };

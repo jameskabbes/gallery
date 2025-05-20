@@ -30,7 +30,7 @@ const timeouts = {
 };
 const lifetime = 3000;
 
-function Toast() {
+export function Toast() {
   const toastContext = useContext(ToastContext);
   const deviceContext = useContext(DeviceContext);
 
@@ -86,5 +86,3 @@ function Toast() {
     </div>
   );
 }
-
-export { Toast };

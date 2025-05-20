@@ -50,7 +50,7 @@ function CheckInbox() {
   );
 }
 
-function RequestSignUp() {
+export function RequestSignUp() {
   const requestSignUpContext = useContext(RequestSignUpContext);
   const authContext = useContext(AuthContext);
   const authModalsContext = useContext(AuthModalsContext);
@@ -159,7 +159,7 @@ function RequestSignUp() {
   );
 }
 
-function VerifySignUp() {
+export function VerifySignUp() {
   const location = useLocation();
   const authContext = useContext(AuthContext);
   const navigate = useNavigate();
@@ -204,5 +204,3 @@ function VerifySignUp() {
     </div>
   );
 }
-
-export { RequestSignUp, VerifySignUp };

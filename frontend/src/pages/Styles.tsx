@@ -34,7 +34,7 @@ import { AuthModalsContext } from '../contexts/AuthModals';
 import { ValidatedInputPhoneNumber } from '../components/Form/ValidatedInputPhoneNumber';
 import { E164Number } from 'libphonenumber-js';
 
-function Styles() {
+export function Styles() {
   let deviceContext = useContext(DeviceContext);
   let toastContext = useContext(ToastContext);
   const authContext = useContext(AuthContext);
@@ -507,5 +507,3 @@ function Styles() {
     </div>
   );
 }
-
-export { Styles };

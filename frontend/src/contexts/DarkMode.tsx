@@ -8,14 +8,18 @@ const localStoragePreference: DarkModeContextType['preference'] =
     localStorageKey
   ) as DarkModeContextType['preference']) || 'system';
 
-const DarkModeContext = createContext<DarkModeContextType>({
+export const DarkModeContext = createContext<DarkModeContextType>({
   state: null,
   systemState: null,
   preference: localStoragePreference,
   setPreference: (preference: DarkModeContextType['preference']) => {},
 });
 
-function DarkModeContextProvider({ children }: { children: React.ReactNode }) {
+export function DarkModeContextProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [state, setState] = useState(false);
   const [systemState, setSystemState] = useState(false);
   const [preference, setPreference] = useState<
@@ -74,5 +78,3 @@ function DarkModeContextProvider({ children }: { children: React.ReactNode }) {
     </DarkModeContext.Provider>
   );
 }
-
-export { DarkModeContext, DarkModeContextProvider };

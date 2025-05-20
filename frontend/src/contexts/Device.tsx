@@ -1,9 +1,15 @@
 import React, { useEffect, useState, createContext } from 'react';
 import { DeviceContextType } from '../types';
 
-const DeviceContext = createContext<DeviceContextType>({ isMobile: false });
+export const DeviceContext = createContext<DeviceContextType>({
+  isMobile: false,
+});
 
-function DeviceContextProvider({ children }: { children: React.ReactNode }) {
+export function DeviceContextProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -26,5 +32,3 @@ function DeviceContextProvider({ children }: { children: React.ReactNode }) {
     </DeviceContext.Provider>
   );
 }
-
-export { DeviceContext, DeviceContextProvider };

@@ -5,7 +5,7 @@ import { ButtonSubmit } from '../Utils/Button';
 import { Surface } from '../Utils/Surface';
 import { Card1 } from '../Utils/Card';
 
-interface TextConfirmationModalProps {
+export interface TextConfirmationModalProps {
   title: string;
   message: React.ReactNode;
   target: string;
@@ -13,7 +13,7 @@ interface TextConfirmationModalProps {
   onConfirm?: () => void;
 }
 
-function TextConfirmationModal({
+export function TextConfirmationModal({
   title,
   message,
   target,
@@ -58,5 +58,3 @@ function TextConfirmationModal({
     </form>
   );
 }
-
-export { TextConfirmationModal, TextConfirmationModalProps };

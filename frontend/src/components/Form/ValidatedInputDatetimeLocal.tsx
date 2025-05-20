@@ -11,13 +11,13 @@ import { Surface } from '../Utils/Surface';
 
 type T = Date | null;
 
-interface ValidatedInputDatetimeLocalProps
+export interface ValidatedInputDatetimeLocalProps
   extends UseValidatedInputProps<T>,
     Omit<InputTextBaseInputProps, 'type'> {
   showStatus?: boolean;
 }
 
-function ValidatedInputDatetimeLocal({
+export function ValidatedInputDatetimeLocal({
   state,
   setState,
   checkAvailability,
@@ -91,5 +91,3 @@ function ValidatedInputDatetimeLocal({
     </Surface>
   );
 }
-
-export { ValidatedInputDatetimeLocal, ValidatedInputDatetimeLocalProps };

@@ -17,7 +17,7 @@ interface Props {
   user: components['schemas']['UserPrivate'];
 }
 
-function UpdateUsername({ user }: Props) {
+export function UpdateUsername({ user }: Props) {
   const [startingUsername, setStartingUsername] = useState<
     Props['user']['username']
   >(user.username === null ? '' : user.username);
@@ -173,5 +173,3 @@ function UpdateUsername({ user }: Props) {
     </div>
   );
 }
-
-export { UpdateUsername };

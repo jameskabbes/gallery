@@ -1,6 +1,8 @@
 import { ValidatedInputCheckValidityReturn } from '../utils/useValidatedInput';
 
-function isDatetimeValid(value: string): ValidatedInputCheckValidityReturn {
+export function isDatetimeValid(
+  value: string
+): ValidatedInputCheckValidityReturn {
   const date = new Date(value);
   if (isNaN(date.getTime())) {
     return { valid: false, message: 'Invalid date' };
@@ -8,5 +10,3 @@ function isDatetimeValid(value: string): ValidatedInputCheckValidityReturn {
     return { valid: true };
   }
 }
-
-export { isDatetimeValid };

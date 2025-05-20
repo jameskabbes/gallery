@@ -7,7 +7,7 @@ import { Surface } from './Utils/Surface';
 import { DeviceContext } from '../contexts/Device';
 import { zIndex } from '../config/constants';
 
-function Header(): JSX.Element {
+export function Header(): JSX.Element {
   const deviceContext = useContext(DeviceContext);
 
   return (
@@ -37,5 +37,3 @@ function Header(): JSX.Element {
     </Surface>
   );
 }
-
-export { Header };

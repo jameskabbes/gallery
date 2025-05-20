@@ -11,7 +11,7 @@ interface Props extends OverrideParentSurfaceProps {
   className?: string;
 }
 
-function Surface({
+export function Surface({
   overrideMode = null,
   keepParentMode = false,
   children,
@@ -40,5 +40,3 @@ function Surface({
     </SurfaceContext.Provider>
   );
 }
-
-export { Surface };

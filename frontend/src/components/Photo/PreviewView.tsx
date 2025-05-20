@@ -4,7 +4,7 @@ import { Image } from './Image';
 
 import { IoIosArrowForward, IoIosArrowBack, IoIosClose } from 'react-icons/io';
 
-function PreviewView({
+export function PreviewView({
   photo,
   nPhotos,
   imagePreviewIndexDispatch,
@@ -77,5 +77,3 @@ function PreviewView({
     </div>
   );
 }
-
-export { PreviewView };

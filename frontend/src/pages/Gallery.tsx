@@ -19,13 +19,13 @@ import { setAddGalleryModal } from '../components/Gallery/AddGallery';
 import { getGalleryLink } from '../components/Gallery/getLink';
 import { Link } from 'react-router-dom';
 import { ToastContext } from '../contexts/Toast';
-import { config } from '../config';
+import { config } from '../config/config';
 
 interface Props {
   root?: boolean;
 }
 
-function Gallery({ root = false }: Props) {
+export function Gallery({ root = false }: Props) {
   const modalsContext = useContext(ModalsContext);
   const authContext = useContext(AuthContext);
   const toastContext = useContext(ToastContext);
@@ -174,5 +174,3 @@ function Gallery({ root = false }: Props) {
     }
   }
 }
-
-export { Gallery };

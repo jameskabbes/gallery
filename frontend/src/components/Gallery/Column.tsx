@@ -1,7 +1,7 @@
 import React from 'react';
 import { GalleryView } from '../Photo/GalleryView';
 
-// function Column({
+// export function Column({
 //   photos,
 //   photoInds,
 //   imagePreviewIndexDispatch,
@@ -25,5 +25,3 @@ import { GalleryView } from '../Photo/GalleryView';
 //     </>
 //   );
 // }
-
-// export { Column };

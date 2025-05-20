@@ -2,7 +2,7 @@ import React, { useEffect, useState, useContext, createContext } from 'react';
 import { AuthContextState, AuthContextType, ToastId } from '../types';
 import { ToastContext } from './Toast';
 import isEqual from 'lodash.isequal';
-import { config } from '../config';
+import { config } from '../config/config';
 
 const defaultState: AuthContextState = {
   user: null,
@@ -10,14 +10,18 @@ const defaultState: AuthContextState = {
   access_token: null,
 };
 
-const AuthContext = createContext<AuthContextType>({
+export const AuthContext = createContext<AuthContextType>({
   state: { ...defaultState },
   setState: () => {},
   logOut: () => {},
   updateFromApiResponse: (data: any) => {},
 });
 
-function AuthContextProvider({ children }: { children: React.ReactNode }) {
+export function AuthContextProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [state, setState] = useState<AuthContextState>(defaultState);
   const toastContext = useContext(ToastContext);
 
@@ -79,5 +83,3 @@ function AuthContextProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   );
 }
-
-export { AuthContext, AuthContextProvider };

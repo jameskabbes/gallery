@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
 
-type InputCheckboxBaseInputProps = Omit<
+export type InputCheckboxBaseInputProps = Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
   'type' | 'onChange'
 >;
 
-interface InputCheckboxBaseProps extends InputCheckboxBaseInputProps {
+export interface InputCheckboxBaseProps extends InputCheckboxBaseInputProps {
   checked: InputCheckboxBaseInputProps['checked'];
   setChecked: (checked: InputCheckboxBaseInputProps['checked']) => void;
 }
 
-function InputCheckboxBase({ setChecked, ...rest }: InputCheckboxBaseProps) {
+export function InputCheckboxBase({
+  setChecked,
+  ...rest
+}: InputCheckboxBaseProps) {
   return (
     <input
       type="checkbox"
@@ -21,9 +24,3 @@ function InputCheckboxBase({ setChecked, ...rest }: InputCheckboxBaseProps) {
     />
   );
 }
-
-export {
-  InputCheckboxBase,
-  InputCheckboxBaseInputProps,
-  InputCheckboxBaseProps,
-};

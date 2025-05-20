@@ -26,7 +26,7 @@ import {
 import { Card1 } from '../Utils/Card';
 import { Surface } from '../Utils/Surface';
 
-function RequestMagicLink() {
+export function RequestMagicLink() {
   const authContext = useContext(AuthContext);
   const toastContext = useContext(ToastContext);
   const requestMagicLinkContext = useContext(RequestMagicLinkContext);
@@ -173,7 +173,7 @@ function RequestMagicLink() {
   );
 }
 
-function VerifyMagicLink() {
+export function VerifyMagicLink() {
   const location = useLocation();
   const authContext = useContext(AuthContext);
   const searchParams = new URLSearchParams(location.search);
@@ -221,5 +221,3 @@ function VerifyMagicLink() {
     </div>
   );
 }
-
-export { RequestMagicLink, VerifyMagicLink };

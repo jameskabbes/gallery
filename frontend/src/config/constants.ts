@@ -1,15 +1,13 @@
-const zIndex = {
+export const zIndex = {
   modalOverlay: 100,
   header: 95,
   toast: 90,
 };
 
-const validatedInput = {
+export const validatedInput = {
   debounceTimeoutLength: 200,
 };
 
-const pagination = {
+export const pagination = {
   debounceTimeoutLength: 100,
 };
-
-export { zIndex, validatedInput, pagination };

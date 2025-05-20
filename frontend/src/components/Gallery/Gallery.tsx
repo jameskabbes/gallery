@@ -36,7 +36,7 @@ import { reducer as PreviewIndexReducer } from './PreviewIndexTracker';
 //   return gallery;
 // }
 
-// function Gallery({ photos }: { photos: Photo[] }): JSX.Element {
+// export function Gallery({ photos }: { photos: Photo[] }): JSX.Element {
 //   const [screenWidth, setScreenWidth] = useState<number>(window.innerWidth);
 //   const [nColumns, setNColumns] = useState<number>(null);
 //   const [columns, setColumns] = useState<Gallery>(null);
@@ -129,5 +129,3 @@ import { reducer as PreviewIndexReducer } from './PreviewIndexTracker';
 //     </>
 //   );
 // }
-
-// export { Gallery };

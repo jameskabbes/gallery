@@ -13,7 +13,7 @@ import { CheckOrX } from './CheckOrX';
 
 type T = boolean;
 
-interface ValidatedInputToggleProps extends UseValidatedInputProps<T> {
+export interface ValidatedInputToggleProps extends UseValidatedInputProps<T> {
   toggleProps?: Omit<ToggleProps, 'state' | 'onClick' | 'children'>;
   inputProps?: Omit<
     InputCheckboxBaseProps,
@@ -22,7 +22,7 @@ interface ValidatedInputToggleProps extends UseValidatedInputProps<T> {
   showStatus?: boolean;
 }
 
-function ValidatedInputToggle({
+export function ValidatedInputToggle({
   state,
   setState,
   checkAvailability,
@@ -64,5 +64,3 @@ function ValidatedInputToggle({
     </div>
   );
 }
-
-export { ValidatedInputToggle, ValidatedInputToggleProps };

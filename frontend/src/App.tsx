@@ -12,12 +12,11 @@ import { Surface } from './components/Utils/Surface';
 import { VerifySignUp } from './components/Auth/SignUp';
 import { Styles } from './pages/Styles';
 // import { LogInWithMagicLink } from './components/Auth/MagicLink';
-
-import { config } from './config';
+import { config } from './config/config';
 
 import { VerifyMagicLink } from './components/Auth/MagicLink';
 
-function App(): JSX.Element {
+export function App(): JSX.Element {
   return (
     <ApplicationContextProvider>
       <Surface>
@@ -65,5 +64,3 @@ function App(): JSX.Element {
     </ApplicationContextProvider>
   );
 }
-
-export { App };

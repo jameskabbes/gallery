@@ -1,5 +1,5 @@
 import { execFileSync } from 'child_process';
-import { config } from './src/config';
+import { config } from './src/config/config';
 import os from 'os';
 import path from 'path';
 

@@ -1,7 +1,8 @@
 import React, { forwardRef } from 'react';
 import { Surface } from './Surface';
 
-interface ToggleProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ToggleProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   state: boolean;
   disabled?: boolean;
 }
@@ -43,6 +44,4 @@ function Toggle1Creator() {
   );
 }
 
-const Toggle1 = Toggle1Creator();
-
-export { Toggle1, ToggleProps };
+export const Toggle1 = Toggle1Creator();

@@ -16,7 +16,7 @@ interface Props {
   toastContext: ToastContextType;
 }
 
-function Profile({ authContext, toastContext }: Props) {
+export function Profile({ authContext, toastContext }: Props) {
   const modalsContext = useContext(ModalsContext);
   const { activateTextConfirmation } = useConfirmationModal();
 
@@ -71,5 +71,3 @@ function Profile({ authContext, toastContext }: Props) {
     );
   }
 }
-
-export { Profile };

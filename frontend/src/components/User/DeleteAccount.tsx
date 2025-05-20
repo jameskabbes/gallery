@@ -18,7 +18,7 @@ interface Props {
 
 const modalKey = 'modal-confirmation-delete-account';
 
-function setDeleteAccountModal({
+export function setDeleteAccountModal({
   activateTextConfirmation,
   authContext,
   toastContext,
@@ -63,5 +63,3 @@ function setDeleteAccountModal({
     },
   });
 }
-
-export { setDeleteAccountModal };

@@ -1,7 +1,5 @@
 import React, { useEffect } from 'react';
 
-function Footer(): JSX.Element {
-  return null;
+export function Footer(): JSX.Element {
+  return <></>;
 }
-
-export { Footer };

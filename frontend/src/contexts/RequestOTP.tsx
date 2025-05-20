@@ -2,7 +2,7 @@ import React, { createContext, useState } from 'react';
 
 import { RequestOTPContextType, defaultValidatedInputState } from '../types';
 
-const RequestOTPContext = createContext<RequestOTPContextType>({
+export const RequestOTPContext = createContext<RequestOTPContextType>({
   medium: null,
   setMedium: () => {},
   email: null,
@@ -17,7 +17,7 @@ interface Props {
   children: React.ReactNode;
 }
 
-function RequestOTPContextProvider({
+export function RequestOTPContextProvider({
   children,
 }: {
   children: React.ReactNode;
@@ -53,5 +53,3 @@ function RequestOTPContextProvider({
     </RequestOTPContext.Provider>
   );
 }
-
-export { RequestOTPContext, RequestOTPContextProvider };

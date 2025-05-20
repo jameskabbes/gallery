@@ -15,7 +15,7 @@ import openapi_schema from '../../../../openapi_schema.json';
 import { RadioButton1 } from '../Utils/RadioButton';
 import { useValidatedInput } from '../../utils/useValidatedInput';
 import { CheckOrX } from '../Form/CheckOrX';
-import { config } from '../../config';
+import { config } from '../../config/config';
 
 interface AddGalleryProps {
   onSuccess: (gallery: (typeof postGallery.responses)['200']) => void;
@@ -25,7 +25,7 @@ interface AddGalleryProps {
 
 const addGalleryModalKey = 'modal-add-gallery';
 
-function AddGallery({
+export function AddGallery({
   onSuccess,
   modalsContext,
   parentGalleryId,
@@ -235,7 +235,7 @@ function AddGallery({
 
 interface SetAddGalleryModalProps extends AddGalleryProps {}
 
-function setAddGalleryModal({
+export function setAddGalleryModal({
   modalsContext,
   ...rest
 }: SetAddGalleryModalProps) {
@@ -248,5 +248,3 @@ function setAddGalleryModal({
     },
   ]);
 }
-
-export { AddGallery, setAddGalleryModal };

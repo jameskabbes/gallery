@@ -3,38 +3,38 @@ import { paths, operations, components } from './openapi_schema';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { E164Number } from 'libphonenumber-js';
 
-type GetElementTypeFromArray<T extends any[]> = T extends (infer U)[]
+export type GetElementTypeFromArray<T extends any[]> = T extends (infer U)[]
   ? U
   : never;
 
-type FirstKey<T> = keyof {
+export type FirstKey<T> = keyof {
   [K in keyof T as K extends string ? K : never]: T[K];
 } extends infer O
   ? keyof O
   : never;
 
-interface CallApiOptions<TRequestData>
+export interface CallApiOptions<TRequestData>
   extends AxiosRequestConfig<TRequestData> {
   url: AxiosRequestConfig<TRequestData>['url'];
   method: AxiosRequestConfig<TRequestData>['method'];
   authContext?: AuthContextType;
 }
 
-interface UseApiCallReturn<T> extends AxiosResponse<T> {
+export interface UseApiCallReturn<T> extends AxiosResponse<T> {
   loading: boolean;
   refetch: () => void;
 }
 
-type ArrayElement<ArrayType extends readonly unknown[]> =
+export type ArrayElement<ArrayType extends readonly unknown[]> =
   ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
 
-interface ValidatedInputState<T> {
+export interface ValidatedInputState<T> {
   value: T;
   status: 'valid' | 'invalid' | 'loading';
   error: string | null;
 }
 
-const defaultValidatedInputState = <T>(
+export const defaultValidatedInputState = <T>(
   defaultValue: T
 ): ValidatedInputState<T> => ({
   value: defaultValue,
@@ -42,25 +42,25 @@ const defaultValidatedInputState = <T>(
   error: null,
 });
 
-interface DarkModeContextType {
+export interface DarkModeContextType {
   state: boolean;
   systemState: boolean;
   preference: 'light' | 'dark' | 'system';
   setPreference: (preference: 'light' | 'dark' | 'system') => void;
 }
 
-type AuthModalType =
+export type AuthModalType =
   | 'logIn'
   | 'requestSignUp'
   | 'requestMagicLink'
   | 'requestOTP'
   | 'verifyOTP';
 
-interface AuthModalsContextType {
+export interface AuthModalsContextType {
   activate: (modal: AuthModalType | null) => void;
 }
 
-interface LogInContextType {
+export interface LogInContextType {
   username: ValidatedInputState<string>;
   setUsername: React.Dispatch<
     React.SetStateAction<LogInContextType['username']>
@@ -81,7 +81,7 @@ interface LogInContextType {
   setError: React.Dispatch<React.SetStateAction<LogInContextType['error']>>;
 }
 
-interface RequestSignUpContextType {
+export interface RequestSignUpContextType {
   email: ValidatedInputState<string>;
   setEmail: React.Dispatch<
     React.SetStateAction<RequestSignUpContextType['email']>
@@ -96,7 +96,7 @@ interface RequestSignUpContextType {
   >;
 }
 
-interface RequestMagicLinkContextType {
+export interface RequestMagicLinkContextType {
   medium: 'email' | 'sms';
   setMedium: React.Dispatch<
     React.SetStateAction<RequestMagicLinkContextType['medium']>
@@ -119,7 +119,7 @@ interface RequestMagicLinkContextType {
   >;
 }
 
-interface RequestOTPContextType {
+export interface RequestOTPContextType {
   medium: 'email' | 'sms';
   setMedium: React.Dispatch<
     React.SetStateAction<RequestOTPContextType['medium']>
@@ -138,7 +138,7 @@ interface RequestOTPContextType {
   >;
 }
 
-interface ModalType<T = Record<string, any>> {
+export interface ModalType<T = Record<string, any>> {
   key: string;
   Component: React.ComponentType<any>;
   componentProps?: T;
@@ -147,12 +147,12 @@ interface ModalType<T = Record<string, any>> {
   onExit?: () => void;
 }
 
-type ModalUpdateType<T = Record<string, any>> = Partial<
+export type ModalUpdateType<T = Record<string, any>> = Partial<
   Omit<ModalType<Partial<T>>, 'key'>
 > &
   Pick<ModalType<T>, 'key'>;
 
-interface ModalsContextType {
+export interface ModalsContextType {
   activeModal: ModalType | null;
   pushModals: (modals: ModalType[]) => void;
   deleteModals: (modalKeys: ModalType['key'][]) => void;
@@ -161,28 +161,28 @@ interface ModalsContextType {
   swapActiveModal: (modal: ModalType) => void;
 }
 
-interface DeviceContextType {
+export interface DeviceContextType {
   isMobile: boolean;
 }
 
-interface DataContextType {
+export interface DataContextType {
   studios: null;
 }
 
-type ToastId = string;
+export type ToastId = string;
 
-interface ToastType {
+export interface ToastType {
   type: 'error' | 'info' | 'success' | 'pending';
   message: string;
 }
 
-interface ToastNoType extends Omit<ToastType, 'type'> {}
+export interface ToastNoType extends Omit<ToastType, 'type'> {}
 
-interface ToastContextState {
+export interface ToastContextState {
   toasts: Map<ToastId, ToastType>;
 }
 
-interface ToastReducerActionTypes {
+export interface ToastReducerActionTypes {
   ADD: {
     type: 'ADD';
     payload: {
@@ -206,10 +206,10 @@ interface ToastReducerActionTypes {
   };
 }
 
-type ToastReducerAction =
+export type ToastReducerAction =
   ToastReducerActionTypes[keyof ToastReducerActionTypes];
 
-interface ToastContextType {
+export interface ToastContextType {
   state: ToastContextState;
   dispatch: React.Dispatch<ToastReducerAction>;
   make: (toast: ToastType) => ToastId;
@@ -217,57 +217,75 @@ interface ToastContextType {
   update: (id: ToastId, toast: Partial<ToastType>) => void;
 }
 
-type AuthContextState = components['schemas']['GetUserSessionInfoReturn'];
+export type AuthContextState =
+  components['schemas']['GetUserSessionInfoReturn'];
 
-interface AuthContextType {
+export interface AuthContextType {
   state: AuthContextState;
   setState: React.Dispatch<React.SetStateAction<AuthContextState>>;
   logOut: (toastId?: ToastId) => void;
   updateFromApiResponse: (data: any) => void;
 }
 
-interface EscapeKeyContextType {
+export interface EscapeKeyContextType {
   addCallback: (callback: () => void) => void;
   removeCallback: (callback: () => void) => void;
 }
 
-interface SurfaceContextType {
+export interface SurfaceContextType {
   level: number;
   mode: 'a' | 'b';
 }
 
-type OrderByState = 'off' | 'asc' | 'desc';
+export type OrderByState = 'off' | 'asc' | 'desc';
 
-export {
-  GetElementTypeFromArray,
-  FirstKey,
-  ArrayElement,
-  CallApiOptions,
-  UseApiCallReturn,
-  DarkModeContextType,
-  ValidatedInputState,
-  defaultValidatedInputState,
-  LogInContextType,
-  RequestSignUpContextType,
-  RequestMagicLinkContextType,
-  RequestOTPContextType,
-  ToastType,
-  ToastId,
-  ToastNoType,
-  ToastContextState,
-  ToastReducerActionTypes,
-  ToastReducerAction,
-  ToastContextType,
-  AuthContextState,
-  AuthContextType,
-  DeviceContextType,
-  ModalType,
-  ModalUpdateType,
-  ModalsContextType,
-  AuthModalsContextType,
-  AuthModalType,
-  DataContextType,
-  EscapeKeyContextType,
-  SurfaceContextType,
-  OrderByState,
-};
+export interface SharedConfig {
+  BACKEND_URL: string;
+  FRONTEND_URL: string;
+  AUTH_KEY: string;
+  HEADER_KEYS: Record<string, string>;
+  FRONTEND_ROUTES: Record<string, string>;
+  SCOPE_NAME_MAPPING: Record<string, number>;
+  VISIBILITY_LEVEL_NAME_MAPPING: Record<string, number>;
+  PERMISSION_LEVEL_NAME_MAPPING: Record<string, number>;
+  USER_ROLE_NAME_MAPPING: Record<string, number>;
+  USER_ROLE_SCOPES: Record<string, string[]>;
+  OTP_LENGTH: number;
+  GOOGLE_CLIENT_ID: string;
+}
+
+export interface FrontendConfig {
+  VITE: {
+    server: {
+      port: number;
+      host: boolean;
+    };
+  };
+  OPENAPI_SCHEMA_PATH: string;
+}
+
+export interface Config {
+  backendUrl: string;
+  frontendUrl: string;
+  authKey: string;
+  headerKeys: Record<string, string>;
+  frontendRoutes: Record<string, string>;
+  scopeNameMapping: Record<string, number>;
+  scopeIdMapping: Record<number, string>;
+  visibilityLevelNameMapping: Record<string, number>;
+  visibilityLevelIdMapping: Record<number, string>;
+  permissionLevelNameMapping: Record<string, number>;
+  permissionLevelIdMapping: Record<number, string>;
+  userRoleNameMapping: Record<string, number>;
+  userRoleIdMapping: Record<number, string>;
+  userRoleScopes: Record<string, string[]>;
+  otpLength: number;
+  googleClientId: string;
+  vite: {
+    server: {
+      port: number;
+      host: boolean;
+    };
+  };
+  openapiSchemaPath: string;
+}

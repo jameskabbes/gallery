@@ -17,14 +17,14 @@ import { Surface } from '../Utils/Surface';
 
 type T = E164Number;
 
-interface ValidatedInputPhoneNumberProps
+export interface ValidatedInputPhoneNumberProps
   extends UseValidatedInputStringProps,
     InputTextBaseInputProps {
   defaultCountryCode?: CountryCode; // Default country code (e.g., 'US', 'GB')
   showStatus?: boolean;
 }
 
-function ValidatedInputPhoneNumber({
+export function ValidatedInputPhoneNumber({
   state,
   setState,
   checkAvailability,
@@ -143,5 +143,3 @@ function ValidatedInputPhoneNumber({
     </div>
   );
 }
-
-export { ValidatedInputPhoneNumber, ValidatedInputPhoneNumberProps };

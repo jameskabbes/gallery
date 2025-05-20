@@ -1,7 +1,7 @@
 import React, { forwardRef } from 'react';
 import createStyledSurfaceComponentCreator from '../../utils/createStyledSurfaceComponent';
 
-const createStyledButton = createStyledSurfaceComponentCreator<
+export const createStyledButton = createStyledSurfaceComponentCreator<
   HTMLButtonElement,
   React.ButtonHTMLAttributes<HTMLButtonElement>
 >('button');
@@ -17,7 +17,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   isActive?: boolean;
 }
 
-const Button1 = forwardRef<HTMLButtonElement, ButtonProps>(
+export const Button1 = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ children, isActive, className = '', ...rest }, ref) => {
     return (
       <Button1Base ref={ref} {...rest} className={`${className}`}>
@@ -27,7 +27,7 @@ const Button1 = forwardRef<HTMLButtonElement, ButtonProps>(
   }
 );
 
-const Button2 = forwardRef<HTMLButtonElement, ButtonProps>(
+export const Button2 = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ children, isActive, className = '', ...rest }, ref) => {
     return (
       <Button2Base
@@ -43,7 +43,7 @@ const Button2 = forwardRef<HTMLButtonElement, ButtonProps>(
   }
 );
 
-const Button3 = forwardRef<HTMLButtonElement, ButtonProps>(
+export const Button3 = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ children, isActive, className = '', ...rest }, ref) => {
     return (
       <Button3Base
@@ -59,7 +59,7 @@ const Button3 = forwardRef<HTMLButtonElement, ButtonProps>(
   }
 );
 
-const ButtonSubmit = forwardRef<HTMLButtonElement, ButtonProps>(
+export const ButtonSubmit = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ children, isActive, className = '', ...rest }, ref) => {
     return (
       <ButtonSubmitBase ref={ref} {...rest} className={`${className} `}>
@@ -68,5 +68,3 @@ const ButtonSubmit = forwardRef<HTMLButtonElement, ButtonProps>(
     );
   }
 );
-
-export { Button1, Button2, Button3, ButtonSubmit, createStyledButton };

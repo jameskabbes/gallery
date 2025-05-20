@@ -1,13 +1,14 @@
-import { fileURLToPath } from 'url';
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import typescript from '@rollup/plugin-typescript';
+import tailwindcss from 'tailwindcss';
+import { Config, SharedConfig, FrontendConfig } from './src/types';
+
 import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
 import os from 'os';
 import { warn } from 'console';
-import { Config } from './src/config/config';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const exampleFrontendConfigPath = path.join(
   __dirname,
@@ -112,40 +113,15 @@ if (frontendConfigPath === null || sharedConfigPath === null) {
   }
 }
 
-interface SharedConfig {
-  BACKEND_URL: string;
-  FRONTEND_URL: string;
-  AUTH_KEY: string;
-  HEADER_KEYS: Record<string, string>;
-  FRONTEND_ROUTES: Record<string, string>;
-  SCOPE_NAME_MAPPING: Record<string, number>;
-  VISIBILITY_LEVEL_NAME_MAPPING: Record<string, number>;
-  PERMISSION_LEVEL_NAME_MAPPING: Record<string, number>;
-  USER_ROLE_NAME_MAPPING: Record<string, number>;
-  USER_ROLE_SCOPES: Record<string, string[]>;
-  OTP_LENGTH: number;
-  GOOGLE_CLIENT_ID: string;
-}
-
 function loadSharedConfig(): SharedConfig {
-  const file = fs.readFileSync(sharedConfigPath, 'utf8');
+  const file = fs.readFileSync(sharedConfigPath!, 'utf8');
   return yaml.load(file) as SharedConfig;
 }
 
 const sharedConfig = loadSharedConfig();
 
-interface FrontendConfig {
-  VITE: {
-    server: {
-      port: number;
-      host: boolean;
-    };
-  };
-  OPENAPI_SCHEMA_PATH: string;
-}
-
 function loadFrontendConfig(): FrontendConfig {
-  const file = fs.readFileSync(frontendConfigPath, 'utf8');
+  const file = fs.readFileSync(frontendConfigPath!, 'utf8');
   return yaml.load(file) as FrontendConfig;
 }
 
@@ -197,7 +173,12 @@ let config: Config = {
   ),
 };
 
-const outputPath = path.join(__dirname, 'src', 'config', 'config.json');
+// https://vitejs.dev/config/
+export default defineConfig({
+  define: {
+    'import.meta.env.APP_CONFIG': JSON.stringify(config),
+  },
 
-console.log(`writing config to ${outputPath}`);
-fs.writeFileSync(outputPath, JSON.stringify(config, null, 2), 'utf8');
+  plugins: [react(), typescript()],
+  server: config.vite.server,
+});

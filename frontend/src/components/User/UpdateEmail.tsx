@@ -13,7 +13,7 @@ interface Props {
   user: components['schemas']['UserPrivate'];
 }
 
-function UpdateEmail({ user }: Props) {
+export function UpdateEmail({ user }: Props) {
   const [startingEmail, setStartingEmail] = useState<string>(user.email);
   const [email, setEmail] = useState<ValidatedInputState<string>>({
     ...defaultValidatedInputState<string>(user.email),
@@ -113,5 +113,3 @@ function UpdateEmail({ user }: Props) {
     </form>
   );
 }
-
-export { UpdateEmail };

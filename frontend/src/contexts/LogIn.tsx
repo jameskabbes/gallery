@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useReducer, createContext } from 'react';
 import { LogInContextType, defaultValidatedInputState } from '../types';
 
-const LogInContext = createContext<LogInContextType>({
+export const LogInContext = createContext<LogInContextType>({
   username: null,
   setUsername: () => {},
   password: null,
@@ -16,7 +16,11 @@ const LogInContext = createContext<LogInContextType>({
   setError: () => {},
 });
 
-function LogInContextProvider({ children }: { children: React.ReactNode }) {
+export function LogInContextProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [username, setUsername] = useState<LogInContextType['username']>({
     ...defaultValidatedInputState<LogInContextType['username']['value']>(''),
   });
@@ -55,5 +59,3 @@ function LogInContextProvider({ children }: { children: React.ReactNode }) {
     </LogInContext.Provider>
   );
 }
-
-export { LogInContext, LogInContextProvider };

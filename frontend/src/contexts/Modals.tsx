@@ -9,7 +9,7 @@ import React, {
 } from 'react';
 import { ModalsContextType, ModalType } from '../types';
 
-const ModalsContext = createContext<ModalsContextType>({
+export const ModalsContext = createContext<ModalsContextType>({
   activeModal: null,
   pushModals: () => {},
   updateModals: () => {},
@@ -18,7 +18,11 @@ const ModalsContext = createContext<ModalsContextType>({
   swapActiveModal: () => {},
 });
 
-function ModalsContextProvider({ children }: { children: React.ReactNode }) {
+export function ModalsContextProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [modals, setModals] = useState<Record<ModalType['key'], ModalType>>({});
   const [keys, setKeys] = useState<ModalType['key'][]>([]);
   const [activeModal, setActiveModal] = useState<ModalType | null>(null);
@@ -203,5 +207,3 @@ function ModalsContextProvider({ children }: { children: React.ReactNode }) {
     </ModalsContext.Provider>
   );
 }
-
-export { ModalsContext, ModalsContextProvider };

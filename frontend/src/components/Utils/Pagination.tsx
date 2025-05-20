@@ -13,7 +13,7 @@ interface PaginationProps {
   total: number | null;
 }
 
-function Pagination({
+export function Pagination({
   loading,
   offset,
   setOffset,
@@ -86,5 +86,3 @@ function Pagination({
     </div>
   );
 }
-
-export { Pagination };

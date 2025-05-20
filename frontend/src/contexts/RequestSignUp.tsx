@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useReducer, createContext } from 'react';
 import { RequestSignUpContextType, defaultValidatedInputState } from '../types';
 
-const RequestSignUpContext = createContext<RequestSignUpContextType>({
+export const RequestSignUpContext = createContext<RequestSignUpContextType>({
   email: null,
   setEmail: () => {},
   valid: false,
@@ -10,7 +10,7 @@ const RequestSignUpContext = createContext<RequestSignUpContextType>({
   setLoading: () => {},
 });
 
-function RequestSignUpContextProvider({
+export function RequestSignUpContextProvider({
   children,
 }: {
   children: React.ReactNode;
@@ -39,5 +39,3 @@ function RequestSignUpContextProvider({
     </RequestSignUpContext.Provider>
   );
 }
-
-export { RequestSignUpContext, RequestSignUpContextProvider };

@@ -4,7 +4,7 @@ import { apiClient } from './apiClient';
 import { AuthContextType, CallApiOptions, UseApiCallReturn } from '../types';
 import { paths, operations, components } from '../openapi_schema';
 import openapi_schema from '../../../openapi_schema.json';
-import { config } from '../config';
+import { config } from '../config/config';
 
 function handleAuthContext<T>(
   authContext: AuthContextType,
@@ -19,7 +19,7 @@ function handleAuthContext<T>(
   }
 }
 
-async function callApi<TResponseData, TRequestData = any>({
+export async function callApi<TResponseData, TRequestData = any>({
   url,
   method,
   authContext = null,
@@ -54,7 +54,7 @@ async function callApi<TResponseData, TRequestData = any>({
   }
 }
 
-type RequestContentType<TOperation> = TOperation extends {
+export type RequestContentType<TOperation> = TOperation extends {
   requestBody:
     | { content: infer ContentTypes }
     | { content?: infer ContentTypes };
@@ -62,7 +62,7 @@ type RequestContentType<TOperation> = TOperation extends {
   ? keyof ContentTypes
   : never;
 
-type ResponseContentType<TOperation> = TOperation extends {
+export type ResponseContentType<TOperation> = TOperation extends {
   responses: infer Responses;
 }
   ? {
@@ -74,13 +74,13 @@ type ResponseContentType<TOperation> = TOperation extends {
     }[keyof Responses]
   : never;
 
-type ResponseStatusCode<TOperation> = TOperation extends {
+export type ResponseStatusCode<TOperation> = TOperation extends {
   responses: infer Responses;
 }
   ? keyof Responses
   : never;
 
-type ResponseDataTypeByStatusCode<
+export type ResponseDataTypeByStatusCode<
   TOperation,
   TResponseContentType extends ResponseContentType<TOperation> = ResponseContentType<TOperation>,
   TResponseStatusCode extends ResponseStatusCode<TOperation> = ResponseStatusCode<TOperation>
@@ -100,7 +100,7 @@ type ResponseDataTypeByStatusCode<
     }
   : never;
 
-type ResponseDataType<
+export type ResponseDataType<
   TOperation,
   TResponseContentType extends ResponseContentType<TOperation> = ResponseContentType<TOperation>,
   TResponseStatusCode extends ResponseStatusCode<TOperation> = ResponseStatusCode<TOperation>,
@@ -111,7 +111,7 @@ type ResponseDataType<
   >
 > = TResponseDataByStatus[keyof TResponseDataByStatus];
 
-type RequestDataTypeProp<
+export type RequestDataTypeProp<
   TOperation,
   TRequestContentType extends RequestContentType<TOperation> = RequestContentType<TOperation>
 > = TOperation extends {
@@ -130,12 +130,12 @@ type RequestDataTypeProp<
     : { data?: never }
   : { data?: never };
 
-type RequestDataType<
+export type RequestDataType<
   TOperation,
   TRequestContentType extends RequestContentType<TOperation> = RequestContentType<TOperation>
 > = RequestDataTypeProp<TOperation, TRequestContentType>['data'];
 
-type RequestParamsTypeProp<TOperation> = TOperation extends {
+export type RequestParamsTypeProp<TOperation> = TOperation extends {
   parameters: infer Params;
 }
   ? Params extends { query: infer U }
@@ -146,10 +146,10 @@ type RequestParamsTypeProp<TOperation> = TOperation extends {
   : // whenever the generic isn't set
     { params?: never };
 
-type RequestParamsType<TOperation> =
+export type RequestParamsType<TOperation> =
   RequestParamsTypeProp<TOperation>['params'];
 
-type RequestPathParamsTypeProp<TOperation> = TOperation extends {
+export type RequestPathParamsTypeProp<TOperation> = TOperation extends {
   parameters: infer Params;
 }
   ? Params extends { path: infer U }
@@ -160,11 +160,11 @@ type RequestPathParamsTypeProp<TOperation> = TOperation extends {
   : // whenever the generic isn't set
     { pathParams?: never };
 
-type RequestPathParamsType<TOperation> =
+export type RequestPathParamsType<TOperation> =
   RequestPathParamsTypeProp<TOperation>['pathParams'];
 
 // Extract the parameters type for the ApiService function
-type ApiServiceCallParams<
+export type ApiServiceCallParams<
   TPath extends keyof paths,
   TMethod extends keyof paths[TPath],
   TRequestContentType extends RequestContentType<paths[TPath][TMethod]>,
@@ -177,7 +177,7 @@ type ApiServiceCallParams<
   RequestParamsTypeProp<paths[TPath][TMethod]> &
   RequestPathParamsTypeProp<paths[TPath][TMethod]>;
 
-type ApiService<
+export type ApiService<
   TPath extends keyof paths,
   TMethod extends keyof paths[TPath],
   TResponseContentType extends ResponseContentType<paths[TPath][TMethod]>,
@@ -209,7 +209,7 @@ type ApiService<
   responses: TResponseDataByStatus;
 };
 
-function createApiService<
+export function createApiService<
   TPath extends keyof paths,
   TMethod extends keyof paths[TPath] & AxiosRequestConfig['method'],
   TResponseContentType extends ResponseContentType<
@@ -320,7 +320,7 @@ function createApiService<
   };
 }
 
-function useApiCall<
+export function useApiCall<
   TPath extends keyof paths,
   TMethod extends keyof paths[TPath] & AxiosRequestConfig['method'],
   TResponseContentType extends ResponseContentType<paths[TPath][TMethod]>,
@@ -375,20 +375,3 @@ function useApiCall<
 
   return { ...response, loading, refetch };
 }
-
-export {
-  callApi,
-  useApiCall,
-  createApiService,
-  ResponseContentType,
-  RequestContentType,
-  ResponseDataType,
-  ResponseStatusCode,
-  ResponseDataTypeByStatusCode,
-  RequestDataTypeProp,
-  RequestDataType,
-  RequestParamsTypeProp,
-  RequestParamsType,
-  RequestPathParamsTypeProp,
-  RequestPathParamsType,
-};

@@ -4,7 +4,11 @@ import { IoCheckmark } from 'react-icons/io5';
 import { ValidatedInputState } from '../../types';
 import { Loader2 } from '../Utils/Loader';
 
-function CheckOrX({ status }: { status: ValidatedInputState<any>['status'] }) {
+export function CheckOrX({
+  status,
+}: {
+  status: ValidatedInputState<any>['status'];
+}) {
   switch (status) {
     case 'valid':
       return <IoCheckmark className="text-green-500" />;
@@ -14,5 +18,3 @@ function CheckOrX({ status }: { status: ValidatedInputState<any>['status'] }) {
       return <Loader2 />;
   }
 }
-
-export { CheckOrX };

@@ -43,7 +43,7 @@ function toastReducer(state: ToastContextState, action: ToastReducerAction) {
   }
 }
 
-const ToastContext = createContext<ToastContextType>({
+export const ToastContext = createContext<ToastContextType>({
   state: toastReducerDefaultState,
   dispatch: () => {},
   make: () => '',
@@ -51,7 +51,11 @@ const ToastContext = createContext<ToastContextType>({
   update: () => {},
 });
 
-function ToastContextProvider({ children }: { children: React.ReactNode }) {
+export function ToastContextProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [state, dispatch] = useReducer(toastReducer, toastReducerDefaultState);
 
   function make(toast: ToastType): ToastId {
@@ -75,5 +79,3 @@ function ToastContextProvider({ children }: { children: React.ReactNode }) {
     </ToastContext.Provider>
   );
 }
-
-export { ToastContext, ToastContextProvider };

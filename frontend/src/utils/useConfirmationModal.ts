@@ -16,7 +16,7 @@ type ActivateModalFunction<T> = (
     Required<Pick<ModalType<T>, 'componentProps'>>
 ) => void;
 
-function useConfirmationModal() {
+export function useConfirmationModal() {
   const modalsContext = useContext(ModalsContext);
 
   const activateConfirmationModal: (modal: ModalType) => void = (modal) => {
@@ -80,5 +80,3 @@ function useConfirmationModal() {
     activateButtonConfirmation,
   };
 }
-
-export { useConfirmationModal };

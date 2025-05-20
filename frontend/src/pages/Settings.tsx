@@ -17,7 +17,7 @@ import { Surface } from '../components/Utils/Surface';
 import { Button2 } from '../components/Utils/Button';
 import { getSettingsPage } from '../services/apiServices';
 
-function Settings(): JSX.Element {
+export function Settings(): JSX.Element {
   const authContext = useContext(AuthContext);
   const toastContext = useContext(ToastContext);
   const navigate = useNavigate();
@@ -137,5 +137,3 @@ function Settings(): JSX.Element {
     </>
   );
 }
-
-export { Settings };

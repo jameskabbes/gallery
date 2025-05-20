@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { AuthModalsContext } from '../contexts/AuthModals';
 import { Button1 } from './Utils/Button';
 
-function LogInPromptFullPage() {
+export function LogInPromptFullPage() {
   const authModalsContext = useContext(AuthModalsContext);
 
   return (
@@ -15,5 +15,3 @@ function LogInPromptFullPage() {
     </div>
   );
 }
-
-export { LogInPromptFullPage };

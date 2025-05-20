@@ -1,7 +1,7 @@
 import React from 'react';
 import createStyledSurfaceComponentCreator from '../../utils/createStyledSurfaceComponent';
 
-const createStyledCheckbox = createStyledSurfaceComponentCreator<
+export const createStyledCheckbox = createStyledSurfaceComponentCreator<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >('div');
@@ -24,7 +24,7 @@ interface CheckboxProps extends React.HTMLAttributes<HTMLDivElement> {
   state: boolean;
 }
 
-function Checkbox1({ children, state, ...rest }: CheckboxProps) {
+export function Checkbox1({ children, state, ...rest }: CheckboxProps) {
   return (
     <Checkbox1Base {...rest}>
       <div
@@ -39,5 +39,3 @@ function Checkbox1({ children, state, ...rest }: CheckboxProps) {
     </Checkbox1Base>
   );
 }
-
-export { Checkbox1, createStyledCheckbox };

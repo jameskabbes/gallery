@@ -21,7 +21,7 @@ import { AuthModalType } from '../../types';
 import { useLogInWithGoogle } from './useLogInWithGoogle';
 import { ValidatedInputToggle } from '../Form/ValidatedInputToggle';
 
-function LogIn() {
+export function LogIn() {
   const logInContext = useContext(LogInContext);
   const authContext = useContext(AuthContext);
   const authModalsContext = useContext(AuthModalsContext);
@@ -238,5 +238,3 @@ function LogIn() {
     </div>
   );
 }
-
-export { LogIn };

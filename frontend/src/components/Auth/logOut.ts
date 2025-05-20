@@ -1,7 +1,7 @@
 import { postLogOut } from '../../services/apiServices';
 import { AuthContextType, ToastContextType } from '../../types';
 
-async function logOut(
+export async function logOut(
   authContext: AuthContextType,
   toastContext: ToastContextType
 ) {
@@ -20,5 +20,3 @@ async function logOut(
     });
   }
 }
-
-export { logOut };

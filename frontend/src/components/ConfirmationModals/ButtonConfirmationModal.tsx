@@ -1,7 +1,7 @@
 import React, { useContext, useRef, useEffect } from 'react';
 import { Button1, Button2 } from '../Utils/Button';
 
-interface ButtonConfirmationModalProps {
+export interface ButtonConfirmationModalProps {
   title: string;
   message: string;
   confirmText?: string;
@@ -11,7 +11,7 @@ interface ButtonConfirmationModalProps {
   onCancel?: () => void;
 }
 
-function ButtonConfirmationModal({
+export function ButtonConfirmationModal({
   title,
   message,
   confirmText = 'Confirm',
@@ -56,5 +56,3 @@ function ButtonConfirmationModal({
     </form>
   );
 }
-
-export { ButtonConfirmationModal, ButtonConfirmationModalProps };

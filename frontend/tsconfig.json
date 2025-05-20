@@ -1,13 +1,21 @@
 {
   "compilerOptions": {
     "module": "ESNext",
+    "target": "ESNext",
+    "skipLibCheck": true,
     "moduleResolution": "Bundler",
     "noUncheckedIndexedAccess": true,
-    "jsx": "react",
+    "jsx": "react-jsx",
     "lib": ["dom", "ESNext"],
+    "strict": true,
+    "noEmit": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
-    "downlevelIteration": true
+    "downlevelIteration": true,
+    "types": ["vite/client"],
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true
   },
-  "ts-node": { "esm": true }
+  "ts-node": { "esm": true },
+  "include": ["src", "vite-env.d.ts"]
 }

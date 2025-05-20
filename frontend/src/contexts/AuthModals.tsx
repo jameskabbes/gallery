@@ -6,7 +6,7 @@ import { RequestSignUp } from '../components/Auth/SignUp';
 import { RequestMagicLink } from '../components/Auth/MagicLink';
 import { RequestOTP, VerifyOTP } from '../components/Auth/OTP';
 
-const AuthModalsContext = React.createContext<AuthModalsContextType>({
+export const AuthModalsContext = React.createContext<AuthModalsContextType>({
   activate: () => {},
 });
 
@@ -18,7 +18,7 @@ const authModalMapping: Record<AuthModalType, React.ComponentType> = {
   verifyOTP: VerifyOTP,
 };
 
-function AuthModalsContextProvider({
+export function AuthModalsContextProvider({
   children,
 }: {
   children: React.ReactNode;
@@ -60,5 +60,3 @@ function AuthModalsContextProvider({
     </AuthModalsContext.Provider>
   );
 }
-
-export { AuthModalsContext, AuthModalsContextProvider };

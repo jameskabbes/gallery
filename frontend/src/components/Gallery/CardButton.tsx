@@ -8,7 +8,7 @@ interface Props {
   gallery: components['schemas']['GalleryPublic'];
 }
 
-function GalleryCardButton({ gallery }: Props) {
+export function GalleryCardButton({ gallery }: Props) {
   const navigate = useNavigate();
 
   return (
@@ -22,5 +22,3 @@ function GalleryCardButton({ gallery }: Props) {
     </CardButton>
   );
 }
-
-export { GalleryCardButton };

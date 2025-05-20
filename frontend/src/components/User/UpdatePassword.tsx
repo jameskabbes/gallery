@@ -9,7 +9,7 @@ import { patchMe } from '../../services/apiServices';
 import { Button1 } from '../Utils/Button';
 import { isPasswordValid } from '../../services/isPasswordValid';
 
-function UpdatePassword() {
+export function UpdatePassword() {
   const [password, setPassword] = useState<ValidatedInputState<string>>({
     ...defaultValidatedInputState<string>(''),
   });
@@ -121,5 +121,3 @@ function UpdatePassword() {
     </form>
   );
 }
-
-export { UpdatePassword };

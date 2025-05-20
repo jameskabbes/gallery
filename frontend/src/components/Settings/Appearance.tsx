@@ -68,9 +68,7 @@ function DarkModeToggle() {
   );
 }
 
-function Appearance() {
+export function Appearance() {
   const darkModeContext = useContext(DarkModeContext);
   return <DarkModeToggle />;
 }
-
-export { Appearance };

@@ -1,7 +1,7 @@
 import React from 'react';
 import createStyledSurfaceComponentCreator from '../../utils/createStyledSurfaceComponent';
 
-const createStyledRadioButton = createStyledSurfaceComponentCreator<
+export const createStyledRadioButton = createStyledSurfaceComponentCreator<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >('div');
@@ -23,7 +23,7 @@ interface CheckboxProps extends React.HTMLAttributes<HTMLDivElement> {
   state: boolean;
 }
 
-function RadioButton1({ children, state, ...rest }: CheckboxProps) {
+export function RadioButton1({ children, state, ...rest }: CheckboxProps) {
   return (
     <RadioButtonBase {...rest}>
       <div
@@ -37,5 +37,3 @@ function RadioButton1({ children, state, ...rest }: CheckboxProps) {
     </RadioButtonBase>
   );
 }
-
-export { RadioButton1, createStyledRadioButton };

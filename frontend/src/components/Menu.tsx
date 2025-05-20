@@ -10,9 +10,9 @@ import { AuthContext } from '../contexts/Auth';
 import { logOut } from './Auth/logOut';
 import { Surface } from './Utils/Surface';
 import { useConfirmationModal } from '../utils/useConfirmationModal';
-import { config } from '../config';
+import { config } from '../config/config';
 
-function Menu() {
+export function Menu() {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const authContext = useContext(AuthContext);
@@ -120,5 +120,3 @@ function Menu() {
     </div>
   );
 }
-
-export { Menu };

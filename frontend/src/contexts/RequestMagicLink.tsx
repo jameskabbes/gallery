@@ -4,20 +4,21 @@ import {
   defaultValidatedInputState,
 } from '../types';
 
-const RequestMagicLinkContext = createContext<RequestMagicLinkContextType>({
-  medium: null,
-  setMedium: () => {},
-  email: null,
-  setEmail: () => {},
-  phoneNumber: null,
-  setPhoneNumber: () => {},
-  valid: false,
-  setValid: () => {},
-  loading: false,
-  setLoading: () => {},
-});
+export const RequestMagicLinkContext =
+  createContext<RequestMagicLinkContextType>({
+    medium: null,
+    setMedium: () => {},
+    email: null,
+    setEmail: () => {},
+    phoneNumber: null,
+    setPhoneNumber: () => {},
+    valid: false,
+    setValid: () => {},
+    loading: false,
+    setLoading: () => {},
+  });
 
-function RequestMagicLinkContextProvider({
+export function RequestMagicLinkContextProvider({
   children,
 }: {
   children: React.ReactNode;
@@ -60,5 +61,3 @@ function RequestMagicLinkContextProvider({
     </RequestMagicLinkContext.Provider>
   );
 }
-
-export { RequestMagicLinkContext, RequestMagicLinkContextProvider };

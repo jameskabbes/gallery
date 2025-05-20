@@ -8,10 +8,8 @@ const baseColors = {
   coral: '#ef8354',
 };
 
-const darken = (color: string, amount: number) =>
-  Color(color).darken(amount).hex();
-const lighten = (color: string, amount: number) =>
-  Color(color).lighten(amount).hex();
+const darken = (color, amount) => Color(color).darken(amount).hex();
+const lighten = (color, amount) => Color(color).lighten(amount).hex();
 
 const darkenAmount = 0.2;
 
