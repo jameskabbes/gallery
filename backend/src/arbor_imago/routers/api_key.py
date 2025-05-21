@@ -12,7 +12,7 @@ from arbor_imago.auth import utils as auth_utils
 
 
 class _Base(
-    base.Router[
+    base.ServiceRouter[
         ApiKeyTable,
         custom_types.User.id,
         api_key_schema.ApiKeyAdminCreate,

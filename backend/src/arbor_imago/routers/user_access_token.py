@@ -18,7 +18,7 @@ def user_access_token_pagination(
 
 
 class _Base(
-    base.Router[
+    base.ServiceRouter[
         UserAccessTokenTable,
         custom_types.UserAccessToken.id,
         user_access_token_schema.UserAccessTokenAdminCreate,

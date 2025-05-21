@@ -13,7 +13,7 @@ from arbor_imago.schemas import gallery as gallery_schema, pagination as paginat
 
 
 class _Base(
-    base.Router[
+    base.ServiceRouter[
         GalleryTable,
         custom_types.User.id,
         gallery_schema.GalleryAdminCreate,

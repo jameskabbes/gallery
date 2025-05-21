@@ -1,5 +1,3 @@
-# all relative paths are relative to the current working directory when you run the server
-
 BACKEND_URL: http://localhost:8080
 FRONTEND_URL: http://localhost:3000
 AUTH_KEY: auth
@@ -30,6 +28,5 @@ USER_ROLE_SCOPES:
   user:
     - user.read
     - user.write
-OPENAPI_SCHEMA_PATH: ../../openapi_schema.json
 OTP_LENGTH: 6
 GOOGLE_CLIENT_ID: abcdef.apps.googleusercontent.com

@@ -176,7 +176,7 @@ let config: Config = {
 // https://vitejs.dev/config/
 export default defineConfig({
   define: {
-    'import.meta.env.APP_CONFIG': JSON.stringify(config),
+    'import.meta.env.VITE_APP_CONFIG': JSON.stringify(config),
   },
 
   plugins: [react(), typescript()],

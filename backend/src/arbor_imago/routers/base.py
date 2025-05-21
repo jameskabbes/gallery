@@ -90,38 +90,7 @@ class HasTag(Protocol):
     _TAG: ClassVar[str]
 
 
-class HasService(
-    Generic[models.TModel,
-            custom_types.TId,
-            base_service.TCreateModel,
-            base_service.TUpdateModel,
-            base_service.TOrderBy_co]):
-
-    _SERVICE: Type[base_service.Service[
-        models.TModel,
-        custom_types.TId,
-        base_service.TCreateModel,
-        base_service.TUpdateModel,
-        base_service.TOrderBy_co,
-    ]]
-
-
-class Router(Generic[
-    models.TModel,
-    custom_types.TId,
-    base_service.TCreateModel,
-    base_service.TUpdateModel,
-    base_service.TOrderBy_co,
-], HasService[
-    models.TModel,
-    custom_types.TId,
-    base_service.TCreateModel,
-    base_service.TUpdateModel,
-    base_service.TOrderBy_co
-
-], HasPrefix, HasAdmin, HasTag):
-
-
+class Router(HasPrefix, HasAdmin, HasTag):
     def __init__(self):
 
         prefix = self._PREFIX
@@ -138,6 +107,40 @@ class Router(Generic[
     def _set_routes(self):
         pass
 
+
+class HasService(
+        Generic[models.TModel,
+                custom_types.TId,
+                base_service.TCreateModel,
+                base_service.TUpdateModel,
+                base_service.TOrderBy_co],
+        Protocol):
+
+    _SERVICE: Type[base_service.Service[
+        models.TModel,
+        custom_types.TId,
+        base_service.TCreateModel,
+        base_service.TUpdateModel,
+        base_service.TOrderBy_co,
+    ]]
+
+
+class ServiceRouter(Generic[
+    models.TModel,
+    custom_types.TId,
+    base_service.TCreateModel,
+    base_service.TUpdateModel,
+    base_service.TOrderBy_co,
+],
+    Router,
+    HasService[
+    models.TModel,
+    custom_types.TId,
+    base_service.TCreateModel,
+    base_service.TUpdateModel,
+    base_service.TOrderBy_co
+
+]):
 
     # def make_get_many_endpoint(
     #         self,

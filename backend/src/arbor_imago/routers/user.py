@@ -15,7 +15,7 @@ PAGINATION_DEPENDS = base.get_pagination()
 
 
 class _Base(
-    base.Router[
+    base.ServiceRouter[
         UserTable,
         custom_types.User.id,
         user_schema.UserAdminCreate,

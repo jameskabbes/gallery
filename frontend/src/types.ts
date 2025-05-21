@@ -254,13 +254,15 @@ export interface SharedConfig {
   GOOGLE_CLIENT_ID: string;
 }
 
-export interface FrontendConfig {
-  VITE: {
-    server: {
-      port: number;
-      host: boolean;
-    };
+interface ViteConfig {
+  server: {
+    port: number;
+    host: boolean;
   };
+}
+
+export interface FrontendConfig {
+  VITE: ViteConfig;
   OPENAPI_SCHEMA_PATH: string;
 }
 
@@ -281,11 +283,6 @@ export interface Config {
   userRoleScopes: Record<string, string[]>;
   otpLength: number;
   googleClientId: string;
-  vite: {
-    server: {
-      port: number;
-      host: boolean;
-    };
-  };
+  vite: ViteConfig;
   openapiSchemaPath: string;
 }

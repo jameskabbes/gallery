@@ -213,7 +213,6 @@ class AccessTokenCookie(TypedDict):
 
 
 class BackendConfig(TypedDict):
-    URL: str
     UVICORN: dict
     DB: DbEnv
     MEDIA_DIR: str
@@ -225,18 +224,6 @@ class BackendConfig(TypedDict):
 
 with BACKEND_CONFIG_PATH.open('r') as f:
     _BACKEND_CONFIG: BackendConfig = yaml.safe_load(f)
-
-
-def resolve_db_url(db_url: str, config_dir: Path) -> str:
-    prefix = "sqlite+aiosqlite:///"
-    abs_prefix = "sqlite+aiosqlite:////"
-    if db_url.startswith(prefix) and not db_url.startswith(abs_prefix):
-        # Relative path: resolve it
-        db_file = db_url[len(prefix):]
-        db_file_path = (config_dir / db_file).resolve()
-        return f"{prefix}{db_file_path}"
-
-    return db_url
 
 
 DB_ASYNC_ENGINE = create_async_engine(_BACKEND_CONFIG['DB']['URL'])
