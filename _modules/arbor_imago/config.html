@@ -304,7 +304,6 @@
 <div class="viewcode-block" id="BackendConfig">
 <a class="viewcode-back" href="../../arbor_imago.html#arbor_imago.config.BackendConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BackendConfig</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
-    <span class="n">URL</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">UVICORN</span><span class="p">:</span> <span class="nb">dict</span>
     <span class="n">DB</span><span class="p">:</span> <span class="n">DbEnv</span>
     <span class="n">MEDIA_DIR</span><span class="p">:</span> <span class="nb">str</span>
@@ -317,21 +316,6 @@
 
 <span class="k">with</span> <span class="n">BACKEND_CONFIG_PATH</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
     <span class="n">_BACKEND_CONFIG</span><span class="p">:</span> <span class="n">BackendConfig</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-
-
-<div class="viewcode-block" id="resolve_db_url">
-<a class="viewcode-back" href="../../arbor_imago.html#arbor_imago.config.resolve_db_url">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">resolve_db_url</span><span class="p">(</span><span class="n">db_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">config_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="n">prefix</span> <span class="o">=</span> <span class="s2">&quot;sqlite+aiosqlite:///&quot;</span>
-    <span class="n">abs_prefix</span> <span class="o">=</span> <span class="s2">&quot;sqlite+aiosqlite:////&quot;</span>
-    <span class="k">if</span> <span class="n">db_url</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">db_url</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">abs_prefix</span><span class="p">):</span>
-        <span class="c1"># Relative path: resolve it</span>
-        <span class="n">db_file</span> <span class="o">=</span> <span class="n">db_url</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">):]</span>
-        <span class="n">db_file_path</span> <span class="o">=</span> <span class="p">(</span><span class="n">config_dir</span> <span class="o">/</span> <span class="n">db_file</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}{</span><span class="n">db_file_path</span><span class="si">}</span><span class="s2">&quot;</span>
-
-    <span class="k">return</span> <span class="n">db_url</span></div>
-
 
 
 <span class="n">DB_ASYNC_ENGINE</span> <span class="o">=</span> <span class="n">create_async_engine</span><span class="p">(</span><span class="n">_BACKEND_CONFIG</span><span class="p">[</span><span class="s1">&#39;DB&#39;</span><span class="p">][</span><span class="s1">&#39;URL&#39;</span><span class="p">])</span>

@@ -56,14 +56,6 @@ arbor\_imago.custom\_types module
    :show-inheritance:
    :undoc-members:
 
-arbor\_imago.main module
-------------------------
-
-.. automodule:: arbor_imago.main
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
 arbor\_imago.utils module
 -------------------------
 

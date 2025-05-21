@@ -76,7 +76,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#arbor_imago.config.SharedConfig"><code class="docutils literal notranslate"><span class="pre">SharedConfig</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#arbor_imago.config.convert_env_path_to_absolute"><code class="docutils literal notranslate"><span class="pre">convert_env_path_to_absolute()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#arbor_imago.config.process_explicit_config_path"><code class="docutils literal notranslate"><span class="pre">process_explicit_config_path()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#arbor_imago.config.resolve_db_url"><code class="docutils literal notranslate"><span class="pre">resolve_db_url()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#module-arbor_imago.core_utils">arbor_imago.core_utils module</a><ul>
@@ -109,7 +108,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#arbor_imago.custom_types.VisibilityLevel"><code class="docutils literal notranslate"><span class="pre">VisibilityLevel</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#module-arbor_imago.main">arbor_imago.main module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#module-arbor_imago.utils">arbor_imago.utils module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#arbor_imago.utils.jwt_decode"><code class="docutils literal notranslate"><span class="pre">jwt_decode()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#arbor_imago.utils.jwt_encode"><code class="docutils literal notranslate"><span class="pre">jwt_encode()</span></code></a></li>
@@ -583,15 +581,16 @@
 <li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.PostParams.create_model"><code class="docutils literal notranslate"><span class="pre">PostParams.create_model</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.Router"><code class="docutils literal notranslate"><span class="pre">Router</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.Router.delete_responses"><code class="docutils literal notranslate"><span class="pre">Router.delete_responses()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.Router.get_responses"><code class="docutils literal notranslate"><span class="pre">Router.get_responses()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.Router.patch_responses"><code class="docutils literal notranslate"><span class="pre">Router.patch_responses()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.Router.post_responses"><code class="docutils literal notranslate"><span class="pre">Router.post_responses()</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.Router"><code class="docutils literal notranslate"><span class="pre">Router</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.RouterVerbParams"><code class="docutils literal notranslate"><span class="pre">RouterVerbParams</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.RouterVerbParams.authorization"><code class="docutils literal notranslate"><span class="pre">RouterVerbParams.authorization</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.ServiceRouter"><code class="docutils literal notranslate"><span class="pre">ServiceRouter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.ServiceRouter.delete_responses"><code class="docutils literal notranslate"><span class="pre">ServiceRouter.delete_responses()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.ServiceRouter.get_responses"><code class="docutils literal notranslate"><span class="pre">ServiceRouter.get_responses()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.ServiceRouter.patch_responses"><code class="docutils literal notranslate"><span class="pre">ServiceRouter.patch_responses()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.ServiceRouter.post_responses"><code class="docutils literal notranslate"><span class="pre">ServiceRouter.post_responses()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="arbor_imago.routers.html#arbor_imago.routers.base.WithId"><code class="docutils literal notranslate"><span class="pre">WithId</span></code></a><ul>
@@ -1573,11 +1572,6 @@
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="arbor_imago.config.BackendConfig.URL">
-<span class="sig-name descname"><span class="pre">URL</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#arbor_imago.config.BackendConfig.URL" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
 <dt class="sig sig-object py" id="arbor_imago.config.BackendConfig.UVICORN">
 <span class="sig-name descname"><span class="pre">UVICORN</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><a class="headerlink" href="#arbor_imago.config.BackendConfig.UVICORN" title="Link to this definition"></a></dt>
 <dd></dd></dl>
@@ -1688,11 +1682,6 @@
 <span class="sig-prename descclassname"><span class="pre">arbor_imago.config.</span></span><span class="sig-name descname"><span class="pre">process_explicit_config_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/arbor_imago/config.html#process_explicit_config_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.config.process_explicit_config_path" title="Link to this definition"></a></dt>
 <dd><p>process an explicit config path sent to an environment variable</p>
 </dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="arbor_imago.config.resolve_db_url">
-<span class="sig-prename descclassname"><span class="pre">arbor_imago.config.</span></span><span class="sig-name descname"><span class="pre">resolve_db_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/arbor_imago/config.html#resolve_db_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arbor_imago.config.resolve_db_url" title="Link to this definition"></a></dt>
-<dd></dd></dl>
 
 </section>
 <section id="module-arbor_imago.core_utils">
@@ -2510,9 +2499,6 @@ of the time to include. Valid options are ‘auto’, ‘hours’, ‘minutes’
 
 </dd></dl>
 
-</section>
-<section id="module-arbor_imago.main">
-<span id="arbor-imago-main-module"></span><h2>arbor_imago.main module<a class="headerlink" href="#module-arbor_imago.main" title="Link to this heading"></a></h2>
 </section>
 <section id="module-arbor_imago.utils">
 <span id="arbor-imago-utils-module"></span><h2>arbor_imago.utils module<a class="headerlink" href="#module-arbor_imago.utils" title="Link to this heading"></a></h2>

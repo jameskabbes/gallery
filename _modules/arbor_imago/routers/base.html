@@ -200,43 +200,9 @@
 
 
 
-<div class="viewcode-block" id="HasService">
-<a class="viewcode-back" href="../../../arbor_imago.routers.html#arbor_imago.routers.base.HasService">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">HasService</span><span class="p">(</span>
-    <span class="n">Generic</span><span class="p">[</span><span class="n">models</span><span class="o">.</span><span class="n">TModel</span><span class="p">,</span>
-            <span class="n">custom_types</span><span class="o">.</span><span class="n">TId</span><span class="p">,</span>
-            <span class="n">base_service</span><span class="o">.</span><span class="n">TCreateModel</span><span class="p">,</span>
-            <span class="n">base_service</span><span class="o">.</span><span class="n">TUpdateModel</span><span class="p">,</span>
-            <span class="n">base_service</span><span class="o">.</span><span class="n">TOrderBy_co</span><span class="p">]):</span>
-
-    <span class="n">_SERVICE</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">base_service</span><span class="o">.</span><span class="n">Service</span><span class="p">[</span>
-        <span class="n">models</span><span class="o">.</span><span class="n">TModel</span><span class="p">,</span>
-        <span class="n">custom_types</span><span class="o">.</span><span class="n">TId</span><span class="p">,</span>
-        <span class="n">base_service</span><span class="o">.</span><span class="n">TCreateModel</span><span class="p">,</span>
-        <span class="n">base_service</span><span class="o">.</span><span class="n">TUpdateModel</span><span class="p">,</span>
-        <span class="n">base_service</span><span class="o">.</span><span class="n">TOrderBy_co</span><span class="p">,</span>
-    <span class="p">]]</span></div>
-
-
-
 <div class="viewcode-block" id="Router">
 <a class="viewcode-back" href="../../../arbor_imago.routers.html#arbor_imago.routers.base.Router">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">Router</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span>
-    <span class="n">models</span><span class="o">.</span><span class="n">TModel</span><span class="p">,</span>
-    <span class="n">custom_types</span><span class="o">.</span><span class="n">TId</span><span class="p">,</span>
-    <span class="n">base_service</span><span class="o">.</span><span class="n">TCreateModel</span><span class="p">,</span>
-    <span class="n">base_service</span><span class="o">.</span><span class="n">TUpdateModel</span><span class="p">,</span>
-    <span class="n">base_service</span><span class="o">.</span><span class="n">TOrderBy_co</span><span class="p">,</span>
-<span class="p">],</span> <span class="n">HasService</span><span class="p">[</span>
-    <span class="n">models</span><span class="o">.</span><span class="n">TModel</span><span class="p">,</span>
-    <span class="n">custom_types</span><span class="o">.</span><span class="n">TId</span><span class="p">,</span>
-    <span class="n">base_service</span><span class="o">.</span><span class="n">TCreateModel</span><span class="p">,</span>
-    <span class="n">base_service</span><span class="o">.</span><span class="n">TUpdateModel</span><span class="p">,</span>
-    <span class="n">base_service</span><span class="o">.</span><span class="n">TOrderBy_co</span>
-
-<span class="p">],</span> <span class="n">HasPrefix</span><span class="p">,</span> <span class="n">HasAdmin</span><span class="p">,</span> <span class="n">HasTag</span><span class="p">):</span>
-
-
+<span class="k">class</span><span class="w"> </span><span class="nc">Router</span><span class="p">(</span><span class="n">HasPrefix</span><span class="p">,</span> <span class="n">HasAdmin</span><span class="p">,</span> <span class="n">HasTag</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="n">prefix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PREFIX</span>
@@ -251,8 +217,48 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_routes</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_set_routes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span>
+        <span class="k">pass</span></div>
 
+
+
+<div class="viewcode-block" id="HasService">
+<a class="viewcode-back" href="../../../arbor_imago.routers.html#arbor_imago.routers.base.HasService">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">HasService</span><span class="p">(</span>
+        <span class="n">Generic</span><span class="p">[</span><span class="n">models</span><span class="o">.</span><span class="n">TModel</span><span class="p">,</span>
+                <span class="n">custom_types</span><span class="o">.</span><span class="n">TId</span><span class="p">,</span>
+                <span class="n">base_service</span><span class="o">.</span><span class="n">TCreateModel</span><span class="p">,</span>
+                <span class="n">base_service</span><span class="o">.</span><span class="n">TUpdateModel</span><span class="p">,</span>
+                <span class="n">base_service</span><span class="o">.</span><span class="n">TOrderBy_co</span><span class="p">],</span>
+        <span class="n">Protocol</span><span class="p">):</span>
+
+    <span class="n">_SERVICE</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">base_service</span><span class="o">.</span><span class="n">Service</span><span class="p">[</span>
+        <span class="n">models</span><span class="o">.</span><span class="n">TModel</span><span class="p">,</span>
+        <span class="n">custom_types</span><span class="o">.</span><span class="n">TId</span><span class="p">,</span>
+        <span class="n">base_service</span><span class="o">.</span><span class="n">TCreateModel</span><span class="p">,</span>
+        <span class="n">base_service</span><span class="o">.</span><span class="n">TUpdateModel</span><span class="p">,</span>
+        <span class="n">base_service</span><span class="o">.</span><span class="n">TOrderBy_co</span><span class="p">,</span>
+    <span class="p">]]</span></div>
+
+
+
+<div class="viewcode-block" id="ServiceRouter">
+<a class="viewcode-back" href="../../../arbor_imago.routers.html#arbor_imago.routers.base.ServiceRouter">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ServiceRouter</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span>
+    <span class="n">models</span><span class="o">.</span><span class="n">TModel</span><span class="p">,</span>
+    <span class="n">custom_types</span><span class="o">.</span><span class="n">TId</span><span class="p">,</span>
+    <span class="n">base_service</span><span class="o">.</span><span class="n">TCreateModel</span><span class="p">,</span>
+    <span class="n">base_service</span><span class="o">.</span><span class="n">TUpdateModel</span><span class="p">,</span>
+    <span class="n">base_service</span><span class="o">.</span><span class="n">TOrderBy_co</span><span class="p">,</span>
+<span class="p">],</span>
+    <span class="n">Router</span><span class="p">,</span>
+    <span class="n">HasService</span><span class="p">[</span>
+    <span class="n">models</span><span class="o">.</span><span class="n">TModel</span><span class="p">,</span>
+    <span class="n">custom_types</span><span class="o">.</span><span class="n">TId</span><span class="p">,</span>
+    <span class="n">base_service</span><span class="o">.</span><span class="n">TCreateModel</span><span class="p">,</span>
+    <span class="n">base_service</span><span class="o">.</span><span class="n">TUpdateModel</span><span class="p">,</span>
+    <span class="n">base_service</span><span class="o">.</span><span class="n">TOrderBy_co</span>
+
+<span class="p">]):</span>
 
     <span class="c1"># def make_get_many_endpoint(</span>
     <span class="c1">#         self,</span>
@@ -453,32 +459,32 @@
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="k">raise</span>
 
-<div class="viewcode-block" id="Router.get_responses">
-<a class="viewcode-back" href="../../../arbor_imago.routers.html#arbor_imago.routers.base.Router.get_responses">[docs]</a>
+<div class="viewcode-block" id="ServiceRouter.get_responses">
+<a class="viewcode-back" href="../../../arbor_imago.routers.html#arbor_imago.routers.base.ServiceRouter.get_responses">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_responses</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">{}</span></div>
 
 
-<div class="viewcode-block" id="Router.post_responses">
-<a class="viewcode-back" href="../../../arbor_imago.routers.html#arbor_imago.routers.base.Router.post_responses">[docs]</a>
+<div class="viewcode-block" id="ServiceRouter.post_responses">
+<a class="viewcode-back" href="../../../arbor_imago.routers.html#arbor_imago.routers.base.ServiceRouter.post_responses">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">post_responses</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">{}</span></div>
 
 
-<div class="viewcode-block" id="Router.patch_responses">
-<a class="viewcode-back" href="../../../arbor_imago.routers.html#arbor_imago.routers.base.Router.patch_responses">[docs]</a>
+<div class="viewcode-block" id="ServiceRouter.patch_responses">
+<a class="viewcode-back" href="../../../arbor_imago.routers.html#arbor_imago.routers.base.ServiceRouter.patch_responses">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">patch_responses</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">{}</span></div>
 
 
-<div class="viewcode-block" id="Router.delete_responses">
-<a class="viewcode-back" href="../../../arbor_imago.routers.html#arbor_imago.routers.base.Router.delete_responses">[docs]</a>
+<div class="viewcode-block" id="ServiceRouter.delete_responses">
+<a class="viewcode-back" href="../../../arbor_imago.routers.html#arbor_imago.routers.base.ServiceRouter.delete_responses">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">delete_responses</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
