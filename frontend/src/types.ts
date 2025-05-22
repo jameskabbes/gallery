@@ -239,11 +239,15 @@ export interface SurfaceContextType {
 
 export type OrderByState = 'off' | 'asc' | 'desc';
 
+interface HeaderKeys {
+  auth_logout: string;
+}
+
 export interface SharedConfig {
   BACKEND_URL: string;
   FRONTEND_URL: string;
   AUTH_KEY: string;
-  HEADER_KEYS: Record<string, string>;
+  HEADER_KEYS: HeaderKeys;
   FRONTEND_ROUTES: Record<string, string>;
   SCOPE_NAME_MAPPING: Record<string, number>;
   VISIBILITY_LEVEL_NAME_MAPPING: Record<string, number>;
@@ -270,7 +274,7 @@ export interface Config {
   backendUrl: string;
   frontendUrl: string;
   authKey: string;
-  headerKeys: Record<string, string>;
+  headerKeys: HeaderKeys;
   frontendRoutes: Record<string, string>;
   scopeNameMapping: Record<string, number>;
   scopeIdMapping: Record<number, string>;
