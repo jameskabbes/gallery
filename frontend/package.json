@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "cross-env APP_ENV=dev vite",
     "prod": "cross-env APP_ENV=prod vite",
-    "import-openapi": "cross-env APP_ENV=dev npx tsx import_openapi_schema.ts",
+    "import-openapi": "cross-env APP_ENV=dev tsx import_openapi_schema.ts",
     "build": "cross-env APP_ENV=prod vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "format": "npx prettier --write .",
